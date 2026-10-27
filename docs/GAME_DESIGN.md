@@ -79,6 +79,48 @@ among all nine, nudged by how the round went:
 Frequent milk use also nudges towards The Veil. Every fortune lasts exactly
 one round and is cleared by a new match.
 
+## Added in 0.4.0 — A Spoonful of Trouble
+
+### Defences
+
+- **Grace period:** after a spill the cup recovers for 1 s (its rim pulses).
+  Leaves reaching the rim then are sloshed 150 units back into the cup instead
+  of costing a cup, so they cannot drain lives the moment it ends. Several
+  cups can still be lost in one round.
+- **Tea strainer:** catches the first escaping leaf of each round, with a
+  metallic glint and a clink. It refills every round. Shown as `STRAINER n/m`
+  and as silver mesh rings on the rim.
+- **Milk backwash:** pouring milk now also sends a pale wave in from the rim
+  that pushes leaves in the slowed wedge 120 units back towards the centre
+  (never further in than where they started). The slowing is unchanged.
+
+### Spoon upgrades
+
+After rounds 1, 3, 5, 7 and so on, the reading offers two different upgrades.
+Pick one with <kbd>1</kbd> / <kbd>2</kbd>, a click, or a tap. Upgrades last
+until the pot runs dry.
+
+| Upgrade | Per level | Limit |
+| --- | --- | --- |
+| **Polished Spoon** | Steam 20% faster; a brighter spoon and luminous trails | 3 |
+| **Quick Stir** | Spoon turns 15% faster; engraved chevrons and afterimages | 3 |
+| **Sugar Scoop** | +1 sugar burst per round (Sugar Rush regrows up to it) | 2 |
+| **Strainer Attachment** | +1 strainer catch per round | 2 (3 catches) |
+
+With three or more upgrades the spoon grows a filigree handle.
+
+### The Golden Spoon
+
+The golden sugar cube may now award the Golden Spoon (and every jackpot does):
+for 9 s of play, steam fires twice as often and 15% faster, in gold, on top of
+any upgrades and fortunes, including both of Double Trouble's darts.
+
+### Fortune tweaks
+
+- Strainer catches, grace recoils, and milk rescues from near the rim count as
+  near misses, each making Tempestuous Tea a little more likely (up to four).
+- The Leaves Lie has a new prank: it recommends a bigger spoon.
+
 ### Presentation
 
 - Procedural canvas art: the cup, liquid, saucer handle, leaves, spoon,
@@ -96,7 +138,9 @@ None are planned commitments.
 - More fortunes, and readings based on timing or accuracy.
 - Choosing between two possible readings.
 - Stacking or longer-lasting omens.
-- New weapons or spoon upgrades (lemon, honey, a stirring vortex).
+- New weapons or more spoon upgrades (lemon, honey, a stirring vortex).
+- Persistent upgrades across sessions, upgrade trees, shops (deliberately
+  not yet).
 - Richer liquid simulation and more elaborate leaf-settling animation.
 - Music and a fuller soundscape.
 - Local high scores, with validated persisted data.

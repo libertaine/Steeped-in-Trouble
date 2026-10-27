@@ -53,6 +53,7 @@ function boot() {
       togglePause: game.togglePause,
       restart: game.restart,
       pause: game.pause,
+      choose: game.chooseUpgrade,
     },
   });
 

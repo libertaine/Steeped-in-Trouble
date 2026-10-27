@@ -11,12 +11,11 @@ pattern is read as a fortune that changes the next round.
 
 ## Status
 
-Version **0.3.0 — The Leaves Have Opinions**: nine fortunes instead of four,
-chosen with a lean towards how you played but plenty of chance, plus a golden
-sugar cube to chase and a fortune that lies. The original four fortunes and
-the core game are unchanged from the
-[reference prototype](docs/reference/README.md). Expect frequent experimental
-changes in later versions.
+Version **0.4.0 — A Spoonful of Trouble**: a tea strainer that catches
+escaping leaves, a moment of grace after each spill, milk that washes leaves
+back into the cup, spoon upgrades to choose between rounds, and a temporary
+Golden Spoon. See the [changelog](CHANGELOG.md) for earlier versions. Expect
+frequent experimental changes in later versions.
 
 The game was called *Storm in a Teacup* up to version 0.1.0.
 
@@ -26,10 +25,11 @@ The game was called *Storm in a Teacup* up to version 0.1.0.
 | --- | --- | --- |
 | Move the silver spoon | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> | hold **◀ TURN** / **TURN ▶** |
 | Fire steam (hold for continuous fire) | <kbd>Space</kbd> | hold **STEAM ↑** |
-| Milk: slow a wedge of the cup | <kbd>M</kbd> | **MILK** |
+| Milk: wash back and slow a wedge of the cup | <kbd>M</kbd> | **MILK** |
 | Sugar: three-lane burst | <kbd>S</kbd> | **SUGAR** |
 | Pause / resume | <kbd>P</kbd> | main button |
 | Start, next cup, new pot | <kbd>Enter</kbd> | main button |
+| Pick a spoon upgrade | <kbd>1</kbd> / <kbd>2</kbd> | tap a card |
 | Restart after game over | <kbd>R</kbd> | main button |
 
 Sound is off by default. Use the **Sound** toggle to enable it.

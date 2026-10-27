@@ -7,7 +7,7 @@ import {
 } from '../../src/gameplay/fortunes.js';
 import { awardGolden } from '../../src/gameplay/golden.js';
 import { LANE_STEP, angleDifference, laneAngle } from '../../src/gameplay/arena.js';
-import { completeRound, killOne, placeEnemy, playingGame, step } from './helpers.js';
+import { brewNext, completeRound, killOne, placeEnemy, playingGame, step } from './helpers.js';
 
 const lanesEach = (lanes, perLane = 1) => lanes.flatMap((lane) => new Array(perLane).fill(lane));
 
@@ -151,7 +151,7 @@ function gameWithFortune(id) {
   const game = playingGame();
   completeRound(game);
   game.state.nextFortune = id; // as if the leaves had read `id`
-  game.primaryAction();
+  brewNext(game);
   game.state.spawnTimer = Infinity;
   return game;
 }
@@ -163,7 +163,7 @@ describe('applying and expiring fortune effects', () => {
     expect(game.state.fortune).toBeNull();
     expect(game.state.modifiers).toEqual(BASE_MODIFIERS);
     const id = game.state.nextFortune;
-    game.primaryAction();
+    brewNext(game);
     expect(game.state.fortune).toBe(id);
     expect(game.state.modifiers).toEqual(modifiersFor(id));
   });
@@ -200,7 +200,7 @@ describe('applying and expiring fortune effects', () => {
     const game = gameWithFortune('crown');
     completeRound(game);
     game.state.nextFortune = 'star';
-    game.primaryAction();
+    brewNext(game);
     expect(game.state.sugarLeft).toBe(2);
     expect(game.state.modifiers.bonusSugar).toBe(0);
   });
@@ -208,9 +208,10 @@ describe('applying and expiring fortune effects', () => {
   it('is cleared by a new match', () => {
     const game = gameWithFortune('crown');
     game.state.lives = 1;
+    game.state.strainerLeft = 0; // no catch: the leaf spills
     placeEnemy(game.state, { radius: CONFIG.arena.rimRadius, speed: 1 });
     step(game, 0.05);
-    game.primaryAction();
+    brewNext(game);
     expect(game.state.fortune).toBeNull();
     expect(game.state.sugarLeft).toBe(2);
   });
@@ -245,7 +246,7 @@ describe('Sugar Rush', () => {
     const game = gameWithFortune('sugarRush');
     completeRound(game);
     game.state.nextFortune = 'star';
-    game.primaryAction();
+    brewNext(game);
     game.state.spawnTimer = Infinity;
     game.sugarBurst();
     step(game, interval * 2);
@@ -279,7 +280,7 @@ describe('Double Trouble', () => {
     const game = gameWithFortune('doubleTrouble');
     completeRound(game);
     game.state.nextFortune = 'crown';
-    game.primaryAction();
+    brewNext(game);
     game.fireSteam();
     expect(game.state.shots).toHaveLength(1);
   });
@@ -296,7 +297,7 @@ describe('Tempestuous Tea', () => {
     expect(b.radius - 50).toBeCloseTo((a.radius - 50) * CONFIG.fortunes.tempestEnemySpeed, 3);
     completeRound(stormy);
     stormy.state.nextFortune = 'star';
-    stormy.primaryAction();
+    brewNext(stormy);
     expect(stormy.state.modifiers.enemySpeedMultiplier).toBe(1);
   });
 });
@@ -355,12 +356,13 @@ describe('Golden Opportunity', () => {
     completeRound(game);
     expect(game.state.golden).toBeNull();
     game.state.nextFortune = 'star';
-    game.primaryAction();
+    brewNext(game);
     step(game, G.delayMax + 1);
     expect(game.state.golden).toBeNull();
 
     const lost = withCube();
     lost.state.lives = 1;
+    lost.state.strainerLeft = 0; // no catch: the leaf spills
     placeEnemy(lost.state, { radius: CONFIG.arena.rimRadius, speed: 1 });
     step(lost, 0.05);
     expect(lost.state.phase).toBe('gameover');
@@ -394,6 +396,7 @@ describe('a restart clears every new fortune', () => {
     it(`clears ${FORTUNES[id].name}`, () => {
       const game = gameWithFortune(id);
       game.state.lives = 1;
+      game.state.strainerLeft = 0; // no catch: the leaf spills
       placeEnemy(game.state, { radius: CONFIG.arena.rimRadius, speed: 1 });
       step(game, 0.05);
       game.restart();

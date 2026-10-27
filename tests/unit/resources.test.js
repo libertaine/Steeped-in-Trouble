@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../../src/config.js';
 import { laneAngle } from '../../src/gameplay/arena.js';
-import { completeRound, placeEnemy, playingGame, step } from './helpers.js';
+import { brewNext, completeRound, placeEnemy, playingGame, step } from './helpers.js';
 
 describe('milk', () => {
   it('starts each round with two pours and spends one per use', () => {
@@ -80,7 +80,7 @@ describe('sugar', () => {
     game.sugarBurst();
     completeRound(game);
     expect(game.state.phase).toBe('reading');
-    game.primaryAction();
+    brewNext(game);
     expect(game.state.milkLeft).toBe(2);
     expect(game.state.sugarLeft).toBeGreaterThanOrEqual(2);
   });

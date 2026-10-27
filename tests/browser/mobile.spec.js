@@ -41,5 +41,18 @@ test('is playable with touch controls on a phone-sized screen', async ({ page, p
   await expect(page.locator('#milkCount')).toHaveText('1');
   await page.locator('#sugarBtn').tap();
   await expect(page.locator('#sugarCount')).toHaveText('1');
+
+  // Finish the round on the spot and pick an upgrade with a tap.
+  await page.evaluate(() => {
+    const { game } = window.__TEACUP__;
+    const s = game.state;
+    s.kills = s.target - 1;
+    s.shots.push({ angle: s.angle, radius: 120, speed: 0, sugar: false, veer: 0, golden: false });
+    s.enemies.push({ angle: s.angle, radius: 120, home: 40, speed: 0, wiggle: 0, shifted: false, size: 10, alpha: 1, backwash: 0 });
+  });
+  await expect(page.locator('#upgradeOffer')).toBeVisible({ timeout: 10_000 });
+  await page.locator('.upgrade-card').first().tap();
+  await expect(page.locator('#roundNum')).toHaveText('02');
+  await expect(page.locator('#spoonKit')).not.toHaveText('An ordinary silver spoon.');
   expect(problems).toEqual([]);
 });

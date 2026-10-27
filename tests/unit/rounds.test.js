@@ -3,7 +3,7 @@ import { CONFIG } from '../../src/config.js';
 import { createGame } from '../../src/core/game.js';
 import { nextSpawnDelay } from '../../src/gameplay/enemies.js';
 import { createRandom } from '../../src/core/random.js';
-import { completeRound, killOne, placeEnemy, playingGame, step } from './helpers.js';
+import { brewNext, completeRound, killOne, placeEnemy, playingGame, step } from './helpers.js';
 
 describe('phases', () => {
   it('starts ready and begins round 1 on the main action', () => {
@@ -54,11 +54,11 @@ describe('round progression', () => {
     expect(game.state.target).toBe(16);
     completeRound(game);
     expect(game.state.phase).toBe('reading');
-    game.primaryAction();
+    brewNext(game);
     expect(game.state.round).toBe(2);
     expect(game.state.target).toBe(20);
     completeRound(game);
-    game.primaryAction();
+    brewNext(game);
     expect(game.state.round).toBe(3);
     expect(game.state.target).toBe(24);
   });
@@ -87,7 +87,7 @@ describe('round progression', () => {
     const game = playingGame();
     completeRound(game);
     game.state.angle = 1;
-    game.primaryAction();
+    brewNext(game);
     expect(game.state.kills).toBe(0);
     expect(game.state.angle).toBeCloseTo(CONFIG.player.startAngle);
   });
@@ -148,7 +148,7 @@ describe('tea-leaf residue', () => {
     const game = playingGame();
     completeRound(game);
     expect(game.state.residue.length).toBeGreaterThan(0);
-    game.primaryAction();
+    brewNext(game);
     expect(game.state.residue).toHaveLength(0);
   });
 
@@ -166,8 +166,9 @@ describe('resetting a match', () => {
     const game = playingGame();
     killOne(game);
     completeRound(game);
-    game.primaryAction(); // round 2 with a fortune
+    brewNext(game); // round 2 with a fortune
     game.state.lives = 1;
+    game.state.strainerLeft = 0; // no catch: the leaf spills
     placeEnemy(game.state, { radius: CONFIG.arena.rimRadius, speed: 1 });
     step(game, 0.05);
     expect(game.state.phase).toBe('gameover');
@@ -187,6 +188,7 @@ describe('resetting a match', () => {
     const game = playingGame();
     expect(game.restart()).toBe(false);
     game.state.lives = 1;
+    game.state.strainerLeft = 0; // no catch: the leaf spills
     placeEnemy(game.state, { radius: CONFIG.arena.rimRadius, speed: 1 });
     step(game, 0.05);
     expect(game.restart()).toBe(true);

@@ -1,23 +1,38 @@
 // Cosmetic effects driven by simulation events: particles, the spill flash,
-// whispered messages, The Leaves Lie's pranks, and the living tea surface
-// (see tea.js).
+// strainer glints, whispered messages, The Leaves Lie's pranks, the spoon's
+// moments of glory, and the living tea surface (see tea.js).
 //
 // Effects never modify game state and use their own random source, so they
 // can be changed freely without affecting gameplay or seeded replays.
 
-import { TAU, toCanvasPoint } from '../gameplay/arena.js';
+import { LANE_STEP, TAU, toCanvasPoint } from '../gameplay/arena.js';
 import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { FIBS, FORTUNES } from '../gameplay/fortunes.js';
+import { UPGRADES } from '../gameplay/upgrades.js';
 import { createTea } from './tea.js';
 
 const GOLD = '#ffd45e';
+const RIM = CONFIG.arena.rimRadius;
+const SPOON_RADIUS = RIM + 7;
 
 const GOLDEN_WORDS = {
   points: (e) => `+${e.points}. Fortune favors the well-caffeinated.`,
   sugar: () => 'The cube was full of sugar. Bursts restocked, plus one.',
   life: () => 'An extra cup! The leaves are quietly impressed.',
-  jackpot: (e) => `JACKPOT! +${e.points}, full sugar, full milk. Steady on.`,
+  goldenSpoon: () => 'The cube was hiding a Golden Spoon!',
+  jackpot: (e) => `JACKPOT! +${e.points}, full sugar, full milk, and a Golden Spoon. Steady on.`,
+};
+
+const STRAINER_REMARKS = ['Not through this mesh.', 'Strained!', 'The strainer earns its keep.', 'Caught, with a tiny clink.'];
+
+const ROMAN = ['', 'I', 'II', 'III', 'IV'];
+
+const UPGRADE_WORDS = {
+  polished: 'The spoon gleams.',
+  quickStir: 'The spoon is in a hurry.',
+  sugarScoop: 'More room for sugar.',
+  strainer: 'The cup gets a little silver trim.',
 };
 
 const ESCAPE_REMARKS = ['The leaves saw that.', 'That one had somewhere to be.', 'Spilled, but with dignity.'];
@@ -45,6 +60,7 @@ const PRANKS = [
   { kind: 'sugarShower', run: () => ({ words: ['A spontaneous sweetening.'] }) },
   { kind: 'whirlpool', run: () => ({ words: ['The cup is thinking.'] }) },
   { kind: 'biscuit', run: () => ({ words: ['Beware the approaching biscuit.'] }) },
+  { kind: 'bigSpoon', run: () => ({ words: ['The leaves recommend a bigger spoon.', 'Perhaps not that big.'] }) },
   { kind: 'nothing', run: (pick) => ({ words: pick(EMPTY_PROPHECIES) }) },
 ];
 
@@ -60,10 +76,15 @@ export function createEffects({ random = Math.random } = {}) {
     fib: FIBS[0], // what The Leaves Lie claims during its reading
     glitch: 0, // seconds of fortune-text glitch remaining
     spoonAngle: CONFIG.player.startAngle,
+    glints: [], // strainer catches: { angle, time, life }
+    spoonScale: 1, // The Leaves Lie can make the spoon briefly enormous
+    upgradeGlow: 0, // seconds of the ring that marks a new upgrade
   };
   const queue = [];
   let prankTimer = null; // seconds until The Leaves Lie misbehaves
   let golden = null; // the cube's last known spot, for sparkles
+  let bigSpoon = null; // { time, life } while the spoon is comically large
+  let strained = false; // has the strainer been explained this pot?
 
   /** Show a message under the cup; `then` queues it behind the current one. */
   function say(text, { color = '#f1dfbd', life = 3.4, then = false } = {}) {
@@ -79,7 +100,7 @@ export function createEffects({ random = Math.random } = {}) {
     fx.whisper = null;
   }
 
-  function burst(count, radius, angle, color, life, speed = 1) {
+  function burst(count, radius, angle, color, life, speed = 1, [sizeMin, sizeMax] = [1, 3.3]) {
     for (let i = 0; i < count; i++) {
       const p = toCanvasPoint(radius(), angle());
       const lifetime = typeof life === 'function' ? life() : life;
@@ -91,7 +112,7 @@ export function createEffects({ random = Math.random } = {}) {
         time: lifetime,
         life: lifetime,
         color: typeof color === 'function' ? color(i) : color,
-        size: rnd(1, 3.3),
+        size: rnd(sizeMin, sizeMax),
       });
     }
   }
@@ -99,15 +120,27 @@ export function createEffects({ random = Math.random } = {}) {
   function prank(only) {
     const { kind, run } = PRANKS.find((p) => p.kind === only) ?? pick(PRANKS);
     const { prank: props = {}, words } = run(pick);
+    if (kind === 'bigSpoon') bigSpoon = { time: 3.4, life: 3.4 };
     tea.handle({ type: 'prank', kind, ...props });
     words.forEach((text, i) => say(text, { color: FORTUNES.lie.color, then: i > 0 }));
   }
 
+  /** Spoon sparkles: silver, or gold. */
+  function spoonBurst(count, angle, colors, speed = 1.4) {
+    burst(count, () => SPOON_RADIUS + rnd(-10, 6), () => angle + rnd(-0.08, 0.08),
+      (i) => colors[i % colors.length], () => rnd(0.4, 1.1), speed);
+  }
+
   const handlers = {
+    matchStart() {
+      strained = false;
+    },
     roundStart({ fortune }) {
       fx.particles = [];
       fx.flash = 0;
+      fx.glints = [];
       golden = null;
+      bigSpoon = null;
       prankTimer = fortune === 'lie' ? rnd(3, 10) : null;
       if (fortune) say(`“${FORTUNES[fortune].quote}”`, { color: FORTUNES[fortune].color });
       else hush();
@@ -142,6 +175,7 @@ export function createEffects({ random = Math.random } = {}) {
     reading({ fortune }) {
       prankTimer = null;
       golden = null;
+      bigSpoon = null;
       hush();
       if (fortune === 'lie') fx.fib = pick(FIBS);
     },
@@ -158,7 +192,40 @@ export function createEffects({ random = Math.random } = {}) {
     gameover() {
       prankTimer = null;
       golden = null;
+      bigSpoon = null;
       hush();
+    },
+    strain({ angle, left }) {
+      fx.glints.push({ angle, time: 1.1, life: 1.1 });
+      // The leaf breaks into fragments, and a little tea splashes off the mesh.
+      burst(18, () => RIM - rnd(2, 10), () => angle + rnd(-0.06, 0.06),
+        (i) => (i % 2 ? '#dcb877' : '#819c6b'), () => rnd(0.5, 1.1), 1.4, [2, 4.2]);
+      burst(16, () => RIM - 2, () => angle + rnd(-0.12, 0.12), (i) => (i % 3 ? '#c98a45' : '#f0c070'),
+        () => rnd(0.4, 0.8), 2.4, [1.5, 3.4]);
+      burst(8, () => RIM + 4, () => angle + rnd(-0.3, 0.3), '#f4fbff', () => rnd(0.2, 0.5), 0.6);
+      if (!strained) {
+        strained = true;
+        say('Caught by the tea strainer! It is ready again every cup.', { color: '#e4eef0' });
+      } else if (left === 0 && random() < 0.4) {
+        say(pick(STRAINER_REMARKS), { color: '#e4eef0', life: 2.4 });
+      }
+    },
+    recoil({ angle }) {
+      // The recovering cup sloshes the leaf back in.
+      burst(12, () => RIM - rnd(0, 8), () => angle + rnd(-0.08, 0.08), (i) => (i % 2 ? '#f7e8cc' : '#e6ad82'),
+        () => rnd(0.3, 0.6), 1.2);
+    },
+    upgrade({ id, level, angle }) {
+      fx.upgradeGlow = 1;
+      spoonBurst(46, angle, ['#ffffff', '#e4f2ee', GOLD], 1.8);
+      say(`${UPGRADES[id].name} ${ROMAN[level] ?? level}. ${UPGRADE_WORDS[id]}`, { color: '#e4eef0', then: true });
+    },
+    goldenSpoon({ angle }) {
+      spoonBurst(50, angle, [GOLD, '#fff8e2', '#f2c13e'], 2.2);
+    },
+    goldenSpoonEnd({ angle }) {
+      spoonBurst(18, angle, ['#b39a5a', '#e4f2ee'], 1);
+      say('The gold wears off. Still a fine spoon.', { color: '#c9b27a', life: 2.6 });
     },
     kill({ radius, angle }) {
       burst(9, () => radius + rnd(-8, 8), () => angle + rnd(-0.07, 0.07),
@@ -169,8 +236,19 @@ export function createEffects({ random = Math.random } = {}) {
       burst(20, () => CONFIG.arena.rimRadius, () => angle + rnd(-0.1, 0.1), '#e6ad82', 0.7);
       if (random() < 0.15) say(pick(ESCAPE_REMARKS), { color: '#e6ad82', life: 2.4 });
     },
-    milk({ angle }) {
+    milk({ angle, cloud = angle }) {
       burst(22, () => rnd(100, 245), () => angle + rnd(-0.38, 0.38), '#dceee8', () => rnd(0.3, 0.9));
+      // The backwash: a spray of cream rushing in from the rim.
+      for (let i = 0; i < 30; i++) {
+        const a = cloud + rnd(-1.6, 1.6) * LANE_STEP;
+        const p = toCanvasPoint(RIM - rnd(4, 20), a);
+        const speed = rnd(140, 280);
+        const life = rnd(0.35, 0.7);
+        fx.particles.push({
+          x: p.x, y: p.y, vx: -Math.cos(a) * speed, vy: -Math.sin(a) * speed,
+          time: life, life, color: i % 3 ? '#f4efe4' : '#dceee8', size: rnd(1.4, 3.4),
+        });
+      }
     },
     drift({ radius, angle }) {
       burst(1, () => radius, () => angle, '#e5d9b0', 0.4);
@@ -193,9 +271,26 @@ export function createEffects({ random = Math.random } = {}) {
       tea.update(dt, state);
       fx.flash = Math.max(0, fx.flash - dt);
       fx.glitch = Math.max(0, fx.glitch - dt);
+      fx.upgradeGlow = Math.max(0, fx.upgradeGlow - dt * 1.2);
       if (state) fx.spoonAngle = state.angle;
+      for (let i = fx.glints.length - 1; i >= 0; i--) {
+        fx.glints[i].time -= dt;
+        if (fx.glints[i].time <= 0) fx.glints.splice(i, 1);
+      }
 
       const playing = state?.phase === PHASE.PLAYING;
+      if (bigSpoon && playing) {
+        bigSpoon.time -= dt;
+        const age = bigSpoon.life - bigSpoon.time;
+        const swell = Math.min(1, age / 0.5, Math.max(0, bigSpoon.time) / 0.6);
+        fx.spoonScale = 1 + 2.2 * swell * swell * (3 - 2 * swell);
+        if (bigSpoon.time <= 0) bigSpoon = null;
+      } else if (!bigSpoon) {
+        fx.spoonScale = 1;
+      }
+      if (playing && state.goldenSpoon > 0 && random() < dt * 18) {
+        spoonBurst(1, state.angle, [GOLD, '#fff8e2'], 0.6);
+      }
       if (playing && prankTimer !== null) {
         prankTimer -= dt;
         if (prankTimer <= 0) {

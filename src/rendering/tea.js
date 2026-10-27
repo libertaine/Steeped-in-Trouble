@@ -22,7 +22,7 @@ const shear = (r) => 0.35 + 1.25 * (1 - clamp(r / RIM, 0, 1)) ** 1.5;
 
 const STRANDS = 24; // low quality draws only the first LOW_STRANDS
 const LOW_STRANDS = 14;
-const LIMITS = { ripples: 40, crystals: 320, wisps: 30, glows: 16, oddities: 14 };
+const LIMITS = { ripples: 40, crystals: 320, wisps: 30, glows: 16, oddities: 14, surges: 6 };
 
 export function createTea({ random = Math.random } = {}) {
   const rnd = (min, max) => min + random() * (max - min);
@@ -48,6 +48,7 @@ export function createTea({ random = Math.random } = {}) {
     blobs: [],
     ripples: [],
     wisps: [],
+    surges: [], // milk backwash: a pale wave rolling in from the rim, { angle, reach, age, life }
     crystals: [],
     glows: [],
     oddities: [],
@@ -200,6 +201,7 @@ export function createTea({ random = Math.random } = {}) {
       // A fresh cup: swirl it up.
       liquid.milkiness = 0;
       liquid.wisps = [];
+      liquid.surges = [];
       kick(0.55);
       liquid.spin += liquid.drift * 0.2;
       ripple(CX, CY, { size: 150, life: 2, strength: 0.8, rings: 3 });
@@ -286,20 +288,24 @@ export function createTea({ random = Math.random } = {}) {
         for (let i = 0; i < 5; i++) crystal(p.x, p.y, 40);
       }
     },
-    milk({ angle }) {
-      kick(0.15);
+    milk({ angle, cloud = angle }) {
+      kick(0.3);
       liquid.milkiness = Math.min(1, liquid.milkiness + 0.5);
       const p = rimPoint(angle, 12);
-      ripple(p.x, p.y, { size: 46, life: 1.6, strength: 1, rings: 3, tone: '#f4efe4' });
-      glow(p.x, p.y, 70, '#f3ece0', 2.4, 0.5);
+      ripple(p.x, p.y, { size: 70, life: 1.8, strength: 1.3, rings: 3, tone: '#f4efe4' });
+      glow(p.x, p.y, 90, '#f3ece0', 2.4, 0.7);
+      // The backwash: a pale wave rolls in over the slowed wedge.
+      push(liquid.surges, { angle: cloud, reach: CONFIG.milk.backwash + 40, age: 0, life: 0.9 }, LIMITS.surges);
+      const mid = polar(RIM - CONFIG.milk.backwash, cloud);
+      ripple(mid.x, mid.y, { size: 60, life: 1.4, strength: 0.8, rings: 2, tone: '#f4efe4' });
       const duration = CONFIG.milk.duration;
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 11; i++) {
         push(liquid.wisps, {
-          angle: angle + rnd(-1.2, 1.2) * LANE_STEP,
+          angle: cloud + rnd(-1.4, 1.4) * LANE_STEP,
           flow0: liquid.flow,
           reach: rnd(110, 240),
           spread: rnd(0.08, 0.3) * (chance(0.5) ? 1 : -1),
-          curl: rnd(-0.7, 0.7),
+          curl: rnd(-1.1, 1.1),
           freq: rnd(2, 6),
           speed: rnd(0.4, 1.2),
           seed: rnd(0, TAU),
@@ -326,6 +332,27 @@ export function createTea({ random = Math.random } = {}) {
     drift({ radius, angle }) {
       const p = polar(radius, angle);
       ripple(p.x, p.y, { size: 20, life: 0.8, strength: 0.7, rings: 1, tone: '#e5d9b0' });
+    },
+    strain({ angle }) {
+      kick(0.15);
+      const p = rimPoint(angle, 6);
+      ripple(p.x, p.y, { size: 44, life: 1, strength: 1.2, rings: 2, tone: '#e8f0f4' });
+      glow(p.x, p.y, 50, '#e6f2f6', 0.8, 0.9);
+      for (let i = 0; i < 10; i++) crystal(p.x, p.y, 70, rnd(0.3, 0.7), '#eef6f8');
+    },
+    recoil({ angle }) {
+      const p = rimPoint(angle, 8);
+      ripple(p.x, p.y, { size: 50, life: 1.2, strength: 1, rings: 2, tone: '#f7e8cc' });
+    },
+    goldenSpoon() {
+      const p = rimPoint(liquid.spoon.angle, 14);
+      ripple(p.x, p.y, { size: 80, life: 1.6, strength: 1.2, rings: 3, tone: '#ffd57a' });
+      glow(p.x, p.y, 100, '#ffcf6a', 1.8, 1);
+      for (let i = 0; i < 40; i++) crystal(p.x, p.y, 110, rnd(0.5, 1.4), chance(0.5) ? '#ffd57a' : '#fff4c8');
+    },
+    upgrade() {
+      const p = rimPoint(liquid.spoon.angle, 14);
+      ripple(p.x, p.y, { size: 60, life: 1.4, strength: 1, rings: 3, tone: '#e8f0f4' });
     },
     escape({ angle }) {
       kick(0.45);
@@ -465,6 +492,7 @@ export function createTea({ random = Math.random } = {}) {
       }
       age(liquid.ripples, sdt);
       age(liquid.wisps, sdt);
+      age(liquid.surges, sdt);
       age(liquid.glows, sdt);
       for (const c of liquid.crystals) {
         const drag = Math.exp(-sdt * 3);
@@ -476,12 +504,12 @@ export function createTea({ random = Math.random } = {}) {
       age(liquid.crystals, sdt);
       updateOddities(sdt);
 
-      // Sugar darts shed crystals that sparkle and dissolve behind them.
+      // Sugar darts (and golden steam) shed crystals that sparkle and dissolve behind them.
       if (playing && sdt > 0) {
         for (const shot of state.shots) {
-          if (!shot.sugar || !chance(Math.min(1, sdt * 50))) continue;
+          if (!(shot.sugar || shot.golden) || !chance(Math.min(1, sdt * (shot.sugar ? 50 : 20)))) continue;
           const p = polar(shot.radius + rnd(0, 12), shot.angle + rnd(-0.02, 0.02));
-          crystal(p.x, p.y, 8);
+          crystal(p.x, p.y, 8, undefined, shot.sugar ? '#fff4c8' : '#ffd57a');
         }
       }
 
@@ -969,6 +997,45 @@ export function createTeaPainter(main) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  /** Milk backwash: a creamy crest rolling inward, the wedge behind it clouding over. */
+  function drawSurges(liquid) {
+    ctx.lineCap = 'round';
+    for (const sg of liquid.surges) {
+      const u = sg.age / sg.life;
+      const ease = 1 - (1 - u) ** 2.2;
+      const front = RIM - 8 - sg.reach * ease;
+      const half = LANE_STEP * 1.65 * (0.85 + 0.35 * u);
+      const fade = (1 - u) ** 1.3;
+      // The milky body between the rim and the front.
+      ctx.globalAlpha = 0.2 * fade;
+      ctx.strokeStyle = '#efe6d6';
+      ctx.lineWidth = RIM - 8 - front;
+      ctx.beginPath();
+      ctx.arc(CX, CY, (front + RIM - 8) / 2, sg.angle - half, sg.angle + half);
+      ctx.stroke();
+      // The crest, curling at its ends.
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.55 * fade;
+      ctx.strokeStyle = '#f8f1e4';
+      ctx.lineWidth = 3 + 9 * (1 - u);
+      ctx.beginPath();
+      ctx.arc(CX, CY, front, sg.angle - half, sg.angle + half);
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.35 * fade;
+      for (const side of [-1, 1]) {
+        const end = sg.angle + side * half;
+        const tip = polar(front, end);
+        ctx.beginPath();
+        ctx.arc(tip.x, tip.y, 6 + 10 * u, end + side * Math.PI / 2, end + side * (Math.PI / 2 + 2.6 * u + 1), side < 0);
+        ctx.stroke();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.globalAlpha = 1;
+    ctx.lineCap = 'butt';
+  }
+
   /** The bright line where tea meets porcelain, shimmering unevenly. */
   function drawMeniscus(liquid) {
     const t = liquid.time;
@@ -1065,6 +1132,7 @@ export function createTeaPainter(main) {
       ctx.drawImage(soft.canvas, ORIGIN_X, ORIGIN_Y, BOX, BOX);
       drawWakes(state);
       drawRipples(liquid);
+      drawSurges(liquid);
       drawOddities(liquid);
       drawCrystals(liquid);
       drawMeniscus(liquid);

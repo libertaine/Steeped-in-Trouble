@@ -11,6 +11,7 @@ import { createTeaPainter } from './tea.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
 const { revealAt, lieRetractAt } = CONFIG.fortunes;
+const GOLD = '#ffd45e';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const smoothstep = (t) => t * t * (3 - 2 * t);
@@ -185,31 +186,238 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     }
   }
 
-  function drawPlayer(angle) {
-    const pos = polar(OUTER + 7, angle);
-    ctx.save();
-    ctx.translate(pos.x, pos.y);
-    ctx.rotate(angle + Math.PI / 2);
-    ctx.shadowColor = '#b4fae5';
-    ctx.shadowBlur = 17;
-    ctx.fillStyle = '#e5f4e8';
-    ctx.strokeStyle = '#132b2c';
-    ctx.lineWidth = 2;
+  /** The spoon's outline, in its own coordinates (the tip points out of the cup). */
+  function spoonPath() {
     ctx.beginPath();
     ctx.moveTo(0, -21);
     ctx.lineTo(12, 9);
     ctx.quadraticCurveTo(0, 20, -12, 9);
     ctx.closePath();
+  }
+
+  /** How the spoon looks: silver, polished silver, or gold. */
+  function spoonLook(state) {
+    if (state.goldenSpoon > 0) {
+      return { fill: '#ffe08a', edge: '#5a3c06', glow: GOLD, blur: 30, bowl: '#c08a1e', golden: true };
+    }
+    const shine = state.spoon.polished;
+    return {
+      fill: ['#e5f4e8', '#eefaf3', '#f6fdf9', '#ffffff'][shine],
+      edge: '#132b2c',
+      glow: shine ? '#d9fff4' : '#b4fae5',
+      blur: 17 + 6 * shine,
+      bowl: '#56847a',
+      golden: false,
+    };
+  }
+
+  /**
+   * One spoon at an angle on the rim, dressed in its upgrades: a brighter
+   * finish and a travelling glint (Polished Spoon), engraved chevrons (Quick
+   * Stir), a deeper bowl with sugar in it (Sugar Scoop), strainer holes
+   * (Strainer Attachment), and a filigree handle once it has a few of them.
+   */
+  function drawSpoonAt(state, angle, size, look, opacity = 1) {
+    const { spoon } = state;
+    const pos = polar(OUTER + 7, angle);
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.translate(pos.x, pos.y);
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.scale(size, size);
+
+    const total = spoon.polished + spoon.quickStir + spoon.sugarScoop + spoon.strainer;
+    if (total >= 3 || look.golden) {
+      ctx.strokeStyle = look.fill;
+      ctx.lineWidth = 2.6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, -20);
+      ctx.bezierCurveTo(-7, -27, 6, -31, 0, -37);
+      if (total >= 6 || look.golden) ctx.arc(-3, -38, 3, 0, TAU * 0.9);
+      ctx.stroke();
+    }
+
+    ctx.shadowColor = look.glow;
+    ctx.shadowBlur = look.blur;
+    ctx.fillStyle = look.fill;
+    ctx.strokeStyle = look.edge;
+    ctx.lineWidth = 2;
+    spoonPath();
     ctx.fill();
     ctx.stroke();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#56847a';
+
+    if (spoon.polished || look.golden) {
+      // A glint sweeps across the bowl every couple of seconds.
+      ctx.save();
+      spoonPath();
+      ctx.clip();
+      const sweep = ((time * 0.55 + angle * 0.1) % 1) * 46 - 23;
+      ctx.globalAlpha = opacity * (look.golden ? 0.85 : 0.35 + 0.15 * spoon.polished);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(sweep - 6, 18);
+      ctx.lineTo(sweep + 6, -22);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (spoon.quickStir) {
+      ctx.strokeStyle = look.golden ? '#8a6212' : '#3d6b63';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      for (let k = 0; k < spoon.quickStir; k++) {
+        const y = -14 + k * 4.2;
+        ctx.moveTo(-3.2, y + 2.4);
+        ctx.lineTo(0, y);
+        ctx.lineTo(3.2, y + 2.4);
+      }
+      ctx.stroke();
+    }
+
+    const bowlW = 4.5 + 1.3 * spoon.sugarScoop;
+    const bowlH = 8 + 1.6 * spoon.sugarScoop;
+    ctx.fillStyle = look.bowl;
     ctx.beginPath();
-    ctx.ellipse(0, 3, 4.5, 8, 0, 0, TAU);
+    ctx.ellipse(0, 3 + spoon.sugarScoop * 0.8, bowlW, bowlH, 0, 0, TAU);
     ctx.fill();
+    if (spoon.sugarScoop) {
+      ctx.fillStyle = '#fff6d8';
+      for (let k = 0; k < spoon.sugarScoop * 2 + 1; k++) {
+        const a = k * 2.4 + time * 0.7;
+        ctx.fillRect(Math.cos(a) * bowlW * 0.45 - 1, 5 + Math.sin(a) * bowlH * 0.4 - 1, 2, 2);
+      }
+    }
+    if (spoon.strainer) {
+      ctx.strokeStyle = look.golden ? '#fff1b0' : '#dfe9ec';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(0, 3 + spoon.sugarScoop * 0.8, bowlW + 1.6, bowlH + 1.6, 0, 0, TAU);
+      ctx.stroke();
+      ctx.fillStyle = '#0f2622';
+      const holes = spoon.strainer * 3;
+      for (let k = 0; k < holes; k++) {
+        const row = Math.floor(k / 3);
+        circleAt((k % 3 - 1) * 2.2, -1.5 + row * 4.5 + (k % 3 === 1 ? 1 : 0), 0.85);
+      }
+    }
     ctx.restore();
+  }
+
+  function circleAt(x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, TAU);
+    ctx.fill();
+  }
+
+  function drawPlayer(state, fx) {
+    const { angle, spoon } = state;
+    const look = spoonLook(state);
+    const size = (fx.spoonScale ?? 1) * (1 + 0.08 * spoon.sugarScoop);
+    // The Golden Spoon flickers as it wears off.
+    const flicker = look.golden && state.goldenSpoon < 1.5 ? 0.6 + 0.4 * Math.abs(Math.sin(time * 14)) : 1;
+    // Quick Stir: afterimages trail a hurrying spoon.
+    const speed = fx.tea?.spoon.speed ?? 0;
+    if (spoon.quickStir && Math.abs(speed) > 0.5 && state.phase === PHASE.PLAYING) {
+      for (let k = spoon.quickStir; k >= 1; k--) {
+        drawSpoonAt(state, angle - Math.sign(speed) * k * 0.05, size, look, 0.16 / k);
+      }
+    }
+    const at = polar(OUTER + 7, angle);
+    if (look.golden) circle(at.x, at.y, 30 * size, GOLD, 0, true, 0.12 * flicker);
+    drawSpoonAt(state, angle, size, look, flicker);
     const p = polar(OUTER - 11, angle);
-    circle(p.x, p.y, 3, '#c4fbeb', 0, true, 0.8);
+    circle(p.x, p.y, 3, look.golden ? '#fff1b0' : '#c4fbeb', 0, true, 0.8);
+    if (fx.upgradeGlow > 0) {
+      const u = 1 - fx.upgradeGlow;
+      circle(at.x, at.y, 18 + 46 * u, '#f4f8f2', 2.5 * (1 - u), false, 0.8 * (1 - u));
+    }
+  }
+
+  /**
+   * The tea strainer: a fine silver mesh band on the rim, one ring per catch.
+   * Rings that are still ready gleam; spent ones go dull.
+   */
+  function drawStrainer(state) {
+    const capacity = CONFIG.strainer.perRound + state.spoon.strainer;
+    ctx.save();
+    ctx.setLineDash([3, 2.4]);
+    ctx.lineWidth = 1.4;
+    for (let k = 0; k < capacity; k++) {
+      const ready = k < state.strainerLeft;
+      ctx.globalAlpha = ready ? 0.55 + 0.1 * Math.sin(time * 2 + k) : 0.13;
+      ctx.strokeStyle = ready ? '#e7f0f2' : '#9fb0a6';
+      ctx.lineDashOffset = time * (k % 2 ? -3 : 3);
+      ctx.beginPath();
+      ctx.arc(CX, CY, OUTER + 5 + k * 3.4, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** A strainer catch: a metallic glint racing along the rim and a flash of mesh. */
+  function drawGlints(glints) {
+    for (const g of glints) {
+      const u = 1 - g.time / g.life;
+      const fade = 1 - u;
+      const reach = 0.12 + 0.9 * Math.sqrt(u);
+      ctx.save();
+      // The whole silver trim rings once, briefly.
+      if (u < 0.35) circle(CX, CY, OUTER + 6, '#f2f8fa', 3, false, 0.5 * (1 - u / 0.35));
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#ffffff';
+      ctx.shadowColor = '#e6f6ff';
+      ctx.shadowBlur = 14;
+      ctx.globalAlpha = fade;
+      ctx.lineWidth = 5 * fade + 1;
+      ctx.beginPath();
+      ctx.arc(CX, CY, OUTER + 4, g.angle - reach, g.angle + reach);
+      ctx.stroke();
+      // Two bright sparks lead the glint around the rim.
+      for (const side of [-1, 1]) {
+        const tip = polar(OUTER + 4, g.angle + side * reach);
+        circle(tip.x, tip.y, 3.5 * fade + 1, '#ffffff', 0, true, fade);
+      }
+      // The mesh itself, briefly visible where it caught the leaf.
+      const c = polar(OUTER - 6, g.angle);
+      ctx.shadowBlur = 0;
+      ctx.translate(c.x, c.y);
+      ctx.rotate(g.angle);
+      ctx.beginPath();
+      ctx.arc(0, 0, 15, 0, TAU);
+      ctx.clip();
+      ctx.globalAlpha = 0.85 * fade;
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#dfeaee';
+      ctx.beginPath();
+      for (let k = -15; k <= 15; k += 4) {
+        ctx.moveTo(k, -15);
+        ctx.lineTo(k, 15);
+        ctx.moveTo(-15, k);
+        ctx.lineTo(15, k);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /** While the cup recovers from a spill, its rim pulses softly. */
+  function drawRecovery(state) {
+    if (state.graceTime <= 0) return;
+    const left = state.graceTime / CONFIG.grace.duration;
+    const pulse = 0.5 + 0.5 * Math.sin(time * 22);
+    ctx.save();
+    ctx.globalAlpha = (0.2 + 0.3 * pulse) * left;
+    ctx.strokeStyle = '#f7e8cc';
+    ctx.lineWidth = 6;
+    ctx.shadowColor = '#f0a878';
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.arc(CX, CY, OUTER - 3, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function drawEnemy(e) {
@@ -220,6 +428,12 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     circle(p.x + 1.5, p.y + 2.5, scale * 1.15, '#0c0501', 0, true, e.alpha * 0.4);
     leafShape(p.x, p.y, scale, rotation, '#dcb877', e.alpha);
     circle(p.x, p.y, scale + 4, '#ead199', 0.65, false, e.alpha * 0.3);
+    if (e.backwash > 3) {
+      // Washed back: a creamy streak on the rim side of the leaf.
+      const tail = polar(e.radius + scale + Math.min(40, e.backwash * 0.45), e.angle);
+      const head = polar(e.radius + scale * 0.6, e.angle);
+      line(head, tail, '#f6efe2', 3.5, Math.min(0.6, e.backwash / 60) * e.alpha);
+    }
   }
 
   /** Golden Opportunity: a spinning golden sugar cube with a ring that runs down. */
@@ -266,9 +480,18 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     ctx.restore();
   }
 
-  function drawShot(s) {
+  function drawShot(s, polish) {
     const p = polar(s.radius, s.angle);
-    if (s.sugar) {
+    if (s.golden && !s.sugar) {
+      line(p, polar(s.radius + 16 + 6 * polish, s.angle), '#ffe9a0', 3, 0.45);
+      ctx.save();
+      ctx.shadowColor = GOLD;
+      ctx.shadowBlur = 12;
+      circle(p.x, p.y, 4.5, '#fff2b8', 0, true, 1);
+      ctx.restore();
+      circle(p.x, p.y, 9, GOLD, 1.2, false, 0.55);
+      if (s.veer) circle(p.x, p.y, 1.6, '#ffffff', 0, true, 0.6 + 0.4 * Math.sin(time * 25 + s.veer));
+    } else if (s.sugar) {
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(Math.PI / 4);
@@ -278,8 +501,10 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       ctx.fillRect(-5, -5, 10, 10);
       ctx.restore();
     } else {
-      circle(p.x, p.y, 4, '#cbfff2', 0, true, 0.9);
-      circle(p.x, p.y, 9, '#b2eac7', 1, false, 0.3);
+      // Polished Spoon: brighter darts with luminous trails.
+      if (polish) line(p, polar(s.radius + 8 + 8 * polish, s.angle), '#e4fff7', 2.4, 0.18 + 0.1 * polish);
+      circle(p.x, p.y, 4 + 0.3 * polish, polish ? '#e9fff8' : '#cbfff2', 0, true, 0.9);
+      circle(p.x, p.y, 9, '#b2eac7', 1, false, 0.3 + 0.1 * polish);
       if (s.veer) circle(p.x, p.y, 1.6, '#ffffff', 0, true, 0.6 + 0.4 * Math.sin(time * 25 + s.veer));
     }
   }
@@ -405,7 +630,8 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     text(quote, CX, y0 + 72, 15, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
     const ready = clamp((t - revealAt - 0.4) / 0.5, 0, 1);
     ctx.globalAlpha = a * ready * (0.65 + 0.35 * Math.sin(time * 2.5));
-    text('ENTER — BREW THE NEXT CUP', CX, y0 + 96, 10, '#bad8c9', 'center', MONO);
+    const next = state.offer ? 'CHOOSE A SPOON UPGRADE — 1 OR 2' : 'ENTER — BREW THE NEXT CUP';
+    text(next, CX, y0 + 96, 10, state.offer ? '#f0d494' : '#bad8c9', 'center', MONO);
     ctx.restore();
   }
 
@@ -442,7 +668,8 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     quality,
     /**
      * @param {object} state simulation state (read only)
-     * @param {{ particles: object[], flash: number, whisper: object, fib: object, glitch: number }} fx cosmetic effects
+     * @param {{ particles: object[], flash: number, whisper: object, fib: object, glitch: number,
+     *   glints: object[], spoonScale: number, upgradeGlow: number }} fx cosmetic effects
      * @param {number} dt seconds since the previous frame
      */
     draw(state, fx, dt) {
@@ -453,15 +680,19 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       drawCup();
       if (fx.tea) tea.paint(fx.tea, state, { quality: renderer.quality, scale: canvas.width / W });
       drawGuides();
+      const inPlay = state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED;
+      if (inPlay) drawStrainer(state);
       drawClouds(state.clouds);
       drawResidue(state);
       for (const e of state.enemies) drawEnemy(e);
       if (state.golden) drawGolden(state.golden);
-      for (const s of state.shots) drawShot(s);
-      drawPlayer(state.angle);
+      for (const s of state.shots) drawShot(s, state.spoon.polished);
+      if (inPlay) drawRecovery(state);
+      drawPlayer(state, fx);
+      drawGlints(fx.glints ?? []);
       drawParticles(fx.particles);
       drawOverlay(state, fx);
-      if (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED) drawWhisper(fx.whisper);
+      if (inPlay) drawWhisper(fx.whisper);
     },
   };
   return renderer;

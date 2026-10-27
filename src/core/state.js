@@ -1,5 +1,6 @@
 import { CONFIG } from '../config.js';
 import { modifiersFor } from '../gameplay/fortunes.js';
+import { createSpoon } from '../gameplay/upgrades.js';
 
 /** Game phases. See docs/ARCHITECTURE.md for the transition diagram. */
 export const PHASE = Object.freeze({
@@ -15,7 +16,8 @@ export function createRoundStats() {
     milkKills: 0, // kills made inside or beside a milk cloud
     milkUses: 0,
     sugarUses: 0,
-    escapes: 0, // leaves that reached the rim
+    escapes: 0, // leaves that reached the rim and cost a cup
+    nearMisses: 0, // strainer catches, grace recoils, and milk rescues from the rim
     motionTime: 0, // seconds the spoon spent moving
   };
 }
@@ -35,6 +37,13 @@ export function createInitialState() {
     target: CONFIG.rounds.baseTarget,
     milkLeft: CONFIG.milk.perRound,
     sugarLeft: CONFIG.sugar.perRound,
+    strainerLeft: CONFIG.strainer.perRound, // escaping leaves the strainer can still catch this round
+    graceTime: 0, // seconds left in which the cup is recovering from a spill
+
+    // Kept for the whole pot, separate from the round's fortune modifiers.
+    spoon: createSpoon(), // upgrade levels; see gameplay/upgrades.js
+    goldenSpoon: 0, // seconds of Golden Spoon left (only runs during play)
+    offer: null, // upgrade ids offered during the current reading, or null
 
     fortune: null, // fortune id active this round
     nextFortune: null, // fortune id revealed by the latest reading
@@ -48,8 +57,8 @@ export function createInitialState() {
     goldenTimer: null, // Golden Opportunity: seconds until the cube appears, or null
     golden: null, // the golden sugar cube on the field: { angle, radius, time, life }
 
-    shots: [], // { angle, radius, speed, sugar, veer }
-    enemies: [], // { angle, radius, speed, wiggle, shifted, size, alpha }
+    shots: [], // { angle, radius, speed, sugar, veer, golden }
+    enemies: [], // { angle, radius, home, speed, wiggle, shifted, size, alpha, backwash }
     clouds: [], // { angle, time, duration }
     residue: [], // { lane, radius, angle, spin, size }
     roundStats: createRoundStats(),

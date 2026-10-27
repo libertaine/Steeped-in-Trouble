@@ -88,8 +88,9 @@ describe('scoring', () => {
 });
 
 describe('lives and game over', () => {
-  it('loses a life when a leaf reaches the rim', () => {
+  it('loses a life when a leaf reaches the rim and the strainer is spent', () => {
     const game = playingGame();
+    game.state.strainerLeft = 0;
     placeEnemy(game.state, { lane: 3, radius: CONFIG.arena.rimRadius - 5, speed: 40 });
     step(game, 0.2);
     expect(game.state.lives).toBe(CONFIG.lives - 1);
@@ -100,6 +101,7 @@ describe('lives and game over', () => {
   it('ends the game when the last life is lost', () => {
     const game = playingGame();
     game.state.lives = 1;
+    game.state.strainerLeft = 0; // no catch: the leaf spills
     placeEnemy(game.state, { lane: 3, radius: CONFIG.arena.rimRadius - 5, speed: 40 });
     placeEnemy(game.state, { lane: 9, radius: 150, speed: 0 });
     step(game, 0.2);
@@ -112,6 +114,7 @@ describe('lives and game over', () => {
   it('ignores gameplay commands after game over', () => {
     const game = playingGame();
     game.state.lives = 1;
+    game.state.strainerLeft = 0; // no catch: the leaf spills
     placeEnemy(game.state, { radius: CONFIG.arena.rimRadius, speed: 1 });
     step(game, 0.05);
     expect(game.fireSteam()).toBe(false);

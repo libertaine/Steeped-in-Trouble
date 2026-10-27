@@ -5,8 +5,8 @@ import { createEffects } from '../../src/rendering/effects.js';
 
 /**
  * Play a scripted match for a number of fixed steps: sweep the spoon back and
- * forth while firing, pour milk and sugar on a schedule, and keep brewing new
- * cups after readings and game overs.
+ * forth while firing, pour milk and sugar on a schedule, take upgrades, and
+ * keep brewing new cups after readings and game overs.
  */
 function scriptedRun(seed, steps = 60 * 60) {
   const game = createGame({ seed });
@@ -18,7 +18,8 @@ function scriptedRun(seed, steps = 60 * 60) {
     if (i % 400 === 100) game.pourMilk();
     if (i % 500 === 250) game.sugarBurst();
     game.update(1 / 60, input);
-    if (game.state.phase === 'reading' && game.state.readingTime > 1) game.primaryAction();
+    if (game.offerOpen()) game.chooseUpgrade(i % 2);
+    else if (game.state.phase === 'reading' && game.state.readingTime > 1) game.primaryAction();
     if (game.state.phase === 'gameover') game.primaryAction();
     for (const event of game.drainEvents()) log.push(`${i}:${event.type}`);
   }

@@ -3,7 +3,7 @@
 //
 // Flow:
 //   1. When a round ends, the game builds a round record
-//      ({ milkKills, milkUses, sugarUses, escapes, leafLanes }).
+//      ({ milkKills, milkUses, sugarUses, escapes, nearMisses, leafLanes }).
 //   2. selectFortune(record) finds the pattern the leaves point at: the first
 //      fortune in FORTUNE_PRIORITY whose matches() accepts the reading.
 //   3. drawFortune(record, rng) makes the actual choice: a weighted draw in
@@ -169,7 +169,9 @@ export const FORTUNES = Object.freeze({
     tone: 'trouble',
     color: '#f2a27a',
     modifiers: { enemySpeedMultiplier: F.tempestEnemySpeed },
-    weight: (record) => 0.6 + 1.6 * (record.escapes ?? 0), // spills stir up trouble
+    // Spills stir up trouble, and so, a little, do narrow escapes.
+    weight: (record) => 0.6 + 1.6 * (record.escapes ?? 0)
+      + CONFIG.strainer.nearMissWeight * Math.min(CONFIG.strainer.maxNearMisses, record.nearMisses ?? 0),
     glyph: (t) => alongPath(BOLT_OUTLINE, t),
   },
   golden: {
@@ -280,7 +282,8 @@ export function fortuneWeights(record) {
 
 /**
  * Draw the fortune for the next round.
- * @param {{ milkKills: number, milkUses?: number, sugarUses?: number, escapes?: number, leafLanes: number[] }} record
+ * @param {{ milkKills: number, milkUses?: number, sugarUses?: number, escapes?: number, nearMisses?: number,
+ *   leafLanes: number[] }} record
  * @param {{ next(): number }} rng
  * @returns {string} fortune id
  */
