@@ -8,6 +8,7 @@ import { PHASE } from '../core/state.js';
 import { LANES, LANE_STEP, TAU, laneAngle, toCanvasPoint as polar } from '../gameplay/arena.js';
 import { FORTUNES, glyphPoint } from '../gameplay/fortunes.js';
 import { SECRETS } from '../gameplay/secrets.js';
+import { COMBOS } from '../gameplay/combos.js';
 import { createTeaPainter } from './tea.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
@@ -176,15 +177,74 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       ctx.fillStyle = wash;
       ctx.beginPath();
       ctx.moveTo(CX, CY);
-      ctx.arc(CX, CY, OUTER - 12, c.angle - LANE_STEP * 1.55, c.angle + LANE_STEP * 1.55);
+      const half = LANE_STEP * 1.55 * c.spread;
+      ctx.arc(CX, CY, OUTER - 12, c.angle - half, c.angle + half);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#f4ecdc';
       ctx.lineWidth = 1;
       ctx.globalAlpha = alpha * 0.22;
       ctx.stroke();
+      if (c.drift) {
+        // The Perfect Storm: cream and amber streaks wheeling round with the current.
+        ctx.clip();
+        ctx.lineCap = 'round';
+        for (let k = 0; k < 7; k++) {
+          const r = 70 + k * 27;
+          const start = c.angle - half + ((time * Math.sign(c.drift) * (0.9 + k * 0.13) + k * 0.7) % (half * 2));
+          ctx.strokeStyle = k % 2 ? '#f4ecdc' : '#e8a95a';
+          ctx.lineWidth = 3 + (k % 3);
+          ctx.globalAlpha = alpha * (k % 2 ? 0.28 : 0.22);
+          ctx.beginPath();
+          ctx.arc(CX, CY, r, start, start + half * 0.55);
+          ctx.stroke();
+        }
+      }
       ctx.restore();
     }
+  }
+
+  /** The Silver Tornado: a bright band of churned tea along the rim behind the spoon. */
+  function drawWake(wake) {
+    if (!wake) return;
+    const from = wake.angle - wake.dir * wake.arc;
+    const [a0, a1] = wake.dir > 0 ? [from, wake.angle] : [wake.angle, from];
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (let k = 0; k < 3; k++) {
+      ctx.globalAlpha = 0.16 + 0.08 * k + 0.06 * Math.sin(time * 20 + k * 2);
+      ctx.strokeStyle = k === 2 ? '#ffffff' : '#d8eef0';
+      ctx.lineWidth = wake.depth * (1 - k * 0.3);
+      ctx.beginPath();
+      ctx.arc(CX, CY, OUTER - wake.depth / 2, a0, a1);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** An unexpected brew, announced at the top of the cup the first time it happens. */
+  function drawDiscovery(discovery) {
+    if (!discovery) return;
+    const combo = COMBOS[discovery.id];
+    const age = discovery.life - discovery.time;
+    const a = clamp(Math.min(age / 0.25, discovery.time / 0.6), 0, 1);
+    const y0 = CY - 248;
+    ctx.save();
+    ctx.globalAlpha = a * 0.9;
+    ctx.fillStyle = '#10271e';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(CX - 200, y0, 400, 70, 10);
+    else ctx.rect(CX - 200, y0, 400, 70);
+    ctx.fill();
+    ctx.strokeStyle = `hsl(${(time * 160) % 360}, 80%, 75%)`;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.globalAlpha = a;
+    const pop = 1 + 0.25 * Math.max(0, 1 - age / 0.3);
+    text('UNEXPECTED BREW DISCOVERED!', CX, y0 + 15, 11, '#e2d4ff', 'center', MONO);
+    text(combo.name, CX, y0 + 36, 21 * pop, '#f5dfb6');
+    text(combo.words, CX, y0 + 57, 12, '#cbdcd0', 'center', 'Georgia,serif', 'italic ');
+    ctx.restore();
   }
 
   /** The spoon's outline, in its own coordinates (the tip points out of the cup). */
@@ -747,12 +807,14 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       if (state.golden) drawGolden(state.golden);
       if (state.prismatic) drawPrismatic(state.prismatic);
       for (const s of state.shots) drawShot(s, state.spoon.polished);
+      if (inPlay) drawWake(state.wake);
       if (inPlay) drawRecovery(state);
       drawPlayer(state, fx);
       drawGlints(fx.glints ?? []);
       drawParticles(fx.particles);
       drawOverlay(state, fx);
       if (inPlay) drawWhisper(fx.whisper);
+      if (inPlay) drawDiscovery(fx.discovery);
     },
   };
   return renderer;

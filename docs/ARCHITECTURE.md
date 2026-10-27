@@ -21,6 +21,7 @@ src/
 │   ├── golden.js        the golden sugar cube and its rewards
 │   ├── prismatic.js     the rare prismatic sugar cube and its Steam Nova
 │   ├── secrets.js       hidden feats judged when a round is read, and their rewards
+│   ├── combos.js        unexpected brews: combinations that unlock new behaviour
 │   ├── upgrades.js      spoon upgrades: definitions, offers, stacking limits
 │   └── fortunes.js      leaf reading, fortune selection, modifiers, glyphs
 ├── rendering/
@@ -148,6 +149,14 @@ The Prismatic Sugar Cube is not a fortune. `startRound()` rolls for it with
 `steamNova()` in `weapons.js`, which launches ordinary steam (the same
 `launchSteam()` that `fireSteam()` uses) down every lane, so every bonus to
 steam applies to the nova too. Nova darts carry `nova: true`.
+
+Unexpected brews (`gameplay/combos.js`) put each rule where the rule it bends
+lives: The Perfect Storm in `pourMilk()` and `updateClouds()` (through the
+Tempestuous Tea modifier `stormyMilk`), The Silver Tornado's wake
+(`tornadoWake()`, from `state.stir`) and Double Gilt's splash
+(`giltSplashTarget()`) in `updateEnemies()`. Each calls `discover()` when it
+first takes effect, which records it in `state.discovered` and emits
+`discover` once per pot.
 
 Each steam shot is a *volley*: `fireSteam()` gives its darts a shared
 `volley` id and records how many are in flight in `state.volleys`. Every way

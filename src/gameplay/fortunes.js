@@ -32,6 +32,7 @@ export const BASE_MODIFIERS = Object.freeze({
   twinSteam: false, // each steam shot is two veering darts
   enemySpeedMultiplier: 1, // leaf speed
   goldenCube: false, // a golden sugar cube appears once this round
+  stormyMilk: false, // milk is caught in the currents (The Perfect Storm)
 });
 
 /** Follow a polyline: t ∈ [0, 1] moves evenly from point to point. */
@@ -168,7 +169,7 @@ export const FORTUNES = Object.freeze({
     tag: 'faster leaves',
     tone: 'trouble',
     color: '#f2a27a',
-    modifiers: { enemySpeedMultiplier: F.tempestEnemySpeed },
+    modifiers: { enemySpeedMultiplier: F.tempestEnemySpeed, stormyMilk: true },
     // Spills stir up trouble, and so, a little, do narrow escapes.
     weight: (record) => 0.6 + 1.6 * (record.escapes ?? 0)
       + CONFIG.strainer.nearMissWeight * Math.min(CONFIG.strainer.maxNearMisses, record.nearMisses ?? 0),

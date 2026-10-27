@@ -40,6 +40,9 @@ const TUNES = {
   goldenSpoonEnd: [[1319, 0.18, 'sine', 0.018], [988, 0.3, 'sine', 0.016, 0.12]],
   prismaticAppear: [[2093, 0.08, 'sine', 0.018], [2637, 0.08, 'sine', 0.018, 0.05], [3136, 0.08, 'sine', 0.018, 0.1],
     [2637, 0.12, 'sine', 0.014, 0.15]],
+  // Something new: a bright, rising flourish.
+  discover: [[784, 0.1, 'triangle', 0.022], [988, 0.1, 'triangle', 0.022, 0.08], [1175, 0.1, 'triangle', 0.022, 0.16],
+    [1568, 0.1, 'triangle', 0.022, 0.24], [1976, 0.55, 'sine', 0.032, 0.32]],
   // A few notes from a music box.
   secret: [[1047, 0.4, 'sine', 0.026, 0.5], [1319, 0.4, 'sine', 0.024, 0.75], [1175, 0.4, 'sine', 0.024, 1],
     [1568, 0.8, 'sine', 0.03, 1.25]],
@@ -61,7 +64,12 @@ function tuneFor(event) {
   return TUNES[event.type];
 }
 
-const KILL_SOUND = { steam: [560, 0.065, 'sine', 0.014], sugar: [720, 0.065, 'sine', 0.014] };
+const KILL_SOUND = {
+  steam: [560, 0.065, 'sine', 0.014],
+  sugar: [720, 0.065, 'sine', 0.014],
+  wake: [380, 0.12, 'triangle', 0.016],
+  splash: [1245, 0.09, 'sine', 0.016],
+};
 const GOLDEN_STEAM = [660, 0.05, 'triangle', 0.012];
 
 export function createAudio() {
@@ -106,7 +114,7 @@ export function createAudio() {
     },
     /** Play the sound for a simulation event, if it has one. */
     handle(event) {
-      if (event.type === 'kill') beep(event.sugar ? KILL_SOUND.sugar : KILL_SOUND.steam);
+      if (event.type === 'kill') beep(KILL_SOUND[event.by] ?? (event.sugar ? KILL_SOUND.sugar : KILL_SOUND.steam));
       else if (event.type === 'steam' && event.golden) beep(GOLDEN_STEAM);
       else if (SOUNDS[event.type]) beep(SOUNDS[event.type]);
       else tuneFor(event)?.forEach(beep);

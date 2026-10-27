@@ -63,12 +63,15 @@ export function createInitialState() {
     prismatic: null, // the prismatic cube on the field: { angle, radius, time, life }
     extraSugar: 0, // sugar bursts promised for the next cup on top of the usual
     secrets: [], // secret ids the leaves noticed at the latest reading
+    discovered: [], // unexpected brews (gameplay/combos.js) already announced this pot
+    stir: { dir: 0, time: 0 }, // which way the spoon is turning (-1, 0, 1), and for how long
+    wake: null, // The Silver Tornado's wake this frame: { angle, arc, dir, depth }, or null
 
     volleys: {}, // steam shots still in flight: volley id -> darts left
 
     shots: [], // { angle, radius, speed, sugar, veer, golden, volley?, nova?, cream? }
     enemies: [], // { angle, radius, home, speed, wiggle, shifted, size, alpha, backwash }
-    clouds: [], // { angle, time, duration }
+    clouds: [], // { angle, time, duration, spread, drift }
     residue: [], // { lane, radius, angle, spin, size }
     roundStats: createRoundStats(),
   };
