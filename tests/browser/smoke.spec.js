@@ -92,8 +92,8 @@ test('Enter on a focused main button acts once, not twice', async ({ page, probl
 test('reaches game over and restarts a fresh match', async ({ page, problems }) => {
   await openGame(page);
   await page.keyboard.press('Enter');
-  // Without defending, three leaves escape.
-  await expect(page.locator('#hudStatus')).toHaveText('THE CUP RUNNETH OVER', { timeout: 30_000 });
+  // Without defending, the strainer catches one leaf and three more escape.
+  await expect(page.locator('#hudStatus')).toHaveText('THE CUP RUNNETH OVER', { timeout: 60_000 });
   await expect(page.locator('#hudLives')).toHaveText(/CUPS ♡ ♡ ♡/);
   await expect(page.locator('#mainBtn')).toHaveText('Start a fresh pot →');
 
@@ -105,7 +105,7 @@ test('reaches game over and restarts a fresh match', async ({ page, problems }) 
   expect(problems).toEqual([]);
 });
 
-test('completes a round, reads the leaves, and brews the next cup', async ({ page, problems }) => {
+test('completes a round, reads the leaves, picks a spoon upgrade, and brews the next cup', async ({ page, problems }) => {
   test.setTimeout(120_000);
   await openGame(page, '&seed=20261027');
   await page.keyboard.press('Enter');
@@ -115,10 +115,18 @@ test('completes a round, reads the leaves, and brews the next cup', async ({ pag
   await expect(page.locator('#fortuneLabel')).toHaveText('Fortune for the next cup');
   await expect(page.locator('#fortuneName')).toHaveText(FORTUNE_NAMES);
   const { nextFortune } = await gameState(page);
-  await page.waitForTimeout(3000); // let the reading animation run to the reveal
-
+  // Round 1 always ends with an upgrade offer, which Enter does not skip.
+  await expect(page.locator('#upgradeOffer')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('#mainBtn')).toHaveText('Choose a spoon upgrade (1 / 2)');
   await page.keyboard.press('Enter');
-  await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
+  await expect(page.locator('#hudStatus')).toHaveText('READING THE LEAVES');
+  const picked = await page.locator('.upgrade-card').nth(1).getAttribute('data-upgrade');
+
+  await page.keyboard.press('2');
+  await expect(page.locator('#upgradeOffer')).toBeHidden();
+  await expect(page.locator('#hudStatus')).toHaveText(/DEFEND THE RIM|GOLDEN SPOON|THE CUP RECOVERS/);
+  expect(await page.evaluate((id) => window.__TEACUP__.game.state.spoon[id], picked)).toBe(1);
+  await expect(page.locator('#spoonKit')).not.toHaveText('An ordinary silver spoon.');
   await expect(page.locator('#roundNum')).toHaveText('02');
   await expect(page.locator('#killCount')).toHaveText('0 / 20');
   await expect(page.locator('#fortuneLabel')).toHaveText('This cup’s omen');

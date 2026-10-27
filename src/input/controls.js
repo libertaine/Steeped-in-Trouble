@@ -4,7 +4,8 @@
 // simulation every frame. One-shot actions call the supplied commands
 // immediately. Holds are released whenever the window loses focus, the page
 // is hidden, a pointer is released or cancelled, or reset() is called (the
-// game calls it on pause and restart).
+// game calls it on pause and restart). Upgrade cards are picked with 1 / 2 or
+// a click or tap.
 
 const KEY_BINDINGS = {
   ArrowLeft: 'left',
@@ -14,6 +15,9 @@ const KEY_BINDINGS = {
   Space: 'fire',
 };
 
+// Number keys (top row or keypad) that pick an offered upgrade.
+const CHOICE_KEYS = { Digit1: 0, Numpad1: 0, Digit2: 1, Numpad2: 1 };
+
 // Keys whose default browser action (scrolling) is suppressed.
 const CAPTURED_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp']);
 
@@ -21,7 +25,7 @@ const CAPTURED_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp']);
  * @param {object} options
  * @param {Document} options.doc
  * @param {{ fire(): void, milk(): void, sugar(): void, confirm(): boolean,
- *   togglePause(): boolean, restart(): boolean, pause(): void }} options.commands
+ *   togglePause(): boolean, restart(): boolean, pause(): void, choose(index: number): boolean }} options.commands
  */
 export function createControls({ doc = document, commands }) {
   const win = doc.defaultView;
@@ -60,6 +64,7 @@ export function createControls({ doc = document, commands }) {
     else if (code === 'Enter') handled = commands.confirm();
     else if (code === 'KeyP') commands.togglePause();
     else if (code === 'KeyR') commands.restart();
+    else if (code in CHOICE_KEYS) handled = commands.choose(CHOICE_KEYS[code]);
     // Stops a focused button from also receiving the Enter as a click.
     if (handled) e.preventDefault();
   });
@@ -100,6 +105,9 @@ export function createControls({ doc = document, commands }) {
   const sugarButton = doc.querySelector('#sugarBtn');
   if (milkButton) listen(milkButton, 'click', () => commands.milk());
   if (sugarButton) listen(sugarButton, 'click', () => commands.sugar());
+  for (const card of doc.querySelectorAll('[data-choice]')) {
+    listen(card, 'click', () => commands.choose(Number(card.dataset.choice)));
+  }
 
   return {
     held,

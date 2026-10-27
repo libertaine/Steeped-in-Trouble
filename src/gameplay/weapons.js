@@ -4,8 +4,25 @@
 import { CONFIG } from '../config.js';
 import { LANE_STEP, angleDifference, laneAngle, wrapLane } from './arena.js';
 import { spoonLane } from './player.js';
+import { steamSpeedFactor } from './upgrades.js';
 
 const RIM = CONFIG.arena.rimRadius;
+const GS = CONFIG.goldenSpoon;
+
+/**
+ * Steam dart speed: the base speed, scaled by the round's fortune, the
+ * Polished Spoon, and the Golden Spoon. Each bonus multiplies the others, so
+ * a temporary effect never replaces a lasting one.
+ */
+export function steamSpeed(state) {
+  return CONFIG.steam.speed * state.modifiers.steamSpeedMultiplier * steamSpeedFactor(state.spoon)
+    * (state.goldenSpoon > 0 ? GS.speedFactor : 1);
+}
+
+/** Seconds between steam darts; the Golden Spoon shortens it. */
+export function steamCooldown(state) {
+  return CONFIG.steam.cooldown * (state.goldenSpoon > 0 ? GS.cooldownFactor : 1);
+}
 
 /**
  * Fire one steam dart down the spoon's lane if the cooldown allows. Under
@@ -13,25 +30,27 @@ const RIM = CONFIG.arena.rimRadius;
  */
 export function fireSteam({ state, emit }) {
   if (state.shotCooldown > 0) return false;
-  state.shotCooldown = CONFIG.steam.cooldown;
+  state.shotCooldown = steamCooldown(state);
   const twin = state.modifiers.twinSteam;
   const rate = CONFIG.fortunes.twinSpreadRate;
+  const golden = state.goldenSpoon > 0;
   for (const veer of twin ? [-rate, rate] : [0]) {
     state.shots.push({
       angle: laneAngle(spoonLane(state)),
       radius: RIM - CONFIG.steam.spawnInset,
-      speed: CONFIG.steam.speed * state.modifiers.steamSpeedMultiplier,
+      speed: steamSpeed(state),
       sugar: false,
       veer, // radians per second of sideways drift
+      golden, // fired by the Golden Spoon (cosmetic tint)
     });
   }
-  emit('steam', { twin });
+  emit('steam', { twin, golden });
   return true;
 }
 
-/** The most sugar bursts the spoon can hold this round. */
+/** The most sugar bursts the spoon can hold this round, Sugar Scoop included. */
 export function sugarCapacity(state) {
-  return CONFIG.sugar.perRound + state.modifiers.bonusSugar;
+  return CONFIG.sugar.perRound + state.modifiers.bonusSugar + state.spoon.sugarScoop;
 }
 
 /** Sugar Rush: regrow one burst per interval, never beyond capacity. */
@@ -69,14 +88,27 @@ export function sugarBurst({ state, emit }) {
   return true;
 }
 
-/** Pour a milk cloud over the spoon's lane, slowing nearby leaves. */
+/**
+ * Pour a milk cloud over the spoon's lane, slowing nearby leaves. The pour's
+ * first wave also washes the leaves under it back towards the centre (see
+ * advanceEnemy() for how the push plays out).
+ */
 export function pourMilk({ state, emit }) {
   if (state.milkLeft <= 0) return false;
   state.milkLeft--;
   state.roundStats.milkUses++;
-  const duration = CONFIG.milk.duration + state.modifiers.milkDurationBonus;
-  state.clouds.push({ angle: laneAngle(spoonLane(state)), time: duration, duration });
-  emit('milk', { angle: state.angle });
+  const M = CONFIG.milk;
+  const duration = M.duration + state.modifiers.milkDurationBonus;
+  const angle = laneAngle(spoonLane(state));
+  state.clouds.push({ angle, time: duration, duration });
+  let pushed = 0;
+  for (const enemy of state.enemies) {
+    if (Math.abs(angleDifference(angle, enemy.angle)) >= LANE_STEP * M.slowHalfWidthLanes) continue;
+    if (enemy.radius > RIM * M.rescueShare) state.roundStats.nearMisses++;
+    enemy.backwash = Math.max(enemy.backwash ?? 0, M.backwash);
+    pushed++;
+  }
+  emit('milk', { angle: state.angle, cloud: angle, pushed });
   return true;
 }
 

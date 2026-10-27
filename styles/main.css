@@ -1,4 +1,4 @@
-/* Styles carried over unchanged from the 0.1 prototype, reformatted for readability. */
+/* Styles carried over from the 0.1 prototype, reformatted for readability, plus later additions. */
 
 :root {
   color-scheme: dark;
@@ -149,6 +149,113 @@ canvas {
   border-radius: 30px;
   padding: 6px 10px;
   background: #11211fc9;
+}
+
+.stage {
+  position: relative;
+}
+
+.strainer {
+  border-color: #c9d4d899;
+  color: #e4eef0;
+}
+
+/* The spoon upgrade offer, over the bottom of the cup during some readings. */
+.upgrade-offer {
+  position: absolute;
+  left: 50%;
+  bottom: 1.5%;
+  transform: translateX(-50%);
+  width: min(94%, 620px);
+  padding: 10px 12px 12px;
+  border: 1px solid #e8c77a99;
+  border-radius: 14px;
+  background: #0e211bf2;
+  box-shadow: 0 10px 34px #0009, inset 0 0 22px #e8c77a14;
+  animation: offer-in .35s ease-out;
+}
+
+.upgrade-offer[hidden],
+.upgrade-card[hidden] {
+  display: none;
+}
+
+@keyframes offer-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+}
+
+.offer-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.offer-head strong {
+  font: small-caps 700 18px/1.2 Georgia,serif;
+  letter-spacing: .06em;
+  color: #f1dfbd;
+}
+
+.offer-head em {
+  font: italic 13px Georgia,serif;
+  color: #c7d6c4;
+}
+
+.offer-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(0,1fr));
+  gap: 9px;
+  margin-top: 9px;
+}
+
+.upgrade-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  background: #1c3a2e;
+  border-color: #a9c7a4aa;
+  padding: 9px 11px;
+}
+
+.upgrade-card:hover,
+.upgrade-card:focus-visible {
+  background: #2b5241;
+  border-color: #f0d494;
+  outline: none;
+}
+
+.upgrade-card strong {
+  display: block;
+  font: small-caps 700 16px/1.25 Georgia,serif;
+  color: #f0d7a1;
+}
+
+.upgrade-card small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #c9d6cb;
+}
+
+.spoon-kit {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0 2px;
+  font-size: 12px;
+}
+
+.spoon-kit span:last-child {
+  text-align: right;
+  color: #dfe8e6;
+  font: 12px/1.45 ui-monospace,monospace;
 }
 
 .controls-mobile {
@@ -385,6 +492,9 @@ kbd {
   .pill {
     padding: 4px 7px;
   }
+  .strainer {
+    display: none; /* the mesh rings on the rim show it */
+  }
   .hudlabel {
     font-size: 9px;
   }
@@ -393,6 +503,28 @@ kbd {
     padding: 8px;
   }
   .controls-mobile button {
+    font-size: 11px;
+  }
+  .upgrade-offer {
+    padding: 7px 8px 8px;
+  }
+  .offer-head strong {
+    font-size: 15px;
+  }
+  .offer-head em {
+    display: none;
+  }
+  .upgrade-card {
+    padding: 6px 7px;
+    gap: 6px;
+  }
+  .upgrade-card kbd {
+    display: none;
+  }
+  .upgrade-card strong {
+    font-size: 13px;
+  }
+  .upgrade-card small {
     font-size: 11px;
   }
 }

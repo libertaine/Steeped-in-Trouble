@@ -12,11 +12,11 @@ const SOUNDS = {
   reading: [820, 0.29, 'sine', 0.04],
   gameover: [180, 0.32, 'sawtooth', 0.035],
   steam: [440, 0.045, 'triangle', 0.011],
-  milk: [260, 0.24, 'sine', 0.027],
   sugar: [820, 0.17, 'square', 0.018],
   escape: [130, 0.22, 'sawtooth', 0.04],
   toggle: [550, 0.1, 'sine', 0.026],
   sugarRegen: [1320, 0.08, 'sine', 0.012],
+  recoil: [310, 0.2, 'sine', 0.026],
 };
 
 // Little tunes: lists of notes.
@@ -30,6 +30,14 @@ const TUNES = {
   jackpot: [[1047, 0.1, 'square', 0.014], [1319, 0.1, 'square', 0.014, 0.08], [1568, 0.1, 'square', 0.014, 0.16],
     [2093, 0.5, 'sine', 0.032, 0.24]],
   goldenGone: [[600, 0.25, 'sine', 0.02], [450, 0.35, 'sine', 0.02, 0.15]],
+  // A pour, then the backwash rolling in.
+  milk: [[260, 0.24, 'sine', 0.027], [170, 0.5, 'triangle', 0.022, 0.06]],
+  // A bright metallic clink.
+  strain: [[2637, 0.05, 'square', 0.01], [3136, 0.22, 'triangle', 0.026, 0.03], [2093, 0.3, 'sine', 0.018, 0.07]],
+  upgrade: [[659, 0.1, 'triangle', 0.024], [988, 0.1, 'triangle', 0.024, 0.08], [1319, 0.35, 'sine', 0.03, 0.16]],
+  goldenSpoon: [[1047, 0.1, 'triangle', 0.024], [1568, 0.1, 'triangle', 0.024, 0.07], [2093, 0.1, 'triangle', 0.024, 0.14],
+    [2637, 0.45, 'sine', 0.03, 0.21]],
+  goldenSpoonEnd: [[1319, 0.18, 'sine', 0.018], [988, 0.3, 'sine', 0.016, 0.12]],
 };
 
 /** The tune for a simulation event, if it has one. */
@@ -44,6 +52,7 @@ function tuneFor(event) {
 }
 
 const KILL_SOUND = { steam: [560, 0.065, 'sine', 0.014], sugar: [720, 0.065, 'sine', 0.014] };
+const GOLDEN_STEAM = [660, 0.05, 'triangle', 0.012];
 
 export function createAudio() {
   let context = null;
@@ -88,6 +97,7 @@ export function createAudio() {
     /** Play the sound for a simulation event, if it has one. */
     handle(event) {
       if (event.type === 'kill') beep(event.sugar ? KILL_SOUND.sugar : KILL_SOUND.steam);
+      else if (event.type === 'steam' && event.golden) beep(GOLDEN_STEAM);
       else if (SOUNDS[event.type]) beep(SOUNDS[event.type]);
       else tuneFor(event)?.forEach(beep);
     },

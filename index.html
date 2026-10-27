@@ -18,7 +18,19 @@
 </header>
 <main>
   <section class="playfield" aria-label="Game area">
-    <canvas id="game" width="920" height="790" role="img" aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
+    <div class="stage">
+      <canvas id="game" width="920" height="790" role="img" aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
+      <div class="upgrade-offer" id="upgradeOffer" role="group" aria-labelledby="offerTitle" hidden>
+        <div class="offer-head">
+          <strong id="offerTitle">A Spoonful of Trouble</strong>
+          <em>The cupboard offers assistance.</em>
+        </div>
+        <div class="offer-cards">
+          <button class="upgrade-card" data-choice="0"><kbd>1</kbd><span><strong></strong><small></small></span></button>
+          <button class="upgrade-card" data-choice="1"><kbd>2</kbd><span><strong></strong><small></small></span></button>
+        </div>
+      </div>
+    </div>
     <div class="hud-top">
       <div class="hud-left">
         <span class="hudlabel pill" id="hudStatus">READY TO BREW</span>
@@ -27,6 +39,7 @@
       <div class="pills">
         <span class="hudlabel pill" id="hudScore">SCORE 0000</span>
         <span class="hudlabel pill" id="hudLives">CUPS ♥ ♥ ♥</span>
+        <span class="hudlabel pill strainer" id="hudStrainer">STRAINER 1/1</span>
       </div>
     </div>
     <div class="controls-mobile">
@@ -45,6 +58,8 @@
       <div class="statrow"><span>Leaves cleared</span><strong id="killCount">0 / 16</strong></div>
       <div class="statrow"><span>Milk pours</span><strong id="milkCount">2</strong></div>
       <div class="statrow"><span>Sugar bursts</span><strong id="sugarCount">2</strong></div>
+      <div class="statrow"><span>Strainer catches</span><strong id="strainerCount">1 / 1</strong></div>
+      <div class="spoon-kit"><span>The spoon</span><span id="spoonKit">An ordinary silver spoon.</span></div>
       <button id="mainBtn" class="action">Brew the first cup →</button>
       <p class="note" id="gameTip">Defend the rim. Where the leaves settle determines the fortune of your next cup.</p>
     </section>
@@ -64,7 +79,8 @@
       <div class="keyrow"><span>Milk: slow a wedge</span><span><kbd>M</kbd></span></div>
       <div class="keyrow"><span>Sugar: triple shot</span><span><kbd>S</kbd></span></div>
       <div class="keyrow"><span>Pause / next cup</span><span><kbd>P</kbd> / <kbd>Enter</kbd></span></div>
-      <p class="note">Hold STEAM to fire continuously. Milk makes a lingering cloudy zone; sugar shoots three strong crystalline darts. Touch controls work too.</p>
+      <div class="keyrow"><span>Pick a spoon upgrade</span><span><kbd>1</kbd> / <kbd>2</kbd></span></div>
+      <p class="note">Hold STEAM to fire continuously. Milk washes the leaves in its wedge back into the cup and slows them; sugar shoots three strong crystalline darts. The tea strainer catches the first leaf to escape each cup. Touch controls work too.</p>
       <button id="soundBtn" class="toggle" aria-label="Toggle sound">Sound: off</button>
       <button id="graphicsBtn" class="toggle" aria-label="Toggle graphics quality">Graphics: high</button>
     </section>

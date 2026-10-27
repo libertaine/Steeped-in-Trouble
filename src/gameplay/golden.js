@@ -1,7 +1,7 @@
 // Golden Opportunity: a golden sugar cube that appears once, briefly, in the
 // round after the fortune. Steam (or sugar) that strikes it before it
-// dissolves wins a small random reward. Functions receive
-// `sim` = { state, rng, emit }.
+// dissolves wins a small random reward, sometimes the Golden Spoon. Functions
+// receive `sim` = { state, rng, emit }.
 
 import { CONFIG } from '../config.js';
 import { laneAngle, wrapLane } from './arena.js';
@@ -17,6 +17,14 @@ export function spawnGolden({ state, rng, emit }) {
   emit('goldenAppear', { angle: state.golden.angle, radius: state.golden.radius });
 }
 
+/**
+ * Turn the spoon golden for a while. Catching another golden cube while it
+ * shines tops the time back up rather than adding to it.
+ */
+export function gildSpoon(state) {
+  state.goldenSpoon = Math.max(state.goldenSpoon, CONFIG.goldenSpoon.duration);
+}
+
 /** Roll and apply a reward. Returns { reward, points }. */
 export function awardGolden({ state, rng }) {
   const roll = rng.next();
@@ -28,7 +36,13 @@ export function awardGolden({ state, rng }) {
   if (roll < edge) {
     state.sugarLeft = Math.max(state.sugarLeft, sugarCapacity(state));
     state.milkLeft = Math.max(state.milkLeft, CONFIG.milk.perRound);
+    gildSpoon(state);
     return { reward: 'jackpot', points: points(G.jackpotPoints) };
+  }
+  edge += G.goldenSpoonChance;
+  if (roll < edge) {
+    gildSpoon(state);
+    return { reward: 'goldenSpoon', points: 0 };
   }
   edge += G.lifeChance;
   if (roll < edge && state.lives < CONFIG.lives + 1) {
@@ -59,7 +73,11 @@ export function updateGolden(sim, dt) {
   if (struck >= 0) {
     state.shots.splice(struck, 1);
     state.golden = null;
-    emit('goldenCatch', { angle: cube.angle, radius: cube.radius, ...awardGolden(sim) });
+    const award = awardGolden(sim);
+    emit('goldenCatch', { angle: cube.angle, radius: cube.radius, ...award });
+    if (award.reward === 'goldenSpoon' || award.reward === 'jackpot') {
+      emit('goldenSpoon', { angle: state.angle, time: state.goldenSpoon });
+    }
   } else if (cube.time <= 0) {
     state.golden = null;
     emit('goldenGone', { angle: cube.angle, radius: cube.radius });

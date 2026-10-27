@@ -5,8 +5,9 @@
 // presentation code (effects, audio, input) drains once per frame.
 //
 // Events: matchStart, roundStart, steam, sugar, sugarRegen, milk, kill, drift,
-// escape, goldenAppear, goldenCatch, goldenGone, reading, reveal, retract,
-// gameover, paused, resumed.
+// escape, strain, recoil, goldenAppear, goldenCatch, goldenGone, goldenSpoon,
+// goldenSpoonEnd, reading, reveal, retract, upgrade, gameover, paused,
+// resumed.
 
 import { CONFIG } from '../config.js';
 import { createRandom } from './random.js';
@@ -15,13 +16,17 @@ import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
 import { updateGolden } from '../gameplay/golden.js';
 import { moveSpoon } from '../gameplay/player.js';
-import { advanceEnemy, hasEscaped, updateSpawning } from '../gameplay/enemies.js';
+import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
+import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import {
-  findStrikingShot, fireSteam, isNearCloud, killScore, pourMilk, sugarBurst, updateClouds, updateShots,
+  findStrikingShot, fireSteam, isNearCloud, killScore, pourMilk, sugarBurst, sugarCapacity, updateClouds, updateShots,
   updateSugarRegen,
 } from '../gameplay/weapons.js';
 
 const { revealAt, lieRetractAt } = CONFIG.fortunes;
+
+/** Reading seconds before an upgrade offer appears and can be taken. */
+export const OFFER_AT = revealAt + 0.6;
 
 const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
 
@@ -36,6 +41,7 @@ export function createGame({ seed, random } = {}) {
   const emit = (type, data = {}) => events.push({ type, ...data });
   const sim = { state, rng, emit };
   const playing = () => state.phase === PHASE.PLAYING;
+  const offerOpen = () => state.phase === PHASE.READING && !!state.offer && state.readingTime >= OFFER_AT;
 
   function clearField() {
     state.shots = [];
@@ -53,7 +59,10 @@ export function createGame({ seed, random } = {}) {
     state.target = CONFIG.rounds.baseTarget + (state.round - 1) * CONFIG.rounds.targetPerRound;
     state.modifiers = modifiersFor(state.fortune);
     state.milkLeft = CONFIG.milk.perRound;
-    state.sugarLeft = CONFIG.sugar.perRound + state.modifiers.bonusSugar;
+    state.sugarLeft = sugarCapacity(state);
+    state.strainerLeft = strainerCapacity(state.spoon);
+    state.graceTime = 0;
+    state.offer = null;
     state.sugarRegenTimer = state.modifiers.sugarRegenInterval;
     if (state.modifiers.goldenCube) state.goldenTimer = rng.range(CONFIG.golden.delayMin, CONFIG.golden.delayMax);
     state.spawnTimer = CONFIG.spawning.firstDelay;
@@ -69,6 +78,8 @@ export function createGame({ seed, random } = {}) {
     state.lives = CONFIG.lives;
     state.fortune = null;
     state.nextFortune = null;
+    state.spoon = createSpoon();
+    state.goldenSpoon = 0;
     emit('matchStart');
     startRound();
   }
@@ -77,25 +88,56 @@ export function createGame({ seed, random } = {}) {
     state.phase = PHASE.READING;
     state.readingTime = 0;
     clearField();
-    const { milkKills, milkUses, sugarUses, escapes } = state.roundStats;
+    const { milkKills, milkUses, sugarUses, escapes, nearMisses } = state.roundStats;
     state.nextFortune = drawFortune({
-      milkKills, milkUses, sugarUses, escapes,
+      milkKills, milkUses, sugarUses, escapes, nearMisses,
       leafLanes: state.residue.map((leaf) => leaf.lane),
     }, rng);
-    emit('reading', { fortune: state.nextFortune });
+    state.offer = offerDue(state.round) ? drawOffer(state.spoon, rng) : null;
+    emit('reading', { fortune: state.nextFortune, offer: state.offer });
+  }
+
+  function brewNextCup() {
+    state.round++;
+    state.fortune = state.nextFortune;
+    startRound();
   }
 
   function finishGame() {
     state.phase = PHASE.GAME_OVER;
+    state.offer = null;
     clearField();
     emit('gameover', { score: state.score });
   }
 
-  function loseLife(enemy) {
+  /**
+   * A leaf has reached the rim. While the cup recovers from a spill it is
+   * sloshed back into the tea; otherwise the strainer catches it if it can,
+   * and failing that it spills and costs a cup.
+   * @returns {boolean} true if the leaf stays in the cup
+   */
+  function escape(enemy) {
+    const stats = state.roundStats;
+    if (state.graceTime > 0) {
+      washBack(enemy, CONFIG.grace.recoil);
+      stats.nearMisses++;
+      emit('recoil', { angle: enemy.angle });
+      return true;
+    }
+    if (state.strainerLeft > 0) {
+      state.strainerLeft--;
+      stats.nearMisses++;
+      emit('strain', {
+        angle: enemy.angle, size: enemy.size, left: state.strainerLeft, capacity: strainerCapacity(state.spoon),
+      });
+      return false;
+    }
     state.lives--;
-    state.roundStats.escapes++;
+    stats.escapes++;
     emit('escape', { angle: enemy.angle });
     if (state.lives <= 0) finishGame();
+    else state.graceTime = CONFIG.grace.duration;
+    return false;
   }
 
   function killEnemy(enemy, shot) {
@@ -121,8 +163,8 @@ export function createGame({ seed, random } = {}) {
       const enemy = enemies[i];
       advanceEnemy(enemy, sim, dt);
       if (hasEscaped(enemy)) {
+        if (escape(enemy)) continue;
         enemies.splice(i, 1);
-        loseLife(enemy);
         if (!playing()) return;
         continue;
       }
@@ -151,6 +193,11 @@ export function createGame({ seed, random } = {}) {
       return;
     }
     if (!playing()) return;
+    state.graceTime = Math.max(0, state.graceTime - dt);
+    if (state.goldenSpoon > 0) {
+      state.goldenSpoon = Math.max(0, state.goldenSpoon - dt);
+      if (state.goldenSpoon === 0) emit('goldenSpoonEnd', { angle: state.angle });
+    }
     moveSpoon(state, input, dt);
     state.shotCooldown -= dt;
     if (input.fire) fireSteam(sim);
@@ -183,9 +230,7 @@ export function createGame({ seed, random } = {}) {
         resetMatch();
         break;
       case PHASE.READING:
-        state.round++;
-        state.fortune = state.nextFortune;
-        startRound();
+        if (!state.offer) brewNextCup(); // an offer waits for a choice
         break;
       case PHASE.PLAYING:
         pause();
@@ -201,10 +246,31 @@ export function createGame({ seed, random } = {}) {
     seed: rng.seed,
     update,
     primaryAction,
-    /** Enter: start, or continue from a reading or game over. Returns true if handled. */
+    /**
+     * Enter: start, or continue from a reading or game over. Returns true if
+     * handled. While an upgrade is on offer Enter is left alone, so a focused
+     * upgrade card can take it as a click.
+     */
     confirm() {
       if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER].includes(state.phase)) return false;
+      if (state.offer) return false;
       primaryAction();
+      return true;
+    },
+    /** Is an upgrade offer on show and ready to be taken? */
+    offerOpen,
+    /**
+     * Take offered upgrade number `index` (0-based) and brew the next cup.
+     * Returns true if an upgrade was taken.
+     */
+    chooseUpgrade(index) {
+      if (!offerOpen()) return false;
+      const id = state.offer[index];
+      if (!id) return false;
+      applyUpgrade(state.spoon, id);
+      state.offer = null;
+      brewNextCup();
+      emit('upgrade', { id, level: state.spoon[id], name: UPGRADES[id].name, angle: state.angle });
       return true;
     },
     /** P: pause or resume during a round. Returns true if handled. */

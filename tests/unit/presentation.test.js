@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createLoop, frameDelta } from '../../src/core/timing.js';
 import { createEffects } from '../../src/rendering/effects.js';
 import { createTea } from '../../src/rendering/tea.js';
-import { hudText } from '../../src/ui/hud.js';
-import { createGame } from '../../src/core/game.js';
-import { completeRound, playingGame } from './helpers.js';
+import { hudText, offerCards, spoonKitText } from '../../src/ui/hud.js';
+import { OFFER_AT, createGame } from '../../src/core/game.js';
+import { brewNext, completeRound, playingGame } from './helpers.js';
 
 describe('frame timing', () => {
   it('converts frame intervals to seconds', () => {
@@ -95,10 +95,45 @@ describe('HUD text', () => {
     completeRound(game);
     game.state.nextFortune = 'sugarRush';
     expect(hudText(game.state).hudOmen).toBe('');
-    game.primaryAction();
+    brewNext(game);
     expect(hudText(game.state).hudOmen).toBe('✦ Sugar Rush · sugar regrows · this cup');
     game.sugarBurst();
     expect(hudText(game.state).hudOmen).toMatch(/next lump \ds$/);
+  });
+
+  it('shows the strainer, the spoon’s upgrades, and the Golden Spoon', () => {
+    const game = playingGame();
+    expect(hudText(game.state)).toMatchObject({ hudStrainer: 'STRAINER 1/1', strainerCount: '1 / 1' });
+    expect(spoonKitText(game.state)).toBe('An ordinary silver spoon.');
+    Object.assign(game.state.spoon, { polished: 1, strainer: 2 });
+    game.state.strainerLeft = 2;
+    expect(hudText(game.state).hudStrainer).toBe('STRAINER 2/3');
+    expect(spoonKitText(game.state)).toBe('✦ Polished ●○○ · ◎ Strainer ●●');
+    game.state.goldenSpoon = 4.2;
+    expect(hudText(game.state).hudStatus).toBe('✦ GOLDEN SPOON 5s');
+    expect(spoonKitText(game.state)).toMatch(/golden, for now$/);
+  });
+
+  it('says when the cup is recovering from a spill', () => {
+    const game = playingGame();
+    game.state.graceTime = 0.5;
+    expect(hudText(game.state).hudStatus).toBe('THE CUP RECOVERS');
+  });
+
+  it('offers upgrade cards once the fortune is revealed, and asks for a choice', () => {
+    const game = playingGame();
+    completeRound(game);
+    expect(offerCards(game.state)).toBeNull();
+    expect(hudText(game.state).mainBtn).toBe('Choose a spoon upgrade (1 / 2)');
+    game.state.readingTime = OFFER_AT;
+    game.state.offer = ['polished', 'strainer'];
+    game.state.spoon.polished = 1;
+    expect(offerCards(game.state)).toEqual([
+      { id: 'polished', title: 'Polished Spoon ●●○', info: 'Steam travels 20% faster.' },
+      { id: 'strainer', title: 'Strainer Attachment ●○', info: 'Catch one more escaping leaf every cup.' },
+    ]);
+    game.chooseUpgrade(0);
+    expect(offerCards(game.state)).toBeNull();
   });
 
   it('keeps The Leaves Lie’s secret until it confesses', () => {
@@ -138,6 +173,32 @@ describe('effects', () => {
     expect(said.size).toBeGreaterThan(1); // the quote, then the prank's message
   });
 
+  it('glints and scatters leaf fragments when the strainer catches a leaf', () => {
+    const effects = createEffects({ random: () => 0.5 });
+    effects.handle({ type: 'strain', angle: 1, left: 0, capacity: 1 });
+    expect(effects.fx.glints).toHaveLength(1);
+    expect(effects.fx.particles.length).toBeGreaterThan(20);
+    effects.update(0.1);
+    expect(effects.fx.whisper.text).toMatch(/tea strainer/); // explained the first time
+    effects.update(1);
+    expect(effects.fx.glints).toHaveLength(0);
+  });
+
+  it('makes the spoon briefly enormous for The Leaves Lie, then puts it back', () => {
+    const game = playingGame();
+    const effects = createEffects();
+    const before = JSON.stringify(game.state);
+    effects.prank('bigSpoon');
+    let biggest = 1;
+    for (let i = 0; i < 60 * 4; i++) {
+      effects.update(1 / 60, game.state);
+      biggest = Math.max(biggest, effects.fx.spoonScale);
+    }
+    expect(biggest).toBeGreaterThan(2.5);
+    expect(effects.fx.spoonScale).toBe(1);
+    expect(JSON.stringify(game.state)).toBe(before);
+  });
+
   it('clears particles when a round starts', () => {
     const effects = createEffects();
     effects.handle({ type: 'milk', angle: 0 });
@@ -147,10 +208,14 @@ describe('effects', () => {
 });
 
 describe('living tea', () => {
-  const EVENTS = ['roundStart', 'steam', 'sugar', 'sugarRegen', 'milk', 'kill', 'drift', 'escape', 'goldenAppear',
-    'goldenCatch', 'goldenGone', 'reading', 'reveal', 'retract', 'gameover']
-    .map((type) => ({ type, angle: 1, radius: 120, sugar: type === 'kill', twin: true, fortune: 'golden', reward: 'jackpot' }));
-  const PRANKS = ['tint', 'bigBubble', 'sugarShower', 'whirlpool', 'biscuit', 'nothing']
+  const EVENTS = ['roundStart', 'steam', 'sugar', 'sugarRegen', 'milk', 'kill', 'drift', 'escape', 'strain', 'recoil',
+    'goldenAppear', 'goldenCatch', 'goldenGone', 'goldenSpoon', 'goldenSpoonEnd', 'reading', 'reveal', 'retract',
+    'upgrade', 'gameover']
+    .map((type) => ({
+      type, angle: 1, cloud: 1, radius: 120, sugar: type === 'kill', twin: true, fortune: 'golden', reward: 'jackpot',
+      id: 'polished', level: 1,
+    }));
+  const PRANKS = ['tint', 'bigBubble', 'sugarShower', 'whirlpool', 'biscuit', 'bigSpoon', 'nothing']
     .map((kind) => ({ type: 'prank', kind, color: '#2f7fe0' }));
 
   it('reacts to every event without touching game state and keeps its effects bounded', () => {

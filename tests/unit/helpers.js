@@ -34,6 +34,15 @@ export function killOne(game, lane = 0) {
   step(game, 0.25);
 }
 
+/**
+ * Continue from a reading to the next cup, declining any upgrade offer (so
+ * tests of other features play with a plain spoon).
+ */
+export function brewNext(game) {
+  game.state.offer = null;
+  game.primaryAction();
+}
+
 /** Finish the current round: the next kill reaches the target. */
 export function completeRound(game) {
   game.state.kills = game.state.target - 1;

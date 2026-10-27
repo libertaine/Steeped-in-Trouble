@@ -17,7 +17,9 @@ src/
 │   ├── arena.js         lanes, angles, polar → canvas mapping
 │   ├── player.js        spoon movement
 │   ├── enemies.js       tea-leaf spawning and movement
-│   ├── weapons.js       steam, sugar, milk, hit testing, scoring
+│   ├── weapons.js       steam, sugar, milk (and its backwash), hit testing, scoring
+│   ├── golden.js        the golden sugar cube and its rewards
+│   ├── upgrades.js      spoon upgrades: definitions, offers, stacking limits
 │   └── fortunes.js      leaf reading, fortune selection, modifiers, glyphs
 ├── rendering/
 │   ├── canvas.js        device-pixel-ratio-aware canvas sizing
@@ -127,6 +129,30 @@ only `state.modifiers` (for example `steamSpeedMultiplier`) and never checks
 fortune ids. Modifiers last exactly one round, because the next round start
 recomputes them, and a new match clears the fortune.
 
+## Spoon upgrades and the Golden Spoon
+
+Spoon upgrades last for the whole pot and are kept apart from fortunes:
+`state.spoon` holds one level per upgrade (`createSpoon()` in
+`gameplay/upgrades.js`), and `state.goldenSpoon` holds the seconds of Golden
+Spoon left. Neither is touched by `modifiersFor()`. Each effect is read where
+its rule lives (`steamSpeed()` and `steamCooldown()` in `weapons.js`,
+`turnSpeed()` in `player.js`, `sugarCapacity()`, and `strainerCapacity()` at
+round start), and every bonus multiplies the others, so a temporary effect
+never replaces a lasting one. A new match resets both.
+
+When an upgrade is due, `readLeaves()` puts `drawOffer()`'s choice in
+`state.offer`. The reading then waits: Enter and the main button do nothing
+until `chooseUpgrade(index)` applies one and brews the next cup. The HUD
+shows the offer as DOM buttons (`#upgradeOffer`).
+
+## Escaping leaves
+
+A leaf reaching the rim goes through `escape()` in `core/game.js`. During the
+short grace period after a spill it is washed back into the cup
+(`washBack()`, the same eased push milk uses). Otherwise the tea strainer
+catches it while `state.strainerLeft` lasts, and only then does it cost a
+cup and start a new grace period.
+
 ## Extending the game
 
 ### Adding a fortune
@@ -149,6 +175,14 @@ recomputes them, and a new match clears the fortune.
    `drawEnemy()` for appearance.
 3. If it scores or dies differently, extend `killEnemy()` in `core/game.js`
    or `killScore()`.
+
+### Adding a spoon upgrade
+
+1. Add an entry to `UPGRADES` in `gameplay/upgrades.js` (with `max`) and a
+   level to `createSpoon()`.
+2. Read `state.spoon.<id>` where its rule lives, and put tuning numbers in
+   `CONFIG.upgrades`.
+3. Optionally dress the spoon for it in the renderer's `drawSpoonAt()`.
 
 ### Adding a weapon
 

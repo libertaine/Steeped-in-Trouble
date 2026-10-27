@@ -3,6 +3,29 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
+## [0.4.0] - 2026-10-27 — A Spoonful of Trouble
+
+### Added
+
+- **Tea strainer:** catches the first escaping leaf each round (more with
+  upgrades), with a metallic glint, leaf fragments, and a clink.
+- **Grace period:** for a second after a spill, further escaping leaves are
+  sloshed back into the cup instead of costing cups.
+- **Milk backwash:** pouring milk pushes leaves in its wedge back towards the
+  centre with a visible wave, as well as slowing them.
+- **Spoon upgrades**, offered two at a time after rounds 1, 3, 5, …, kept for
+  the whole pot: Polished Spoon, Quick Stir, Sugar Scoop, and Strainer
+  Attachment, each with stacking limits and its own look on the spoon.
+- **The Golden Spoon:** a rare golden-cube reward (and part of every jackpot)
+  that fires faster golden steam for 9 seconds.
+- A new Leaves Lie prank: a briefly enormous spoon.
+- `STRAINER` pill and spoon summary in the HUD.
+
+### Changed
+
+- Near misses make Tempestuous Tea slightly more likely.
+- Enter no longer skips a reading that is offering an upgrade.
+
 ## [0.3.0] - 2026-10-27 — The Leaves Have Opinions
 
 ### Added
@@ -70,7 +93,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[0.3.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/f0357ee...main
+[0.4.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/73e1fad...main
+[0.3.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/f0357ee...73e1fad
 [0.2.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.1.1...f0357ee
 [0.1.1]: https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.1.1
 [0.1.0]: https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.1.0
