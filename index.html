@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Storm in a Teacup — Vector Prototype</title>
+  <meta name="description" content="An original, experimental, tea-themed vector arcade game. Defend the cup with a silver spoon; the leaves you defeat foretell the next round." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/styles/main.css" />
+</head>
+<body>
+<header>
+  <div>
+    <div class="kicker">An experimental vector arcade game</div>
+    <div class="brand">Storm <em>in a</em> Teacup</div>
+  </div>
+  <div class="version" id="version">VERSION</div>
+</header>
+<main>
+  <section class="playfield" aria-label="Game area">
+    <canvas id="game" width="920" height="790" role="img" aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
+    <div class="hud-top">
+      <span class="hudlabel pill" id="hudStatus">READY TO BREW</span>
+      <div class="pills">
+        <span class="hudlabel pill" id="hudScore">SCORE 0000</span>
+        <span class="hudlabel pill" id="hudLives">CUPS ♥ ♥ ♥</span>
+      </div>
+    </div>
+    <div class="controls-mobile">
+      <button data-hold="left" aria-label="Rotate counterclockwise">◀ TURN</button>
+      <button data-hold="fire" aria-label="Shoot steam">STEAM ↑</button>
+      <button data-hold="right" aria-label="Rotate clockwise">TURN ▶</button>
+      <button id="milkBtn" aria-label="Pour milk">MILK</button>
+      <button id="sugarBtn" aria-label="Fire sugar burst">SUGAR</button>
+    </div>
+  </section>
+  <aside>
+    <section class="panel">
+      <div class="eyebrow">Cup status</div>
+      <h2 id="roundTitle">The kettle waits</h2>
+      <div class="statrow"><span>Round</span><strong id="roundNum">01</strong></div>
+      <div class="statrow"><span>Leaves cleared</span><strong id="killCount">0 / 16</strong></div>
+      <div class="statrow"><span>Milk pours</span><strong id="milkCount">2</strong></div>
+      <div class="statrow"><span>Sugar bursts</span><strong id="sugarCount">2</strong></div>
+      <button id="mainBtn" class="action">Brew the first cup →</button>
+      <p class="note" id="gameTip">Defend the rim. Where the leaves settle determines the fortune of your next cup.</p>
+    </section>
+    <section class="panel">
+      <div class="eyebrow">The cup remembers</div>
+      <div class="fortune">
+        <small id="fortuneLabel">Next cup's omen</small>
+        <strong id="fortuneName">Not yet written</strong>
+        <p id="fortuneDetail">Finish a round to read the leaves. Your tactics become the next round's rules.</p>
+      </div>
+      <p class="note">Tea leaves from defeated foes collect in the cup. At the end of each round they form a reading that changes the next round.</p>
+    </section>
+    <section class="panel">
+      <div class="eyebrow">How to stir up trouble</div>
+      <div class="keyrow"><span>Move the silver spoon</span><span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></span></div>
+      <div class="keyrow"><span>Fire steam inward</span><span><kbd>Space</kbd></span></div>
+      <div class="keyrow"><span>Milk: slow a wedge</span><span><kbd>M</kbd></span></div>
+      <div class="keyrow"><span>Sugar: triple shot</span><span><kbd>S</kbd></span></div>
+      <div class="keyrow"><span>Pause / next cup</span><span><kbd>P</kbd> / <kbd>Enter</kbd></span></div>
+      <p class="note">Hold STEAM to fire continuously. Milk makes a lingering cloudy zone; sugar shoots three strong crystalline darts. Touch controls work too.</p>
+      <button id="soundBtn" class="toggle" aria-label="Toggle sound">Sound: off</button>
+    </section>
+  </aside>
+</main>
+<div class="bottom">Original teacup concept; all artwork procedurally drawn with HTML Canvas paths. No arcade-game assets, fonts, or external libraries.</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
