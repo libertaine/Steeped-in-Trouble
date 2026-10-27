@@ -1,0 +1,17 @@
+# Normalize text files to LF in the repository and working tree.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets.
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+
+# The preserved prototype must stay byte-identical so its SHA-256 checksum
+# remains verifiable on every platform. Never convert its line endings.
+docs/reference/** -text -diff linguist-documentation
