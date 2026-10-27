@@ -69,6 +69,14 @@ npx playwright install chromium firefox
 
 On Linux you may also need `npx playwright install-deps` (requires sudo).
 
+To smoke-test the published site instead of a local build:
+
+```bash
+BASE_URL=https://libertaine.github.io/Storm-in-a-Teacup/ npm run test:browser
+```
+
+On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Storm-in-a-Teacup/"; npm run test:browser`.
+
 ## Project documentation
 
 - [Architecture](docs/ARCHITECTURE.md): how the code fits together and how to
