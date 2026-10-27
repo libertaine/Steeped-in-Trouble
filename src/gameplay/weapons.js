@@ -2,9 +2,10 @@
 // tea leaves. Functions receive `sim` = { state, rng, emit }.
 
 import { CONFIG } from '../config.js';
-import { LANE_STEP, angleDifference, laneAngle, wrapLane } from './arena.js';
+import { LANE_STEP, angleDifference, laneAngle, normalizeAngle, wrapLane } from './arena.js';
 import { spoonLane } from './player.js';
 import { steamSpeedFactor } from './upgrades.js';
+import { discover } from './combos.js';
 
 const RIM = CONFIG.arena.rimRadius;
 const GS = CONFIG.goldenSpoon;
@@ -44,11 +45,18 @@ function launchSteam(state, lane, extra = {}) {
   }
 }
 
-/** Fire steam down the spoon's lane if the cooldown allows. */
+/**
+ * Fire steam down the spoon's lane if the cooldown allows. Each shot is a
+ * volley: its darts share an id, and the volley counts as wasted only if none
+ * of them hits anything (see spendDart()).
+ */
 export function fireSteam({ state, emit }) {
   if (state.shotCooldown > 0) return false;
   state.shotCooldown = steamCooldown(state);
-  launchSteam(state, spoonLane(state));
+  const volley = ++state.roundStats.volleys;
+  const before = state.shots.length;
+  launchSteam(state, spoonLane(state), { volley });
+  state.volleys[volley] = state.shots.length - before; // darts still in flight
   emit('steam', { twin: state.modifiers.twinSteam, golden: state.goldenSpoon > 0 });
   return true;
 }
@@ -109,25 +117,47 @@ export function sugarBurst({ state, emit }) {
 /**
  * Pour a milk cloud over the spoon's lane, slowing nearby leaves. The pour's
  * first wave also washes the leaves under it back towards the centre (see
- * advanceEnemy() for how the push plays out).
+ * advanceEnemy() for how the push plays out). In stormy tea the cloud is
+ * wider and drifts with the currents (The Perfect Storm).
  */
-export function pourMilk({ state, emit }) {
+export function pourMilk(sim) {
+  const { state, rng, emit } = sim;
   if (state.milkLeft <= 0) return false;
   state.milkLeft--;
   state.roundStats.milkUses++;
   const M = CONFIG.milk;
   const duration = M.duration + state.modifiers.milkDurationBonus;
   const angle = laneAngle(spoonLane(state));
-  state.clouds.push({ angle, time: duration, duration });
+  const stormy = state.modifiers.stormyMilk;
+  const spread = stormy ? CONFIG.combos.stormSpread : 1;
+  const drift = stormy ? CONFIG.combos.stormDrift * (rng.next() < 0.5 ? -1 : 1) : 0;
+  state.clouds.push({ angle, time: duration, duration, spread, drift });
   let pushed = 0;
   for (const enemy of state.enemies) {
-    if (Math.abs(angleDifference(angle, enemy.angle)) >= LANE_STEP * M.slowHalfWidthLanes) continue;
+    if (Math.abs(angleDifference(angle, enemy.angle)) >= LANE_STEP * M.slowHalfWidthLanes * spread) continue;
     if (enemy.radius > RIM * M.rescueShare) state.roundStats.nearMisses++;
     enemy.backwash = Math.max(enemy.backwash ?? 0, M.backwash);
     pushed++;
   }
-  emit('milk', { angle: state.angle, cloud: angle, pushed });
+  emit('milk', { angle: state.angle, cloud: angle, pushed, spread });
+  if (stormy) discover(sim, 'perfectStorm');
   return true;
+}
+
+/**
+ * A dart is used up, on a target (`hit`) or by fizzling out at the centre.
+ * A hit settles its volley at once; the volley is wasted when its last dart
+ * fizzles without any of them having hit.
+ */
+export function spendDart(state, shot, hit) {
+  const left = state.volleys[shot.volley];
+  if (left === undefined) return;
+  if (hit) delete state.volleys[shot.volley];
+  else if (left > 1) state.volleys[shot.volley] = left - 1;
+  else {
+    delete state.volleys[shot.volley];
+    state.roundStats.wastedVolleys++;
+  }
 }
 
 export function updateShots(state, dt) {
@@ -135,19 +165,25 @@ export function updateShots(state, dt) {
     shot.radius -= shot.speed * dt;
     shot.angle += shot.veer * dt;
   }
-  state.shots = state.shots.filter((shot) => shot.radius >= CONFIG.steam.despawnRadius);
+  state.shots = state.shots.filter((shot) => {
+    if (shot.radius >= CONFIG.steam.despawnRadius) return true;
+    spendDart(state, shot, false);
+    return false;
+  });
 }
 
 export function updateClouds(state, dt) {
   for (let i = state.clouds.length - 1; i >= 0; i--) {
-    state.clouds[i].time -= dt;
-    if (state.clouds[i].time <= 0) state.clouds.splice(i, 1);
+    const cloud = state.clouds[i];
+    cloud.time -= dt;
+    cloud.angle = normalizeAngle(cloud.angle + cloud.drift * dt);
+    if (cloud.time <= 0) state.clouds.splice(i, 1);
   }
 }
 
-/** Is an angle within `halfWidthLanes` lanes of any active milk cloud? */
+/** Is an angle within `halfWidthLanes` lanes (scaled by each cloud's spread) of any active milk cloud? */
 export function isNearCloud(clouds, angle, halfWidthLanes) {
-  return clouds.some((cloud) => Math.abs(angleDifference(cloud.angle, angle)) < LANE_STEP * halfWidthLanes);
+  return clouds.some((cloud) => Math.abs(angleDifference(cloud.angle, angle)) < LANE_STEP * halfWidthLanes * cloud.spread);
 }
 
 /** Index of the most recently fired dart touching a target ({ radius, angle }), or -1. */

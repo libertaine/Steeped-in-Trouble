@@ -1,6 +1,7 @@
 import { CONFIG } from '../config.js';
 import { laneOf, normalizeAngle } from './arena.js';
 import { turnSpeedFactor } from './upgrades.js';
+import { updateStir } from './combos.js';
 
 /** Radians per second the spoon turns, Quick Stir included. */
 export function turnSpeed(state) {
@@ -12,15 +13,10 @@ export function turnSpeed(state) {
  * @param {{ left: boolean, right: boolean }} input
  */
 export function moveSpoon(state, input, dt) {
-  const step = turnSpeed(state) * dt;
-  if (input.left && !input.right) {
-    state.angle -= step;
-    state.roundStats.motionTime += dt;
-  } else if (input.right && !input.left) {
-    state.angle += step;
-    state.roundStats.motionTime += dt;
-  }
-  state.angle = normalizeAngle(state.angle);
+  const dir = input.left === input.right ? 0 : input.right ? 1 : -1;
+  state.angle = normalizeAngle(state.angle + dir * turnSpeed(state) * dt);
+  if (dir) state.roundStats.motionTime += dt;
+  updateStir(state, dir, dt);
 }
 
 /** The lane the spoon currently aims down. */

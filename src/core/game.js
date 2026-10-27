@@ -6,7 +6,8 @@
 //
 // Events: matchStart, roundStart, steam, sugar, sugarRegen, milk, kill, drift,
 // escape, strain, recoil, goldenAppear, goldenCatch, goldenGone, goldenSpoon,
-// goldenSpoonEnd, prismaticAppear, prismaticCatch, prismaticGone, nova, reading, reveal, retract, upgrade, gameover, paused,
+// goldenSpoonEnd, prismaticAppear, prismaticCatch, prismaticGone, nova, secret,
+// discover, reading, reveal, retract, upgrade, gameover, paused,
 // resumed.
 
 import { CONFIG } from '../config.js';
@@ -16,12 +17,14 @@ import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
 import { updateGolden } from '../gameplay/golden.js';
 import { rollPrismatic, updatePrismatic } from '../gameplay/prismatic.js';
+import { SECRETS, findSecrets } from '../gameplay/secrets.js';
+import { discover, giltSplashTarget, inWake, tornadoWake } from '../gameplay/combos.js';
 import { moveSpoon } from '../gameplay/player.js';
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import {
-  findStrikingShot, fireSteam, isNearCloud, killScore, pourMilk, sugarBurst, sugarCapacity, updateClouds, updateShots,
-  updateSugarRegen,
+  findStrikingShot, fireSteam, isNearCloud, killScore, pourMilk, spendDart, sugarBurst, sugarCapacity, updateClouds,
+  updateShots, updateSugarRegen,
 } from '../gameplay/weapons.js';
 
 const { revealAt, lieRetractAt } = CONFIG.fortunes;
@@ -52,6 +55,9 @@ export function createGame({ seed, random } = {}) {
     state.goldenTimer = null;
     state.prismatic = null;
     state.prismaticTimer = null;
+    state.volleys = {};
+    state.stir = { dir: 0, time: 0 };
+    state.wake = null;
   }
 
   function startRound() {
@@ -62,7 +68,9 @@ export function createGame({ seed, random } = {}) {
     state.target = CONFIG.rounds.baseTarget + (state.round - 1) * CONFIG.rounds.targetPerRound;
     state.modifiers = modifiersFor(state.fortune);
     state.milkLeft = CONFIG.milk.perRound;
-    state.sugarLeft = sugarCapacity(state);
+    state.sugarLeft = sugarCapacity(state) + state.extraSugar;
+    state.extraSugar = 0;
+    state.secrets = [];
     state.strainerLeft = strainerCapacity(state.spoon);
     state.graceTime = 0;
     state.offer = null;
@@ -84,6 +92,8 @@ export function createGame({ seed, random } = {}) {
     state.nextFortune = null;
     state.spoon = createSpoon();
     state.goldenSpoon = 0;
+    state.extraSugar = 0;
+    state.discovered = [];
     emit('matchStart');
     startRound();
   }
@@ -99,6 +109,11 @@ export function createGame({ seed, random } = {}) {
     }, rng);
     state.offer = offerDue(state.round) ? drawOffer(state.spoon, rng) : null;
     emit('reading', { fortune: state.nextFortune, offer: state.offer });
+    state.secrets = findSecrets(state.roundStats);
+    for (const id of state.secrets) {
+      SECRETS[id].award(state);
+      emit('secret', { id, angle: state.angle });
+    }
   }
 
   function brewNextCup() {
@@ -144,9 +159,9 @@ export function createGame({ seed, random } = {}) {
     return false;
   }
 
-  function killEnemy(enemy, shot) {
+  function killEnemy(enemy, shot, inMilk) {
     const R = CONFIG.residue;
-    emit('kill', { radius: enemy.radius, angle: enemy.angle, sugar: shot.sugar });
+    emit('kill', { radius: enemy.radius, angle: enemy.angle, sugar: shot.sugar, by: shot.by });
     state.residue.push({
       lane: laneOf(enemy.angle),
       radius: rng.range(R.radiusMin, R.radiusMax),
@@ -155,17 +170,29 @@ export function createGame({ seed, random } = {}) {
       size: rng.range(R.sizeMin, R.sizeMax),
     });
     if (state.residue.length > R.maxLeaves) state.residue.shift();
-    if (isNearCloud(state.clouds, enemy.angle, CONFIG.milk.creditHalfWidthLanes)) state.roundStats.milkKills++;
+    if (inMilk) state.roundStats.milkKills++;
+    if (shot.volley) state.roundStats.steamKills++;
     state.score += killScore(shot, state.modifiers);
     state.kills++;
     if (state.kills >= state.target) readLeaves();
   }
 
+  /** Unexpected brews that destroy leaves without a dart of their own. */
+  const WAKE = Object.freeze({ sugar: false, by: 'wake' });
+  const SPLASH = Object.freeze({ sugar: false, by: 'splash' });
+
   function updateEnemies(dt) {
     const { enemies } = state;
+    const splashed = []; // Double Gilt: leaves to splash once the loop is done
     for (let i = enemies.length - 1; i >= 0; i--) {
       const enemy = enemies[i];
       advanceEnemy(enemy, sim, dt);
+      if (state.wake && inWake(state.wake, enemy)) {
+        enemies.splice(i, 1);
+        killEnemy(enemy, WAKE, false);
+        if (!playing()) return;
+        continue;
+      }
       if (hasEscaped(enemy)) {
         if (escape(enemy)) continue;
         enemies.splice(i, 1);
@@ -174,11 +201,26 @@ export function createGame({ seed, random } = {}) {
       }
       const struck = findStrikingShot(state.shots, enemy);
       if (struck >= 0) {
-        const [shot] = state.shots.splice(struck, 1);
+        const shot = state.shots[struck];
+        const inMilk = isNearCloud(state.clouds, enemy.angle, CONFIG.milk.creditHalfWidthLanes);
+        // Now and then the cream carries a steam dart on to the next leaf. Nobody mentions it.
+        if (inMilk && !shot.sugar && !shot.cream && rng.next() < CONFIG.milk.carryChance) shot.cream = true;
+        else state.shots.splice(struck, 1);
+        spendDart(state, shot, true);
         enemies.splice(i, 1);
-        killEnemy(enemy, shot);
+        const splash = giltSplashTarget(enemies, enemy, shot);
+        if (splash && !splashed.includes(splash)) splashed.push(splash);
+        killEnemy(enemy, shot, inMilk);
         if (!playing()) return;
       }
+    }
+    for (const enemy of splashed) {
+      const index = enemies.indexOf(enemy);
+      if (index < 0) continue; // already gone
+      enemies.splice(index, 1);
+      discover(sim, 'doubleGilt');
+      killEnemy(enemy, SPLASH, isNearCloud(state.clouds, enemy.angle, CONFIG.milk.creditHalfWidthLanes));
+      if (!playing()) return;
     }
   }
 
@@ -203,6 +245,8 @@ export function createGame({ seed, random } = {}) {
       if (state.goldenSpoon === 0) emit('goldenSpoonEnd', { angle: state.angle });
     }
     moveSpoon(state, input, dt);
+    state.wake = tornadoWake(state);
+    if (state.wake) discover(sim, 'silverTornado');
     state.shotCooldown -= dt;
     if (input.fire) fireSteam(sim);
     updateSugarRegen(sim, dt);

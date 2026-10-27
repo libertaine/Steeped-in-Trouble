@@ -67,6 +67,7 @@ export const CONFIG = deepFreeze({
     backwash: 120, // the pour's first wave pushes leaves in the slowed wedge this far back towards the centre
     backwashRate: 7, // how quickly the push plays out (per second; about 95% done in 0.4 s)
     rescueShare: 0.75, // a pushed leaf beyond this share of the rim radius counts as a near miss
+    carryChance: 0.2, // a steam dart that kills a leaf in a cloud may be carried on by the cream (once)
   },
 
   enemies: {
@@ -184,5 +185,24 @@ export const CONFIG = deepFreeze({
     radiusMin: 120,
     radiusMax: 190,
     laneReach: 4,
+  },
+
+  // Unexpected brews: combinations that unlock a new behaviour (gameplay/combos.js).
+  combos: {
+    stormSpread: 1.6, // The Perfect Storm: milk clouds this much wider…
+    stormDrift: 0.35, // …and carried around the cup at this many radians per second
+    tornadoSpinUp: 0.5, // The Silver Tornado: seconds of steady turning before the wake forms
+    tornadoTrail: 0.25, // seconds of the spoon's path the wake covers
+    tornadoDepth: 16, // how far in from the rim the wake reaches with one level of each upgrade
+    tornadoDepthPerLevel: 6, // and per further level of either
+    giltSplash: 48, // Double Gilt: a golden twin's kill splashes the nearest leaf within this distance
+  },
+
+  // Secrets: things the leaves notice about a finished round, and reward.
+  secrets: {
+    perfectMinVolleys: 12, // Not a Drop Wasted: steam shots needed for a perfect round to count
+    perfectPoints: 250,
+    perfectSugar: 1, // extra sugar bursts next cup
+    thriftyMinVolleys: 8, // More Leaves Than Steam: steam shots needed
   },
 });

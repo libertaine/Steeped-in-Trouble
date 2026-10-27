@@ -311,7 +311,7 @@ export function createTea({ random = Math.random } = {}) {
         for (let i = 0; i < 5; i++) crystal(p.x, p.y, 40);
       }
     },
-    milk({ angle, cloud = angle }) {
+    milk({ angle, cloud = angle, spread = 1 }) {
       kick(0.3);
       liquid.milkiness = Math.min(1, liquid.milkiness + 0.5);
       const p = rimPoint(angle, 12);
@@ -322,9 +322,9 @@ export function createTea({ random = Math.random } = {}) {
       const mid = polar(RIM - CONFIG.milk.backwash, cloud);
       ripple(mid.x, mid.y, { size: 60, life: 1.4, strength: 0.8, rings: 2, tone: '#f4efe4' });
       const duration = CONFIG.milk.duration;
-      for (let i = 0; i < 11; i++) {
+      for (let i = 0; i < Math.round(11 * spread); i++) {
         push(liquid.wisps, {
-          angle: cloud + rnd(-1.4, 1.4) * LANE_STEP,
+          angle: cloud + rnd(-1.4, 1.4) * LANE_STEP * spread,
           flow0: liquid.flow,
           reach: rnd(110, 240),
           spread: rnd(0.08, 0.3) * (chance(0.5) ? 1 : -1),

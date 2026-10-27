@@ -87,6 +87,7 @@ export function createEffects({ random = Math.random } = {}) {
     glints: [], // strainer catches: { angle, time, life }
     spoonScale: 1, // The Leaves Lie can make the spoon briefly enormous
     upgradeGlow: 0, // seconds of the ring that marks a new upgrade
+    discovery: null, // { id, time, life }: an unexpected brew being announced
   };
   const queue = [];
   let prankTimer = null; // seconds until The Leaves Lie misbehaves
@@ -143,6 +144,7 @@ export function createEffects({ random = Math.random } = {}) {
   const handlers = {
     matchStart() {
       strained = false;
+      fx.discovery = null;
     },
     roundStart({ fortune }) {
       fx.particles = [];
@@ -264,6 +266,12 @@ export function createEffects({ random = Math.random } = {}) {
       spoonBurst(46, angle, ['#ffffff', '#e4f2ee', GOLD], 1.8);
       say(`${UPGRADES[id].name} ${ROMAN[level] ?? level}. ${UPGRADE_WORDS[id]}`, { color: '#e4eef0', then: true });
     },
+    secret({ id, angle }) {
+      // A shower of lilac sparks over the top of the cup (the reading shows the words).
+      burst(40, () => rnd(150, 250), () => -Math.PI / 2 + rnd(-0.5, 0.5), (i) => (i % 3 ? '#c79bff' : '#fff8e2'),
+        () => rnd(0.6, 1.4), 1.2);
+      if (id === 'moreLeavesThanSteam') spoonBurst(40, angle, [GOLD, '#fff8e2', '#f2c13e'], 2);
+    },
     goldenSpoon({ angle }) {
       spoonBurst(50, angle, [GOLD, '#fff8e2', '#f2c13e'], 2.2);
     },
@@ -271,9 +279,23 @@ export function createEffects({ random = Math.random } = {}) {
       spoonBurst(18, angle, ['#b39a5a', '#e4f2ee'], 1);
       say('The gold wears off. Still a fine spoon.', { color: '#c9b27a', life: 2.6 });
     },
-    kill({ radius, angle }) {
-      burst(9, () => radius + rnd(-8, 8), () => angle + rnd(-0.07, 0.07),
-        (i) => (i % 3 === 0 ? '#efe4b4' : '#b4dcc0'), () => rnd(0.25, 0.7));
+    kill({ radius, angle, by }) {
+      if (by === 'wake') {
+        // Churned out over the rim by the Silver Tornado.
+        burst(14, () => radius + rnd(-4, 10), () => angle + rnd(-0.08, 0.08),
+          (i) => (i % 2 ? '#ffffff' : '#cfe6e8'), () => rnd(0.3, 0.7), 2);
+      } else if (by === 'splash') {
+        burst(16, () => radius + rnd(-8, 8), () => angle + rnd(-0.07, 0.07),
+          (i) => (i % 2 ? GOLD : '#fff8e2'), () => rnd(0.3, 0.8), 1.6);
+      } else {
+        burst(9, () => radius + rnd(-8, 8), () => angle + rnd(-0.07, 0.07),
+          (i) => (i % 3 === 0 ? '#efe4b4' : '#b4dcc0'), () => rnd(0.25, 0.7));
+      }
+    },
+    discover({ id }) {
+      fx.discovery = { id, time: 4, life: 4 };
+      burst(50, () => rnd(170, 255), () => -Math.PI / 2 + rnd(-0.6, 0.6),
+        (i) => ['#c79bff', '#ffd36b', '#8dffb8', '#7ccfff', '#ffffff'][i % 5], () => rnd(0.6, 1.4), 1.6);
     },
     escape({ angle }) {
       fx.flash = 0.5;
@@ -351,6 +373,10 @@ export function createEffects({ random = Math.random } = {}) {
       }
 
       if (state?.phase !== PHASE.PAUSED) {
+        if (fx.discovery) {
+          fx.discovery.time -= dt;
+          if (fx.discovery.time <= 0) fx.discovery = null;
+        }
         if (fx.whisper) {
           fx.whisper.time -= dt;
           if (fx.whisper.time <= 0) fx.whisper = null;

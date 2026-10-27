@@ -142,6 +142,47 @@ Polished Spoon and The Star make them faster, the Golden Spoon gilds them, and
 Double Trouble doubles them to 32. No combination is special-cased; they fall
 out of the rules.
 
+### Unexpected brews
+
+Some combinations unlock a new behaviour instead of a bigger number. The
+first time each happens in a pot, the cup announces **UNEXPECTED BREW
+DISCOVERED!** with its name. After that it works without comment.
+
+| Brew | Ingredients | Effect |
+| --- | --- | --- |
+| **The Perfect Storm** | Milk + Tempestuous Tea | Clouds are 60% wider and drift around the cup at 0.35 rad/s, slowing and washing back everything they pass |
+| **The Silver Tornado** | Polished Spoon + Quick Stir (any level) | After 0.5 s of steady turning, the rim the spoon swept in the last 0.25 s is a wake that destroys leaves within 16 units of the rim (+6 per further level of either upgrade) |
+| **Double Gilt** | Golden Spoon + Double Trouble | When a golden twin dart destroys a leaf, the nearest other leaf within 48 units is splashed too |
+
+The Silver Tornado rewards movement rather than shooting: it guards the rim
+the spoon sweeps, so circling the cup becomes a defence. Wake and splash kills
+score like steam but don't count as steam kills for the secrets.
+
+### Secrets (spoilers)
+
+The game never explains these, and the README doesn't mention them. When a
+finished round earns one, the reading shows **THE LEAVES ARE IMPRESSED.**
+with its name and reward.
+
+| Secret | Earned when… | Reward |
+| --- | --- | --- |
+| **Not a drop wasted.** | 12+ steam shots in the round, and every one hit something | +250, and one extra sugar burst next cup |
+| **More leaves than steam.** | 8+ steam shots, and steam destroyed more leaves than shots fired | The Golden Spoon (its 9 s run during the next cup) |
+
+A *shot* is one press of fire: a Double Trouble pair is one shot, and it hits
+if either dart does. Striking a sugar cube counts as a hit. Sugar bursts and
+the Steam Nova are not shots, and their kills don't count as steam kills.
+Darts still in flight when the round ends are ignored.
+
+Without help, one shot destroys one leaf, so *More leaves than steam* needs
+Double Trouble or the cream (below).
+
+### Accidents
+
+Not everything is announced. When a steam dart destroys a leaf inside or
+beside a milk cloud, there is a 20% chance the cream carries it on to the
+next leaf in its path (once per dart, shown only as a pale streak behind it).
+
 ## Future ideas (not implemented)
 
 These are possibilities for later milestones, recorded so they aren't lost.
