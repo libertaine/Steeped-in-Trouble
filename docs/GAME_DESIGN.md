@@ -2,7 +2,7 @@
 
 ## Creative direction
 
-**Storm in a Teacup is a circular arcade survival game in which the player's
+**Steeped in Trouble is a circular arcade survival game in which the player's
 actions influence the tea-leaf patterns remaining after each round. Those
 patterns determine future gameplay modifiers.**
 

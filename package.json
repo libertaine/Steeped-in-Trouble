@@ -1,17 +1,17 @@
 {
-  "name": "storm-in-a-teacup",
-  "version": "0.1.0",
+  "name": "steeped-in-trouble",
+  "version": "0.1.1",
   "description": "An original, experimental, tea-themed vector arcade game built with HTML5 Canvas.",
   "private": true,
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/libertaine/Storm-in-a-Teacup.git"
+    "url": "git+https://github.com/libertaine/Steeped-in-Trouble.git"
   },
-  "homepage": "https://libertaine.github.io/Storm-in-a-Teacup/",
+  "homepage": "https://libertaine.github.io/Steeped-in-Trouble/",
   "bugs": {
-    "url": "https://github.com/libertaine/Storm-in-a-Teacup/issues"
+    "url": "https://github.com/libertaine/Steeped-in-Trouble/issues"
   },
   "engines": {
     "node": ">=22.12"

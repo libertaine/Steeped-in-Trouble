@@ -9,7 +9,7 @@ import { createEffects } from './rendering/effects.js';
 import { createRenderer } from './rendering/renderer.js';
 import { createHud } from './ui/hud.js';
 
-const INSTANCE_KEY = Symbol.for('storm-in-a-teacup');
+const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 
 /** Read an optional ?seed=<number> to replay a gameplay sequence. */
 function seedFromUrl(params) {

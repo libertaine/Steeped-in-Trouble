@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
+## [0.1.1] - 2026-10-27
+
+Name-only maintenance release.
+
+### Changed
+
+- Renamed the game from *Storm in a Teacup* to *Steeped in Trouble*. The
+  repository is now `libertaine/Steeped-in-Trouble` and the game is served at
+  <https://libertaine.github.io/Steeped-in-Trouble/>. The old Pages address no
+  longer serves the game. Gameplay is unchanged.
+
 ## [0.1.0] - 2026-10-27
 
 The original single-file prototype, restructured into a maintainable project
@@ -31,4 +42,5 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[0.1.0]: https://github.com/libertaine/Storm-in-a-Teacup/releases/tag/v0.1.0
+[0.1.1]: https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.1.1
+[0.1.0]: https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.1.0

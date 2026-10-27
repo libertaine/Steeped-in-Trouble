@@ -1,20 +1,22 @@
-# Storm in a Teacup
+# Steeped in Trouble
 
 An original, experimental, tea-themed vector arcade game. Defend the rim of a
 stormy teacup with a silver spoon, fire steam at rising tea leaves, and use
 milk and sugar wisely. The leaves you defeat settle in the cup, and their
 pattern is read as a fortune that changes the next round.
 
-**[▶ Play it in your browser](https://libertaine.github.io/Storm-in-a-Teacup/)**
+**[▶ Play it in your browser](https://libertaine.github.io/Steeped-in-Trouble/)**
 
-![Storm in a Teacup gameplay: a silver spoon on the rim of a circular teacup fires steam at tea leaves while a milk cloud slows them](docs/images/screenshot.png)
+![Steeped in Trouble gameplay: a silver spoon on the rim of a circular teacup fires steam at tea leaves while a milk cloud slows them](docs/images/screenshot.png)
 
 ## Status
 
-Version **0.1.0**: the original prototype restructured into a maintainable
+Version **0.1.1**: the original prototype restructured into a maintainable
 project. Gameplay matches the
 [reference prototype](docs/reference/README.md). Expect frequent
 experimental changes in later versions.
+
+The game was called *Storm in a Teacup* up to version 0.1.0.
 
 ## Controls
 
@@ -39,14 +41,14 @@ works) and npm, which ships with Node.js. The project works on Windows,
 macOS, and Linux.
 
 ```bash
-git clone https://github.com/libertaine/Storm-in-a-Teacup.git
-cd Storm-in-a-Teacup
+git clone https://github.com/libertaine/Steeped-in-Trouble.git
+cd Steeped-in-Trouble
 npm ci
 npm run dev
 ```
 
 Then open the URL Vite prints (normally
-<http://localhost:5173/Storm-in-a-Teacup/>).
+<http://localhost:5173/Steeped-in-Trouble/>).
 
 ## Development commands
 
@@ -72,10 +74,10 @@ On Linux you may also need `npx playwright install-deps` (requires sudo).
 To smoke-test the published site instead of a local build:
 
 ```bash
-BASE_URL=https://libertaine.github.io/Storm-in-a-Teacup/ npm run test:browser
+BASE_URL=https://libertaine.github.io/Steeped-in-Trouble/ npm run test:browser
 ```
 
-On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Storm-in-a-Teacup/"; npm run test:browser`.
+On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-in-Trouble/"; npm run test:browser`.
 
 ## Project documentation
 
@@ -83,6 +85,7 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Storm-in
   add enemies, weapons, and fortunes
 - [Game design](docs/GAME_DESIGN.md): creative direction, current mechanics,
   and future ideas
+- [Development](DEVELOPMENT.md): how we work on the game
 - [Contributing](CONTRIBUTING.md): development workflow
 - [Reference prototype](docs/reference/README.md): the preserved original and
   its differences from 0.1.0
@@ -91,7 +94,7 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Storm-in
 ## Feedback
 
 Bug reports and ideas are welcome in
-[GitHub Issues](https://github.com/libertaine/Storm-in-a-Teacup/issues).
+[GitHub Issues](https://github.com/libertaine/Steeped-in-Trouble/issues).
 
 ## License
 

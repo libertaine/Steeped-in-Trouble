@@ -1,6 +1,6 @@
 # Architecture
 
-Storm in a Teacup is a static browser game. It uses vanilla JavaScript ES
+Steeped in Trouble is a static browser game. It uses vanilla JavaScript ES
 modules, Canvas 2D, and Vite for builds. There is no runtime dependency and
 no backend.
 
@@ -153,5 +153,5 @@ recomputes them, and a new match clears the fortune.
 - `tests/unit/` (Vitest, Node) tests gameplay through `createGame()` with
   fixed seeds and fixed time steps.
 - `tests/browser/` (Playwright) holds smoke tests against the production
-  build served under `/Storm-in-a-Teacup/`, in Chromium, Firefox, and a
+  build served under `/Steeped-in-Trouble/`, in Chromium, Firefox, and a
   mobile viewport. These tests assert on state and HUD text, not pixels.

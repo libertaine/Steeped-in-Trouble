@@ -18,7 +18,7 @@ const puffOffset = (n) => ((n * 71) % 97) / 97;
 const OVERLAY_TEXT = {
   [PHASE.READY]: {
     heading: 'A STORM IS STEEPING',
-    title: 'Storm in a Teacup',
+    title: 'Steeped in Trouble',
     line: () => 'Steer the spoon • fire steam',
     hint: 'Click “Brew” or press Enter',
   },

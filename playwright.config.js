@@ -1,11 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Smoke tests run against the production build served beneath the same
-// /Storm-in-a-Teacup/ base path that GitHub Pages uses, so broken asset
+// /Steeped-in-Trouble/ base path that GitHub Pages uses, so broken asset
 // references show up as 404s here rather than after deployment.
 //
 // Set BASE_URL to smoke-test an existing deployment instead, e.g.
-//   BASE_URL=https://libertaine.github.io/Storm-in-a-Teacup/ npm run test:browser
+//   BASE_URL=https://libertaine.github.io/Steeped-in-Trouble/ npm run test:browser
 const PORT = 4173;
 const BASE_URL = process.env.BASE_URL;
 
@@ -17,7 +17,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
-    baseURL: BASE_URL ?? `http://localhost:${PORT}/Storm-in-a-Teacup/`,
+    baseURL: BASE_URL ?? `http://localhost:${PORT}/Steeped-in-Trouble/`,
     trace: 'retain-on-failure',
   },
   projects: [
@@ -27,7 +27,7 @@ export default defineConfig({
   ],
   webServer: BASE_URL ? undefined : {
     command: 'npm run build && npm run preview',
-    url: `http://localhost:${PORT}/Storm-in-a-Teacup/`,
+    url: `http://localhost:${PORT}/Steeped-in-Trouble/`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

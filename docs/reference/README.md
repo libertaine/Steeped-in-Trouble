@@ -1,7 +1,9 @@
 # Reference prototype
 
-`prototype-0.1.html` is the original single-file prototype of Storm in a
-Teacup, preserved unchanged as the functional baseline for the project.
+`prototype-0.1.html` is the original single-file prototype, preserved unchanged
+as the functional baseline for the project. It carries the game's original
+title, *Storm in a Teacup*. The game was renamed *Steeped in Trouble* in
+version 0.1.1.
 
 | File | SHA-256 |
 | --- | --- |

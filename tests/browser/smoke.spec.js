@@ -2,7 +2,7 @@ import { autoplayUntilReading, expect, gameState, openGame, test } from './fixtu
 
 test('loads the game without errors or missing files', async ({ page, problems }) => {
   await openGame(page);
-  await expect(page).toHaveTitle(/Storm in a Teacup/);
+  await expect(page).toHaveTitle(/Steeped in Trouble/);
   await expect(page.locator('#hudStatus')).toHaveText('READY TO BREW');
   await expect(page.locator('#hudScore')).toHaveText('SCORE 0000');
   await expect(page.locator('#hudLives')).toHaveText(/CUPS ♥ ♥ ♥/);
