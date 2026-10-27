@@ -142,6 +142,31 @@ Polished Spoon and The Star make them faster, the Golden Spoon gilds them, and
 Double Trouble doubles them to 32. No combination is special-cased; they fall
 out of the rules.
 
+### Secrets (spoilers)
+
+The game never explains these, and the README doesn't mention them. When a
+finished round earns one, the reading shows **THE LEAVES ARE IMPRESSED.**
+with its name and reward.
+
+| Secret | Earned when… | Reward |
+| --- | --- | --- |
+| **Not a drop wasted.** | 12+ steam shots in the round, and every one hit something | +250, and one extra sugar burst next cup |
+| **More leaves than steam.** | 8+ steam shots, and steam destroyed more leaves than shots fired | The Golden Spoon (its 9 s run during the next cup) |
+
+A *shot* is one press of fire: a Double Trouble pair is one shot, and it hits
+if either dart does. Striking a sugar cube counts as a hit. Sugar bursts and
+the Steam Nova are not shots, and their kills don't count as steam kills.
+Darts still in flight when the round ends are ignored.
+
+Without help, one shot destroys one leaf, so *More leaves than steam* needs
+Double Trouble or the cream (below).
+
+### Accidents
+
+Not everything is announced. When a steam dart destroys a leaf inside or
+beside a milk cloud, there is a 20% chance the cream carries it on to the
+next leaf in its path (once per dart, shown only as a pale streak behind it).
+
 ## Future ideas (not implemented)
 
 These are possibilities for later milestones, recorded so they aren't lost.

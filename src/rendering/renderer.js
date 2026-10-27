@@ -7,6 +7,7 @@ import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { LANES, LANE_STEP, TAU, laneAngle, toCanvasPoint as polar } from '../gameplay/arena.js';
 import { FORTUNES, glyphPoint } from '../gameplay/fortunes.js';
+import { SECRETS } from '../gameplay/secrets.js';
 import { createTeaPainter } from './tea.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
@@ -502,6 +503,8 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
 
   function drawShot(s, polish) {
     const p = polar(s.radius, s.angle);
+    // Carried on by the cream: a pale streak behind the dart.
+    if (s.cream) line(p, polar(s.radius + 30, s.angle - s.veer * 0.06), '#f6efe2', 4, 0.5);
     if (s.golden && !s.sugar) {
       line(p, polar(s.radius + 16 + 6 * polish, s.angle), '#ffe9a0', 3, 0.45);
       ctx.save();
@@ -665,6 +668,33 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     for (const p of particles) circle(p.x, p.y, p.size, p.color, 0, true, p.time / p.life);
   }
 
+  /** A secret the leaves noticed: a small banner at the top of the cup during the reading. */
+  function drawSecrets(state) {
+    const a = clamp((state.readingTime - 0.4) / 0.5, 0, 1);
+    if (a <= 0.01 || !state.secrets.length) return;
+    const y0 = CY - 246;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.fillStyle = '#10271ee6';
+    const h = 26 + state.secrets.length * 38;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(CX - 150, y0, 300, h, 10);
+    else ctx.rect(CX - 150, y0, 300, h);
+    ctx.fill();
+    ctx.strokeStyle = '#c79bff';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = a * (0.5 + 0.3 * Math.sin(time * 2.4));
+    ctx.stroke();
+    ctx.globalAlpha = a;
+    text('THE LEAVES ARE IMPRESSED.', CX, y0 + 17, 11, '#e2d4ff', 'center', MONO);
+    state.secrets.forEach((id, i) => {
+      const y = y0 + 38 + i * 38;
+      text(SECRETS[id].words, CX, y, 16, '#f5dfb6', 'center', 'Georgia,serif', 'italic ');
+      text(SECRETS[id].reward, CX, y + 17, 11, '#cbbde6', 'center', MONO);
+    });
+    ctx.restore();
+  }
+
   function drawOverlay(state, fx) {
     if (state.phase === PHASE.PLAYING) return;
     const copy = OVERLAY_TEXT[state.phase];
@@ -681,7 +711,10 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       text(copy.hint, CX, CY + 63, 13, '#bad8c9', 'center', 'ui-monospace,monospace');
       ctx.restore();
     }
-    if (state.phase === PHASE.READING) drawFortuneCard(state, fx);
+    if (state.phase === PHASE.READING) {
+      drawFortuneCard(state, fx);
+      drawSecrets(state);
+    }
     // Preserved from the prototype: the spill flash is drawn here, so it only
     // shows outside active play (e.g. on the final, game-ending spill).
     if (fx.flash > 0) {

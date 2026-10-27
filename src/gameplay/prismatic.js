@@ -6,7 +6,7 @@
 import { CONFIG } from '../config.js';
 import { laneAngle, wrapLane } from './arena.js';
 import { spoonLane } from './player.js';
-import { findStrikingShot, steamNova } from './weapons.js';
+import { findStrikingShot, spendDart, steamNova } from './weapons.js';
 
 const P = CONFIG.prismatic;
 
@@ -37,7 +37,7 @@ export function updatePrismatic(sim, dt) {
   cube.time -= dt;
   const struck = findStrikingShot(state.shots, cube);
   if (struck >= 0) {
-    state.shots.splice(struck, 1);
+    spendDart(state, state.shots.splice(struck, 1)[0], true);
     state.prismatic = null;
     emit('prismaticCatch', { angle: cube.angle, radius: cube.radius });
     steamNova(sim);

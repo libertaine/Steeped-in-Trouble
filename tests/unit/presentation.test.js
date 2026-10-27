@@ -210,7 +210,7 @@ describe('effects', () => {
 describe('living tea', () => {
   const EVENTS = ['roundStart', 'steam', 'sugar', 'sugarRegen', 'milk', 'kill', 'drift', 'escape', 'strain', 'recoil',
     'goldenAppear', 'goldenCatch', 'goldenGone', 'goldenSpoon', 'goldenSpoonEnd', 'prismaticAppear', 'prismaticCatch',
-    'prismaticGone', 'nova', 'reading', 'reveal', 'retract', 'upgrade', 'gameover']
+    'prismaticGone', 'nova', 'secret', 'reading', 'reveal', 'retract', 'upgrade', 'gameover']
     .map((type) => ({
       type, angle: 1, cloud: 1, radius: 120, sugar: type === 'kill', twin: true, fortune: 'golden', reward: 'jackpot',
       id: 'polished', level: 1, count: 32,

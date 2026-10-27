@@ -11,6 +11,9 @@ All notable changes to this project are documented here. The project uses
   fortune) that sets off a **Steam Nova** down all 16 lanes when steamed. The
   nova is ordinary steam, so Double Trouble makes it 32 darts and the Golden
   Spoon gilds it.
+- The leaves now notice certain feats and reward them. They don't say which
+  in advance.
+- Milk occasionally does something nobody mentions.
 
 ## [0.4.0] - 2026-10-27 — A Spoonful of Trouble
 

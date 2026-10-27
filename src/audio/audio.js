@@ -40,6 +40,9 @@ const TUNES = {
   goldenSpoonEnd: [[1319, 0.18, 'sine', 0.018], [988, 0.3, 'sine', 0.016, 0.12]],
   prismaticAppear: [[2093, 0.08, 'sine', 0.018], [2637, 0.08, 'sine', 0.018, 0.05], [3136, 0.08, 'sine', 0.018, 0.1],
     [2637, 0.12, 'sine', 0.014, 0.15]],
+  // A few notes from a music box.
+  secret: [[1047, 0.4, 'sine', 0.026, 0.5], [1319, 0.4, 'sine', 0.024, 0.75], [1175, 0.4, 'sine', 0.024, 1],
+    [1568, 0.8, 'sine', 0.03, 1.25]],
   prismaticGone: [[1568, 0.2, 'sine', 0.016], [1175, 0.3, 'sine', 0.014, 0.1]],
   // Steam Nova: a rising whoosh, then a bright chord rippling up.
   nova: [[196, 0.45, 'sawtooth', 0.02], [523, 0.12, 'square', 0.014, 0.05], [659, 0.12, 'square', 0.014, 0.1],

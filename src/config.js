@@ -67,6 +67,7 @@ export const CONFIG = deepFreeze({
     backwash: 120, // the pour's first wave pushes leaves in the slowed wedge this far back towards the centre
     backwashRate: 7, // how quickly the push plays out (per second; about 95% done in 0.4 s)
     rescueShare: 0.75, // a pushed leaf beyond this share of the rim radius counts as a near miss
+    carryChance: 0.2, // a steam dart that kills a leaf in a cloud may be carried on by the cream (once)
   },
 
   enemies: {
@@ -184,5 +185,13 @@ export const CONFIG = deepFreeze({
     radiusMin: 120,
     radiusMax: 190,
     laneReach: 4,
+  },
+
+  // Secrets: things the leaves notice about a finished round, and reward.
+  secrets: {
+    perfectMinVolleys: 12, // Not a Drop Wasted: steam shots needed for a perfect round to count
+    perfectPoints: 250,
+    perfectSugar: 1, // extra sugar bursts next cup
+    thriftyMinVolleys: 8, // More Leaves Than Steam: steam shots needed
   },
 });

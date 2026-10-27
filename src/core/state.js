@@ -19,6 +19,9 @@ export function createRoundStats() {
     escapes: 0, // leaves that reached the rim and cost a cup
     nearMisses: 0, // strainer catches, grace recoils, and milk rescues from the rim
     motionTime: 0, // seconds the spoon spent moving
+    volleys: 0, // steam shots fired (a Double Trouble pair is one shot)
+    wastedVolleys: 0, // shots whose every dart missed
+    steamKills: 0, // leaves destroyed by fired steam (not sugar, not a Steam Nova)
   };
 }
 
@@ -58,8 +61,12 @@ export function createInitialState() {
     golden: null, // the golden sugar cube on the field: { angle, radius, time, life }
     prismaticTimer: null, // seconds until the Prismatic Sugar Cube appears this round, or null
     prismatic: null, // the prismatic cube on the field: { angle, radius, time, life }
+    extraSugar: 0, // sugar bursts promised for the next cup on top of the usual
+    secrets: [], // secret ids the leaves noticed at the latest reading
 
-    shots: [], // { angle, radius, speed, sugar, veer, golden, nova? }
+    volleys: {}, // steam shots still in flight: volley id -> darts left
+
+    shots: [], // { angle, radius, speed, sugar, veer, golden, volley?, nova?, cream? }
     enemies: [], // { angle, radius, home, speed, wiggle, shifted, size, alpha, backwash }
     clouds: [], // { angle, time, duration }
     residue: [], // { lane, radius, angle, spin, size }

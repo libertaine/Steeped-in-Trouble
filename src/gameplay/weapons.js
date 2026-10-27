@@ -44,11 +44,18 @@ function launchSteam(state, lane, extra = {}) {
   }
 }
 
-/** Fire steam down the spoon's lane if the cooldown allows. */
+/**
+ * Fire steam down the spoon's lane if the cooldown allows. Each shot is a
+ * volley: its darts share an id, and the volley counts as wasted only if none
+ * of them hits anything (see spendDart()).
+ */
 export function fireSteam({ state, emit }) {
   if (state.shotCooldown > 0) return false;
   state.shotCooldown = steamCooldown(state);
-  launchSteam(state, spoonLane(state));
+  const volley = ++state.roundStats.volleys;
+  const before = state.shots.length;
+  launchSteam(state, spoonLane(state), { volley });
+  state.volleys[volley] = state.shots.length - before; // darts still in flight
   emit('steam', { twin: state.modifiers.twinSteam, golden: state.goldenSpoon > 0 });
   return true;
 }
@@ -130,12 +137,32 @@ export function pourMilk({ state, emit }) {
   return true;
 }
 
+/**
+ * A dart is used up, on a target (`hit`) or by fizzling out at the centre.
+ * A hit settles its volley at once; the volley is wasted when its last dart
+ * fizzles without any of them having hit.
+ */
+export function spendDart(state, shot, hit) {
+  const left = state.volleys[shot.volley];
+  if (left === undefined) return;
+  if (hit) delete state.volleys[shot.volley];
+  else if (left > 1) state.volleys[shot.volley] = left - 1;
+  else {
+    delete state.volleys[shot.volley];
+    state.roundStats.wastedVolleys++;
+  }
+}
+
 export function updateShots(state, dt) {
   for (const shot of state.shots) {
     shot.radius -= shot.speed * dt;
     shot.angle += shot.veer * dt;
   }
-  state.shots = state.shots.filter((shot) => shot.radius >= CONFIG.steam.despawnRadius);
+  state.shots = state.shots.filter((shot) => {
+    if (shot.radius >= CONFIG.steam.despawnRadius) return true;
+    spendDart(state, shot, false);
+    return false;
+  });
 }
 
 export function updateClouds(state, dt) {
