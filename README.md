@@ -11,10 +11,12 @@ pattern is read as a fortune that changes the next round.
 
 ## Status
 
-Version **0.2.0 — The Living Teacup**: the tea in the cup now drifts,
-ripples, and reacts to play, with a High/Low graphics toggle. Gameplay matches
-the [reference prototype](docs/reference/README.md). Expect frequent
-experimental changes in later versions.
+Version **0.3.0 — The Leaves Have Opinions**: nine fortunes instead of four,
+chosen with a lean towards how you played but plenty of chance, plus a golden
+sugar cube to chase and a fortune that lies. The original four fortunes and
+the core game are unchanged from the
+[reference prototype](docs/reference/README.md). Expect frequent experimental
+changes in later versions.
 
 The game was called *Storm in a Teacup* up to version 0.1.0.
 
