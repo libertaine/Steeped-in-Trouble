@@ -34,7 +34,11 @@ const OVERLAY_TEXT = {
   },
 };
 
-export function createRenderer(canvas) {
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @param {{ quality?: 'high' | 'low' }} [options] graphics quality; can be changed later via renderer.quality
+ */
+export function createRenderer(canvas, { quality = 'high' } = {}) {
   const ctx = canvas.getContext('2d');
   let time = 0; // animation clock, independent of the simulation
   let gradients = null;
@@ -300,7 +304,8 @@ export function createRenderer(canvas) {
     }
   }
 
-  return {
+  const renderer = {
+    quality,
     /**
      * @param {object} state simulation state (read only)
      * @param {{ particles: object[], flash: number }} fx cosmetic effects
@@ -312,7 +317,7 @@ export function createRenderer(canvas) {
       ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
       ctx.clearRect(0, 0, W, H);
       drawCup();
-      if (fx.tea) tea.paint(fx.tea, state);
+      if (fx.tea) tea.paint(fx.tea, state, { quality: renderer.quality, scale: canvas.width / W });
       drawGuides();
       drawClouds(state.clouds);
       drawResidue(state);
@@ -323,4 +328,5 @@ export function createRenderer(canvas) {
       drawOverlay(state, fx);
     },
   };
+  return renderer;
 }

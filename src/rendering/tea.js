@@ -19,7 +19,8 @@ const swell = (age, life) => Math.sin(Math.PI * clamp(age / life, 0, 1));
 /** The tea turns faster near the centre than at the rim, so currents curl into spirals. */
 const shear = (r) => 0.35 + 1.25 * (1 - clamp(r / RIM, 0, 1)) ** 1.5;
 
-const STRANDS = 15;
+const STRANDS = 24; // low quality draws only the first LOW_STRANDS
+const LOW_STRANDS = 14;
 const LIMITS = { ripples: 40, crystals: 320, wisps: 30, glows: 16, oddities: 14 };
 
 export function createTea({ random = Math.random } = {}) {
@@ -390,7 +391,12 @@ export function createTea({ random = Math.random } = {}) {
 
 // ── Drawing ───────────────────────────────────────────────────────────────
 
-const POINTS = 24;
+/** Per-quality drawing detail. High assumes a reasonably modern GPU. */
+const QUALITY = {
+  high: { points: 32, strands: STRANDS, bloom: true, fullResolution: true, glow: 1.5 },
+  low: { points: 20, strands: LOW_STRANDS, bloom: false, fullResolution: false, glow: 1 },
+};
+const MAX_POINTS = 32;
 const SPRITE = 128;
 
 function offscreen(size) {
@@ -438,24 +444,40 @@ const HIGHLIGHTS = [
 ];
 
 /**
- * The soft, slow layers are painted into a small buffer at one pixel per
- * logical unit and stretched onto the canvas; only crisp details are drawn at
- * full resolution. That keeps high-DPI screens cheap without visible loss.
+ * The soft, slow layers (base colour, depths, currents, milk, glows) are
+ * painted into an offscreen buffer and stretched onto the canvas; crisp
+ * details are drawn directly. High quality sizes the buffer to the canvas and
+ * adds a bloom pass over the light currents; low quality uses one pixel per
+ * logical unit, which keeps older laptops and high-DPI screens cheap.
  */
 export function createTeaPainter(main) {
   const BOX = RIM * 2 + 4;
   const ORIGIN_X = CX - BOX / 2;
   const ORIGIN_Y = CY - BOX / 2;
-  const buffer = offscreen(BOX);
-  const soft = buffer.getContext('2d');
-  soft.translate(-ORIGIN_X, -ORIGIN_Y);
-  soft.beginPath();
-  soft.arc(CX, CY, RIM + 1, 0, TAU);
-  soft.clip();
+  let resolution = 0;
+  let soft = null; // buffer context for the soft layers
+  let glowLayer = null; // light currents, composited sharp and blurred (high only)
   let ctx = main; // whichever surface the draw helpers currently paint on
-  const xs = new Float64Array(POINTS);
-  const ys = new Float64Array(POINTS);
-  const ws = new Float64Array(POINTS);
+  let detail = QUALITY.high;
+  const xs = new Float64Array(MAX_POINTS);
+  const ys = new Float64Array(MAX_POINTS);
+  const ws = new Float64Array(MAX_POINTS);
+
+  function layer(res) {
+    const g = offscreen(Math.ceil(BOX * res)).getContext('2d');
+    g.setTransform(res, 0, 0, res, -ORIGIN_X * res, -ORIGIN_Y * res);
+    g.beginPath();
+    g.arc(CX, CY, RIM + 1, 0, TAU);
+    g.clip();
+    return g;
+  }
+
+  function prepare(res) {
+    if (res === resolution) return;
+    resolution = res;
+    soft = layer(res);
+    glowLayer = null;
+  }
   let cached = null;
   const sprites = new Map();
   let highlightSprites = null;
@@ -525,9 +547,11 @@ export function createTeaPainter(main) {
   }
 
   function drawStrands(liquid, light) {
+    const POINTS = detail.points;
     const { time: t, flow, agitation } = liquid;
     ctx.globalCompositeOperation = light ? 'lighter' : 'source-over';
-    for (const s of liquid.strands) {
+    for (let n = 0; n < Math.min(detail.strands, liquid.strands.length); n++) {
+      const s = liquid.strands[n];
       if (s.light !== light) continue;
       for (let i = 0; i < POINTS; i++) {
         const u = i / (POINTS - 1);
@@ -539,7 +563,7 @@ export function createTeaPainter(main) {
         ws[i] = s.width * Math.sin(Math.PI * u) ** 0.7 * (0.65 + 0.35 * Math.sin(u * 4 + t * 0.6 + s.seed));
         displace(liquid, i);
       }
-      ctx.globalAlpha = s.alpha * swell(s.age, s.life) * (0.75 + 0.45 * agitation);
+      ctx.globalAlpha = s.alpha * swell(s.age, s.life) * (0.75 + 0.45 * agitation) * (light ? detail.glow : 1);
       ctx.fillStyle = s.tone;
       ribbon(POINTS);
     }
@@ -547,6 +571,7 @@ export function createTeaPainter(main) {
   }
 
   function drawWisps(liquid) {
+    const POINTS = detail.points;
     const { time: t, flow } = liquid;
     ctx.fillStyle = '#f1e7d4';
     for (const w of liquid.wisps) {
@@ -835,7 +860,9 @@ export function createTeaPainter(main) {
      * @param {object} liquid tea state from createTea()
      * @param {object} state simulation state (read only)
      */
-    paint(liquid, state) {
+    paint(liquid, state, { quality = 'high', scale = 1 } = {}) {
+      detail = QUALITY[quality] ?? QUALITY.high;
+      prepare(detail.fullResolution ? Math.max(1, Math.min(2, scale)) : 1);
       ctx = soft;
       cached ??= gradients();
       ctx.fillStyle = cached.base;
@@ -848,7 +875,29 @@ export function createTeaPainter(main) {
       }
       drawBlobs(liquid);
       drawStrands(liquid, false);
-      drawStrands(liquid, true);
+      if (detail.bloom) {
+        // Paint the light currents on their own layer, then add it back twice:
+        // once crisp and once blurred, for a soft vector-screen glow.
+        glowLayer ??= layer(resolution);
+        glowLayer.save();
+        glowLayer.setTransform(1, 0, 0, 1, 0, 0);
+        glowLayer.clearRect(0, 0, glowLayer.canvas.width, glowLayer.canvas.height);
+        glowLayer.restore();
+        ctx = glowLayer;
+        drawStrands(liquid, true);
+        ctx = soft;
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.drawImage(glowLayer.canvas, 0, 0);
+        ctx.filter = `blur(${(8 * resolution).toFixed(1)}px)`;
+        ctx.globalAlpha = 1;
+        ctx.drawImage(glowLayer.canvas, 0, 0);
+        ctx.drawImage(glowLayer.canvas, 0, 0);
+        ctx.restore();
+      } else {
+        drawStrands(liquid, true);
+      }
       drawWisps(liquid);
       drawGlows(liquid);
       drawHighlights(liquid);
@@ -864,7 +913,7 @@ export function createTeaPainter(main) {
       ctx.beginPath();
       ctx.arc(CX, CY, RIM, 0, TAU);
       ctx.clip();
-      ctx.drawImage(buffer, ORIGIN_X, ORIGIN_Y, BOX, BOX);
+      ctx.drawImage(soft.canvas, ORIGIN_X, ORIGIN_Y, BOX, BOX);
       drawWakes(state);
       drawRipples(liquid);
       drawOddities(liquid);

@@ -34,6 +34,10 @@ Sound is off by default. Use the **Sound** toggle to enable it.
 
 Add `?seed=<number>` to the URL to replay the same sequence of tea leaves.
 
+The **Graphics** toggle switches the tea between high quality (full-resolution
+liquid with glowing currents) and low quality for older machines. You can also
+add `?graphics=low` or `?graphics=high` to the URL.
+
 ## Running locally
 
 Prerequisites: [Node.js](https://nodejs.org/) 24 LTS (22.12 or newer also
