@@ -7,18 +7,47 @@ import { spoonLane } from './player.js';
 
 const RIM = CONFIG.arena.rimRadius;
 
-/** Fire one steam dart down the spoon's lane if the cooldown allows. */
+/**
+ * Fire one steam dart down the spoon's lane if the cooldown allows. Under
+ * Double Trouble it is two darts that veer apart as they travel.
+ */
 export function fireSteam({ state, emit }) {
   if (state.shotCooldown > 0) return false;
   state.shotCooldown = CONFIG.steam.cooldown;
-  state.shots.push({
-    angle: laneAngle(spoonLane(state)),
-    radius: RIM - CONFIG.steam.spawnInset,
-    speed: CONFIG.steam.speed * state.modifiers.steamSpeedMultiplier,
-    sugar: false,
-  });
-  emit('steam');
+  const twin = state.modifiers.twinSteam;
+  const rate = CONFIG.fortunes.twinSpreadRate;
+  for (const veer of twin ? [-rate, rate] : [0]) {
+    state.shots.push({
+      angle: laneAngle(spoonLane(state)),
+      radius: RIM - CONFIG.steam.spawnInset,
+      speed: CONFIG.steam.speed * state.modifiers.steamSpeedMultiplier,
+      sugar: false,
+      veer, // radians per second of sideways drift
+    });
+  }
+  emit('steam', { twin });
   return true;
+}
+
+/** The most sugar bursts the spoon can hold this round. */
+export function sugarCapacity(state) {
+  return CONFIG.sugar.perRound + state.modifiers.bonusSugar;
+}
+
+/** Sugar Rush: regrow one burst per interval, never beyond capacity. */
+export function updateSugarRegen({ state, emit }, dt) {
+  const interval = state.modifiers.sugarRegenInterval;
+  if (!interval) return;
+  if (state.sugarLeft >= sugarCapacity(state)) {
+    state.sugarRegenTimer = interval; // the clock only runs while there is room
+    return;
+  }
+  state.sugarRegenTimer -= dt;
+  if (state.sugarRegenTimer <= 0) {
+    state.sugarRegenTimer = interval;
+    state.sugarLeft++;
+    emit('sugarRegen', { angle: state.angle });
+  }
 }
 
 /** Fire three sugar darts across the spoon's lane and its neighbours. */
@@ -32,8 +61,10 @@ export function sugarBurst({ state, emit }) {
       radius: RIM - CONFIG.sugar.spawnInset,
       speed: CONFIG.sugar.speed,
       sugar: true,
+      veer: 0,
     });
   }
+  state.roundStats.sugarUses++;
   emit('sugar');
   return true;
 }
@@ -50,7 +81,10 @@ export function pourMilk({ state, emit }) {
 }
 
 export function updateShots(state, dt) {
-  for (const shot of state.shots) shot.radius -= shot.speed * dt;
+  for (const shot of state.shots) {
+    shot.radius -= shot.speed * dt;
+    shot.angle += shot.veer * dt;
+  }
   state.shots = state.shots.filter((shot) => shot.radius >= CONFIG.steam.despawnRadius);
 }
 
@@ -66,7 +100,7 @@ export function isNearCloud(clouds, angle, halfWidthLanes) {
   return clouds.some((cloud) => Math.abs(angleDifference(cloud.angle, angle)) < LANE_STEP * halfWidthLanes);
 }
 
-/** Index of the most recently fired dart touching an enemy, or -1. */
+/** Index of the most recently fired dart touching a target ({ radius, angle }), or -1. */
 export function findStrikingShot(shots, enemy) {
   const { radialTolerance, laneTolerance } = CONFIG.collision;
   for (let j = shots.length - 1; j >= 0; j--) {

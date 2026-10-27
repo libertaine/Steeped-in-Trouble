@@ -14,6 +14,8 @@ export function createRoundStats() {
   return {
     milkKills: 0, // kills made inside or beside a milk cloud
     milkUses: 0,
+    sugarUses: 0,
+    escapes: 0, // leaves that reached the rim
     motionTime: 0, // seconds the spoon spent moving
   };
 }
@@ -42,8 +44,11 @@ export function createInitialState() {
     shotCooldown: 0,
     spawnTimer: 1.1,
     readingTime: 0, // seconds since the reading began (drives its animation)
+    sugarRegenTimer: 0, // Sugar Rush: seconds until the next regenerated burst
+    goldenTimer: null, // Golden Opportunity: seconds until the cube appears, or null
+    golden: null, // the golden sugar cube on the field: { angle, radius, time, life }
 
-    shots: [], // { angle, radius, speed, sugar }
+    shots: [], // { angle, radius, speed, sugar, veer }
     enemies: [], // { angle, radius, speed, wiggle, shifted, size, alpha }
     clouds: [], // { angle, time, duration }
     residue: [], // { lane, radius, angle, spin, size }

@@ -86,7 +86,28 @@ describe('HUD text', () => {
     expect(text.hudLives).toBe('CUPS ♥ ♥ ♡ ');
     expect(text.hudStatus).toBe('READING THE LEAVES');
     expect(text.fortuneLabel).toBe('Fortune for the next cup');
-    expect(text.fortuneName).toMatch(/^The /);
+    expect(text.fortuneName).toBeTruthy();
+  });
+
+  it('shows the active fortune in a small omen pill during play only', () => {
+    const game = playingGame();
+    expect(hudText(game.state).hudOmen).toBe('');
+    completeRound(game);
+    game.state.nextFortune = 'sugarRush';
+    expect(hudText(game.state).hudOmen).toBe('');
+    game.primaryAction();
+    expect(hudText(game.state).hudOmen).toBe('✦ Sugar Rush · sugar regrows · this cup');
+    game.sugarBurst();
+    expect(hudText(game.state).hudOmen).toMatch(/next lump \ds$/);
+  });
+
+  it('keeps The Leaves Lie’s secret until it confesses', () => {
+    const game = playingGame();
+    completeRound(game);
+    game.state.nextFortune = 'lie';
+    expect(hudText(game.state).fortuneName).toBe('Something Wonderful');
+    game.state.readingTime = 10;
+    expect(hudText(game.state).fortuneName).toBe('The Leaves Lie');
   });
 });
 
@@ -103,6 +124,20 @@ describe('effects', () => {
     expect(effects.fx.flash).toBe(0);
   });
 
+  it('lets The Leaves Lie play one harmless prank during its round', () => {
+    const game = playingGame();
+    const effects = createEffects();
+    effects.handle({ type: 'roundStart', fortune: 'lie' });
+    const before = JSON.stringify(game.state);
+    const said = new Set();
+    for (let i = 0; i < 60 * 15; i++) {
+      effects.update(1 / 60, game.state);
+      if (effects.fx.whisper) said.add(effects.fx.whisper.text);
+    }
+    expect(JSON.stringify(game.state)).toBe(before);
+    expect(said.size).toBeGreaterThan(1); // the quote, then the prank's message
+  });
+
   it('clears particles when a round starts', () => {
     const effects = createEffects();
     effects.handle({ type: 'milk', angle: 0 });
@@ -112,15 +147,18 @@ describe('effects', () => {
 });
 
 describe('living tea', () => {
-  const EVENTS = ['roundStart', 'steam', 'sugar', 'milk', 'kill', 'drift', 'escape', 'reading', 'gameover']
-    .map((type) => ({ type, angle: 1, radius: 120, sugar: type === 'kill' }));
+  const EVENTS = ['roundStart', 'steam', 'sugar', 'sugarRegen', 'milk', 'kill', 'drift', 'escape', 'goldenAppear',
+    'goldenCatch', 'goldenGone', 'reading', 'reveal', 'retract', 'gameover']
+    .map((type) => ({ type, angle: 1, radius: 120, sugar: type === 'kill', twin: true, fortune: 'golden', reward: 'jackpot' }));
+  const PRANKS = ['tint', 'bigBubble', 'sugarShower', 'whirlpool', 'biscuit', 'nothing']
+    .map((kind) => ({ type: 'prank', kind, color: '#2f7fe0' }));
 
   it('reacts to every event without touching game state and keeps its effects bounded', () => {
     const game = playingGame();
     const before = JSON.stringify(game.state);
     const { liquid, handle, update } = createTea({ random: () => 0.5 });
     for (let i = 0; i < 600; i++) {
-      for (const event of EVENTS) handle(event);
+      for (const event of [...EVENTS, ...PRANKS]) handle(event);
       update(1 / 60, game.state);
     }
     expect(JSON.stringify(game.state)).toBe(before);

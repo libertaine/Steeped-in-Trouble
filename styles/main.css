@@ -105,6 +105,39 @@ canvas {
   text-shadow: 0 2px 4px #091611;
 }
 
+.hud-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.omen {
+  font-size: 10px;
+  letter-spacing: .08em;
+  border-color: #e8c77a88;
+  color: #f6e3b0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.omen:empty {
+  display: none;
+}
+
+.omen[data-tone="trouble"] {
+  border-color: #e88a6299;
+  color: #f8c7ae;
+}
+
+.omen[data-tone="odd"] {
+  border-color: #d9b8f299;
+  color: #e9d6f8;
+}
+
 .pills {
   display: flex;
   gap: 7px;

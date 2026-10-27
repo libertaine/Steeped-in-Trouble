@@ -4,19 +4,24 @@
 // state and queues events ({ type, ...data }) describing what happened, which
 // presentation code (effects, audio, input) drains once per frame.
 //
-// Events: matchStart, roundStart, steam, sugar, milk, kill, drift, escape,
-// reading, gameover, paused, resumed.
+// Events: matchStart, roundStart, steam, sugar, sugarRegen, milk, kill, drift,
+// escape, goldenAppear, goldenCatch, goldenGone, reading, reveal, retract,
+// gameover, paused, resumed.
 
 import { CONFIG } from '../config.js';
 import { createRandom } from './random.js';
 import { PHASE, createInitialState, createRoundStats } from './state.js';
 import { laneOf } from '../gameplay/arena.js';
-import { modifiersFor, selectFortune } from '../gameplay/fortunes.js';
+import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
+import { updateGolden } from '../gameplay/golden.js';
 import { moveSpoon } from '../gameplay/player.js';
 import { advanceEnemy, hasEscaped, updateSpawning } from '../gameplay/enemies.js';
 import {
   findStrikingShot, fireSteam, isNearCloud, killScore, pourMilk, sugarBurst, updateClouds, updateShots,
+  updateSugarRegen,
 } from '../gameplay/weapons.js';
+
+const { revealAt, lieRetractAt } = CONFIG.fortunes;
 
 const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
 
@@ -36,6 +41,8 @@ export function createGame({ seed, random } = {}) {
     state.shots = [];
     state.enemies = [];
     state.clouds = [];
+    state.golden = null;
+    state.goldenTimer = null;
   }
 
   function startRound() {
@@ -47,11 +54,13 @@ export function createGame({ seed, random } = {}) {
     state.modifiers = modifiersFor(state.fortune);
     state.milkLeft = CONFIG.milk.perRound;
     state.sugarLeft = CONFIG.sugar.perRound + state.modifiers.bonusSugar;
+    state.sugarRegenTimer = state.modifiers.sugarRegenInterval;
+    if (state.modifiers.goldenCube) state.goldenTimer = rng.range(CONFIG.golden.delayMin, CONFIG.golden.delayMax);
     state.spawnTimer = CONFIG.spawning.firstDelay;
     state.shotCooldown = 0;
     state.roundStats = createRoundStats();
     state.angle = CONFIG.player.startAngle;
-    emit('roundStart', { round: state.round });
+    emit('roundStart', { round: state.round, fortune: state.fortune });
   }
 
   function resetMatch() {
@@ -68,10 +77,11 @@ export function createGame({ seed, random } = {}) {
     state.phase = PHASE.READING;
     state.readingTime = 0;
     clearField();
-    state.nextFortune = selectFortune({
-      milkKills: state.roundStats.milkKills,
+    const { milkKills, milkUses, sugarUses, escapes } = state.roundStats;
+    state.nextFortune = drawFortune({
+      milkKills, milkUses, sugarUses, escapes,
       leafLanes: state.residue.map((leaf) => leaf.lane),
-    });
+    }, rng);
     emit('reading', { fortune: state.nextFortune });
   }
 
@@ -83,6 +93,7 @@ export function createGame({ seed, random } = {}) {
 
   function loseLife(enemy) {
     state.lives--;
+    state.roundStats.escapes++;
     emit('escape', { angle: enemy.angle });
     if (state.lives <= 0) finishGame();
   }
@@ -132,16 +143,22 @@ export function createGame({ seed, random } = {}) {
    */
   function update(dt, input = NO_INPUT) {
     if (state.phase === PHASE.READING) {
+      const before = state.readingTime;
       state.readingTime += dt;
+      const crossed = (at) => before < at && state.readingTime >= at;
+      if (crossed(revealAt)) emit('reveal', { fortune: state.nextFortune });
+      if (state.nextFortune === 'lie' && crossed(lieRetractAt)) emit('retract');
       return;
     }
     if (!playing()) return;
     moveSpoon(state, input, dt);
     state.shotCooldown -= dt;
     if (input.fire) fireSteam(sim);
+    updateSugarRegen(sim, dt);
     updateSpawning(sim, dt);
     updateClouds(state, dt);
     updateShots(state, dt);
+    updateGolden(sim, dt);
     updateEnemies(dt);
   }
 

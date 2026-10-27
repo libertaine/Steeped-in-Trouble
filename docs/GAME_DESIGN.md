@@ -52,7 +52,8 @@ Each defeated leaf leaves residue in the cup, near the lane where it died.
 When a round ends, the leaves are read. They glide into the shape of the
 fortune, and the fortune applies to the **next** round only.
 
-Fortunes are checked in this order:
+The leaf pattern points at one of four classic fortunes, checked in this
+order:
 
 | Fortune | Read when… | Effect next round |
 | --- | --- | --- |
@@ -63,6 +64,20 @@ Fortunes are checked in this order:
 
 So fighting in one area tends to bring abundance, spreading out invites
 crosswinds, relying on milk brings cover, and a tidy round sharpens your aim.
+
+The pattern is only a strong favourite. The actual fortune is a weighted draw
+among all nine, nudged by how the round went:
+
+| Fortune | More likely after… | Effect next round |
+| --- | --- | --- |
+| **Sugar Rush** | Heavy sugar use | Sugar bursts regrow, one every 6 s, up to the usual supply |
+| **Double Trouble** | A clean round (no spills) | Each steam shot is two darts that veer apart |
+| **Tempestuous Tea** | Spills | Wilder tea; leaves rise 18% faster |
+| **Golden Opportunity** | A clean round | A golden sugar cube appears for 5 s near the spoon; steam it for points, sugar, rarely an extra cup (up to four), or a jackpot |
+| **The Leaves Lie** | (rare, slightly less so after a clean round) | No rule changes. The reading claims something grand, then confesses; during the round the cup plays one harmless prank |
+
+Frequent milk use also nudges towards The Veil. Every fortune lasts exactly
+one round and is cleared by a new match.
 
 ### Presentation
 
@@ -78,8 +93,7 @@ None are planned commitments.
 
 - New tea-leaf types (for example leaves that split, sink, or hide in
   steam).
-- New fortunes, including negative or mixed omens, and readings based on
-  more than lane distribution (timing, weapon choice, accuracy).
+- More fortunes, and readings based on timing or accuracy.
 - Choosing between two possible readings.
 - Stacking or longer-lasting omens.
 - New weapons or spoon upgrades (lemon, honey, a stirring vortex).
