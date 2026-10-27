@@ -39,11 +39,11 @@ export function updateSpawning(sim, dt) {
   }
 }
 
-/** Move one enemy outward, slowed by milk and nudged by The Spiral. */
+/** Move one enemy outward, slowed by milk, hurried by Tempestuous Tea, and nudged by The Spiral. */
 export function advanceEnemy(enemy, { state, rng, emit }, dt) {
   enemy.alpha = Math.min(1, enemy.alpha + dt * E.fadeInRate);
   const slowed = isNearCloud(state.clouds, enemy.angle, CONFIG.milk.slowHalfWidthLanes);
-  enemy.radius += enemy.speed * dt * (slowed ? CONFIG.milk.slowFactor : 1);
+  enemy.radius += enemy.speed * dt * state.modifiers.enemySpeedMultiplier * (slowed ? CONFIG.milk.slowFactor : 1);
   if (state.modifiers.laneDrift && !enemy.shifted && enemy.radius > CONFIG.fortunes.spiralDriftRadius) {
     enemy.angle += LANE_STEP * (rng.next() < 0.5 ? -1 : 1);
     enemy.shifted = true;

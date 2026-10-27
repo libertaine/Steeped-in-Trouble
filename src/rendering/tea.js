@@ -9,6 +9,7 @@
 import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { LANE_STEP, TAU, angleDifference, toCanvasPoint as polar } from '../gameplay/arena.js';
+import { FORTUNES } from '../gameplay/fortunes.js';
 
 const { centerX: CX, centerY: CY, rimRadius: RIM } = CONFIG.arena;
 
@@ -39,6 +40,8 @@ export function createTea({ random = Math.random } = {}) {
     agitation: 0.3,
     milkiness: 0,
     glow: 0, // fortune-reading luminescence
+    glowColor: '#ffd27e',
+    tint: null, // The Leaves Lie: { color, age, life } — the tea briefly turns an absurd colour
     reduced: false,
     spoon: { angle: CONFIG.player.startAngle, speed: 0 },
     strands: [],
@@ -201,10 +204,79 @@ export function createTea({ random = Math.random } = {}) {
       liquid.spin += liquid.drift * 0.2;
       ripple(CX, CY, { size: 150, life: 2, strength: 0.8, rings: 3 });
     },
-    steam() {
+    steam({ twin }) {
+      if (twin) {
+        for (const side of [-1, 1]) {
+          const p = rimPoint(liquid.spoon.angle + side * LANE_STEP * 0.25, 16);
+          ripple(p.x, p.y, { size: 14, life: 0.6, strength: 0.55, rings: 1, tone: '#d8f5e8' });
+        }
+        return;
+      }
       if (!chance(0.45)) return;
       const p = rimPoint(liquid.spoon.angle, 14);
       ripple(p.x, p.y, { size: 12, life: 0.55, strength: 0.45, rings: 1, tone: '#d8f5e8' });
+    },
+    sugarRegen({ angle }) {
+      const p = rimPoint(angle, 16);
+      ripple(p.x, p.y, { size: 30, life: 1, strength: 0.9, rings: 2, tone: '#ffd57a' });
+      glow(p.x, p.y, 50, '#ffcf6a', 1.2, 0.8);
+      for (let i = 0; i < 18; i++) crystal(p.x, p.y, 60);
+    },
+    goldenAppear({ radius, angle }) {
+      const p = polar(radius, angle);
+      ripple(p.x, p.y, { size: 60, life: 1.4, strength: 1.2, rings: 3, tone: '#ffd57a' });
+      glow(p.x, p.y, 80, '#ffcf6a', 1.6, 1);
+    },
+    goldenCatch({ radius, angle, reward }) {
+      const p = polar(radius, angle);
+      const big = reward === 'jackpot';
+      kick(big ? 0.5 : 0.25);
+      ripple(p.x, p.y, { size: big ? 220 : 110, life: big ? 2.4 : 1.6, strength: 1.4, rings: 3, tone: '#ffd57a' });
+      glow(p.x, p.y, big ? 200 : 110, '#ffcf6a', big ? 2.6 : 1.6, 1.2);
+      for (let i = 0; i < (big ? 90 : 40); i++) crystal(p.x, p.y, big ? 160 : 100, rnd(0.6, 1.6));
+    },
+    goldenGone({ radius, angle }) {
+      const p = polar(radius, angle);
+      ripple(p.x, p.y, { size: 36, life: 1.2, strength: 0.6, rings: 1, tone: 'dark' });
+    },
+    reveal({ fortune }) {
+      const f = FORTUNES[fortune];
+      liquid.glowColor = f.color;
+      ripple(CX, CY, { size: 210, life: 1.8, strength: 1.1, rings: f.tone === 'trouble' ? 1 : 3, tone: f.color });
+      glow(CX, CY, 160, f.color, 1.6, f.rare ? 1.4 : 1);
+      if (f.tone === 'trouble') kick(0.35); // a shiver runs through the cup
+    },
+    retract() {
+      ripple(CX, CY, { size: RIM * 0.9, life: 1.6, strength: 1, rings: 1, tone: 'dark' });
+      liquid.glowColor = FORTUNES.lie.color;
+    },
+    /** The Leaves Lie, misbehaving harmlessly. */
+    prank({ kind, color }) {
+      if (kind === 'tint') {
+        liquid.tint = { color, age: 0, life: rnd(4, 6) };
+        kick(0.2);
+      } else if (kind === 'bigBubble') {
+        const at = randomSpot(RIM - 90, 40);
+        oddity('bubble', { ...at, size: rnd(24, 34), life: rnd(2.6, 3.4) });
+      } else if (kind === 'sugarShower') {
+        for (let i = 0; i < 160; i++) {
+          const at = randomSpot(RIM - 10);
+          crystal(at.x, at.y, 20, rnd(0.6, 2.2), chance(0.3) ? '#ffd57a' : '#fff4c8');
+        }
+      } else if (kind === 'whirlpool') {
+        oddity('whirlpool', { x: CX + rnd(-30, 30), y: CY + rnd(-30, 30), size: rnd(85, 115), life: rnd(4.5, 6), dir: liquid.drift });
+        liquid.spin += liquid.drift * 0.25;
+      } else if (kind === 'biscuit') {
+        // It drifts across the cup on a chord, well beneath the action.
+        const a = rnd(0, TAU);
+        const from = polar(RIM + 40, a);
+        const to = polar(RIM + 40, a + Math.PI + rnd(-0.7, 0.7));
+        const life = rnd(8, 10);
+        oddity('biscuit', {
+          x: from.x, y: from.y, vx: (to.x - from.x) / life, vy: (to.y - from.y) / life,
+          rot: rnd(0, TAU), spinRate: rnd(-0.4, 0.4), size: rnd(26, 32), life,
+        });
+      }
     },
     sugar() {
       kick(0.12);
@@ -294,12 +366,18 @@ export function createTea({ random = Math.random } = {}) {
       const o = list[i];
       o.age += sdt;
       if (o.kind === 'bubble' || o.kind === 'stem' || o.kind === 'whirlpool') carry(o, sdt);
-      if (o.kind === 'stem') o.rot += o.spinRate * sdt;
+      if (o.kind === 'stem' || o.kind === 'biscuit') o.rot += o.spinRate * sdt;
+      if (o.kind === 'biscuit') {
+        o.x += o.vx * sdt;
+        o.y += o.vy * sdt;
+      }
       if (o.age < o.life) continue;
       list.splice(i, 1);
       if (o.kind === 'bubble') {
-        ripple(o.x, o.y, { size: 10 + o.size * 3, life: 0.8, strength: 0.8, rings: 1 });
-        for (let n = 0; n < 5; n++) crystal(o.x, o.y, 50, rnd(0.2, 0.45), '#f6e2b5');
+        const big = o.size > 15;
+        ripple(o.x, o.y, { size: 10 + o.size * 3, life: big ? 1.4 : 0.8, strength: big ? 1.3 : 0.8, rings: big ? 3 : 1 });
+        for (let n = 0; n < (big ? 40 : 5); n++) crystal(o.x, o.y, big ? 140 : 50, rnd(0.2, big ? 0.9 : 0.45), '#f6e2b5');
+        if (big) kick(0.3);
       } else if (o.kind === 'whirlpool') {
         ripple(o.x, o.y, { size: o.size * 1.6, life: 1, strength: 0.6, rings: 1 });
       }
@@ -321,6 +399,7 @@ export function createTea({ random = Math.random } = {}) {
       const phase = state?.phase;
       const playing = phase === PHASE.PLAYING;
       const reading = phase === PHASE.READING;
+      const stormy = playing && state.fortune === 'tempest'; // Tempestuous Tea
 
       // Pausing lets the tea settle to a standstill rather than freezing mid-slosh.
       liquid.pace += ((phase === PHASE.PAUSED ? 0 : 1) - liquid.pace) * Math.min(1, dt * 5);
@@ -342,16 +421,42 @@ export function createTea({ random = Math.random } = {}) {
         moodTarget = r < 0.5 ? rnd(0.05, 0.3) : r < 0.86 ? rnd(0.3, 0.6) : rnd(0.7, 1);
         if (chance(0.18)) liquid.drift = -liquid.drift;
       }
-      liquid.mood += ((reading ? 0.02 : moodTarget) - liquid.mood) * Math.min(1, sdt * 0.4);
+      const target = reading ? 0.02 : stormy ? Math.max(moodTarget, 0.9) : moodTarget;
+      liquid.mood += (target - liquid.mood) * Math.min(1, sdt * (stormy ? 0.8 : 0.4));
       liquid.stir *= Math.exp(-sdt * (reading ? 2 : 0.7));
       liquid.agitation = clamp(liquid.mood + liquid.stir, 0, 1.2);
 
-      const base = liquid.drift * (0.04 + 0.09 * liquid.agitation) * (reading ? 0.4 : 1);
+      const base = liquid.drift * (0.04 + 0.09 * liquid.agitation) * (reading ? 0.4 : stormy ? 2.4 : 1);
       liquid.spin += (liquid.spoon.speed * 0.02 - (liquid.spin - base) * 0.3) * sdt;
       liquid.flow += liquid.spin * sdt * motion;
 
       liquid.glow += ((reading ? 1 : 0) - liquid.glow) * Math.min(1, sdt * 1.2);
       liquid.milkiness = Math.max(0, liquid.milkiness - sdt * 0.025);
+      if (liquid.tint) {
+        liquid.tint.age += sdt;
+        if (liquid.tint.age >= liquid.tint.life || !playing) liquid.tint = null;
+      }
+
+      if (stormy && sdt > 0) {
+        // Squalls: gusts of stirring, rim spray, and bubbles boiling up.
+        if (chance(sdt * 0.5)) {
+          kick(0.3);
+          liquid.spin += liquid.drift * rnd(0.05, 0.15);
+        }
+        if (chance(sdt * 1.6 * motion)) {
+          const p = rimPoint(rnd(0, TAU), rnd(4, 20));
+          ripple(p.x, p.y, { size: rnd(20, 50), life: rnd(0.8, 1.4), strength: 0.9, rings: 2, tone: '#f0b38a' });
+        }
+        if (chance(sdt * 1.2 * motion)) {
+          const at = randomSpot(RIM - 30, 30);
+          oddity('bubble', { ...at, size: rnd(2.5, 7), life: rnd(0.8, 2) });
+        }
+      }
+      // Sugar Rush: the cup glitters near the spoon.
+      if (playing && state.fortune === 'sugarRush' && chance(Math.min(1, sdt * 10))) {
+        const p = rimPoint(liquid.spoon.angle + rnd(-0.5, 0.5), rnd(10, 60));
+        crystal(p.x, p.y, 15, rnd(0.4, 1));
+      }
 
       for (let i = 0; i < liquid.strands.length; i++) {
         const strand = liquid.strands[i];
@@ -770,6 +875,36 @@ export function createTeaPainter(main) {
         ctx.fillStyle = band;
         ctx.fillRect(offset - o.width, -RIM, o.width * 2, RIM * 2);
         ctx.restore();
+      } else if (o.kind === 'biscuit') {
+        // A plain round biscuit: scalloped edge, docking holes. Muted, so it reads as scenery.
+        const fade = clamp(Math.min(o.age / 1, (o.life - o.age) / 1), 0, 1);
+        ctx.save();
+        ctx.translate(o.x, o.y);
+        ctx.rotate(o.rot);
+        ctx.globalAlpha = 0.3 * fade;
+        ctx.fillStyle = '#0c0501';
+        ctx.beginPath();
+        ctx.arc(3, 5, o.size, 0, TAU);
+        ctx.fill();
+        ctx.globalAlpha = 0.62 * fade;
+        ctx.fillStyle = '#b98a4e';
+        ctx.strokeStyle = '#6e4a22';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let k = 0; k <= 48; k++) {
+          const a = (k / 48) * TAU;
+          const r = o.size * (1 + 0.05 * Math.cos(a * 16));
+          ctx.lineTo(r * Math.cos(a), r * Math.sin(a));
+        }
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#5c3b18';
+        for (const [hx, hy] of [[-0.4, -0.35], [0.4, -0.35], [0, 0], [-0.4, 0.38], [0.4, 0.38], [0, -0.7], [0, 0.7]]) {
+          ctx.beginPath();
+          ctx.arc(hx * o.size * 0.8, hy * o.size * 0.8, 1.6, 0, TAU);
+          ctx.fill();
+        }
+        ctx.restore();
       } else if (o.kind === 'starlight') {
         ctx.globalCompositeOperation = 'lighter';
         ctx.fillStyle = '#fff8e2';
@@ -812,11 +947,24 @@ export function createTeaPainter(main) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  /** Recolour the tea, keeping its light and shade, so the leaves stay readable. */
+  function drawTint(liquid) {
+    const tint = liquid.tint;
+    if (!tint) return;
+    const u = tint.age / tint.life;
+    ctx.globalCompositeOperation = 'color';
+    ctx.globalAlpha = 0.85 * clamp(Math.min(u / 0.12, (1 - u) / 0.25), 0, 1);
+    ctx.fillStyle = tint.color;
+    ctx.fillRect(CX - RIM, CY - RIM, RIM * 2, RIM * 2);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
   function drawReadingGlow(liquid) {
     if (liquid.glow < 0.01) return;
     ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = 0.14 * liquid.glow * (0.85 + 0.15 * Math.sin(liquid.time * 1.7));
-    blot('#ffd27e', CX, CY, 230);
+    blot(liquid.glowColor, CX, CY, 230);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
   }
@@ -899,6 +1047,7 @@ export function createTeaPainter(main) {
         drawStrands(liquid, true);
       }
       drawWisps(liquid);
+      drawTint(liquid);
       drawGlows(liquid);
       drawHighlights(liquid);
       drawReadingGlow(liquid);

@@ -110,7 +110,7 @@ function boot() {
 
   // ?debug exposes the running game for automated browser tests and tinkering.
   if (params.has('debug')) {
-    window.__TEACUP__ = { game, version: __APP_VERSION__ };
+    window.__TEACUP__ = { game, effects, version: __APP_VERSION__ };
   }
   return instance;
 }

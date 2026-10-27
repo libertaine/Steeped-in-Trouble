@@ -114,5 +114,30 @@ export const CONFIG = deepFreeze({
     spiralScoreMultiplier: 1.25,
     spiralDriftRadius: 140, // foes drift one lane after passing this radius
     starSteamMultiplier: 1.35,
+
+    // 0.3 fortunes. Each lasts only the round after its reading.
+    sugarRushInterval: 6, // Sugar Rush: seconds per regenerated sugar burst (up to the round's capacity)
+    twinSpreadRate: 0.45, // Double Trouble: radians per second each twin dart veers away from the other
+    tempestEnemySpeed: 1.18, // Tempestuous Tea: leaves move this much faster
+    revealAt: 2.1, // reading seconds before the fortune is revealed
+    lieRetractAt: 3.4, // The Leaves Lie: reading seconds before the leaves change their mind
+
+    // Selection: the classic pattern reading is a strong tendency, never a guarantee.
+    patternWeight: 6, // weight given to the fortune the leaf pattern points at
+  },
+
+  golden: {
+    delayMin: 4, // seconds into the round before the cube may appear
+    delayMax: 14,
+    life: 5, // seconds it stays before dissolving
+    radiusMin: 110,
+    radiusMax: 200,
+    laneReach: 5, // appears within this many lanes of the spoon
+    points: 150,
+    jackpotPoints: 500,
+    // Reward odds, checked in order; whatever is left over is bonus points.
+    jackpotChance: 0.06, // points + full sugar and milk
+    lifeChance: 0.12, // an extra cup (up to lives + 1)
+    sugarChance: 0.32, // refill sugar, plus one
   },
 });

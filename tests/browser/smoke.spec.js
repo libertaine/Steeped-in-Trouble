@@ -1,5 +1,8 @@
 import { autoplayUntilReading, expect, gameState, openGame, test } from './fixtures.js';
 
+// Every fortune, plus the name The Leaves Lie hides behind until it confesses.
+const FORTUNE_NAMES = /^(The (Crown|Veil|Spiral|Star|Leaves Lie)|Sugar Rush|Double Trouble|Tempestuous Tea|Golden Opportunity|Something Wonderful)$/;
+
 test('loads the game without errors or missing files', async ({ page, problems }) => {
   await openGame(page);
   await expect(page).toHaveTitle(/Steeped in Trouble/);
@@ -110,15 +113,17 @@ test('completes a round, reads the leaves, and brews the next cup', async ({ pag
 
   await expect(page.locator('#hudStatus')).toHaveText('READING THE LEAVES');
   await expect(page.locator('#fortuneLabel')).toHaveText('Fortune for the next cup');
-  await expect(page.locator('#fortuneName')).toHaveText(/^The (Crown|Veil|Spiral|Star)$/);
-  const fortuneName = await page.locator('#fortuneName').textContent();
-  await page.waitForTimeout(500); // let the reading animation run
+  await expect(page.locator('#fortuneName')).toHaveText(FORTUNE_NAMES);
+  const { nextFortune } = await gameState(page);
+  await page.waitForTimeout(3000); // let the reading animation run to the reveal
 
   await page.keyboard.press('Enter');
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
   await expect(page.locator('#roundNum')).toHaveText('02');
   await expect(page.locator('#killCount')).toHaveText('0 / 20');
   await expect(page.locator('#fortuneLabel')).toHaveText('This cup’s omen');
-  await expect(page.locator('#fortuneName')).toHaveText(fortuneName);
+  expect((await gameState(page)).fortune).toBe(nextFortune);
+  await expect(page.locator('#fortuneName')).toHaveText(FORTUNE_NAMES);
+  await expect(page.locator('#hudOmen')).toHaveText(/^✦ /);
   expect(problems).toEqual([]);
 });

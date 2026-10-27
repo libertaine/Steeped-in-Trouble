@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
+## [0.3.0] - 2026-10-27 — The Leaves Have Opinions
+
+### Added
+
+- Five new fortunes, each lasting one round: **Sugar Rush** (sugar bursts
+  regrow), **Double Trouble** (twin, veering steam darts), **Tempestuous Tea**
+  (wilder currents, faster leaves), **Golden Opportunity** (a short-lived
+  golden sugar cube with a random reward, occasionally an extra cup), and the
+  rare **The Leaves Lie** (a confident prophecy, a change of mind, and a
+  harmless prank during the next round).
+- Fortune choice is now a weighted draw: the leaf pattern is a strong
+  favourite, and sugar use, milk use, spills, and clean rounds nudge the odds.
+- A more theatrical reading: leaves settle, light up along the glyph, and a
+  card with a shimmer, the fortune's quip, and its own sound appears.
+- An omen pill in the HUD showing the active fortune and any countdown, and
+  short messages under the cup.
+
 ## [0.2.0] - 2026-10-27 — The Living Teacup
 
 ### Added
@@ -53,6 +70,7 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[0.2.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.1.1...main
+[0.3.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/f0357ee...main
+[0.2.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.1.1...f0357ee
 [0.1.1]: https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.1.1
 [0.1.0]: https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.1.0

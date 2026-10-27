@@ -10,8 +10,11 @@ import { FORTUNES, glyphPoint } from '../gameplay/fortunes.js';
 import { createTeaPainter } from './tea.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
+const { revealAt, lieRetractAt } = CONFIG.fortunes;
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const smoothstep = (t) => t * t * (3 - 2 * t);
+const MONO = 'ui-monospace,monospace';
 
 const OVERLAY_TEXT = {
   [PHASE.READY]: {
@@ -80,10 +83,10 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     ctx.restore();
   }
 
-  function text(t, x, y, size, color, align = 'center', font = 'Georgia,serif') {
+  function text(t, x, y, size, color, align = 'center', font = 'Georgia,serif', style = '') {
     ctx.save();
     ctx.fillStyle = color;
-    ctx.font = `${size}px ${font}`;
+    ctx.font = `${style}${size}px ${font}`;
     ctx.textAlign = align;
     ctx.textBaseline = 'middle';
     ctx.fillText(t, x, y);
@@ -219,6 +222,50 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     circle(p.x, p.y, scale + 4, '#ead199', 0.65, false, e.alpha * 0.3);
   }
 
+  /** Golden Opportunity: a spinning golden sugar cube with a ring that runs down. */
+  function drawGolden(cube) {
+    const p = polar(cube.radius, cube.angle);
+    const left = cube.time / cube.life;
+    const blink = left < 0.3 ? 0.65 + 0.35 * Math.sin(time * 30) : 1; // hurry!
+    const pulse = 1 + 0.08 * Math.sin(time * 6);
+    const s = 13 * pulse;
+    ctx.save();
+    ctx.globalAlpha = blink;
+    ctx.translate(p.x, p.y);
+    if (renderer.quality === 'high') {
+      ctx.shadowColor = '#ffd45e';
+      ctx.shadowBlur = 22;
+    } else {
+      circle(0, 0, 22, '#ffd45e', 0, true, 0.18);
+    }
+    // An isometric cube whose faces catch the light as it turns.
+    ctx.rotate(Math.sin(time * 1.6) * 0.35);
+    const top = [[0, -s], [s * 0.87, -s * 0.5], [0, 0], [-s * 0.87, -s * 0.5]];
+    const leftFace = [[-s * 0.87, -s * 0.5], [0, 0], [0, s], [-s * 0.87, s * 0.5]];
+    const rightFace = [[s * 0.87, -s * 0.5], [0, 0], [0, s], [s * 0.87, s * 0.5]];
+    const shine = 0.5 + 0.5 * Math.sin(time * 3);
+    ctx.strokeStyle = '#7a5410';
+    ctx.lineWidth = 1;
+    for (const [face, color] of [[top, '#fff1b0'], [leftFace, shine > 0.5 ? '#f2c13e' : '#d9a52a'], [rightFace, shine > 0.5 ? '#d9a52a' : '#f2c13e']]) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      face.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
+    // The time left, as a ring that empties.
+    ctx.save();
+    ctx.globalAlpha = 0.75 * blink;
+    ctx.strokeStyle = '#ffe9a0';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 24, -Math.PI / 2, -Math.PI / 2 + TAU * left);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawShot(s) {
     const p = polar(s.radius, s.angle);
     if (s.sugar) {
@@ -233,7 +280,17 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     } else {
       circle(p.x, p.y, 4, '#cbfff2', 0, true, 0.9);
       circle(p.x, p.y, 9, '#b2eac7', 1, false, 0.3);
+      if (s.veer) circle(p.x, p.y, 1.6, '#ffffff', 0, true, 0.6 + 0.4 * Math.sin(time * 25 + s.veer));
     }
+  }
+
+  /** Where leaf i settles while the leaves are read. The Leaves Lie pretends to be a crown, then confesses. */
+  function readingTarget(state, i, count) {
+    if (state.nextFortune !== 'lie') return glyphPoint(state.nextFortune, i, count);
+    const crown = glyphPoint('crown', i, count);
+    const question = glyphPoint('lie', i, count);
+    const m = smoothstep(clamp((state.readingTime - lieRetractAt) / 0.7, 0, 1));
+    return { x: crown.x + (question.x - crown.x) * m, y: crown.y + (question.y - crown.y) * m };
   }
 
   function drawResidue(state) {
@@ -244,20 +301,112 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       let { x, y } = start;
       let size = leaf.size;
       let opacity = 0.75;
+      let color = '#819c6b';
       if (phase === PHASE.READING) {
         // Leaves glide from where they fell into the fortune's glyph.
-        const t = clamp((state.readingTime - 0.3) / 2.1, 0, 1);
-        const smooth = t * t * (3 - 2 * t);
-        const g = glyphPoint(state.nextFortune, i, residue.length);
+        const smooth = smoothstep(clamp((state.readingTime - 0.3) / 1.7, 0, 1));
+        const g = readingTarget(state, i, residue.length);
         x = start.x + (CX + g.x - start.x) * smooth;
         y = start.y + (CY + g.y - start.y) * smooth;
         size += 1.7 * smooth;
         opacity = 0.7 + 0.28 * smooth;
+        // On the reveal, each leaf lights up in turn, a ripple running along the glyph.
+        const lit = clamp((state.readingTime - revealAt) * 3 - (i / residue.length) * 1.5, 0, 1);
+        if (lit > 0) {
+          const f = FORTUNES[readingFortune(state)];
+          const twinkle = 0.75 + 0.25 * Math.sin(time * 4 + i);
+          circle(x, y, size * 1.9, f.color, 0, true, 0.16 * lit * twinkle);
+          color = f.color;
+          opacity = 0.98;
+        }
       } else if (phase !== PHASE.PLAYING) {
         opacity = 0.38;
       }
-      leafShape(x, y, size, leaf.spin + time * 0.13, '#819c6b', opacity);
+      leafShape(x, y, size, leaf.spin + time * 0.13, color, opacity);
     }
+  }
+
+  /** The fortune the reading currently shows (The Leaves Lie poses as The Crown at first). */
+  function readingFortune(state) {
+    return state.nextFortune === 'lie' && state.readingTime < lieRetractAt ? 'crown' : state.nextFortune;
+  }
+
+  /** A short message under the cup: fortune quotes, golden cube news, pranks. */
+  function drawWhisper(whisper) {
+    if (!whisper) return;
+    const age = whisper.life - whisper.time;
+    const alpha = clamp(Math.min(age / 0.3, whisper.time / 0.6), 0, 1);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    text(whisper.text, CX, H - 32 + 4 * (1 - Math.min(1, age / 0.3)), 17, whisper.color, 'center', 'Georgia,serif', 'italic ');
+    ctx.restore();
+  }
+
+  /** The fortune card: a shimmer, the name, its little joke, and how to carry on. */
+  function drawFortuneCard(state, fx) {
+    const t = state.readingTime;
+    const a = clamp((t - (revealAt - 0.5)) / 0.6, 0, 1);
+    if (a <= 0.01) return;
+    const lying = state.nextFortune === 'lie';
+    const shownId = readingFortune(state);
+    const f = FORTUNES[shownId];
+    const x0 = CX - 205;
+    const y0 = CY + 148;
+    const w = 410;
+    const h = 112;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.fillStyle = '#10271ee0';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x0, y0, w, h, 12);
+    else ctx.rect(x0, y0, w, h);
+    ctx.fill();
+    // Good omens glow gold, troublesome ones smoulder, odd ones shift colour.
+    const tone = lying && t < lieRetractAt ? 'good' : f.tone;
+    const edge = tone === 'trouble' ? '#e88a62' : tone === 'odd' ? `hsl(${(time * 90) % 360},70%,78%)` : '#e8c77a';
+    ctx.strokeStyle = edge;
+    ctx.lineWidth = 1.2;
+    ctx.globalAlpha = a * (0.55 + 0.25 * Math.sin(time * 3));
+    ctx.stroke();
+    // A shimmer sweeps once across the card as it appears.
+    const sweep = (t - revealAt) / 0.7;
+    if (sweep > 0 && sweep < 1) {
+      ctx.clip();
+      const sx = x0 - 60 + (w + 120) * sweep;
+      const band = ctx.createLinearGradient(sx - 50, 0, sx + 50, 0);
+      band.addColorStop(0, 'rgba(255,240,200,0)');
+      band.addColorStop(0.5, 'rgba(255,240,200,0.22)');
+      band.addColorStop(1, 'rgba(255,240,200,0)');
+      ctx.globalAlpha = a;
+      ctx.fillStyle = band;
+      ctx.fillRect(x0, y0, w, h);
+    }
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = a;
+    const confessed = lying && t >= lieRetractAt;
+    const heading = confessed ? 'THE LEAVES… RECONSIDER' : 'THE LEAVES FORETELL';
+    text(heading, CX, y0 + 17, 11, '#bcdbbc', 'center', MONO);
+    const name = lying && !confessed ? fx.fib.claim : FORTUNES[state.nextFortune].name;
+    const quote = lying ? (confessed ? fx.fib.retraction : 'The leaves have never been more certain.') : f.quote;
+    let nx = CX;
+    let ny = y0 + 44;
+    if (fx.glitch > 0) {
+      nx += (Math.random() - 0.5) * 10 * fx.glitch;
+      ny += (Math.random() - 0.5) * 6 * fx.glitch;
+      text(name.toUpperCase(), nx + 3, ny, 25, '#ff6fd0');
+      text(name.toUpperCase(), nx - 3, ny, 25, '#5fe3ff');
+    } else if (tone === 'trouble') {
+      nx += Math.sin(time * 37) * 0.8; // a faint, ominous tremble
+    }
+    const nameColor = confessed ? `hsl(${(time * 90) % 360},65%,80%)` : lying ? FORTUNES.crown.color : f.color;
+    text(name.toUpperCase(), nx, ny, 25, nameColor);
+    text(quote, CX, y0 + 72, 15, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
+    const ready = clamp((t - revealAt - 0.4) / 0.5, 0, 1);
+    ctx.globalAlpha = a * ready * (0.65 + 0.35 * Math.sin(time * 2.5));
+    text('ENTER — BREW THE NEXT CUP', CX, y0 + 96, 10, '#bad8c9', 'center', MONO);
+    ctx.restore();
   }
 
   function drawParticles(particles) {
@@ -280,22 +429,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       text(copy.hint, CX, CY + 63, 13, '#bad8c9', 'center', 'ui-monospace,monospace');
       ctx.restore();
     }
-    if (state.phase === PHASE.READING) {
-      const a = clamp((state.readingTime - 1.5) / 1.1, 0, 1);
-      if (a > 0.01) {
-        const f = FORTUNES[state.nextFortune];
-        ctx.save();
-        ctx.globalAlpha = a;
-        ctx.fillStyle = '#10271ecc';
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(CX - 194, CY + 178, 388, 73, 12);
-        else ctx.rect(CX - 194, CY + 178, 388, 73);
-        ctx.fill();
-        text('THE LEAVES FORETELL', CX, CY + 196, 11, '#bcdbbc', 'center', 'ui-monospace,monospace');
-        text(f.name.toUpperCase(), CX, CY + 222, 25, f.color);
-        ctx.restore();
-      }
-    }
+    if (state.phase === PHASE.READING) drawFortuneCard(state, fx);
     // Preserved from the prototype: the spill flash is drawn here, so it only
     // shows outside active play (e.g. on the final, game-ending spill).
     if (fx.flash > 0) {
@@ -308,7 +442,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     quality,
     /**
      * @param {object} state simulation state (read only)
-     * @param {{ particles: object[], flash: number }} fx cosmetic effects
+     * @param {{ particles: object[], flash: number, whisper: object, fib: object, glitch: number }} fx cosmetic effects
      * @param {number} dt seconds since the previous frame
      */
     draw(state, fx, dt) {
@@ -322,10 +456,12 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       drawClouds(state.clouds);
       drawResidue(state);
       for (const e of state.enemies) drawEnemy(e);
+      if (state.golden) drawGolden(state.golden);
       for (const s of state.shots) drawShot(s);
       drawPlayer(state.angle);
       drawParticles(fx.particles);
       drawOverlay(state, fx);
+      if (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED) drawWhisper(fx.whisper);
     },
   };
   return renderer;

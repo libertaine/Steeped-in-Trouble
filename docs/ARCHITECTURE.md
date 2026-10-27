@@ -106,10 +106,20 @@ match.
 ## Fortune system
 
 At the end of a round, `game.js` builds a round record
-(`{ milkKills, leafLanes }`) and calls `selectFortune()`. `readLeafPattern()`
-summarizes the leaves (densest three-lane cluster, occupied lanes). Each
-fortune in `FORTUNE_PRIORITY` is then asked `matches(reading)`, and the first
-match wins.
+(`{ milkKills, milkUses, sugarUses, escapes, leafLanes }`) and calls
+`drawFortune(record, rng)`. First `selectFortune()` finds the pattern the
+leaves point at: `readLeafPattern()` summarizes them (densest three-lane
+cluster, occupied lanes), and the first fortune in `FORTUNE_PRIORITY` whose
+`matches(reading)` accepts wins. Then every fortune's `weight(record)` is
+added up, with `CONFIG.fortunes.patternWeight` extra for the pattern's
+fortune, and one fortune is drawn with the gameplay generator. The pattern is
+a strong tendency, never a guarantee.
+
+Mid-round fortune mechanics live with the rules they change: Sugar Rush in
+`updateSugarRegen()` and Double Trouble in `fireSteam()` (`weapons.js`),
+Tempestuous Tea in `advanceEnemy()`, and the Golden Opportunity cube in
+`gameplay/golden.js`. The Leaves Lie changes no rules; its reading twist and
+prank are cosmetic, in `rendering/effects.js` and `rendering/tea.js`.
 
 When the next round starts, `modifiersFor(fortuneId)` merges the fortune's
 `modifiers` over `BASE_MODIFIERS` into `state.modifiers`. Gameplay code reads
@@ -121,10 +131,12 @@ recomputes them, and a new match clears the fortune.
 
 ### Adding a fortune
 
-1. Add an entry to `FORTUNES` in `gameplay/fortunes.js` with `name`, `info`,
-   `color`, `modifiers`, `matches(reading)`, and a `glyph(t)` that maps
+1. Add an entry to `FORTUNES` in `gameplay/fortunes.js` with `name`,
+   `quote`, `info`, `tag` (for the HUD pill), `tone` (`good`, `trouble`, or
+   `odd`), `color`, `modifiers`, `weight(record)`, and a `glyph(t)` that maps
    t ∈ [0, 1] to an offset from the cup centre (the shape the leaves form).
-2. Insert its id into `FORTUNE_PRIORITY`.
+2. Only if it is read from the leaf pattern, give it `matches(reading)` and
+   insert its id into `FORTUNE_PRIORITY`.
 3. If it needs a new effect, add a neutral default to `BASE_MODIFIERS` and
    read `state.modifiers.<name>` where the rule lives.
 4. Put any tuning numbers in `CONFIG.fortunes` and add tests.

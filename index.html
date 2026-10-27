@@ -20,7 +20,10 @@
   <section class="playfield" aria-label="Game area">
     <canvas id="game" width="920" height="790" role="img" aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
     <div class="hud-top">
-      <span class="hudlabel pill" id="hudStatus">READY TO BREW</span>
+      <div class="hud-left">
+        <span class="hudlabel pill" id="hudStatus">READY TO BREW</span>
+        <span class="hudlabel pill omen" id="hudOmen" aria-live="polite"></span>
+      </div>
       <div class="pills">
         <span class="hudlabel pill" id="hudScore">SCORE 0000</span>
         <span class="hudlabel pill" id="hudLives">CUPS ♥ ♥ ♥</span>
@@ -52,7 +55,7 @@
         <strong id="fortuneName">Not yet written</strong>
         <p id="fortuneDetail">Finish a round to read the leaves. Your tactics become the next round's rules.</p>
       </div>
-      <p class="note">Tea leaves from defeated foes collect in the cup. At the end of each round they form a reading that changes the next round.</p>
+      <p class="note">Tea leaves from defeated foes collect in the cup. At the end of each round they form a reading that changes the next round. How you played sways the reading, but the leaves have opinions of their own.</p>
     </section>
     <section class="panel">
       <div class="eyebrow">How to stir up trouble</div>

@@ -31,7 +31,7 @@ export const gameState = (page) => page.evaluate(() => {
   const s = window.__TEACUP__.game.state;
   return {
     phase: s.phase, round: s.round, score: s.score, lives: s.lives, kills: s.kills, angle: s.angle,
-    shots: s.shots.length, milkLeft: s.milkLeft, sugarLeft: s.sugarLeft, nextFortune: s.nextFortune,
+    shots: s.shots.length, milkLeft: s.milkLeft, sugarLeft: s.sugarLeft, fortune: s.fortune, nextFortune: s.nextFortune,
   };
 });
 
