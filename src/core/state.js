@@ -56,8 +56,10 @@ export function createInitialState() {
     sugarRegenTimer: 0, // Sugar Rush: seconds until the next regenerated burst
     goldenTimer: null, // Golden Opportunity: seconds until the cube appears, or null
     golden: null, // the golden sugar cube on the field: { angle, radius, time, life }
+    prismaticTimer: null, // seconds until the Prismatic Sugar Cube appears this round, or null
+    prismatic: null, // the prismatic cube on the field: { angle, radius, time, life }
 
-    shots: [], // { angle, radius, speed, sugar, veer, golden }
+    shots: [], // { angle, radius, speed, sugar, veer, golden, nova? }
     enemies: [], // { angle, radius, home, speed, wiggle, shifted, size, alpha, backwash }
     clouds: [], // { angle, time, duration }
     residue: [], // { lane, radius, angle, spin, size }

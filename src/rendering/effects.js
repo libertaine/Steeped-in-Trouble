@@ -16,6 +16,14 @@ const GOLD = '#ffd45e';
 const RIM = CONFIG.arena.rimRadius;
 const SPOON_RADIUS = RIM + 7;
 
+const PRISM = ['#ff7aa8', '#ffd36b', '#8dffb8', '#7ccfff', '#c79bff', '#ffffff'];
+
+const NOVA_WORDS = [
+  'STEAM NOVA! Every lane at once.',
+  'STEAM NOVA! The cup has opinions now too.',
+  'STEAM NOVA! That was a lot of steam.',
+];
+
 const GOLDEN_WORDS = {
   points: (e) => `+${e.points}. Fortune favors the well-caffeinated.`,
   sugar: () => 'The cube was full of sugar. Bursts restocked, plus one.',
@@ -83,6 +91,7 @@ export function createEffects({ random = Math.random } = {}) {
   const queue = [];
   let prankTimer = null; // seconds until The Leaves Lie misbehaves
   let golden = null; // the cube's last known spot, for sparkles
+  let prismatic = null; // the same for the prismatic cube
   let bigSpoon = null; // { time, life } while the spoon is comically large
   let strained = false; // has the strainer been explained this pot?
 
@@ -140,6 +149,7 @@ export function createEffects({ random = Math.random } = {}) {
       fx.flash = 0;
       fx.glints = [];
       golden = null;
+      prismatic = null;
       bigSpoon = null;
       prankTimer = fortune === 'lie' ? rnd(3, 10) : null;
       if (fortune) say(`“${FORTUNES[fortune].quote}”`, { color: FORTUNES[fortune].color });
@@ -172,9 +182,42 @@ export function createEffects({ random = Math.random } = {}) {
       burst(10, () => radius + rnd(-5, 5), () => angle + rnd(-0.04, 0.04), '#b39a5a', () => rnd(0.3, 0.7));
       say('The golden cube dissolves. Typical.', { color: '#c9b27a' });
     },
+    prismaticAppear({ radius, angle }) {
+      prismatic = { radius, angle };
+      burst(30, () => radius + rnd(-6, 6), () => angle + rnd(-0.05, 0.05), (i) => PRISM[i % PRISM.length],
+        () => rnd(0.4, 0.9), 1.8);
+      say('A prismatic sugar cube! QUICK!', { color: '#c79bff', life: 2 });
+    },
+    prismaticCatch({ radius, angle }) {
+      prismatic = null;
+      burst(40, () => radius + rnd(-8, 8), () => angle + rnd(-0.06, 0.06), (i) => PRISM[i % PRISM.length],
+        () => rnd(0.5, 1.2), 2.6);
+    },
+    prismaticGone({ radius, angle }) {
+      prismatic = null;
+      burst(10, () => radius + rnd(-5, 5), () => angle + rnd(-0.04, 0.04), '#a99bc0', () => rnd(0.3, 0.6));
+      say('The prism fades. Blink and you miss it.', { color: '#a99bc0', life: 2.6 });
+    },
+    nova({ count, golden: gilded }) {
+      // A ring of colour bursting out from the middle of the cup.
+      for (let i = 0; i < 90; i++) {
+        const a = rnd(0, TAU);
+        const p = toCanvasPoint(rnd(0, 30), a);
+        const speed = rnd(160, 340);
+        const life = rnd(0.5, 1.1);
+        fx.particles.push({
+          x: p.x, y: p.y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed,
+          time: life, life, color: gilded && i % 2 ? GOLD : PRISM[i % PRISM.length], size: rnd(1.5, 3.8),
+        });
+      }
+      const words = gilded ? `GOLDEN STEAM NOVA! ${count} darts. Steady on.` : count > CONFIG.arena.lanes
+        ? `STEAM NOVA! ${count} darts. Double the trouble.` : pick(NOVA_WORDS);
+      say(words, { color: gilded ? GOLD : '#f4fbff', life: 3.4 });
+    },
     reading({ fortune }) {
       prankTimer = null;
       golden = null;
+      prismatic = null;
       bigSpoon = null;
       hush();
       if (fortune === 'lie') fx.fib = pick(FIBS);
@@ -192,6 +235,7 @@ export function createEffects({ random = Math.random } = {}) {
     gameover() {
       prankTimer = null;
       golden = null;
+      prismatic = null;
       bigSpoon = null;
       hush();
     },
@@ -300,6 +344,10 @@ export function createEffects({ random = Math.random } = {}) {
       }
       if (playing && golden && random() < dt * 14) {
         burst(1, () => golden.radius + rnd(-14, 14), () => golden.angle + rnd(-0.06, 0.06), GOLD, () => rnd(0.3, 0.7), 0.5);
+      }
+      if (playing && prismatic && random() < dt * 24) {
+        burst(1, () => prismatic.radius + rnd(-12, 12), () => prismatic.angle + rnd(-0.05, 0.05),
+          () => pick(PRISM), () => rnd(0.3, 0.6), 0.6);
       }
 
       if (state?.phase !== PHASE.PAUSED) {

@@ -436,48 +436,68 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     }
   }
 
-  /** Golden Opportunity: a spinning golden sugar cube with a ring that runs down. */
-  function drawGolden(cube) {
+  /**
+   * A spinning isometric sugar cube with a ring that runs down as it melts.
+   * `faces(shine)` returns the top, left, and right face colours.
+   */
+  function sugarCube(cube, { size, glow, edge, ring, faces, spin = 1.6 }) {
     const p = polar(cube.radius, cube.angle);
     const left = cube.time / cube.life;
     const blink = left < 0.3 ? 0.65 + 0.35 * Math.sin(time * 30) : 1; // hurry!
     const pulse = 1 + 0.08 * Math.sin(time * 6);
-    const s = 13 * pulse;
+    const s = size * pulse;
     ctx.save();
     ctx.globalAlpha = blink;
     ctx.translate(p.x, p.y);
     if (renderer.quality === 'high') {
-      ctx.shadowColor = '#ffd45e';
+      ctx.shadowColor = glow;
       ctx.shadowBlur = 22;
     } else {
-      circle(0, 0, 22, '#ffd45e', 0, true, 0.18);
+      circle(0, 0, s + 9, glow, 0, true, 0.18);
     }
-    // An isometric cube whose faces catch the light as it turns.
-    ctx.rotate(Math.sin(time * 1.6) * 0.35);
+    // The faces catch the light as it turns.
+    ctx.rotate(Math.sin(time * spin) * 0.35);
     const top = [[0, -s], [s * 0.87, -s * 0.5], [0, 0], [-s * 0.87, -s * 0.5]];
     const leftFace = [[-s * 0.87, -s * 0.5], [0, 0], [0, s], [-s * 0.87, s * 0.5]];
     const rightFace = [[s * 0.87, -s * 0.5], [0, 0], [0, s], [s * 0.87, s * 0.5]];
-    const shine = 0.5 + 0.5 * Math.sin(time * 3);
-    ctx.strokeStyle = '#7a5410';
+    const colors = faces(0.5 + 0.5 * Math.sin(time * 3));
+    ctx.strokeStyle = edge;
     ctx.lineWidth = 1;
-    for (const [face, color] of [[top, '#fff1b0'], [leftFace, shine > 0.5 ? '#f2c13e' : '#d9a52a'], [rightFace, shine > 0.5 ? '#d9a52a' : '#f2c13e']]) {
-      ctx.fillStyle = color;
+    [top, leftFace, rightFace].forEach((face, i) => {
+      ctx.fillStyle = colors[i];
       ctx.beginPath();
-      face.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      face.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
-    }
+    });
     ctx.restore();
     // The time left, as a ring that empties.
     ctx.save();
     ctx.globalAlpha = 0.75 * blink;
-    ctx.strokeStyle = '#ffe9a0';
+    ctx.strokeStyle = ring;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 24, -Math.PI / 2, -Math.PI / 2 + TAU * left);
+    ctx.arc(p.x, p.y, s + 11, -Math.PI / 2, -Math.PI / 2 + TAU * left);
     ctx.stroke();
     ctx.restore();
+  }
+
+  /** Golden Opportunity: the golden sugar cube. */
+  function drawGolden(cube) {
+    sugarCube(cube, {
+      size: 13, glow: GOLD, edge: '#7a5410', ring: '#ffe9a0',
+      faces: (shine) => ['#fff1b0', shine > 0.5 ? '#f2c13e' : '#d9a52a', shine > 0.5 ? '#d9a52a' : '#f2c13e'],
+    });
+  }
+
+  /** The Prismatic Sugar Cube: smaller, quicker, and every colour at once. */
+  function drawPrismatic(cube) {
+    const hue = (time * 240) % 360;
+    sugarCube(cube, {
+      size: 10, glow: `hsl(${hue}, 100%, 70%)`, edge: '#ffffff', ring: `hsl(${(hue + 180) % 360}, 100%, 82%)`, spin: 4,
+      faces: () => [0, 120, 240].map((offset, i) => `hsl(${(hue + offset) % 360}, 95%, ${82 - i * 10}%)`),
+    });
   }
 
   function drawShot(s, polish) {
@@ -491,6 +511,12 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       ctx.restore();
       circle(p.x, p.y, 9, GOLD, 1.2, false, 0.55);
       if (s.veer) circle(p.x, p.y, 1.6, '#ffffff', 0, true, 0.6 + 0.4 * Math.sin(time * 25 + s.veer));
+    } else if (s.nova) {
+      // Steam Nova: each lane's dart takes its own colour of the rainbow.
+      const hue = ((s.angle / TAU) * 360 + time * 120) % 360;
+      line(p, polar(s.radius + 22 + 6 * polish, s.angle), `hsl(${hue}, 100%, 78%)`, 3, 0.5);
+      circle(p.x, p.y, 4.5, `hsl(${hue}, 100%, 88%)`, 0, true, 1);
+      circle(p.x, p.y, 9, `hsl(${hue}, 100%, 65%)`, 1.2, false, 0.6);
     } else if (s.sugar) {
       ctx.save();
       ctx.translate(p.x, p.y);
@@ -686,6 +712,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       drawResidue(state);
       for (const e of state.enemies) drawEnemy(e);
       if (state.golden) drawGolden(state.golden);
+      if (state.prismatic) drawPrismatic(state.prismatic);
       for (const s of state.shots) drawShot(s, state.spoon.polished);
       if (inPlay) drawRecovery(state);
       drawPlayer(state, fx);

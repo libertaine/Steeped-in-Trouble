@@ -25,27 +25,45 @@ export function steamCooldown(state) {
 }
 
 /**
- * Fire one steam dart down the spoon's lane if the cooldown allows. Under
- * Double Trouble it is two darts that veer apart as they travel.
+ * Launch steam down one lane: a single dart, or under Double Trouble two
+ * darts that veer apart as they travel. Every bonus to steam applies.
  */
-export function fireSteam({ state, emit }) {
-  if (state.shotCooldown > 0) return false;
-  state.shotCooldown = steamCooldown(state);
-  const twin = state.modifiers.twinSteam;
+function launchSteam(state, lane, extra = {}) {
   const rate = CONFIG.fortunes.twinSpreadRate;
   const golden = state.goldenSpoon > 0;
-  for (const veer of twin ? [-rate, rate] : [0]) {
+  for (const veer of state.modifiers.twinSteam ? [-rate, rate] : [0]) {
     state.shots.push({
-      angle: laneAngle(spoonLane(state)),
+      angle: laneAngle(lane),
       radius: RIM - CONFIG.steam.spawnInset,
       speed: steamSpeed(state),
       sugar: false,
       veer, // radians per second of sideways drift
       golden, // fired by the Golden Spoon (cosmetic tint)
+      ...extra,
     });
   }
-  emit('steam', { twin, golden });
+}
+
+/** Fire steam down the spoon's lane if the cooldown allows. */
+export function fireSteam({ state, emit }) {
+  if (state.shotCooldown > 0) return false;
+  state.shotCooldown = steamCooldown(state);
+  launchSteam(state, spoonLane(state));
+  emit('steam', { twin: state.modifiers.twinSteam, golden: state.goldenSpoon > 0 });
   return true;
+}
+
+/**
+ * Steam Nova: ordinary steam down every lane at once, so Double Trouble, the
+ * Golden Spoon, and every speed bonus carry over. It ignores the cooldown.
+ */
+export function steamNova({ state, emit }) {
+  const before = state.shots.length;
+  for (let lane = 0; lane < CONFIG.arena.lanes; lane++) launchSteam(state, lane, { nova: true });
+  emit('nova', {
+    angle: state.angle, count: state.shots.length - before,
+    twin: state.modifiers.twinSteam, golden: state.goldenSpoon > 0,
+  });
 }
 
 /** The most sugar bursts the spoon can hold this round, Sugar Scoop included. */
