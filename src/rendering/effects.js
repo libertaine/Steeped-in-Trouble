@@ -1,16 +1,20 @@
-// Cosmetic effects driven by simulation events: particles and the spill flash.
+// Cosmetic effects driven by simulation events: particles, the spill flash,
+// and the living tea surface (see tea.js).
 //
 // Effects never modify game state and use their own random source, so they
 // can be changed freely without affecting gameplay or seeded replays.
 
 import { toCanvasPoint } from '../gameplay/arena.js';
 import { CONFIG } from '../config.js';
+import { createTea } from './tea.js';
 
 export function createEffects({ random = Math.random } = {}) {
   const rnd = (min, max) => min + random() * (max - min);
+  const tea = createTea({ random });
   const fx = {
     particles: [],
     flash: 0, // seconds of spill flash remaining
+    tea: tea.liquid,
   };
 
   function burst(count, radius, angle, color, life) {
@@ -55,8 +59,14 @@ export function createEffects({ random = Math.random } = {}) {
     fx,
     handle(event) {
       handlers[event.type]?.(event);
+      tea.handle(event);
     },
-    update(dt) {
+    /**
+     * @param {number} dt seconds since the previous frame
+     * @param {object} [state] simulation state, read only (lets the tea follow the spoon and darts)
+     */
+    update(dt, state) {
+      tea.update(dt, state);
       fx.flash = Math.max(0, fx.flash - dt);
       const { particles } = fx;
       for (let i = particles.length - 1; i >= 0; i--) {

@@ -10,6 +10,18 @@ import { createRenderer } from './rendering/renderer.js';
 import { createHud } from './ui/hud.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
+const QUALITY_KEY = 'steeped-in-trouble:graphics';
+
+/** Graphics quality: ?graphics=low|high, else the last choice, else high. */
+function initialQuality(params) {
+  const fromUrl = params.get('graphics');
+  if (fromUrl === 'low' || fromUrl === 'high') return fromUrl;
+  try {
+    return localStorage.getItem(QUALITY_KEY) === 'low' ? 'low' : 'high';
+  } catch {
+    return 'high';
+  }
+}
 
 /** Read an optional ?seed=<number> to replay a gameplay sequence. */
 function seedFromUrl(params) {
@@ -27,7 +39,7 @@ function boot() {
   const canvas = document.getElementById('game');
   const game = createGame({ seed: seedFromUrl(params) });
   const effects = createEffects();
-  const renderer = createRenderer(canvas);
+  const renderer = createRenderer(canvas, { quality: initialQuality(params) });
   const hud = createHud(document);
   const audio = createAudio();
 
@@ -50,13 +62,28 @@ function boot() {
     soundButton.textContent = `Sound: ${audio.toggle() ? 'on' : 'off'}`;
   });
 
+  const graphicsButton = document.getElementById('graphicsBtn');
+  const showQuality = () => {
+    if (graphicsButton) graphicsButton.textContent = `Graphics: ${renderer.quality}`;
+  };
+  graphicsButton?.addEventListener('click', () => {
+    renderer.quality = renderer.quality === 'high' ? 'low' : 'high';
+    showQuality();
+    try {
+      localStorage.setItem(QUALITY_KEY, renderer.quality);
+    } catch {
+      // Storage may be unavailable (private mode); the choice just won't persist.
+    }
+  });
+  showQuality();
+
   const version = document.getElementById('version');
   if (version) version.textContent = `VERSION ${__APP_VERSION__}`;
 
   const detachScaling = attachCanvasScaling(canvas);
 
   const loop = createLoop((dt) => {
-    effects.update(dt);
+    effects.update(dt, game.state);
     game.update(dt, controls.held);
     for (const event of game.drainEvents()) {
       if (event.type === 'paused' || event.type === 'matchStart') controls.reset();

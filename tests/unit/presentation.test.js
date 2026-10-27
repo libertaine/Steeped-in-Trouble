@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createLoop, frameDelta } from '../../src/core/timing.js';
 import { createEffects } from '../../src/rendering/effects.js';
+import { createTea } from '../../src/rendering/tea.js';
 import { hudText } from '../../src/ui/hud.js';
 import { createGame } from '../../src/core/game.js';
 import { completeRound, playingGame } from './helpers.js';
@@ -107,5 +108,35 @@ describe('effects', () => {
     effects.handle({ type: 'milk', angle: 0 });
     effects.handle({ type: 'roundStart' });
     expect(effects.fx.particles).toHaveLength(0);
+  });
+});
+
+describe('living tea', () => {
+  const EVENTS = ['roundStart', 'steam', 'sugar', 'milk', 'kill', 'drift', 'escape', 'reading', 'gameover']
+    .map((type) => ({ type, angle: 1, radius: 120, sugar: type === 'kill' }));
+
+  it('reacts to every event without touching game state and keeps its effects bounded', () => {
+    const game = playingGame();
+    const before = JSON.stringify(game.state);
+    const { liquid, handle, update } = createTea({ random: () => 0.5 });
+    for (let i = 0; i < 600; i++) {
+      for (const event of EVENTS) handle(event);
+      update(1 / 60, game.state);
+    }
+    expect(JSON.stringify(game.state)).toBe(before);
+    expect(liquid.ripples.length).toBeLessThanOrEqual(40);
+    expect(liquid.crystals.length).toBeLessThanOrEqual(320);
+    expect(Number.isFinite(liquid.flow)).toBe(true);
+  });
+
+  it('settles to a standstill while paused', () => {
+    const game = playingGame();
+    const { liquid, update } = createTea();
+    game.pause();
+    for (let i = 0; i < 120; i++) update(1 / 60, game.state);
+    const { time, flow } = liquid;
+    update(1 / 60, game.state);
+    expect(liquid.time).toBe(time);
+    expect(liquid.flow).toBe(flow);
   });
 });

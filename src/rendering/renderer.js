@@ -7,13 +7,11 @@ import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { LANES, LANE_STEP, TAU, laneAngle, toCanvasPoint as polar } from '../gameplay/arena.js';
 import { FORTUNES, glyphPoint } from '../gameplay/fortunes.js';
+import { createTeaPainter } from './tea.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-
-// Fixed pseudo-random offsets for the milk cloud puffs.
-const puffOffset = (n) => ((n * 71) % 97) / 97;
 
 const OVERLAY_TEXT = {
   [PHASE.READY]: {
@@ -36,22 +34,22 @@ const OVERLAY_TEXT = {
   },
 };
 
-export function createRenderer(canvas) {
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @param {{ quality?: 'high' | 'low' }} [options] graphics quality; can be changed later via renderer.quality
+ */
+export function createRenderer(canvas, { quality = 'high' } = {}) {
   const ctx = canvas.getContext('2d');
   let time = 0; // animation clock, independent of the simulation
   let gradients = null;
+  const tea = createTeaPainter(ctx);
 
   function createGradients() {
-    const liquid = ctx.createRadialGradient(CX - 64, CY - 82, 30, CX, CY, 330);
-    liquid.addColorStop(0, '#5e6645');
-    liquid.addColorStop(0.52, '#394c34');
-    liquid.addColorStop(0.95, '#152920');
-    liquid.addColorStop(1, '#0d1d1b');
     const glare = ctx.createLinearGradient(CX - 250, CY - 240, CX + 220, CY + 240);
     glare.addColorStop(0, '#f3ead914');
     glare.addColorStop(0.35, '#ffffff02');
     glare.addColorStop(1, '#0000001a');
-    return { liquid, glare };
+    return { glare };
   }
 
   function line(a, b, color, width = 1, opacity = 1) {
@@ -115,17 +113,13 @@ export function createRenderer(canvas) {
     ctx.restore();
   }
 
-  function drawBackground() {
+  function drawCup() {
     circle(CX, CY, OUTER + 52, '#78948022', 16);
     circle(CX, CY, OUTER + 43, '#8ca58836', 3);
     circle(CX, CY, OUTER + 26, '#a9b68d28', 17);
     circle(CX, CY, OUTER + 15, '#eee8ce', 3);
     circle(CX, CY, OUTER + 10, '#678b6f', 14);
     circle(CX, CY, OUTER + 2, '#a9bc94', 3);
-    ctx.beginPath();
-    ctx.arc(CX, CY, OUTER, 0, TAU);
-    ctx.fillStyle = gradients.liquid;
-    ctx.fill();
 
     // An abstract saucer handle, drawn with original curved vector paths.
     ctx.save();
@@ -139,26 +133,20 @@ export function createRenderer(canvas) {
     ctx.lineWidth = 5;
     ctx.stroke();
     ctx.restore();
+  }
 
+  /** Lane guides float above the tea so the arena always stays readable. */
+  function drawGuides() {
     for (let ring = 1; ring <= 4; ring++) {
-      circle(CX, CY, (ring * OUTER) / 4, '#d7e4bf', ring === 4 ? 1.5 : 0.7, false, ring === 4 ? 0.32 : 0.14);
+      circle(CX, CY, (ring * OUTER) / 4, '#f0e2bf', ring === 4 ? 1.5 : 0.7, false, ring === 4 ? 0.32 : 0.14);
     }
     for (let i = 0; i < LANES; i++) {
       const a = laneAngle(i);
-      line(polar(25, a), polar(OUTER - 3, a), '#c8d5ae', 1, i % 2 === 0 ? 0.2 : 0.11);
+      line(polar(25, a), polar(OUTER - 3, a), '#ead9b2', 1, i % 2 === 0 ? 0.2 : 0.11);
       const p = polar(OUTER + 17, a);
       circle(p.x, p.y, 1.7, '#c7daba', 0, true, 0.55);
     }
 
-    // Slow swirl on the tea's surface.
-    const rot = time * 0.035;
-    ctx.strokeStyle = '#d3c17d20';
-    ctx.lineWidth = 1.5;
-    for (let i = 0; i < 4; i++) {
-      ctx.beginPath();
-      ctx.arc(CX, CY, 70 + i * 40, rot + i * 0.7, rot + 1.7 + i * 0.7);
-      ctx.stroke();
-    }
     circle(CX, CY, 30, '#ddc18f', 1.4, false, 0.5);
 
     ctx.save();
@@ -170,22 +158,26 @@ export function createRenderer(canvas) {
     ctx.restore();
   }
 
+  /** The slowed wedge under each milk cloud; the marbled wisps live in the tea. */
   function drawClouds(clouds) {
     for (const c of clouds) {
+      const alpha = Math.min(1, c.time / 0.75) * Math.min(1, (c.duration - c.time) / 0.5);
+      const wash = ctx.createRadialGradient(CX, CY, 20, CX, CY, OUTER - 12);
+      wash.addColorStop(0, 'rgba(240,232,214,0)');
+      wash.addColorStop(0.35, 'rgba(240,232,214,0.08)');
+      wash.addColorStop(1, 'rgba(240,232,214,0.17)');
       ctx.save();
-      const alpha = Math.min(1, c.time / 0.75) * 0.17;
-      ctx.fillStyle = `rgba(220,240,231,${alpha})`;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = wash;
       ctx.beginPath();
       ctx.moveTo(CX, CY);
       ctx.arc(CX, CY, OUTER - 12, c.angle - LANE_STEP * 1.55, c.angle + LANE_STEP * 1.55);
       ctx.closePath();
       ctx.fill();
-      for (let n = 0; n < 12; n++) {
-        const a = c.angle + puffOffset(n) * LANE_STEP * 2.6 - LANE_STEP * 1.3;
-        const r = 70 + ((n * 31) % 170);
-        const p = polar(r, a);
-        circle(p.x + Math.sin(time + n) * 3, p.y, 16 + (n % 4) * 6, '#e0eee1', 0, true, Math.min(0.1, c.time * 0.03));
-      }
+      ctx.strokeStyle = '#f4ecdc';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = alpha * 0.22;
+      ctx.stroke();
       ctx.restore();
     }
   }
@@ -220,7 +212,10 @@ export function createRenderer(canvas) {
   function drawEnemy(e) {
     const p = polar(e.radius, e.angle);
     const scale = e.size * (1 + Math.sin(time * 7 + e.wiggle) * 0.08);
-    leafShape(p.x, p.y, scale, e.angle + Math.PI / 2 + Math.sin(time * 3 + e.wiggle) * 0.3, '#c8a36b', e.alpha);
+    const rotation = e.angle + Math.PI / 2 + Math.sin(time * 3 + e.wiggle) * 0.3;
+    // A soft shadow lifts the leaf off the tea so it never melts into the currents.
+    circle(p.x + 1.5, p.y + 2.5, scale * 1.15, '#0c0501', 0, true, e.alpha * 0.4);
+    leafShape(p.x, p.y, scale, rotation, '#dcb877', e.alpha);
     circle(p.x, p.y, scale + 4, '#ead199', 0.65, false, e.alpha * 0.3);
   }
 
@@ -309,7 +304,8 @@ export function createRenderer(canvas) {
     }
   }
 
-  return {
+  const renderer = {
+    quality,
     /**
      * @param {object} state simulation state (read only)
      * @param {{ particles: object[], flash: number }} fx cosmetic effects
@@ -320,7 +316,9 @@ export function createRenderer(canvas) {
       gradients ??= createGradients();
       ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
       ctx.clearRect(0, 0, W, H);
-      drawBackground();
+      drawCup();
+      if (fx.tea) tea.paint(fx.tea, state, { quality: renderer.quality, scale: canvas.width / W });
+      drawGuides();
       drawClouds(state.clouds);
       drawResidue(state);
       for (const e of state.enemies) drawEnemy(e);
@@ -330,4 +328,5 @@ export function createRenderer(canvas) {
       drawOverlay(state, fx);
     },
   };
+  return renderer;
 }

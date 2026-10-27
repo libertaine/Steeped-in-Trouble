@@ -11,9 +11,9 @@ pattern is read as a fortune that changes the next round.
 
 ## Status
 
-Version **0.1.1**: the original prototype restructured into a maintainable
-project. Gameplay matches the
-[reference prototype](docs/reference/README.md). Expect frequent
+Version **0.2.0 — The Living Teacup**: the tea in the cup now drifts,
+ripples, and reacts to play, with a High/Low graphics toggle. Gameplay matches
+the [reference prototype](docs/reference/README.md). Expect frequent
 experimental changes in later versions.
 
 The game was called *Storm in a Teacup* up to version 0.1.0.
@@ -33,6 +33,10 @@ The game was called *Storm in a Teacup* up to version 0.1.0.
 Sound is off by default. Use the **Sound** toggle to enable it.
 
 Add `?seed=<number>` to the URL to replay the same sequence of tea leaves.
+
+The **Graphics** toggle switches the tea between high quality (full-resolution
+liquid with glowing currents) and low quality for older machines. You can also
+add `?graphics=low` or `?graphics=high` to the URL.
 
 ## Running locally
 
