@@ -56,7 +56,7 @@ function boot() {
   const detachScaling = attachCanvasScaling(canvas);
 
   const loop = createLoop((dt) => {
-    effects.update(dt);
+    effects.update(dt, game.state);
     game.update(dt, controls.held);
     for (const event of game.drainEvents()) {
       if (event.type === 'paused' || event.type === 'matchStart') controls.reset();
