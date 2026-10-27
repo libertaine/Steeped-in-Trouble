@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Adaptive soundtrack:** with sound on, a procedural synth band follows the
+  cup. Tempo drifts with the round and the fortune; layers build as leaves
+  near the rim and relax when they're cleared. The Golden Spoon, Tempestuous
+  Tea, and the Steam Nova each colour it.
+
 ## [0.5.0] - 2026-10-27 — Something's Brewing
 
 ### Added

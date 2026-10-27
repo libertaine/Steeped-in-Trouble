@@ -183,6 +183,31 @@ Not everything is announced. When a steam dart destroys a leaf inside or
 beside a milk cloud, there is a 20% chance the cream carries it on to the
 next leaf in its path (once per dart, shown only as a pale streak behind it).
 
+## Coming in 0.6.0 — sound
+
+### The adaptive soundtrack
+
+With sound on, a small procedural synth band plays in D minor (i – VI – III –
+VII, two bars per chord). It follows the cup rather than a track:
+
+| Moment | What you hear |
+| --- | --- |
+| Ready screen | A quiet pad and a music-box melody, about 76 BPM |
+| Early round, leaves far away | Pad, half-note bass, kick on the strong beats, the melody wandering on top; 92 BPM, +3 per round up to 120 |
+| A leaf closing in | Hats on eighths, quarter-note bass with octave hops, an arpeggio, the filter opening |
+| Leaves at the rim | Driving eighth-note bass, sixteenth hats, snare, a pulsing semitone alarm; the melody steps aside |
+| Leaves cleared | Everything relaxes over a few seconds |
+| Tempestuous Tea | 8 BPM faster, the arpeggio from the start, an octave up |
+| Golden Spoon | A high, glittering bell layer |
+| Steam Nova | The chord tumbles up three octaves |
+| Reading | Back to the pad and music box, slowing to 66 BPM |
+| Paused, game over | The band rests |
+
+Tension is mostly the leaf nearest the rim, plus how many are close; it rises
+quickly and eases off slowly, and a spill spikes it. Tempo drifts towards its
+target (tension adds up to 12 BPM), so it never lurches. The layers carry the
+moment-to-moment drama.
+
 ## Future ideas (not implemented)
 
 These are possibilities for later milestones, recorded so they aren't lost.
@@ -197,8 +222,7 @@ None are planned commitments.
 - Persistent upgrades across sessions, upgrade trees, shops (deliberately
   not yet).
 - Richer liquid simulation and more elaborate leaf-settling animation.
-- Music and a fuller soundscape: the likely focus of 0.6.0, starting with an
-  adaptive procedural soundtrack that follows the tension in the cup.
+- A fuller soundscape: richer sound effects, a separate music volume.
 - Local high scores, with validated persisted data.
 - Revisiting the prototype quirks listed in
   [the reference notes](reference/README.md), such as making the spill flash

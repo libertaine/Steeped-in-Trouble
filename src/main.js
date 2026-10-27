@@ -91,6 +91,7 @@ function boot() {
       effects.handle(event);
       audio.handle(event);
     }
+    audio.update(game.state, dt);
     renderer.draw(game.state, effects.fx, dt);
     hud.update(game.state);
   });

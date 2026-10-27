@@ -1,10 +1,12 @@
-// Optional procedural sound effects.
+// Optional procedural sound effects and the adaptive soundtrack (music.js).
 //
-// Sound is off by default. The AudioContext is created on the first sound
-// after the player turns sound on (a user gesture), which satisfies browser
-// autoplay rules. Any audio failure is ignored so it can never interrupt play.
+// Sound is off by default, and the toggle covers both. The AudioContext is
+// created on the first sound after the player turns sound on (a user
+// gesture), which satisfies browser autoplay rules. Any audio failure is
+// ignored so it can never interrupt play.
 
 import { FORTUNES } from '../gameplay/fortunes.js';
+import { createMusic } from './music.js';
 
 // [frequency Hz, duration s, waveform, gain, delay s]
 const SOUNDS = {
@@ -75,16 +77,27 @@ const GOLDEN_STEAM = [660, 0.05, 'triangle', 0.012];
 export function createAudio() {
   let context = null;
   let enabled = false;
+  const music = createMusic();
 
-  function beep([hz, duration, shape, gain, delay = 0]) {
-    if (!enabled) return;
+  /** The shared AudioContext, created on first use; null if sound is off or unsupported. */
+  function audioContext() {
+    if (!enabled) return null;
     try {
       if (!context) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return;
+        if (!AudioContextClass) return null;
         context = new AudioContextClass();
       }
       if (context.state === 'suspended') context.resume().catch(() => {});
+      return context;
+    } catch {
+      return null;
+    }
+  }
+
+  function beep([hz, duration, shape, gain, delay = 0]) {
+    if (!audioContext()) return;
+    try {
       const now = context.currentTime + delay;
       const osc = context.createOscillator();
       const amp = context.createGain();
@@ -112,8 +125,21 @@ export function createAudio() {
       beep(SOUNDS.toggle);
       return enabled;
     },
-    /** Play the sound for a simulation event, if it has one. */
+    /**
+     * Keep the soundtrack going: call every frame.
+     * @param {object} state simulation state (read only)
+     * @param {number} dt seconds since the previous frame
+     */
+    update(state, dt) {
+      try {
+        music.update(audioContext(), state, dt);
+      } catch {
+        // Audio is optional.
+      }
+    },
+    /** Play the sound for a simulation event, if it has one, and let the band react. */
     handle(event) {
+      music.handle(event);
       if (event.type === 'kill') beep(KILL_SOUND[event.by] ?? (event.sugar ? KILL_SOUND.sugar : KILL_SOUND.steam));
       else if (event.type === 'steam' && event.golden) beep(GOLDEN_STEAM);
       else if (SOUNDS[event.type]) beep(SOUNDS[event.type]);

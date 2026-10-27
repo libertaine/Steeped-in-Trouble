@@ -29,7 +29,9 @@ src/
 │   ├── renderer.js      draws state onto the canvas
 │   └── effects.js       cosmetic particles and the spill flash
 ├── input/controls.js    keyboard and pointer input
-├── audio/audio.js       optional synthesized sound
+├── audio/
+│   ├── audio.js         optional synthesized sound effects; owns the AudioContext
+│   └── music.js         the adaptive procedural soundtrack
 └── ui/hud.js            DOM HUD text
 ```
 
@@ -43,6 +45,19 @@ Everything else is presentation. It reads state and reacts to events, but
 never changes gameplay state. This is why the whole game can be unit-tested
 in Node, and why a seed reproduces a match exactly.
 
+## The soundtrack
+
+`audio/music.js` is presentation like the rest: it reads state and events
+and never changes the game. Three pure functions make the musical decisions,
+so they can be unit-tested: `rawTension(enemies)` (how close the leaves are to
+the rim, 0–1), `musicMood(state, tension)` (section, target tempo, Golden
+Spoon, stormy tea), and `arrange(step, mood)` (the notes to start on one
+sixteenth-note step). `createMusic()` smooths the tension (quick to rise, slow
+to fall), glides the tempo, and schedules each step's notes about 0.12 s ahead
+on the Web Audio clock, so tempo changes never bend pitch. A pause, game over,
+or hidden tab simply stops scheduling. The band shares `audio.js`'s
+AudioContext and the Sound toggle.
+
 ## Main loop
 
 `main.js` starts one `createLoop()` (calling `start()` again is a no-op). Each
@@ -52,7 +67,8 @@ frame:
 2. `game.update(dt, controls.held)` advances the simulation.
 3. Queued events are drained and passed to `effects`, `audio`, and (for
    `paused` / `matchStart`) `controls.reset()`.
-4. `renderer.draw(state, fx, dt)` paints the frame, and `hud.update(state)`
+4. `audio.update(state, dt)` keeps the soundtrack scheduled.
+5. `renderer.draw(state, fx, dt)` paints the frame, and `hud.update(state)`
    updates changed DOM text.
 
 `dt` is capped at 0.04 s (`CONFIG.timing.maxFrameSeconds`), so a slow frame
