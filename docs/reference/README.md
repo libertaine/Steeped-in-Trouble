@@ -44,6 +44,9 @@ unchanged. The following deliberate differences exist:
 5. **Canvas resizing also reacts to layout changes** (via `ResizeObserver`), not
    only window resizes, so the backing store stays sharp when the sidebar
    layout reflows.
+6. **Touch buttons tolerate a failed pointer capture.** `setPointerCapture`
+   can throw if the pointer is already gone (for example after a very quick
+   tap). The prototype let that error escape; it is now caught.
 
 ### Structural differences
 
