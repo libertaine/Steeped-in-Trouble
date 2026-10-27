@@ -128,7 +128,7 @@ any upgrades and fortunes, including both of Double Trouble's darts.
 - Optional synthesized sound effects (off by default).
 - Keyboard and touch controls. Responsive layout for desktop and mobile.
 
-## Coming in 0.5.0 — Something's Brewing
+## Added in 0.5.0 — Something's Brewing
 
 ### The Prismatic Sugar Cube and the Steam Nova
 
@@ -197,7 +197,8 @@ None are planned commitments.
 - Persistent upgrades across sessions, upgrade trees, shops (deliberately
   not yet).
 - Richer liquid simulation and more elaborate leaf-settling animation.
-- Music and a fuller soundscape.
+- Music and a fuller soundscape: the likely focus of 0.6.0, starting with an
+  adaptive procedural soundtrack that follows the tension in the cup.
 - Local high scores, with validated persisted data.
 - Revisiting the prototype quirks listed in
   [the reference notes](reference/README.md), such as making the spill flash

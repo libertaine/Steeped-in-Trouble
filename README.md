@@ -11,11 +11,11 @@ pattern is read as a fortune that changes the next round.
 
 ## Status
 
-Version **0.4.0 — A Spoonful of Trouble**: a tea strainer that catches
-escaping leaves, a moment of grace after each spill, milk that washes leaves
-back into the cup, spoon upgrades to choose between rounds, and a temporary
-Golden Spoon. See the [changelog](CHANGELOG.md) for earlier versions. Expect
-frequent experimental changes in later versions.
+Version **0.5.0 — Something's Brewing**: a rare prismatic sugar cube that
+sets off a Steam Nova down every lane, and unexpected brews: combinations of
+upgrades and fortunes that do something new. The leaves have also started
+noticing how you play. See the [changelog](CHANGELOG.md) for earlier
+versions. Expect frequent experimental changes in later versions.
 
 The game was called *Storm in a Teacup* up to version 0.1.0.
 
