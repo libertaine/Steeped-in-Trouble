@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Storm in a Teacup — Vector Prototype</title>
+<style>
+:root{color-scheme:dark;--ink:#e9e5d9;--muted:#9ea8a1;--mint:#b4e9cf;--gold:#e3c486;--edge:#34483f;--panel:#14221e}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 24% 8%,#263e34 0%,#13231f 43%,#0c1716 100%);color:var(--ink);font:14px/1.48 ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:21px min(4vw,52px) 13px;border-bottom:1px solid #ffffff16}
+.brand{font:small-caps 700 clamp(25px,3vw,39px)/1.1 Georgia,serif;letter-spacing:.045em;color:#f1dfbd}.brand em{font-style:italic;color:#b5e1c5}
+.kicker{font:10px/1.3 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.24em;text-transform:uppercase;color:#a1bdb0;margin-bottom:5px}
+.version{border:1px solid #6a846d66;border-radius:999px;padding:8px 11px;color:#bbd3c2;font:11px ui-monospace,monospace;white-space:nowrap}
+main{display:grid;grid-template-columns:minmax(0,1fr) 315px;gap:19px;max-width:1390px;padding:21px 26px 25px;margin:auto;align-items:start}
+.playfield{position:relative;background:radial-gradient(ellipse at 50% 46%,#233930 0%,#132621 52%,#10211e 100%);border:1px solid #506e5d66;border-radius:19px;box-shadow:inset 0 0 85px #0915109c,0 22px 65px #0005;overflow:hidden}
+canvas{width:100%;display:block;aspect-ratio:920/790;touch-action:manipulation}
+.hud-top{display:flex;position:absolute;top:16px;left:20px;right:20px;align-items:center;justify-content:space-between;pointer-events:none;gap:12px}
+.hudlabel{color:#f4e4c4;font:11px/1.2 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;text-shadow:0 2px 4px #091611}
+.pills{display:flex;gap:7px;flex-wrap:wrap}.pill{border:1px solid #c5b58a66;border-radius:30px;padding:6px 10px;background:#11211fc9}
+.controls-mobile{display:flex;justify-content:space-between;gap:8px;padding:10px 13px 14px;border-top:1px solid #4f7c6650}
+.controls-mobile button{flex:1;min-width:0;padding:9px 5px;font-weight:650;touch-action:none}
+button{background:#24483a;color:#e9efdf;border:1px solid #6c927e;border-radius:8px;padding:10px 13px;cursor:pointer;font:inherit;transition:background .15s,border-color .15s;user-select:none}
+button:hover{background:#35614a;border-color:#a5dabb}button:active{transform:translateY(1px)}button:disabled{opacity:.45;cursor:not-allowed}
+aside{display:grid;gap:15px}.panel{background:linear-gradient(146deg,#1a2d25e8,#13231ff5);border:1px solid #66816c54;border-radius:15px;padding:17px 18px;box-shadow:0 9px 28px #0000001f}
+.eyebrow{color:#b5c8ba;font:10px ui-monospace,monospace;letter-spacing:.17em;text-transform:uppercase}
+h2{font:small-caps 26px Georgia,serif;color:#ecd7ae;letter-spacing:.035em;margin:7px 0 9px}h3{font:small-caps 20px Georgia,serif;color:#ecd7ae;margin:5px 0}
+p{margin:7px 0;color:#c6d2c9}.statrow{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff16;padding:9px 0;gap:10px}.statrow:last-child{border:0}.statrow strong{font:700 15px ui-monospace,monospace;color:#eed9a4}.muted{color:#91a69b}.fortune{border-left:3px solid #d5bd80;padding:4px 0 5px 12px;margin:14px 0 10px}.fortune small{display:block;color:#a8c1b0;text-transform:uppercase;letter-spacing:.12em;font:10px ui-monospace,monospace}.fortune strong{display:block;color:#f0d7a1;font:small-caps 23px Georgia,serif;margin:5px 0 3px}.fortune p{font-size:13px;margin:2px 0}
+.action{width:100%;font-weight:700;background:#b8d9bd;color:#10251c;border-color:#d4f0d4;padding:12px;margin-top:10px}.action:hover{background:#d4eed0;color:#122a1f}
+kbd{display:inline-block;border:1px solid #78918170;color:#e3e6d6;background:#294037;padding:2px 6px;border-radius:5px;min-width:25px;text-align:center;font:11px ui-monospace,monospace}
+.keyrow{display:flex;justify-content:space-between;gap:5px;padding:6px 0;color:#cdd7cc}.keyrow span:first-child{color:#dfd8c6}.keyrow span:last-child{text-align:right}
+.note{font-size:12px;color:#b9c8b8;line-height:1.5}.bottom{font-size:11px;color:#93a99b;text-align:center;padding:0 15px 27px}.toggle{background:none;border:1px solid #57776677;color:#c5d5cc;padding:5px 9px;font-size:11px;margin-left:8px}
+@media(max-width:980px){main{grid-template-columns:1fr;max-width:940px}aside{grid-template-columns:repeat(2,minmax(0,1fr))}.panel:last-child{grid-column:1/-1}}
+@media(max-width:560px){header{padding:15px 16px 12px}.brand{font-size:25px}.version{font-size:9px;padding:6px}main{padding:12px;gap:12px}aside{grid-template-columns:1fr}.panel:last-child{grid-column:auto}.hud-top{top:9px;left:9px;right:9px}.pill{padding:4px 7px}.hudlabel{font-size:9px}.controls-mobile{gap:5px;padding:8px}.controls-mobile button{font-size:11px}}
+</style>
+</head>
+<body>
+<header><div><div class="kicker">An experimental vector arcade game</div><div class="brand">Storm <em>in a</em> Teacup</div></div><div class="version">PROTOTYPE 0.1 · SINGLE-FILE HTML</div></header>
+<main>
+<section class="playfield" aria-label="Game area"><canvas id="game" width="920" height="790" role="img" aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
+<div class="hud-top"><span class="hudlabel pill" id="hudStatus">READY TO BREW</span><div class="pills"><span class="hudlabel pill" id="hudScore">SCORE 0000</span><span class="hudlabel pill" id="hudLives">CUPS ♥ ♥ ♥</span></div></div>
+<div class="controls-mobile"><button data-hold="left" aria-label="Rotate counterclockwise">◀ TURN</button><button data-hold="fire" aria-label="Shoot steam">STEAM ↑</button><button data-hold="right" aria-label="Rotate clockwise">TURN ▶</button><button id="milkBtn" aria-label="Pour milk">MILK</button><button id="sugarBtn" aria-label="Fire sugar burst">SUGAR</button></div>
+</section>
+<aside>
+<section class="panel"><div class="eyebrow">Cup status</div><h2 id="roundTitle">The kettle waits</h2><div class="statrow"><span>Round</span><strong id="roundNum">01</strong></div><div class="statrow"><span>Leaves cleared</span><strong id="killCount">0 / 16</strong></div><div class="statrow"><span>Milk pours</span><strong id="milkCount">2</strong></div><div class="statrow"><span>Sugar bursts</span><strong id="sugarCount">2</strong></div><button id="mainBtn" class="action">Brew the first cup →</button><p class="note" id="gameTip">Defend the rim. Where the leaves settle determines the fortune of your next cup.</p></section>
+<section class="panel"><div class="eyebrow">The cup remembers</div><div class="fortune"><small id="fortuneLabel">Next cup's omen</small><strong id="fortuneName">Not yet written</strong><p id="fortuneDetail">Finish a round to read the leaves. Your tactics become the next round's rules.</p></div><p class="note">Tea leaves from defeated foes collect in the cup. At the end of each round they form a reading that changes the next round.</p></section>
+<section class="panel"><div class="eyebrow">How to stir up trouble</div><div class="keyrow"><span>Move the silver spoon</span><span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></span></div><div class="keyrow"><span>Fire steam inward</span><span><kbd>Space</kbd></span></div><div class="keyrow"><span>Milk: slow a wedge</span><span><kbd>M</kbd></span></div><div class="keyrow"><span>Sugar: triple shot</span><span><kbd>S</kbd></span></div><div class="keyrow"><span>Pause / next cup</span><span><kbd>P</kbd> / <kbd>Enter</kbd></span></div><p class="note">Hold STEAM to fire continuously. Milk makes a lingering cloudy zone; sugar shoots three strong crystalline darts. Touch controls work too.</p><button id="soundBtn" class="toggle" aria-label="Toggle sound">Sound: off</button></section>
+</aside>
+</main>
+<div class="bottom">Original teacup concept; all artwork procedurally drawn with HTML Canvas paths. No arcade-game assets, fonts, or external libraries.</div>
+<script>
+'use strict';
+(()=>{
+const canvas=document.querySelector('#game'), ctx=canvas.getContext('2d');
+const W=920,H=790,CX=451,CY=400,OUTER=273,LANES=16,TAU=Math.PI*2,STEP=TAU/LANES;
+const ui={status:document.querySelector('#hudStatus'),score:document.querySelector('#hudScore'),lives:document.querySelector('#hudLives'),title:document.querySelector('#roundTitle'),round:document.querySelector('#roundNum'),kills:document.querySelector('#killCount'),milk:document.querySelector('#milkCount'),sugar:document.querySelector('#sugarCount'),main:document.querySelector('#mainBtn'),tip:document.querySelector('#gameTip'),fortuneLabel:document.querySelector('#fortuneLabel'),fortuneName:document.querySelector('#fortuneName'),fortuneDetail:document.querySelector('#fortuneDetail'),sound:document.querySelector('#soundBtn')};
+const keys={left:false,right:false,fire:false};
+const fortunes={
+ crown:{name:'The Crown',info:'A cluster of leaves foretells abundance: +1 sugar burst next cup.',color:'#eed393'},
+ veil:{name:'The Veil',info:'Milky leaves promise cover: milk clouds last 2.5 seconds longer next cup.',color:'#d1e8de'},
+ spiral:{name:'The Spiral',info:'Scattered leaves foretell crosswinds: foes drift between lanes; each kill scores 25% more.',color:'#b7dcbe'},
+ star:{name:'The Star',info:'A clear cup guides the spoon: steam darts travel 35% faster next cup.',color:'#cfdeef'}
+};
+let state='ready',round=1,score=0,lives=3,kills=0,target=16,milkLeft=2,sugarLeft=2;
+let omen=null,nextOmen=null,angle=-Math.PI/2,shots=[],enemies=[],clouds=[],particles=[],residue=[];
+let spawnTimer=1.1,shotTimer=0,readingTime=0,frameTime=0,last=performance.now(),missFlash=0;
+let roundMilkKills=0,roundMilkUses=0,motionTime=0,gamePausedFrom='playing';
+let audioCtx=null,soundEnabled=false;
+const rnd=(min,max)=>min+Math.random()*(max-min);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const polar=(r,a)=>({x:CX+r*Math.cos(a),y:CY+r*Math.sin(a)});
+const norm=a=>((a%TAU)+TAU)%TAU;
+const diff=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+const lane=a=>((Math.round((norm(a)+Math.PI/2)/STEP)%LANES)+LANES)%LANES;
+const laneAngle=l=>-Math.PI/2+l*STEP;
+const setCanvas=()=>{const b=canvas.getBoundingClientRect();if(!b.width)return;const d=clamp(devicePixelRatio||1,1,2);canvas.width=Math.round(b.width*d);canvas.height=Math.round(b.height*d);};
+addEventListener('resize',setCanvas);setCanvas();
+function beep(hz,duration=.065,shape='sine',gain=.026){if(!soundEnabled)return;try{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=shape;o.frequency.setValueAtTime(hz,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(Math.max(hz*.6,30),audioCtx.currentTime+duration);g.gain.setValueAtTime(gain,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+duration);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration)}catch(_){/* audio optional */}}
+function resetMatch(){round=1;score=0;lives=3;omen=null;nextOmen=null;angle=-Math.PI/2;startRound()}
+function startRound(){state='playing';shots=[];enemies=[];clouds=[];particles=[];residue=[];kills=0;target=16+(round-1)*4;milkLeft=2;sugarLeft=2+(omen==='crown'?1:0);spawnTimer=.95;shotTimer=0;roundMilkKills=0;roundMilkUses=0;motionTime=0;missFlash=0;angle=-Math.PI/2;refresh();beep(510,.13,'triangle')}
+function readLeaves(){if(state!=='playing')return;state='reading';readingTime=0;shots=[];enemies=[];clouds=[];const bins=Array(LANES).fill(0);for(const l of residue)bins[l.lane]++;
+let maxTriple=0,occupied=0;for(let i=0;i<LANES;i++)maxTriple=Math.max(maxTriple,bins[i]+bins[(i+1)%LANES]+bins[(i+2)%LANES]);occupied=bins.filter(x=>x>0).length;
+nextOmen=roundMilkKills>=3?'veil':maxTriple/Math.max(1,residue.length)>=.40?'crown':occupied>=10?'spiral':'star';
+const n=residue.length;residue.forEach((leaf,i)=>{const t=i/Math.max(1,n-1),a=t*Math.PI*2;let x=0,y=0;switch(nextOmen){
+case 'crown':{const pts=[[-115,72],[-125,-57],[-70,-22],[-34,-109],[0,-32],[45,-112],[75,-22],[128,-54],[109,72],[-115,72]];const xx=t*(pts.length-1),k=Math.min(pts.length-2,Math.floor(xx)),f=xx-k;x=pts[k][0]*(1-f)+pts[k+1][0]*f;y=pts[k][1]*(1-f)+pts[k+1][1]*f;break}
+case 'veil':x=-123+246*t;y=43*Math.sin(t*4*Math.PI)-28*Math.cos(t*2*Math.PI);break;
+case 'spiral':{const r=17+120*t,aa=t*3.6*Math.PI-Math.PI/2;x=r*Math.cos(aa);y=r*Math.sin(aa);break}
+case 'star':{let r= t<.5?120:55;const aa=-Math.PI/2+Math.floor(t*10)*Math.PI/5;x=r*Math.cos(aa);y=r*Math.sin(aa);break}
+}leaf.tx=CX+x;leaf.ty=CY+y});refresh();beep(820,.29,'sine',.04)}
+function finishGame(){state='gameover';shots=[];enemies=[];clouds=[];refresh();beep(180,.32,'sawtooth',.035)}
+function refresh(){ui.round.textContent=String(round).padStart(2,'0');ui.score.textContent='SCORE '+String(score).padStart(4,'0');ui.lives.textContent='CUPS '+'♥ '.repeat(lives)+'♡ '.repeat(Math.max(0,3-lives));ui.kills.textContent=`${kills} / ${target}`;ui.milk.textContent=String(milkLeft);ui.sugar.textContent=String(sugarLeft);
+ui.status.textContent={ready:'READY TO BREW',playing:'DEFEND THE RIM',paused:'PAUSED',reading:'READING THE LEAVES',gameover:'THE CUP RUNNETH OVER'}[state];
+ui.title.textContent={ready:'The kettle waits',playing:`Cup ${round}: the storm stirs`,paused:'A moment to steep',reading:'The leaves have spoken',gameover:'The last drop'}[state];
+ui.main.textContent={ready:'Brew the first cup →',playing:'Pause / resume (P)',paused:'Resume cup →',reading:'Brew the next cup →',gameover:'Start a fresh pot →'}[state];
+ui.tip.textContent={ready:'Defend the rim. Your defeated leaves are the seeds of the next fortune.',playing:'Keep tea leaves from escaping the rim. Every defeated leaf joins your final reading.',paused:'The kettle is on hold.',reading:'The pattern was made by the leaves you defeated. The omen applies to the next cup.',gameover:'Three spills end the pot. Brew again to rewrite the future.'}[state];
+const shown=state==='reading'?nextOmen:omen;
+ui.fortuneLabel.textContent=state==='reading'?'Fortune for the next cup':shown?'This cup’s omen':'Next cup’s omen';
+ui.fortuneName.textContent=shown?fortunes[shown].name:'Not yet written';
+ui.fortuneDetail.textContent=shown?fortunes[shown].info:'Finish a round to read the leaves. Your tactics become the next round’s rules.';
+ui.milk.textContent=String(milkLeft);ui.sugar.textContent=String(sugarLeft);
+}
+function mainAction(){if(state==='ready'||state==='gameover')resetMatch();else if(state==='reading'){round++;omen=nextOmen;startRound()}else if(state==='playing'){gamePausedFrom=state;state='paused';refresh()}else if(state==='paused'){state=gamePausedFrom;refresh()}}
+ui.main.addEventListener('click',mainAction);
+ui.sound.addEventListener('click',()=>{soundEnabled=!soundEnabled;ui.sound.textContent=`Sound: ${soundEnabled?'on':'off'}`;beep(550,.1)});
+function fire(extra=0){if(state!=='playing')return;const a=laneAngle(lane(angle))+extra*STEP;shots.push({a,r:OUTER-13,vr:450*(omen==='star'?1.35:1),sugar:extra!==0||false});if(extra===0)beep(440,.045,'triangle',.011)}
+function fireRegular(){if(state!=='playing'||shotTimer>0)return;shotTimer=.19;fire()}
+function milk(){if(state!=='playing'||milkLeft<=0)return;milkLeft--;roundMilkUses++;clouds.push({a:laneAngle(lane(angle)),t:5.2+(omen==='veil'?2.5:0),max:5.2+(omen==='veil'?2.5:0)});for(let i=0;i<22;i++)makeParticle(rnd(100,245),angle+rnd(-.38,.38),'#dceee8',rnd(.3,.9));refresh();beep(260,.24,'sine',.027)}
+function sugar(){if(state!=='playing'||sugarLeft<=0)return;sugarLeft--;[-1,0,1].forEach((off)=>{const a=laneAngle((lane(angle)+off+LANES)%LANES);shots.push({a,r:OUTER-12,vr:560,sugar:true})});refresh();beep(820,.17,'square',.018)}
+function makeParticle(r,a,color,life=1){const p=polar(r,a);particles.push({x:p.x,y:p.y,vx:rnd(-36,36),vy:rnd(-45,18),t:life,max:life,color,size:rnd(1,3.3)})}
+function spawn(){const l=Math.floor(Math.random()*LANES);enemies.push({a:laneAngle(l),r:rnd(30,47),speed:rnd(31,47)+Math.min(55,round*6),wiggle:rnd(0,TAU),shifted:false,size:rnd(9,12),alpha:0});}
+function touchKeys(){document.querySelectorAll('[data-hold]').forEach(button=>{const type=button.dataset.hold;const down=e=>{e.preventDefault();if(type==='fire'){keys.fire=true;fireRegular()}else keys[type]=true;button.setPointerCapture?.(e.pointerId)};const up=e=>{e.preventDefault();keys[type]=false};button.addEventListener('pointerdown',down);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',up);button.addEventListener('lostpointercapture',up)});document.querySelector('#milkBtn').addEventListener('click',milk);document.querySelector('#sugarBtn').addEventListener('click',sugar)}touchKeys();
+addEventListener('keydown',e=>{const c=e.code;if(['ArrowLeft','ArrowRight','Space','ArrowUp'].includes(c))e.preventDefault();if(c==='ArrowLeft'||c==='KeyA')keys.left=true;if(c==='ArrowRight'||c==='KeyD')keys.right=true;if(c==='Space'){keys.fire=true;fireRegular()}if(!e.repeat){if(c==='KeyM')milk();if(c==='KeyS')sugar();if(c==='Enter'&&(state==='ready'||state==='reading'||state==='gameover'))mainAction();if(c==='KeyP'&&(state==='playing'||state==='paused'))mainAction();if(c==='KeyR'&&state==='gameover')resetMatch()}});
+addEventListener('keyup',e=>{const c=e.code;if(c==='ArrowLeft'||c==='KeyA')keys.left=false;if(c==='ArrowRight'||c==='KeyD')keys.right=false;if(c==='Space')keys.fire=false});
+addEventListener('blur',()=>{keys.left=keys.right=keys.fire=false;if(state==='playing'){gamePausedFrom='playing';state='paused';refresh()}});
+function hitEnemy(e,s){const x=polar(e.r,e.a);for(let k=0;k<9;k++)makeParticle(e.r+rnd(-8,8),e.a+rnd(-.07,.07),k%3===0?'#efe4b4':'#b4dcc0',rnd(.25,.7));
+const l=lane(e.a),p=polar(rnd(50,138),e.a+rnd(-.055,.055));residue.push({x:p.x,y:p.y,tx:p.x,ty:p.y,lane:l,spin:rnd(-2,2),size:rnd(5,8)});
+if(residue.length>90)residue.shift();if(clouds.some(c=>Math.abs(diff(c.a,e.a))<STEP*1.7))roundMilkKills++;
+score+=Math.round((s.sugar?15:10)*(omen==='spiral'?1.25:1));kills++;beep(s.sugar?720:560,.065,'sine',.014);if(kills>=target)readLeaves();refresh();}
+function tick(dt){frameTime+=dt;missFlash=Math.max(0,missFlash-dt);
+for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.t-=dt;if(p.t<=0)particles.splice(i,1)}
+if(state==='reading'){readingTime+=dt;return}if(state!=='playing')return;
+if(keys.left&&!keys.right){angle-=2.8*dt;motionTime+=dt}else if(keys.right&&!keys.left){angle+=2.8*dt;motionTime+=dt}
+angle=norm(angle);shotTimer-=dt;if(keys.fire)fireRegular();
+spawnTimer-=dt;if(spawnTimer<=0&&enemies.length<18){spawnTimer=clamp(1.15-round*.055,.57,1.1)*rnd(.72,1.36);spawn()}
+for(let i=clouds.length-1;i>=0;i--){clouds[i].t-=dt;if(clouds[i].t<=0)clouds.splice(i,1)}
+for(const s of shots)s.r-=s.vr*dt;shots=shots.filter(s=>s.r>=10);
+for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];e.alpha=Math.min(1,e.alpha+dt*2);const inCloud=clouds.some(c=>Math.abs(diff(c.a,e.a))<STEP*1.65);e.r+=e.speed*dt*(inCloud?.31:1);
+if(omen==='spiral'&&!e.shifted&&e.r>140){e.a+=STEP*(Math.random()<.5?-1:1);e.shifted=true;makeParticle(e.r,e.a,'#e5d9b0',.4)}
+if(e.r>=OUTER-3){enemies.splice(i,1);lives--;missFlash=.5;beep(130,.22,'sawtooth',.04);for(let k=0;k<20;k++)makeParticle(OUTER,e.a+rnd(-.1,.1),'#e6ad82',.7);refresh();if(lives<=0){finishGame();return}continue}
+let struck=-1;for(let j=shots.length-1;j>=0;j--){const s=shots[j];if(Math.abs(e.r-s.r)<17&&Math.abs(diff(e.a,s.a))<STEP*.48){struck=j;break}}
+if(struck>=0){const s=shots[struck];shots.splice(struck,1);enemies.splice(i,1);hitEnemy(e,s);if(state!=='playing')return;}
+}
+}
+function line(a,b,color,width=1,opacity=1){ctx.save();ctx.globalAlpha=opacity;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore()}
+function circle(x,y,r,color,width=1,fill=false,opacity=1){ctx.save();ctx.globalAlpha=opacity;ctx.beginPath();ctx.arc(x,y,r,0,TAU);if(fill){ctx.fillStyle=color;ctx.fill()}else{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()}ctx.restore()}
+function text(t,x,y,size,color,align='center',font='Georgia,serif',spacing=0){ctx.save();ctx.fillStyle=color;ctx.font=`${size}px ${font}`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(t,x,y);ctx.restore()}
+function leafShape(x,y,size,rotation,color,opacity=1){ctx.save();ctx.translate(x,y);ctx.rotate(rotation);ctx.globalAlpha=opacity;ctx.fillStyle=color;ctx.strokeStyle='#112a20';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,-size);ctx.bezierCurveTo(size*.86,-size*.4,size*.9,size*.65,0,size);ctx.bezierCurveTo(-size*.8,size*.53,-size*.9,-size*.4,0,-size);ctx.fill();ctx.stroke();ctx.strokeStyle='#f4e3aa70';ctx.lineWidth=.75;ctx.beginPath();ctx.moveTo(0,-size*.83);ctx.lineTo(0,size*.7);ctx.stroke();ctx.restore()}
+function drawBackground(){const g=ctx.createRadialGradient(CX-64,CY-82,30,CX,CY,330);g.addColorStop(0,'#5e6645');g.addColorStop(.52,'#394c34');g.addColorStop(.95,'#152920');g.addColorStop(1,'#0d1d1b');circle(CX,CY,OUTER+52,'#78948022',16);circle(CX,CY,OUTER+43,'#8ca58836',3);circle(CX,CY,OUTER+26,'#a9b68d28',17);circle(CX,CY,OUTER+15,'#eee8ce',3);circle(CX,CY,OUTER+10,'#678b6f',14);circle(CX,CY,OUTER+2,'#a9bc94',3);ctx.beginPath();ctx.arc(CX,CY,OUTER,0,TAU);ctx.fillStyle=g;ctx.fill();
+// An abstract saucer handle, drawn with original curved vector paths.
+ctx.save();ctx.strokeStyle='#b6c4a388';ctx.lineWidth=11;ctx.beginPath();ctx.moveTo(CX+OUTER+5,CY-77);ctx.bezierCurveTo(CX+OUTER+124,CY-124,CX+OUTER+124,CY+130,CX+OUTER+4,CY+82);ctx.stroke();ctx.strokeStyle='#304f41';ctx.lineWidth=5;ctx.stroke();ctx.restore();
+for(let ring=1;ring<=4;ring++)circle(CX,CY,ring*OUTER/4,'#d7e4bf',ring===4?1.5:.7,false,ring===4?.32:.14);
+for(let i=0;i<LANES;i++){const a=laneAngle(i),inn=polar(25,a),out=polar(OUTER-3,a);line(inn,out,'#c8d5ae',1,i%2===0?.2:.11);const p=polar(OUTER+17,a);circle(p.x,p.y,1.7,'#c7daba',0,true,.55)}
+const rot=frameTime*.035;ctx.strokeStyle='#d3c17d20';ctx.lineWidth=1.5;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(CX,CY,70+i*40,rot+i*.7,rot+1.7+i*.7);ctx.stroke()}circle(CX,CY,30,'#ddc18f',1.4,false,.5);
+ctx.save();ctx.beginPath();ctx.arc(CX,CY,OUTER-1,0,TAU);ctx.clip();const glare=ctx.createLinearGradient(CX-250,CY-240,CX+220,CY+240);glare.addColorStop(0,'#f3ead914');glare.addColorStop(.35,'#ffffff02');glare.addColorStop(1,'#0000001a');ctx.fillStyle=glare;ctx.fillRect(CX-OUTER,CY-OUTER,OUTER*2,OUTER*2);ctx.restore();}
+function drawClouds(){for(const c of clouds){ctx.save();const alpha=Math.min(1,c.t/.75)*.17;ctx.fillStyle=`rgba(220,240,231,${alpha})`;ctx.beginPath();ctx.moveTo(CX,CY);ctx.arc(CX,CY,OUTER-12,c.a-STEP*1.55,c.a+STEP*1.55);ctx.closePath();ctx.fill();for(let n=0;n<12;n++){const a=c.a+rndSeed(n)*STEP*2.6-STEP*1.3,r=70+((n*31)%170),p=polar(r,a);circle(p.x+Math.sin(frameTime+n)*3,p.y,16+(n%4)*6,'#e0eee1',0,true,Math.min(.1,c.t*.03))}ctx.restore()}}
+function rndSeed(n){return ((n*71)%97)/97}
+function drawPlayer(){const pos=polar(OUTER+7,angle);ctx.save();ctx.translate(pos.x,pos.y);ctx.rotate(angle+Math.PI/2);
+ctx.shadowColor='#b4fae5';ctx.shadowBlur=17;ctx.fillStyle='#e5f4e8';ctx.strokeStyle='#132b2c';ctx.lineWidth=2;
+ctx.beginPath();ctx.moveTo(0,-21);ctx.lineTo(12,9);ctx.quadraticCurveTo(0,20,-12,9);ctx.closePath();ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+ctx.fillStyle='#56847a';ctx.beginPath();ctx.ellipse(0,3,4.5,8,0,0,TAU);ctx.fill();ctx.restore();const p=polar(OUTER-11,angle);circle(p.x,p.y,3,'#c4fbeb',0,true,.8)}
+function drawEnemy(e){const p=polar(e.r,e.a);const scale=e.size*(1+Math.sin(frameTime*7+e.wiggle)*.08);leafShape(p.x,p.y,scale,e.a+Math.PI/2+Math.sin(frameTime*3+e.wiggle)*.3,'#c8a36b',e.alpha);circle(p.x,p.y,scale+4,'#ead199',.65,false,e.alpha*.3)}
+function drawShot(s){const p=polar(s.r,s.a);if(s.sugar){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);ctx.fillStyle='#faf1cc';ctx.shadowColor='#fff3a9';ctx.shadowBlur=13;ctx.fillRect(-5,-5,10,10);ctx.restore()}else{circle(p.x,p.y,4,'#cbfff2',0,true,.9);circle(p.x,p.y,9,'#b2eac7',1,false,.3)}}
+function drawResidue(){for(let i=0;i<residue.length;i++){const r=residue[i];let x=r.x,y=r.y,size=r.size,opacity=.75;
+if(state==='reading'){const t=clamp((readingTime-.3)/2.1,0,1),smooth=t*t*(3-2*t);x=r.x+(r.tx-r.x)*smooth;y=r.y+(r.ty-r.y)*smooth;size+=1.7*smooth;opacity=.7+.28*smooth}else if(state!=='playing')opacity=.38;
+leafShape(x,y,size,r.spin+frameTime*.13,'#819c6b',opacity)}}
+function drawParticles(){for(const p of particles)circle(p.x,p.y,p.size,p.color,0,true,p.t/p.max)}
+function drawOverlay(){if(state==='playing')return;
+if(state==='ready'||state==='paused'||state==='gameover'){
+ctx.save();ctx.fillStyle='rgba(12,27,24,.67)';ctx.beginPath();ctx.arc(CX,CY,191,0,TAU);ctx.fill();circle(CX,CY,190,'#c2dbb3',1,false,.42);
+const heading=state==='ready'?'A STORM IS STEEPING':state==='paused'?'THE CUP IS PAUSED':'THE POT IS EMPTY';
+text(heading,CX,CY-58,14,'#d3e9d9','center','ui-monospace,monospace');text(state==='ready'?'Storm in a Teacup':state==='paused'?'Take a little sip':'A splendid spill',CX,CY-10,30,'#f5dfb6');
+text(state==='ready'?'Steer the spoon • fire steam':state==='paused'?'Press P to continue':`Final score: ${score}`,CX,CY+31,15,'#d1dec8');
+text(state==='ready'?'Click “Brew” or press Enter':state==='paused'?'': 'Press Enter for a new pot',CX,CY+63,13,'#bad8c9','center','ui-monospace,monospace');ctx.restore()}
+if(state==='reading'){
+const a=clamp((readingTime-1.5)/1.1,0,1);if(a>.01){ctx.save();ctx.globalAlpha=a;const f=fortunes[nextOmen];ctx.fillStyle='#10271ecc';ctx.beginPath();ctx.roundRect(CX-194,CY+178,388,73,12);ctx.fill();text('THE LEAVES FORETELL',CX,CY+196,11,'#bcdbbc','center','ui-monospace,monospace');text(f.name.toUpperCase(),CX,CY+222,25,f.color);ctx.restore()}
+}
+if(missFlash>0){ctx.fillStyle=`rgba(241,150,110,${missFlash*.18})`;ctx.fillRect(0,0,W,H)}}
+function draw(){ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);ctx.clearRect(0,0,W,H);drawBackground();drawClouds();drawResidue();for(const e of enemies)drawEnemy(e);for(const s of shots)drawShot(s);drawPlayer();drawParticles();drawOverlay();}
+function run(now){const dt=clamp((now-last)/1000,0,.04);last=now;tick(dt);draw();requestAnimationFrame(run)}
+refresh();requestAnimationFrame(run);
+})();
+</script>
+</body>
+</html>
