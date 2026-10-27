@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.5.0] - 2026-10-27 — Something's Brewing
 
 ### Added
 
