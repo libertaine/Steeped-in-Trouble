@@ -128,6 +128,20 @@ any upgrades and fortunes, including both of Double Trouble's darts.
 - Optional synthesized sound effects (off by default).
 - Keyboard and touch controls. Responsive layout for desktop and mobile.
 
+## Coming in 0.5.0 — Something's Brewing
+
+### The Prismatic Sugar Cube and the Steam Nova
+
+From the second round on, each round has a 20% chance of a Prismatic Sugar
+Cube, under any fortune. It appears within four lanes of the spoon and lasts
+only 2.5 s. Steam (or sugar) that strikes it sets off a **Steam Nova**:
+ordinary steam down all 16 lanes at once.
+
+Nova darts are plain steam, so everything that improves steam carries over:
+Polished Spoon and The Star make them faster, the Golden Spoon gilds them, and
+Double Trouble doubles them to 32. No combination is special-cased; they fall
+out of the rules.
+
 ## Future ideas (not implemented)
 
 These are possibilities for later milestones, recorded so they aren't lost.

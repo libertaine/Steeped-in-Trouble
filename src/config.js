@@ -172,4 +172,17 @@ export const CONFIG = deepFreeze({
     lifeChance: 0.12, // an extra cup (up to lives + 1)
     sugarChance: 0.28, // refill sugar, plus one
   },
+
+  // The Prismatic Sugar Cube: rarer and quicker than the golden one, under
+  // any fortune. Steaming it sets off a Steam Nova down every lane.
+  prismatic: {
+    firstRound: 2, // never in the first cup
+    chance: 0.2, // per round from then on
+    delayMin: 5,
+    delayMax: 18,
+    life: 2.5,
+    radiusMin: 120,
+    radiusMax: 190,
+    laneReach: 4,
+  },
 });

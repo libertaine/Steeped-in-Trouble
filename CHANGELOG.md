@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **The Prismatic Sugar Cube:** a rare, fleeting crystal (from round 2, any
+  fortune) that sets off a **Steam Nova** down all 16 lanes when steamed. The
+  nova is ordinary steam, so Double Trouble makes it 32 darts and the Golden
+  Spoon gilds it.
+
 ## [0.4.0] - 2026-10-27 — A Spoonful of Trouble
 
 ### Added

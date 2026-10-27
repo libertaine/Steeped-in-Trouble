@@ -6,7 +6,7 @@
 //
 // Events: matchStart, roundStart, steam, sugar, sugarRegen, milk, kill, drift,
 // escape, strain, recoil, goldenAppear, goldenCatch, goldenGone, goldenSpoon,
-// goldenSpoonEnd, reading, reveal, retract, upgrade, gameover, paused,
+// goldenSpoonEnd, prismaticAppear, prismaticCatch, prismaticGone, nova, reading, reveal, retract, upgrade, gameover, paused,
 // resumed.
 
 import { CONFIG } from '../config.js';
@@ -15,6 +15,7 @@ import { PHASE, createInitialState, createRoundStats } from './state.js';
 import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
 import { updateGolden } from '../gameplay/golden.js';
+import { rollPrismatic, updatePrismatic } from '../gameplay/prismatic.js';
 import { moveSpoon } from '../gameplay/player.js';
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
@@ -49,6 +50,8 @@ export function createGame({ seed, random } = {}) {
     state.clouds = [];
     state.golden = null;
     state.goldenTimer = null;
+    state.prismatic = null;
+    state.prismaticTimer = null;
   }
 
   function startRound() {
@@ -65,6 +68,7 @@ export function createGame({ seed, random } = {}) {
     state.offer = null;
     state.sugarRegenTimer = state.modifiers.sugarRegenInterval;
     if (state.modifiers.goldenCube) state.goldenTimer = rng.range(CONFIG.golden.delayMin, CONFIG.golden.delayMax);
+    state.prismaticTimer = rollPrismatic(state.round, rng);
     state.spawnTimer = CONFIG.spawning.firstDelay;
     state.shotCooldown = 0;
     state.roundStats = createRoundStats();
@@ -206,6 +210,7 @@ export function createGame({ seed, random } = {}) {
     updateClouds(state, dt);
     updateShots(state, dt);
     updateGolden(sim, dt);
+    updatePrismatic(sim, dt);
     updateEnemies(dt);
   }
 

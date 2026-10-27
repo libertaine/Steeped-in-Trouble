@@ -13,6 +13,9 @@ import { FORTUNES } from '../gameplay/fortunes.js';
 
 const { centerX: CX, centerY: CY, rimRadius: RIM } = CONFIG.arena;
 
+// The Prismatic Sugar Cube's colours (a fixed set, so glow sprites stay cached).
+const PRISM = ['#ff7aa8', '#ffd36b', '#8dffb8', '#7ccfff', '#c79bff'];
+
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 /** 0 → 1 → 0 over a lifetime. */
 const swell = (age, life) => Math.sin(Math.PI * clamp(age / life, 0, 1));
@@ -240,6 +243,26 @@ export function createTea({ random = Math.random } = {}) {
     goldenGone({ radius, angle }) {
       const p = polar(radius, angle);
       ripple(p.x, p.y, { size: 36, life: 1.2, strength: 0.6, rings: 1, tone: 'dark' });
+    },
+    prismaticAppear({ radius, angle }) {
+      const p = polar(radius, angle);
+      PRISM.forEach((tone, i) => ripple(p.x, p.y, { size: 30 + i * 9, life: 1, strength: 0.8, rings: 1, tone }));
+      glow(p.x, p.y, 60, PRISM[1], 1, 0.9);
+    },
+    prismaticGone({ radius, angle }) {
+      const p = polar(radius, angle);
+      ripple(p.x, p.y, { size: 30, life: 1, strength: 0.5, rings: 1, tone: 'dark' });
+    },
+    nova({ count }) {
+      // Every lane at once: the whole cup rings like a struck bell.
+      kick(0.6);
+      ripple(CX, CY, { size: RIM, life: 1.8, strength: 1.4, rings: 3, tone: '#f4fbff' });
+      PRISM.forEach((tone, i) => glow(CX, CY, 90 + i * 30, tone, 1.4, 0.8));
+      for (let i = 0; i < 6; i++) {
+        const p = rimPoint((i / 6) * TAU, 14);
+        ripple(p.x, p.y, { size: 34, life: 1, strength: 0.9, rings: 2, tone: PRISM[i % PRISM.length] });
+      }
+      for (let i = 0; i < Math.min(80, count * 3); i++) crystal(CX, CY, 180, rnd(0.6, 1.6), PRISM[i % PRISM.length]);
     },
     reveal({ fortune }) {
       const f = FORTUNES[fortune];

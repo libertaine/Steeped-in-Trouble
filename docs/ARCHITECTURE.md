@@ -19,6 +19,7 @@ src/
 │   ├── enemies.js       tea-leaf spawning and movement
 │   ├── weapons.js       steam, sugar, milk (and its backwash), hit testing, scoring
 │   ├── golden.js        the golden sugar cube and its rewards
+│   ├── prismatic.js     the rare prismatic sugar cube and its Steam Nova
 │   ├── upgrades.js      spoon upgrades: definitions, offers, stacking limits
 │   └── fortunes.js      leaf reading, fortune selection, modifiers, glyphs
 ├── rendering/
@@ -139,6 +140,13 @@ its rule lives (`steamSpeed()` and `steamCooldown()` in `weapons.js`,
 `turnSpeed()` in `player.js`, `sugarCapacity()`, and `strainerCapacity()` at
 round start), and every bonus multiplies the others, so a temporary effect
 never replaces a lasting one. A new match resets both.
+
+The Prismatic Sugar Cube is not a fortune. `startRound()` rolls for it with
+`rollPrismatic()` from round 2 on, whatever the fortune, and
+`gameplay/prismatic.js` places it and checks for a strike. A strike calls
+`steamNova()` in `weapons.js`, which launches ordinary steam (the same
+`launchSteam()` that `fireSteam()` uses) down every lane, so every bonus to
+steam applies to the nova too. Nova darts carry `nova: true`.
 
 When an upgrade is due, `readLeaves()` puts `drawOffer()`'s choice in
 `state.offer`. The reading then waits: Enter and the main button do nothing
