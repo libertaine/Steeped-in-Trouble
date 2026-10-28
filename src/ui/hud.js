@@ -78,6 +78,11 @@ const GRIND = {
     fight: 'Steam the safety valve while it’s open. Dodge the glowing lanes before the pressure blows, and shoot or sidestep the beans. Milk washes beans back and makes the machine sputter; sugar hits the valve hard. Three scalds and it gets away, but it can’t cost you a cup.',
     outro: 'Your cups, your spoon, and the next fortune are exactly as you left them.',
   },
+  // Until it is first beaten, the machine stands between the pot and its next chapter.
+  milestone: {
+    victory: 'The next brew awaits: new teas are on the shelf, and the leaves are a little livelier. Your spoon comes too.',
+    escaped: `It will be back after ${CONFIG.grind.retryAfter} more cups. Until then the tea stays as you know it, and your cups, spoon, and fortune are safe.`,
+  },
 };
 
 const pad = (n, width) => String(n).padStart(width, '0');
@@ -164,7 +169,8 @@ export function hudText(state) {
   const offering = state.phase === PHASE.READING && !!state.offer;
   const strainer = `${state.strainerLeft}/${strainerCapacity(state.spoon)}`;
   const tea = TEAS[state.tea];
-  const teaTip = state.phase === PHASE.PLAYING && tea.id !== 'house' ? `${tea.name}: ${tea.info}` : null;
+  const fresh = state.round > 1 && state.teaAge === 1 ? 'New on the shelf! ' : '';
+  const teaTip = state.phase === PHASE.PLAYING && tea.id !== 'house' ? `${fresh}${tea.name}: ${tea.info}` : null;
   const values = {
     hudStatus: statusText(state),
     hudScore: `SCORE ${pad(state.score, 4)}`,
@@ -214,7 +220,7 @@ export function hudText(state) {
       killLabel: 'Machine pressure',
       killCount: `${grind.health} / ${CONFIG.grind.health}`,
       hudStrainer: `SCALDS ${'● '.repeat(grind.scalds)}${'○ '.repeat(Math.max(0, left))}`.trim(),
-      gameTip: GRIND.tip[grind.stage],
+      gameTip: grind.stage === 'outro' && grind.milestone ? GRIND.milestone[grind.result] : GRIND.tip[grind.stage],
     });
     if (state.phase === PHASE.GRIND) values.mainBtn = GRIND.button[grind.stage];
   }

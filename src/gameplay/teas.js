@@ -2,31 +2,34 @@
 //
 // The tea is the round's environment; the fortune read from the last round's
 // leaves is a second, independent layer on top. Each round start:
-//   1. chooseTea(state, rng) picks the variety from the tea generator. The
-//      first cup is always the House Blend; after that a variety never repeats
-//      straight away, rounds since it was last served raise its chances, and
-//      one missing for too long is served next.
-//   2. roundModifiers(fortuneId, teaId, round) folds the tea's modifiers into
+//   1. chooseTea(state, rng) picks the variety from the tea generator, among
+//      the teas on tap so far (gameplay/progress.js). The first cup is always
+//      the House Blend, and a tea that has just come on tap is served the
+//      round it arrives. Otherwise a variety never repeats straight away,
+//      rounds since it was last served raise its chances, and one missing for
+//      too long is served next.
+//   2. roundModifiers(fortuneId, teaId, age) folds the tea's modifiers into
 //      the fortune's by fixed rules (multipliers multiply, bonuses add, chances
 //      take the larger, switches combine), so nothing stacks twice and
 //      everything expires at the next round start.
 //   3. Chai starts a spice current clock (createCurrent()), which
 //      updateCurrent() runs during play.
-// How strongly a variety's behaviour brews depends on the round: see
-// gameplay/strength.js. A tea's `strength(round)` gives its modifiers that
-// grow with the stage.
+// How strongly a variety's behaviour brews depends on its age, the normal
+// rounds since it came on tap: see gameplay/strength.js. A tea's
+// `strength(age)` gives its modifiers that grow with the stage.
 //
 // Hot Chocolate Havoc and The Daily Grind never read the tea.
 //
-// To add a variety, add an entry to TEAS (and to TEA_ROTATION), give any new
-// modifier a neutral default in BASE_MODIFIERS and a rule in COMBINE, and
-// put its tuning numbers in CONFIG.teas (or, if they grow with the stage, in
-// a per-stage list read through byStage()).
+// To add a variety, add an entry to TEAS and to a chapter's teas in
+// CONFIG.chapters, give any new modifier a neutral default in BASE_MODIFIERS
+// and a rule in COMBINE, and put its tuning numbers in CONFIG.teas (or, if
+// they grow with the stage, in a per-stage list read through byStage()).
 
 import { CONFIG } from '../config.js';
 import { LANE_STEP } from './arena.js';
 import { glide } from './enemies.js';
 import { modifiersFor } from './fortunes.js';
+import { debutTea, teasOnTap } from './progress.js';
 import { byStage } from './strength.js';
 
 const T = CONFIG.teas;
@@ -52,7 +55,7 @@ export const TEAS = Object.freeze({
     tag: 'darting leaves',
     color: '#b9e37a',
     modifiers: { enemySpeedMultiplier: T.green.enemySpeed },
-    strength: (round) => ({ dartChance: byStage(CONFIG.darting.chance, round) }),
+    strength: (age) => ({ dartChance: byStage(CONFIG.darting.chance, age) }),
   },
   earlGrey: {
     id: 'earlGrey',
@@ -63,7 +66,7 @@ export const TEAS = Object.freeze({
     tag: 'wandering leaves',
     color: '#c9b3ef',
     modifiers: {},
-    strength: (round) => ({ wanderChance: byStage(CONFIG.wandering.chance, round) }),
+    strength: (age) => ({ wanderChance: byStage(CONFIG.wandering.chance, age) }),
   },
   chai: {
     id: 'chai',
@@ -103,9 +106,6 @@ export const TEAS = Object.freeze({
   },
 });
 
-/** The varieties served from the second cup on, in a fixed order for tie-breaks. */
-export const TEA_ROTATION = Object.freeze(['green', 'earlGrey', 'chai', 'black', 'herbal']);
-
 /** How each modifier a tea may set combines with the fortune's value. */
 export const COMBINE = Object.freeze({
   enemySpeedMultiplier: 'multiply',
@@ -124,19 +124,19 @@ const RULES = {
   or: (a, b) => a || b,
 };
 
-/** The modifiers a tea brews with in a given round (its fixed ones, plus those that grow with the stage). */
-export function teaModifiers(teaId, round) {
+/** The modifiers a tea of a given age brews with (its fixed ones, plus those that grow with the stage). */
+export function teaModifiers(teaId, age) {
   const tea = TEAS[teaId];
-  return { ...tea?.modifiers, ...tea?.strength?.(round) };
+  return { ...tea?.modifiers, ...tea?.strength?.(age) };
 }
 
 /**
  * The modifiers a normal round plays with: the fortune's, with the tea's
- * for that round folded in by COMBINE, and leaf speed capped.
+ * at its age folded in by COMBINE, and leaf speed capped.
  */
-export function roundModifiers(fortuneId, teaId = 'house', round = 1) {
+export function roundModifiers(fortuneId, teaId = 'house', age = 1) {
   const modifiers = modifiersFor(fortuneId);
-  for (const [key, value] of Object.entries(teaModifiers(teaId, round))) {
+  for (const [key, value] of Object.entries(teaModifiers(teaId, age))) {
     modifiers[key] = RULES[COMBINE[key]](modifiers[key], value);
   }
   modifiers.enemySpeedMultiplier = Math.min(T.maxEnemySpeedMultiplier, modifiers.enemySpeedMultiplier);
@@ -149,16 +149,20 @@ export function teaFortuneNudges(teaId) {
 }
 
 /**
- * The variety for the round in state.round, given the one served last round
- * (state.tea) and when each was last served (state.teaServed). Always draws
- * exactly one number, so the tea generator advances the same way every cup.
+ * The variety for the round in state.round, given the teas on tap
+ * (state.progress), the one served last round (state.tea), and when each was
+ * last served (state.teaServed). Always draws exactly one number, so the tea
+ * generator advances the same way every cup.
  */
 export function chooseTea(state, rng) {
   const roll = rng.next();
   if (state.round <= 1) return 'house';
+  const debut = debutTea(state.progress, state.round);
+  if (debut) return debut;
   // Never served: count from the first cup.
   const since = (id) => state.round - (state.teaServed[id] ?? 1);
-  const candidates = TEA_ROTATION.filter((id) => id !== state.tea);
+  const candidates = teasOnTap(state.progress, state.round).filter((id) => id !== state.tea);
+  if (!candidates.length) return state.tea;
   const overdue = candidates.filter((id) => since(id) > T.maxAbsence);
   if (overdue.length) return overdue.reduce((a, b) => (since(b) > since(a) ? b : a));
   const weights = candidates.map((id) => Math.min(T.weightCap, since(id)));
@@ -174,15 +178,15 @@ export function chooseTea(state, rng) {
 
 /**
  * A current clock for one Chai round. `dir` is the first current's direction
- * (−1 or 1); the round sets how long the warnings and calms last.
+ * (−1 or 1); Chai's age sets how long the warnings and calms last.
  */
-export function createCurrent(dir, round = 1) {
+export function createCurrent(dir, age = 1) {
   return {
     stage: 'calm', // calm → warning → flowing → calm …
     time: 0, // seconds in the current stage
-    wait: byStage(C.firstAt, round), // seconds of calm before the next warning
-    calm: byStage(C.calmTime, round), // the calm between currents
-    warn: byStage(C.warnTime, round), // how long each warning lasts
+    wait: byStage(C.firstAt, age), // seconds of calm before the next warning
+    calm: byStage(C.calmTime, age), // the calm between currents
+    warn: byStage(C.warnTime, age), // how long each warning lasts
     dir, // −1 anticlockwise, 1 clockwise; alternates after each current
     count: 0, // currents so far this round
   };

@@ -21,6 +21,8 @@ but there's plenty in the cup already:
   reacts to every shot.
 - New in 0.9.0: five tea varieties, each changing how its round plays, from
   leaves that dart or change lanes to spice currents that sweep the cup.
+  They arrive as you progress, in chapters: a steady first chapter to learn
+  the cup, then a milestone to clear before the next brew is poured.
 - Tea-leaf fortunes: the leaves you defeat are read at the end of each
   round, and the reading changes the next one. Tea and fortune combine.
 - Spoon upgrades that last the whole pot, and combinations that sometimes
@@ -38,14 +40,17 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
   dry.
 - The spoon circles the rim and fires down the lane that glows. Steam is
   unlimited. Each round you also get a couple of milk pours, which push
-  leaves back and slow them, and a couple of sugar bursts, which fire down
-  three lanes at once.
+  leaves back and slow them (strongly in front of the spoon, and briefly
+  across the whole cup), and a couple of sugar bursts, which fire down three
+  lanes at once.
 - Clear enough leaves to finish the round. The leaves you defeated are then
   read, and their fortune changes the next round. Every other round you also
   choose an upgrade for your spoon, which lasts for the whole pot.
-- From the second cup on, each round brews a different tea, and each tea
-  changes how the leaves behave. The cup announces it, and the side panel
-  says what it does.
+- Each round brews a tea, and each tea changes how the leaves behave. The
+  cup announces it, and the side panel says what it does. New teas join the
+  shelf as you progress.
+- The game doesn't simply speed up every round. It moves on in chapters,
+  when you've earned it.
 - Now and then something different happens between cups. The side panel
   explains what to do, and none of it costs a cup.
 - Experiment. The cup rewards curiosity, and some things are best found for
@@ -58,7 +63,7 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 | --- | --- | --- |
 | Move the silver spoon | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> | hold **◀ TURN** / **TURN ▶** |
 | Fire steam (hold for continuous fire) | <kbd>Space</kbd> | hold **STEAM ↑** |
-| Milk: wash back and slow a wedge of the cup | <kbd>Q</kbd>, <kbd>↑</kbd>, or <kbd>M</kbd> | **MILK** |
+| Milk: wash back and slow a wedge of the cup, and the whole cup briefly | <kbd>Q</kbd>, <kbd>↑</kbd>, or <kbd>M</kbd> | **MILK** |
 | Sugar: three-lane burst | <kbd>E</kbd>, <kbd>↓</kbd>, or <kbd>S</kbd> | **SUGAR** |
 | Pause / resume | <kbd>P</kbd> | main button |
 | Start, next cup, new pot | <kbd>Enter</kbd> | main button |
@@ -74,7 +79,8 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
   `?graphics=low` or `?graphics=high` to the URL.
 - Add `?seed=<number>` to the URL to replay the same sequence of tea leaves.
 - Add `?tea=<variety>` to brew only one tea, for practice: `green`,
-  `earlGrey`, `chai`, `black`, `herbal`, or `house`.
+  `earlGrey`, `chai`, `black`, `herbal`, or `house`. A practice tea is
+  available from the first cup.
 
 ## Running locally
 

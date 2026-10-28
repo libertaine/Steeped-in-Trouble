@@ -68,16 +68,21 @@ export const CONFIG = deepFreeze({
     backwashRate: 7, // how quickly the push plays out (per second; about 95% done in 0.4 s)
     rescueShare: 0.75, // a pushed leaf beyond this share of the rim radius counts as a near miss
     carryChance: 0.2, // a steam dart that kills a leaf in a cloud may be carried on by the cream (once)
+    // The recovery pulse: in a normal round every pour also sends a wave through the whole cup.
+    // Under the cloud itself the stronger push and slowdown win; the two never add up.
+    pulse: {
+      backwash: 40, // every leaf in the cup is pushed this far back
+      duration: 1.5, // and slowed for this long (a second pour starts it again)…
+      slowFactor: 0.65, // …to this share of its speed
+    },
   },
 
   enemies: {
     maxActive: 18,
     spawnRadiusMin: 30,
     spawnRadiusMax: 47,
-    speedMin: 31,
-    speedMax: 47,
-    speedPerRound: 6,
-    maxRoundSpeedBonus: 55,
+    speedMin: 41, // a new leaf's speed, before the chapter's multiplier (CONFIG.chapters)
+    speedMax: 57,
     sizeMin: 9,
     sizeMax: 12,
     fadeInRate: 2, // alpha per second
@@ -86,11 +91,7 @@ export const CONFIG = deepFreeze({
 
   spawning: {
     firstDelay: 0.95,
-    baseInterval: 1.15,
-    intervalPerRound: 0.055,
-    minInterval: 0.57,
-    maxInterval: 1.1,
-    jitterMin: 0.72,
+    jitterMin: 0.72, // each gap is the chapter's interval (CONFIG.chapters) times a random factor between these
     jitterMax: 1.36,
   },
 
@@ -106,8 +107,29 @@ export const CONFIG = deepFreeze({
 
   rounds: {
     baseTarget: 16, // kills needed in round 1
-    targetPerRound: 4, // extra kills needed per later round
+    targetPerRound: 2, // extra kills needed per later round…
+    maxTarget: 32, // …up to this many
   },
+
+  // The slow burn (gameplay/progress.js): a pot is told in chapters. Within a
+  // chapter the leaves' speed and the pace of their arrival hold steady; a
+  // chapter begins with the cup after its milestone boss is beaten. `teas`
+  // lists the varieties the chapter brings, each with the number of normal
+  // rounds after the chapter's first before it comes on tap.
+  chapters: [
+    {
+      name: 'Learning to Steep',
+      enemySpeed: 1, // multiplies every new leaf's speed
+      spawnInterval: 1, // seconds between new leaves, before jitter and the tea
+      teas: { house: 0, herbal: 0, earlGrey: 0 },
+    },
+    {
+      name: 'Things Heat Up',
+      enemySpeed: 1.15,
+      spawnInterval: 1,
+      teas: { chai: 0, green: 2, black: 4 },
+    },
+  ],
 
   residue: {
     maxLeaves: 90,
@@ -201,7 +223,7 @@ export const CONFIG = deepFreeze({
   // Hot Chocolate Havoc: a bonus round between normal rounds (gameplay/chocolate.js).
   chocolate: {
     firstAfterMin: 3, // the first bonus always follows one of these rounds…
-    firstAfterMax: 5, // …so it comes before round 6 starts
+    firstAfterMax: 4, // …so it never meets the first Daily Grind
     minGap: 3, // later bonuses: at least this many normal rounds apart…
     chance: 0.3, // …then this chance after each round
     introTime: 4.2, // the prophecy and the transformation (Enter skips it)
@@ -261,9 +283,9 @@ export const CONFIG = deepFreeze({
   // The Daily Grind: a coffee boss between normal rounds (gameplay/grind.js).
   // Pairs are [calm, furious]: the machine speeds up as it takes damage.
   grind: {
-    firstAfterMin: 6, // the first encounter always follows one of these rounds…
-    firstAfterMax: 8,
-    minGap: 4, // later ones: at least this many normal rounds apart…
+    milestoneAfter: 5, // the first encounter always follows this round: Chapter 1's milestone
+    retryAfter: 2, // if the machine gets away, it is back after this many more normal rounds, until beaten
+    minGap: 4, // once beaten, rematches: at least this many normal rounds apart…
     chance: 0.25, // …then this chance after each round (never alongside Hot Chocolate Havoc)
     introTime: 4.6, // the announcement and the machine rising (Enter skips it)
     duration: 38, // seconds to defeat it before it leaves anyway
@@ -310,7 +332,8 @@ export const CONFIG = deepFreeze({
     weightCap: 4, // a variety's draw weight grows by 1 per round since it was last served, up to this
     maxAbsence: 7, // a variety missing for more than this many rounds is served next
     maxEnemySpeedMultiplier: 1.35, // tea × fortune leaf speed never goes beyond this
-    // The learning curve: each stage starts at this round and lasts until the
+    // The learning curve: each stage starts at this many normal rounds since
+    // the tea came on tap (1 for the round it arrives) and lasts until the
     // next one starts. Darting, wandering, and currents below list one value
     // per stage, in this order; everything else about a tea is the same in
     // every round.
@@ -327,7 +350,9 @@ export const CONFIG = deepFreeze({
   // Green Tea's darting leaves: a warning crouch, then a short burst of speed.
   // The dash adds a fixed distance on top of the leaf's ordinary movement, so
   // a faster leaf doesn't dash further. Even the fastest leaf finishes its
-  // dash well inside the rim.
+  // dash well inside the rim, and the crouch gives back about what the dash
+  // takes, so even the slowest leaf never reaches the rim noticeably sooner
+  // for having darted.
   darting: {
     chance: [0.1, 0.2, 0.3], // by stage: share of new leaves that dart
     atMin: 60, // the crouch starts once a leaf passes a radius between these
@@ -336,7 +361,7 @@ export const CONFIG = deepFreeze({
     warnTime: [0.75, 0.65, 0.55], // by stage: seconds of visible crouch…
     warnPace: 0.35, // …at this share of its speed
     dashTime: 0.45, // seconds of dash, accelerating and then settling…
-    dashDistance: [12, 22, 35], // …by stage: carrying it this much further than an ordinary leaf would go
+    dashDistance: [10, 14, 18], // …by stage: carrying it this much further than an ordinary leaf would go
   },
 
   // Earl Grey's wandering leaves: a visible lean, then a glide into the neighbouring lane,

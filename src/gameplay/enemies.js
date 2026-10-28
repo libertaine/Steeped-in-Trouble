@@ -7,8 +7,9 @@
 //   - 'darter' (Green Tea): crouches and flickers, then dashes a fixed
 //     distance further than an ordinary leaf would go in that time.
 //   - 'wanderer' (Earl Grey): leans one way, then glides into that lane.
-// Each takes its warning time (and a darter its dash distance) from the
-// round it appears in; see gameplay/strength.js.
+// Each takes its warning time (and a darter its dash distance) from the age
+// of the round's tea; see gameplay/strength.js. A leaf's speed, and how often
+// new ones arrive, come from the chapter (gameplay/progress.js), not the round.
 // A glide ({ shift, length, time, done }) moves a leaf sideways smoothly;
 // wanderers and Chai's spice currents both use it, and it adds to (rather
 // than overwrites) any other change of angle, such as The Spiral's drift.
@@ -18,6 +19,7 @@
 
 import { CONFIG } from '../config.js';
 import { LANES, LANE_STEP, TAU, laneAngle } from './arena.js';
+import { currentChapter } from './progress.js';
 import { byStage } from './strength.js';
 import { isNearCloud } from './weapons.js';
 
@@ -46,7 +48,7 @@ export function spawnEnemy({ state, rng }) {
     angle: laneAngle(lane),
     radius,
     home: radius, // milk and the recovering cup never push it further in than this
-    speed: rng.range(E.speedMin, E.speedMax) + Math.min(E.maxRoundSpeedBonus, state.round * E.speedPerRound),
+    speed: rng.range(E.speedMin, E.speedMax) * currentChapter(state.progress).enemySpeed,
     wiggle: rng.range(0, TAU), // animation phase only
     shifted: false, // has drifted under The Spiral
     size: rng.range(E.sizeMin, E.sizeMax),
@@ -59,22 +61,21 @@ export function spawnEnemy({ state, rng }) {
     enemy.kind = kind;
     enemy.dart = {
       stage: 'waiting', at: rng.range(D.atMin, D.atMax), time: 0,
-      warn: byStage(D.warnTime, state.round), distance: byStage(D.dashDistance, state.round),
+      warn: byStage(D.warnTime, state.teaAge), distance: byStage(D.dashDistance, state.teaAge),
     };
   } else if (kind === 'wanderer') {
     enemy.kind = kind;
     enemy.wander = {
       stage: 'waiting', at: rng.range(WANDER.atMin, WANDER.atMax), dir: rng.next() < 0.5 ? -1 : 1, time: 0,
-      warn: byStage(WANDER.warnTime, state.round),
+      warn: byStage(WANDER.warnTime, state.teaAge),
     };
   }
   state.enemies.push(enemy);
   return enemy;
 }
 
-/** Seconds until the next spawn in a given round (scaled by the tea, if a modifier is given). */
-export function nextSpawnDelay(round, rng, intervalMultiplier = 1) {
-  const interval = Math.min(S.maxInterval, Math.max(S.minInterval, S.baseInterval - round * S.intervalPerRound));
+/** Seconds until the next spawn: the chapter's interval, scaled by the tea and fortune, with some jitter. */
+export function nextSpawnDelay(interval, rng, intervalMultiplier = 1) {
   return interval * intervalMultiplier * rng.range(S.jitterMin, S.jitterMax);
 }
 
@@ -82,7 +83,8 @@ export function updateSpawning(sim, dt) {
   const { state, rng } = sim;
   state.spawnTimer -= dt;
   if (state.spawnTimer <= 0 && state.enemies.length < E.maxActive) {
-    state.spawnTimer = nextSpawnDelay(state.round, rng, state.modifiers.spawnIntervalMultiplier);
+    const { spawnInterval } = currentChapter(state.progress);
+    state.spawnTimer = nextSpawnDelay(spawnInterval, rng, state.modifiers.spawnIntervalMultiplier);
     spawnEnemy(sim);
   }
 }
@@ -181,6 +183,18 @@ function advanceWander(enemy, emit, dt) {
 }
 
 /**
+ * How much milk slows a leaf at this angle: a cloud's strong slowdown near
+ * it, and the recovery pulse's lighter one everywhere while it lasts. Only
+ * the stronger applies, so the two never multiply into a standstill.
+ */
+export function milkSlow(state, angle) {
+  const M = CONFIG.milk;
+  const cloud = isNearCloud(state.clouds, angle, M.slowHalfWidthLanes) ? M.slowFactor : 1;
+  const pulse = state.pulse > 0 ? M.pulse.slowFactor : 1;
+  return Math.min(cloud, pulse);
+}
+
+/**
  * Move one enemy outward, slowed by milk, hurried by the tea and Tempestuous
  * Tea, held or dashing by its own behaviour, nudged by The Spiral, carried by
  * any glide, and washed back by a milk wave or the recovering cup. A dash's
@@ -190,9 +204,8 @@ function advanceWander(enemy, emit, dt) {
 export function advanceEnemy(enemy, { state, rng, emit }, dt) {
   enemy.alpha = Math.min(1, enemy.alpha + dt * E.fadeInRate);
   const { pace, dash } = advanceDart(enemy, emit, dt);
-  const slowed = isNearCloud(state.clouds, enemy.angle, CONFIG.milk.slowHalfWidthLanes);
   const rise = enemy.speed * state.modifiers.enemySpeedMultiplier * pace + (enemy.backwash > 0 ? 0 : dash);
-  enemy.radius += rise * (slowed ? CONFIG.milk.slowFactor : 1);
+  enemy.radius += rise * milkSlow(state, enemy.angle);
   if (enemy.backwash > 0) {
     // The push eases out: quick at first, then settling.
     const move = enemy.backwash * (1 - Math.exp(-dt * CONFIG.milk.backwashRate));

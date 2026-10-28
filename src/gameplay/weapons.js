@@ -146,6 +146,21 @@ export function pourMilk(sim) {
 }
 
 /**
+ * The recovery pulse that follows every milk pour in a normal round: a wave
+ * through the whole cup pushes every leaf back a little and slows it for a
+ * moment (see milkSlow() in enemies.js). Under the pour's own cloud the
+ * stronger push and slowdown win rather than adding up, and a second pour
+ * starts the pulse again rather than deepening it. The pulse counts no near
+ * misses, kills, or milk credit of its own: those stay with the cloud.
+ */
+export function milkPulse({ state, emit }) {
+  const P = CONFIG.milk.pulse;
+  for (const enemy of state.enemies) enemy.backwash = Math.max(enemy.backwash ?? 0, P.backwash);
+  state.pulse = P.duration;
+  emit('milkPulse', { leaves: state.enemies.length });
+}
+
+/**
  * A dart is used up, on a target (`hit`) or by fizzling out at the centre.
  * A hit settles its volley at once; the volley is wasted when its last dart
  * fizzles without any of them having hit.
@@ -173,7 +188,9 @@ export function updateShots(state, dt) {
   });
 }
 
+/** Milk clouds and the recovery pulse wear off; clouds drift if they are stormy. */
 export function updateClouds(state, dt) {
+  state.pulse = Math.max(0, (state.pulse ?? 0) - dt);
   for (let i = state.clouds.length - 1; i >= 0; i--) {
     const cloud = state.clouds[i];
     cloud.time -= dt;

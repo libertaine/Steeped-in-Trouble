@@ -128,7 +128,7 @@ test('completes a round, reads the leaves, picks a spoon upgrade, and brews the 
   expect(await page.evaluate((id) => window.__TEACUP__.game.state.spoon[id], picked)).toBe(1);
   await expect(page.locator('#spoonKit')).not.toHaveText('An ordinary silver spoon.');
   await expect(page.locator('#roundNum')).toHaveText('02');
-  await expect(page.locator('#killCount')).toHaveText('0 / 20');
+  await expect(page.locator('#killCount')).toHaveText('0 / 18');
   await expect(page.locator('#fortuneLabel')).toHaveText('This cup’s omen');
   expect((await gameState(page)).fortune).toBe(nextFortune);
   await expect(page.locator('#fortuneName')).toHaveText(FORTUNE_NAMES);

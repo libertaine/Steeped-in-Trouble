@@ -55,15 +55,15 @@ function flameAt(game, lane, wait = 0.3) {
 const types = (game) => game.drainEvents().map((e) => e.type);
 
 describe('when Hot Chocolate Havoc happens', () => {
-  it('guarantees the first bonus after round 3, 4, or 5', () => {
+  it('guarantees the first bonus after round 3 or 4, before the first Daily Grind', () => {
     const seen = new Set();
     for (let seed = 0; seed < 200; seed++) {
       const after = firstHavocRound(createRandom(seed));
       expect(after).toBeGreaterThanOrEqual(3);
-      expect(after).toBeLessThanOrEqual(5);
+      expect(after).toBeLessThan(CONFIG.grind.milestoneAfter);
       seen.add(after);
     }
-    expect([...seen].sort()).toEqual([3, 4, 5]);
+    expect([...seen].sort()).toEqual([3, 4]);
   });
 
   it('comes after that round in a real match, and not before', () => {

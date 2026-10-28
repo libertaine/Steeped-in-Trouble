@@ -1136,9 +1136,65 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     ctx.restore();
   }
 
+  /** A new chapter, announced at the top of the cup before its first tea, drawn under the leaves. */
+  function drawChapterCard(card, reduced) {
+    const chapter = card && CONFIG.chapters[card.chapter - 1];
+    if (!chapter) return;
+    const age = card.life - card.time;
+    const a = clamp(Math.min(age / 0.3, card.time / 0.6), 0, 1);
+    const pop = reduced ? 1 : 1 + 0.2 * Math.max(0, 1 - age / 0.4);
+    // Lower than the tea card, clear of the HUD pills that overlay the top of the cup on small screens.
+    const y0 = CY - 160;
+    ctx.save();
+    ctx.globalAlpha = a * 0.9;
+    ctx.fillStyle = '#1d1608';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(CX - 190, y0, 380, 86, 12);
+    else ctx.rect(CX - 190, y0, 380, 86);
+    ctx.fill();
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 1.6;
+    if (renderer.quality === 'high' && !reduced) {
+      ctx.shadowColor = GOLD;
+      ctx.shadowBlur = 8 + 6 * Math.sin(time * 3);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = a;
+    text(`CHAPTER ${card.chapter} · ${chapter.name.toUpperCase()}`, CX, y0 + 15, 10, GOLD, 'center', MONO);
+    text('THE NEXT BREW AWAITS', CX, y0 + 43, 24 * pop, '#fff4e0', 'center', 'Georgia,serif', 'bold ');
+    text('New teas are on the shelf.', CX, y0 + 69, 13, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
+    ctx.restore();
+  }
+
+  /**
+   * Milk's recovery pulse: while the whole cup is slowed, a pale ring glows
+   * just inside the rim, fading as the pulse runs out (the wave itself is in
+   * the tea). It sits under the leaves and the aim markers.
+   */
+  function drawPulse(state, reduced) {
+    const left = state.pulse ?? 0;
+    if (left <= 0) return;
+    const total = CONFIG.milk.pulse.duration;
+    const a = clamp(left / 0.45, 0, 1) * clamp((total - left) / 0.15, 0, 1);
+    const shimmer = reduced ? 1 : 0.85 + 0.15 * Math.sin(time * 8);
+    ctx.save();
+    ctx.globalAlpha = 0.45 * a * shimmer;
+    ctx.strokeStyle = '#f6f1e6';
+    ctx.lineWidth = 3;
+    if (renderer.quality === 'high') {
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 10;
+    }
+    ctx.beginPath();
+    ctx.arc(CX, CY, OUTER - 9, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   /** The round's tea, announced briefly at the top of the cup, drawn under the leaves. */
   function drawTeaCard(card, reduced) {
-    if (!card) return;
+    if (!card || card.delay > 0) return;
     const tea = TEAS[card.tea];
     if (!tea) return;
     const age = card.life - card.time;
@@ -1156,7 +1212,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     ctx.lineWidth = 1.4;
     ctx.stroke();
     ctx.globalAlpha = a;
-    text('NOW BREWING', CX, y0 + 14, 10, tea.color, 'center', MONO);
+    text(card.debut ? '✦ NEW ON THE SHELF ✦' : 'NOW BREWING', CX, y0 + 14, 10, tea.color, 'center', MONO);
     text(tea.name, CX, y0 + 35, 22 * pop, '#fff4e0', 'center', 'Georgia,serif', 'bold ');
     text(`“${tea.quip}”`, CX, y0 + 58, 13, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
     ctx.restore();
@@ -1477,9 +1533,13 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       const reduced = !!fx.tea?.reduced;
       drawAimBeams(state, fx);
       drawClouds(state.clouds);
+      if (inPlay) drawPulse(state, reduced);
       if (inPlay) drawCurrent(state.current, reduced);
-      // The tea's announcement sits beneath the leaves, so it can never hide one.
-      if (state.phase === PHASE.PLAYING) drawTeaCard(fx.teaCard, reduced);
+      // The announcements sit beneath the leaves, so they can never hide one.
+      if (state.phase === PHASE.PLAYING) {
+        drawChapterCard(fx.chapterCard, reduced);
+        drawTeaCard(fx.teaCard, reduced);
+      }
       if (grind) espresso.drawField(grind, time);
       drawResidue(state);
       for (const e of state.enemies) drawEnemy(e, reduced);

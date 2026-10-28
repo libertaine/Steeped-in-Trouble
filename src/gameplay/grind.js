@@ -7,7 +7,8 @@
 //
 // The encounter keeps its own damage meter: three scalds and the machine
 // escapes. Neither outcome touches the cups (except as a reward), the spoon,
-// the round, or the next fortune. Like Hot Chocolate Havoc it has its own
+// the round, or the next fortune; the first victory opens Chapter 2 (see
+// game.js and gameplay/progress.js). Like Hot Chocolate Havoc it has its own
 // random generator (passed in as `rng`), so the normal rounds play out the
 // same with or without it. Functions receive `sim` = { state, rng, emit }.
 
@@ -29,26 +30,35 @@ const by = ([calm, furious], f) => calm + (furious - calm) * f;
 
 // ── When it happens ──────────────────────────────────────────────────────
 
-/** At a new match: the round after which the first encounter is guaranteed. */
-export function firstGrindRound(rng) {
-  return G.firstAfterMin + rng.int(G.firstAfterMax - G.firstAfterMin + 1);
+// Until it is beaten the machine is Chapter 1's milestone: state.grindAfter
+// holds the round it is guaranteed to follow (G.milestoneAfter at first, then
+// G.retryAfter rounds after each escape), and nothing else can take that
+// reading. Once beaten, it returns now and then as a rematch with nothing at
+// stake for the chapters.
+
+/** At a reading: is the milestone encounter (the first, or a rematch after an escape) due? */
+export function milestoneDue(state) {
+  return state.grindAfter !== null && state.round >= state.grindAfter;
 }
 
 /**
- * At a reading: does the machine appear before the next cup? Never alongside
- * Hot Chocolate Havoc: if both want the same reading, the machine waits for a
- * later one (the first encounter stays due until it has happened).
+ * At a reading, once any Hot Chocolate Havoc has been settled: does the
+ * machine appear before the next cup? Until beaten, only when its milestone
+ * is due; after that, an occasional rematch, never alongside the hot
+ * chocolate (the rematch simply waits for a later reading).
  */
 export function grindDue(state, rng) {
+  if (state.grindAfter !== null) return milestoneDue(state);
   if (state.havocDue) return false;
-  if (state.grindAfter !== null) return state.round >= state.grindAfter;
   return state.round - state.lastGrind >= G.minGap && rng.next() < G.chance;
 }
 
 // ── State ────────────────────────────────────────────────────────────────
 
-export function createGrind() {
+/** A fresh encounter; `milestone` if beating it opens the next chapter. It is the same fight either way. */
+export function createGrind({ milestone = false } = {}) {
   return {
+    milestone,
     stage: 'intro', // intro → fight → outro
     time: 0, // seconds in the current stage
     left: G.duration, // seconds of fighting left

@@ -4,7 +4,7 @@ import { createEffects } from '../../src/rendering/effects.js';
 import { createTea } from '../../src/rendering/tea.js';
 import { hudText, offerCards, spoonKitText } from '../../src/ui/hud.js';
 import { OFFER_AT, createGame } from '../../src/core/game.js';
-import { brewNext, completeRound, playingGame } from './helpers.js';
+import { beatGrind, brewNext, completeRound, playTo, playingGame } from './helpers.js';
 
 describe('frame timing', () => {
   it('converts frame intervals to seconds', () => {
@@ -208,7 +208,7 @@ describe('effects', () => {
 });
 
 describe('living tea', () => {
-  const EVENTS = ['roundStart', 'steam', 'sugar', 'sugarRegen', 'milk', 'kill', 'drift', 'escape', 'strain', 'recoil',
+  const EVENTS = ['roundStart', 'steam', 'sugar', 'sugarRegen', 'milk', 'milkPulse', 'kill', 'drift', 'escape', 'strain', 'recoil',
     'goldenAppear', 'goldenCatch', 'goldenGone', 'goldenSpoon', 'goldenSpoonEnd', 'prismaticAppear', 'prismaticCatch',
     'prismaticGone', 'nova', 'secret', 'discover', 'reading', 'reveal', 'retract', 'upgrade', 'gameover']
     .map((type) => ({
@@ -273,6 +273,90 @@ describe('Strange Brews presentation', () => {
     expect(effects.fx.teaCard).toBeNull();
     effects.handle({ type: 'roundStart', round: 12, fortune: null, tea: 'green' });
     expect(effects.fx.teaCard.life).toBeLessThan(2.8);
+  });
+
+  it('announces a new chapter first, then its new tea, marked as new', () => {
+    const effects = createEffects({ random: () => 0.5 });
+    const playing = { phase: 'playing', angle: 0, enemies: [], shots: [] };
+    effects.handle({ type: 'roundStart', round: 6, fortune: null, tea: 'chai', debut: true, chapter: 2, opens: true });
+    expect(effects.fx.chapterCard).toMatchObject({ chapter: 2 });
+    expect(effects.fx.teaCard).toMatchObject({ tea: 'chai', debut: true });
+    expect(effects.fx.teaCard.delay).toBeGreaterThan(0);
+    expect(effects.fx.particles.length).toBeGreaterThan(0);
+    const life = effects.fx.teaCard.life;
+    effects.update(effects.fx.chapterCard.life + 0.05, playing);
+    expect(effects.fx.chapterCard).toBeNull();
+    expect(effects.fx.teaCard).toMatchObject({ tea: 'chai', delay: 0, time: life }); // its turn now
+    effects.update(life + 0.1, playing);
+    expect(effects.fx.teaCard).toBeNull();
+    // A tea arriving later in the chapter gets its card straight away; nothing announces a chapter.
+    effects.handle({ type: 'roundStart', round: 8, fortune: null, tea: 'green', debut: true, chapter: 2, opens: false });
+    expect(effects.fx.chapterCard).toBeNull();
+    expect(effects.fx.teaCard).toMatchObject({ tea: 'green', debut: true, delay: 0 });
+    effects.handle({ type: 'roundStart', round: 9, fortune: null, tea: 'house', chapter: 2 });
+    expect(effects.fx.teaCard).toMatchObject({ debut: false });
+  });
+
+  it('marks a newly arrived tea in the tip, and only in its first round', () => {
+    const game = createGame({ seed: 1 });
+    game.primaryAction();
+    playTo(game, 6, { win: true });
+    expect(game.state.tea).toBe('chai');
+    expect(hudText(game.state).gameTip).toMatch(/^New on the shelf! Chai: /);
+    playTo(game, 7, { win: true });
+    expect(hudText(game.state).gameTip).not.toMatch(/New on the shelf/);
+    // A pinned practice tea is never new.
+    const pinned = createGame({ seed: 1, tea: 'green' });
+    pinned.primaryAction();
+    playTo(pinned, 3);
+    expect(hudText(pinned.state).gameTip).toMatch(/^Green Tea: /);
+  });
+
+  it('says what the milestone means when the machine is beaten, or gets away', () => {
+    for (const win of [true, false]) {
+      const game = createGame({ seed: 1 });
+      game.primaryAction();
+      playTo(game, 5);
+      completeRound(game);
+      game.state.offer = null;
+      game.primaryAction();
+      game.primaryAction(); // into the fight
+      if (win) beatGrind(game);
+      else {
+        game.state.grind.left = 0;
+        game.update(1 / 60);
+      }
+      expect(game.state.grind.stage).toBe('outro');
+      expect(hudText(game.state).gameTip).toMatch(win ? /^The next brew awaits/ : /^It will be back after 2 more cups/);
+    }
+    // A plain encounter keeps the plain words.
+    const plain = playingGame();
+    completeRound(plain);
+    plain.state.offer = null;
+    plain.state.grindDue = true;
+    plain.primaryAction();
+    plain.primaryAction();
+    plain.state.grind.left = 0;
+    plain.update(1 / 60);
+    expect(plain.state.grind.milestone).toBe(false);
+    expect(hudText(plain.state).gameTip).toMatch(/^Your cups, your spoon/);
+  });
+
+  it('shows the recovery pulse as a cup-wide wave, or a still glow with reduced motion', () => {
+    const tea = createTea({ random: () => 0.5 });
+    tea.handle({ type: 'milkPulse', leaves: 3 });
+    expect(tea.liquid.surges.some((s) => s.full)).toBe(true);
+    expect(tea.liquid.ripples.length).toBeGreaterThan(0);
+    const still = createTea({ random: () => 0.5 });
+    still.liquid.reduced = true;
+    still.handle({ type: 'milkPulse', leaves: 3 });
+    expect(still.liquid.surges).toHaveLength(0);
+    expect(still.liquid.ripples).toHaveLength(0);
+    expect(still.liquid.glows.length).toBeGreaterThan(0);
+    const effects = createEffects({ random: () => 0.5 });
+    effects.handle({ type: 'milkPulse', leaves: 3 });
+    effects.update(0.05, { phase: 'playing', angle: 0, enemies: [], shots: [] });
+    expect(effects.fx.whisper.text).toMatch(/whole cup/); // explained the first time
   });
 
   it('eases the liquid into the new tea’s colours', () => {

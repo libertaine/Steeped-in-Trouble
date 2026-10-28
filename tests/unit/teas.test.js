@@ -5,9 +5,10 @@ import { createRandom } from '../../src/core/random.js';
 import { LANE_STEP, angleDifference, laneAngle, laneOf } from '../../src/gameplay/arena.js';
 import { nextSpawnDelay, spawnEnemy } from '../../src/gameplay/enemies.js';
 import { BASE_MODIFIERS, FORTUNES, drawFortune, fortuneWeights, modifiersFor } from '../../src/gameplay/fortunes.js';
+import { teasOnTap } from '../../src/gameplay/progress.js';
 import { byStage, teaStage } from '../../src/gameplay/strength.js';
 import {
-  COMBINE, TEAS, TEA_ROTATION, chooseTea, createCurrent, roundModifiers, teaFortuneNudges, teaModifiers,
+  COMBINE, TEAS, chooseTea, createCurrent, roundModifiers, teaFortuneNudges, teaModifiers,
 } from '../../src/gameplay/teas.js';
 import { killScore } from '../../src/gameplay/weapons.js';
 import { IDLE, brewNext, completeRound, killOne, placeEnemy, playingGame, step } from './helpers.js';
@@ -15,9 +16,14 @@ import { IDLE, brewNext, completeRound, killOne, placeEnemy, playingGame, step }
 const D = CONFIG.darting;
 const W = CONFIG.wandering;
 const C = CONFIG.currents;
+const ALL_ON_TAP = { chapter: 2, starts: [1, 2] }; // every tea on tap from round 6
 
-/** The teas a seed brews for its first `rounds` normal rounds, played as quickly as possible. */
-function teaSequence(seed, rounds, { bonuses = true } = {}) {
+/**
+ * The teas a seed brews for its first `rounds` normal rounds, played as
+ * quickly as possible, with The Daily Grind beaten at its first chance (so
+ * Chapter 2 opens with round 6). `havoc: false` skips every hot chocolate.
+ */
+function teaSequence(seed, rounds, { havoc = true } = {}) {
   const game = createGame({ seed });
   game.primaryAction();
   const teas = [game.state.tea];
@@ -27,11 +33,9 @@ function teaSequence(seed, rounds, { bonuses = true } = {}) {
     game.state.modifiers = { ...game.state.modifiers, laneDrift: false };
     completeRound(game);
     expect(game.state.phase).toBe('reading');
-    if (!bonuses) {
-      game.state.havocDue = false;
-      game.state.grindDue = false;
-    }
-    brewNext(game);
+    if (!havoc) game.state.havocDue = false;
+    brewNext(game, { win: true });
+    expect(teasOnTap(game.state.progress, game.state.round)).toContain(game.state.tea);
     teas.push(game.state.tea);
   }
   return teas;
@@ -58,11 +62,17 @@ function brewedRound(tea, round, fortune = null) {
   return game;
 }
 
-/** The fastest a leaf can rise in a round: top base speed and round bonus, at the leaf speed cap. */
-function fastestIn(round) {
+/** The fastest any chapter's leaf can be spawned (before the tea and fortune). */
+const FASTEST_SPAWN = CONFIG.enemies.speedMax * Math.max(...CONFIG.chapters.map((c) => c.enemySpeed));
+
+/** The fastest a leaf can rise in any chapter, at the leaf speed cap. */
+const FASTEST = FASTEST_SPAWN * CONFIG.teas.maxEnemySpeedMultiplier;
+
+/** Typical leaf speeds, slowest to fastest: each chapter's slowest, middling, and fastest spawn. */
+const SPAWN_SPEEDS = CONFIG.chapters.flatMap(({ enemySpeed }) => {
   const E = CONFIG.enemies;
-  return (E.speedMax + Math.min(E.maxRoundSpeedBonus, round * E.speedPerRound)) * CONFIG.teas.maxEnemySpeedMultiplier;
-}
+  return [E.speedMin, (E.speedMin + E.speedMax) / 2, E.speedMax].map((speed) => speed * enemySpeed);
+});
 
 /** The last round of each stage (the final stage stands in for any later round). */
 const lastRounds = () => CONFIG.teas.stages.map((stage, i, all) => (all[i + 1] ? all[i + 1].from - 1 : 99));
@@ -99,22 +109,20 @@ describe('choosing the tea', () => {
     expect(teaSequence(1, 20)).not.toEqual(teaSequence(2, 20));
   });
 
-  it('never repeats a variety in consecutive rounds, and never brews the House Blend again', () => {
+  it('never repeats a variety in consecutive rounds, and only ever brews teas on tap', () => {
     for (let seed = 1; seed <= 60; seed++) {
-      const teas = teaSequence(seed, 25);
-      for (let i = 1; i < teas.length; i++) {
-        expect(teas[i]).not.toBe(teas[i - 1]);
-        expect(TEA_ROTATION).toContain(teas[i]);
-      }
+      const teas = teaSequence(seed, 25); // teaSequence checks every cup is on tap
+      for (let i = 1; i < teas.length; i++) expect(teas[i]).not.toBe(teas[i - 1]);
     }
   });
 
-  it('serves all five varieties early, and none goes missing for long', () => {
+  it('serves every variety on tap, and none goes missing for long', () => {
     for (let seed = 1; seed <= 100; seed++) {
       const teas = teaSequence(seed, 30);
-      expect(new Set(teas.slice(1, 1 + CONFIG.teas.maxAbsence + 2)).size).toBe(5);
-      for (const id of TEA_ROTATION) {
-        const served = teas.flatMap((t, i) => (t === id ? [i + 1] : []));
+      for (const tea of teas.slice(0, 5)) expect(['house', 'herbal', 'earlGrey']).toContain(tea); // Chapter 1
+      expect(new Set(teas.slice(5, 5 + 5 + CONFIG.teas.maxAbsence)).size).toBe(6);
+      for (const id of Object.keys(TEAS)) {
+        const served = teas.flatMap((t, i) => (t === id && i >= 5 ? [i + 1] : []));
         for (let k = 1; k < served.length; k++) {
           expect(served[k] - served[k - 1]).toBeLessThanOrEqual(CONFIG.teas.maxAbsence + 1);
         }
@@ -124,19 +132,27 @@ describe('choosing the tea', () => {
 
   it('is not a fixed cycle', () => {
     const openings = new Set();
-    for (let seed = 1; seed <= 40; seed++) openings.add(teaSequence(seed, 6).slice(1).join(','));
-    expect(openings.size).toBeGreaterThan(20);
+    const later = new Set();
+    for (let seed = 1; seed <= 40; seed++) {
+      const teas = teaSequence(seed, 16);
+      openings.add(teas.slice(1, 5).join(','));
+      later.add(teas.slice(10).join(','));
+    }
+    expect(openings.size).toBeGreaterThan(6);
+    expect(later.size).toBeGreaterThan(30);
   });
 
-  it('is unaffected by how the cups are played, or by bonus rounds between them', () => {
-    // With bonuses suppressed the pot skips every Hot Chocolate Havoc and Daily Grind.
+  it('is unaffected by how the cups are played, or by Hot Chocolate Havoc between them', () => {
     for (const seed of [3, 17, 99]) {
-      expect(teaSequence(seed, 16, { bonuses: false })).toEqual(teaSequence(seed, 16));
+      expect(teaSequence(seed, 16, { havoc: false })).toEqual(teaSequence(seed, 16));
     }
   });
 
   it('weights varieties by how long since they were served', () => {
-    const state = { round: 6, tea: 'green', teaServed: { green: 5, earlGrey: 4, chai: 3, black: 2 } };
+    const state = {
+      round: 14, tea: 'green', progress: ALL_ON_TAP,
+      teaServed: { green: 13, earlGrey: 12, chai: 11, black: 10, house: 9, herbal: 9 },
+    };
     const counts = {};
     const rng = createRandom(8);
     for (let i = 0; i < 4000; i++) {
@@ -147,11 +163,27 @@ describe('choosing the tea', () => {
     expect(counts.earlGrey).toBeLessThan(counts.chai);
     expect(counts.chai).toBeLessThan(counts.black);
     expect(counts.black).toBeLessThanOrEqual(counts.herbal * 1.15); // both at the weight cap
+    expect(counts.house).toBeLessThanOrEqual(counts.herbal * 1.15);
   });
 
   it('serves a variety missing for too long next', () => {
-    const state = { round: 12, tea: 'green', teaServed: { green: 11, earlGrey: 10, chai: 9, black: 8, herbal: 3 } };
+    const state = {
+      round: 14, tea: 'green', progress: ALL_ON_TAP,
+      teaServed: { green: 13, earlGrey: 12, chai: 11, black: 10, house: 9, herbal: 3 },
+    };
     expect(chooseTea(state, createRandom(1))).toBe('herbal');
+  });
+
+  it('serves a tea the round it comes on tap, and never one still to come', () => {
+    const progress = { chapter: 2, starts: [1, 8] };
+    for (const [round, tea] of [[8, 'chai'], [10, 'green'], [12, 'black']]) {
+      const state = { round, tea: 'house', progress, teaServed: { house: round - 1 } };
+      expect(chooseTea(state, createRandom(round))).toBe(tea);
+    }
+    for (let seed = 0; seed < 300; seed++) {
+      const state = { round: 9, tea: 'chai', progress, teaServed: { chai: 8, house: 7 } };
+      expect(['house', 'herbal', 'earlGrey']).toContain(chooseTea(state, createRandom(seed)));
+    }
   });
 
   it('can be pinned to one variety, and ignores ids that are not teas', () => {
@@ -206,13 +238,15 @@ describe('combining the tea with the fortune', () => {
     completeRound(plain);
     brewNext(plain);
     expect(plain.state.modifiers.dartChance).toBe(0);
-    // An unpinned pot: each round's modifiers are exactly that round's tea and fortune.
+    // An unpinned pot: each round's modifiers are exactly that round's tea, at its age, and fortune.
     const pot = createGame({ seed: 12 });
     pot.primaryAction();
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 16; i++) {
+      pot.state.current = null;
+      pot.state.modifiers = { ...pot.state.modifiers, laneDrift: false };
       completeRound(pot);
-      brewNext(pot);
-      expect(pot.state.modifiers).toEqual(roundModifiers(pot.state.fortune, pot.state.tea, pot.state.round));
+      brewNext(pot, { win: true });
+      expect(pot.state.modifiers).toEqual(roundModifiers(pot.state.fortune, pot.state.tea, pot.state.teaAge));
     }
   });
 });
@@ -221,7 +255,7 @@ describe('the learning curve', () => {
   /** Leaves spawned in a game's current round, each from its own seed. */
   const spawned = (game, count) => Array.from({ length: count }, (_, i) => spawnEnemy({ state: game.state, rng: createRandom(i) }));
 
-  it('runs learn for rounds 1-4, adapt for 5-8, and full strength from round 9', () => {
+  it('runs learn for a tea’s first 4 rounds on tap, adapt for the next 4, and full strength from its 9th', () => {
     expect(CONFIG.teas.stages.map((stage) => [stage.name, stage.from])).toEqual([['learn', 1], ['adapt', 5], ['full', 9]]);
     expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40].map(teaStage)).toEqual([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]);
     expect(byStage(['a', 'b', 'c'], 4)).toBe('a');
@@ -238,11 +272,11 @@ describe('the learning curve', () => {
   it('brews each behaviour at its tuned strength either side of every boundary', () => {
     // [round, dart chance, dash distance, dart warning, wander chance, wander warning, first current, current warning, calm]
     const table = [
-      [2, 0.1, 12, 0.75, 0.15, 0.8, 6.5, 2.2, 10],
-      [4, 0.1, 12, 0.75, 0.15, 0.8, 6.5, 2.2, 10],
-      [5, 0.2, 22, 0.65, 0.25, 0.65, 5.5, 1.9, 8.5],
-      [8, 0.2, 22, 0.65, 0.25, 0.65, 5.5, 1.9, 8.5],
-      [9, 0.3, 35, 0.55, 0.4, 0.55, 5, 1.6, 7.5],
+      [2, 0.1, 10, 0.75, 0.15, 0.8, 6.5, 2.2, 10],
+      [4, 0.1, 10, 0.75, 0.15, 0.8, 6.5, 2.2, 10],
+      [5, 0.2, 14, 0.65, 0.25, 0.65, 5.5, 1.9, 8.5],
+      [8, 0.2, 14, 0.65, 0.25, 0.65, 5.5, 1.9, 8.5],
+      [9, 0.3, 18, 0.55, 0.4, 0.55, 5, 1.6, 7.5],
     ];
     for (const [round, dartChance, distance, dartWarn, wanderChance, wanderWarn, firstAt, warn, calm] of table) {
       const green = brewedRound('green', round);
@@ -276,28 +310,30 @@ describe('the learning curve', () => {
     }
   });
 
-  it('depends on the round alone: a pinned tea brews like the same tea in an ordinary pot', () => {
-    // Find ordinary pots that brew Green Tea in a learn, an adapt, and a full-strength round.
+  it('depends on the tea’s age alone: a pinned tea brews like the same tea, as long on tap, in an ordinary pot', () => {
+    // Find ordinary pots that brew Green Tea (on tap from round 8) at a learn, an adapt, and a full-strength age.
     const found = {};
     for (let seed = 1; Object.keys(found).length < 3 && seed < 200; seed++) {
       const pot = createGame({ seed });
       pot.primaryAction();
-      for (let i = 0; i < 12; i++) {
+      while (pot.state.round < 22) {
         pot.state.current = null;
         pot.state.modifiers = { ...pot.state.modifiers, laneDrift: false };
         completeRound(pot);
-        brewNext(pot);
-        const { round, tea, fortune, modifiers } = pot.state;
-        if (tea === 'green' && !found[teaStage(round)]) found[teaStage(round)] = { round, fortune, modifiers: { ...modifiers } };
+        brewNext(pot, { win: true });
+        const { teaAge: age, tea, fortune, modifiers, round } = pot.state;
+        if (tea === 'green') expect(round - age).toBe(7);
+        if (tea === 'green' && !found[teaStage(age)]) found[teaStage(age)] = { age, fortune, modifiers: { ...modifiers } };
       }
     }
     expect(Object.keys(found)).toHaveLength(3);
-    for (const { round, fortune, modifiers } of Object.values(found)) {
-      // The practice pot has brewed Green Tea every cup; the ordinary one only now and then.
-      const pinned = brewedRound('green', round, fortune);
+    for (const { age, fortune, modifiers } of Object.values(found)) {
+      // The practice pot has brewed Green Tea every cup since the first, so its age is its round.
+      const pinned = brewedRound('green', age, fortune);
+      expect(pinned.state.teaAge).toBe(age);
       expect(pinned.state.modifiers).toEqual(modifiers);
       const darter = spawned(pinned, 200).find((e) => e.kind === 'darter');
-      expect(darter.dart).toMatchObject({ warn: byStage(D.warnTime, round), distance: byStage(D.dashDistance, round) });
+      expect(darter.dart).toMatchObject({ warn: byStage(D.warnTime, age), distance: byStage(D.dashDistance, age) });
     }
   });
 });
@@ -370,9 +406,9 @@ describe('Green Tea', () => {
       expect(steps.indexOf(peak)).toBeLessThan(steps.length * 0.7);
       expect(steps[0]).toBeLessThan(peak * 0.25);
       expect(steps.at(-1)).toBeLessThan(peak * 0.25);
-      // Still a burst you notice: at its height it adds at least half again to a typical leaf's speed.
+      // Still a burst you notice: at its height it adds at least half again to a typical Chapter 2 leaf's speed.
       const E = CONFIG.enemies;
-      const typical = ((E.speedMin + E.speedMax) / 2 + Math.min(E.maxRoundSpeedBonus, round * E.speedPerRound)) * CONFIG.teas.green.enemySpeed;
+      const typical = ((E.speedMin + E.speedMax) / 2) * CONFIG.chapters[1].enemySpeed * CONFIG.teas.green.enemySpeed;
       expect(peak * 60).toBeGreaterThan(typical * 0.5);
     }
   });
@@ -439,8 +475,8 @@ describe('Green Tea', () => {
 
   it('keeps every dart well inside the cup, with time to react', () => {
     for (const round of lastRounds()) {
-      // The fastest leaf this stage can bring, starting its crouch at the furthest point (plus a slow frame).
-      const fastest = fastestIn(round);
+      // The fastest leaf any chapter can bring, starting its crouch at the furthest point (plus a slow frame).
+      const fastest = FASTEST;
       const game = brewedRound('green', round);
       game.state.modifiers = { ...game.state.modifiers, enemySpeedMultiplier: CONFIG.teas.maxEnemySpeedMultiplier };
       const at = D.atMax + fastest * CONFIG.timing.maxFrameSeconds;
@@ -455,15 +491,13 @@ describe('Green Tea', () => {
   it('never reaches the rim sooner than an ordinary leaf from the same point, give or take a frame', () => {
     // The crouch gives back about what the dash takes, so a dart surprises without stealing reaction time.
     const rim = CONFIG.arena.rimRadius - CONFIG.enemies.escapeInset;
-    const E = CONFIG.enemies;
     for (const round of [2, 4, 5, 8, 9, 12]) {
-      const bonus = Math.min(E.maxRoundSpeedBonus, round * E.speedPerRound);
-      for (const base of [E.speedMin, (E.speedMin + E.speedMax) / 2, E.speedMax]) {
+      for (const speed of SPAWN_SPEEDS) {
         for (const at of [D.atMin, D.atMax]) {
           const game = brewedRound('green', round);
-          const leaf = darterAt(game.state, round, { radius: at, speed: base + bonus });
+          const leaf = darterAt(game.state, round, { radius: at, speed });
           const track = followDart(game, leaf, { untilRadius: rim });
-          const ordinary = (rim - at) / ((base + bonus) * CONFIG.teas.green.enemySpeed);
+          const ordinary = (rim - at) / (speed * CONFIG.teas.green.enemySpeed);
           expect(track.time).toBeGreaterThan(ordinary - 0.05);
         }
       }
@@ -531,8 +565,8 @@ describe('Earl Grey', () => {
 
   it('wanders in the middle of the cup, never near the rim', () => {
     for (const round of lastRounds()) {
-      // The fastest leaf this stage can bring, starting to lean from the furthest point.
-      const reach = W.atMax + fastestIn(round) * (byStage(W.warnTime, round) + W.glideTime);
+      // The fastest leaf any chapter can bring, starting to lean from the furthest point.
+      const reach = W.atMax + FASTEST * (byStage(W.warnTime, round) + W.glideTime);
       expect(reach).toBeLessThan(CONFIG.arena.rimRadius * 0.85);
     }
   });
@@ -847,7 +881,7 @@ describe('bonus encounters ignore the tea', () => {
     brewNext(game);
     expect(game.state.round).toBe(2);
     expect(game.state.fortune).toBe(fortune);
-    expect(TEA_ROTATION).toContain(game.state.tea);
-    expect(game.state.modifiers).toEqual(roundModifiers(fortune, game.state.tea));
+    expect(['herbal', 'earlGrey']).toContain(game.state.tea);
+    expect(game.state.modifiers).toEqual(roundModifiers(fortune, game.state.tea, game.state.teaAge));
   });
 });

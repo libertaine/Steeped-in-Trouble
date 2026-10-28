@@ -115,7 +115,7 @@ export function createTea({ random = Math.random } = {}) {
     blobs: [],
     ripples: [],
     wisps: [],
-    surges: [], // milk backwash: a pale wave rolling in from the rim, { angle, reach, age, life }
+    surges: [], // milk backwash: a pale wave rolling in from the rim, { angle, reach, age, life, full? }
     crystals: [],
     glows: [],
     oddities: [],
@@ -377,6 +377,17 @@ export function createTea({ random = Math.random } = {}) {
         ripple(p.x, p.y, { size: 22, life: 0.8, strength: 0.8, rings: 2, tone: '#ffd57a' });
         for (let i = 0; i < 5; i++) crystal(p.x, p.y, 40);
       }
+    },
+    milkPulse() {
+      // The recovery pulse: a pale ripple spreads through the whole cup while a soft crest
+      // rolls in from every side of the rim. With reduced motion, a still glow instead.
+      liquid.milkiness = Math.min(1, liquid.milkiness + 0.2);
+      if (liquid.reduced) {
+        glow(CX, CY, RIM, '#f3ece0', CONFIG.milk.pulse.duration, 0.45);
+        return;
+      }
+      ripple(CX, CY, { size: RIM * 1.02, life: 1.5, strength: 0.75, rings: 2, tone: '#f8f2e6' });
+      push(liquid.surges, { angle: 0, full: true, reach: CONFIG.milk.pulse.backwash + 30, age: 0, life: 1.1 }, LIMITS.surges);
     },
     milk({ angle, cloud = angle, spread = 1 }) {
       kick(0.3);
@@ -1362,15 +1373,19 @@ export function createTeaPainter(main) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
-  /** Milk backwash: a creamy crest rolling inward, the wedge behind it clouding over. */
+  /**
+   * Milk backwash: a creamy crest rolling inward, the wedge behind it clouding
+   * over. The recovery pulse's surge (`full`) rolls in from the whole rim,
+   * fainter, and has no ends to curl.
+   */
   function drawSurges(liquid) {
     ctx.lineCap = 'round';
     for (const sg of liquid.surges) {
       const u = sg.age / sg.life;
       const ease = 1 - (1 - u) ** 2.2;
       const front = RIM - 8 - sg.reach * ease;
-      const half = LANE_STEP * 1.65 * (0.85 + 0.35 * u);
-      const fade = (1 - u) ** 1.3;
+      const half = sg.full ? Math.PI : LANE_STEP * 1.65 * (0.85 + 0.35 * u);
+      const fade = (1 - u) ** 1.3 * (sg.full ? 0.6 : 1);
       // The milky body between the rim and the front.
       ctx.globalAlpha = 0.2 * fade;
       ctx.strokeStyle = '#efe6d6';
@@ -1388,7 +1403,7 @@ export function createTeaPainter(main) {
       ctx.stroke();
       ctx.lineWidth = 2;
       ctx.globalAlpha = 0.35 * fade;
-      for (const side of [-1, 1]) {
+      for (const side of sg.full ? [] : [-1, 1]) {
         const end = sg.angle + side * half;
         const tip = polar(front, end);
         ctx.beginPath();

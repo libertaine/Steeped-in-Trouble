@@ -9,7 +9,7 @@ import {
   UPGRADES, applyUpgrade, availableUpgrades, createSpoon, drawOffer, offerDue,
 } from '../../src/gameplay/upgrades.js';
 import { sugarCapacity } from '../../src/gameplay/weapons.js';
-import { brewNext, completeRound, placeEnemy, playingGame, step } from './helpers.js';
+import { brewNext, completeRound, killOne, placeEnemy, playingGame, step } from './helpers.js';
 
 const RIM = CONFIG.arena.rimRadius;
 const types = (game) => game.drainEvents().map((e) => e.type);
@@ -147,14 +147,14 @@ describe('the grace period after a spill', () => {
 });
 
 describe('milk backwash', () => {
-  it('pushes leaves in the milk wedge back towards the centre', () => {
+  it('pushes leaves in the milk wedge back towards the centre, and the rest of the cup a little', () => {
     const game = playingGame(); // spoon over lane 0
     const near = placeEnemy(game.state, { lane: 1, radius: 250, speed: 0 });
     const far = placeEnemy(game.state, { lane: 4, radius: 250, speed: 0 });
     game.pourMilk();
     step(game, 1);
     expect(near.radius).toBeCloseTo(250 - CONFIG.milk.backwash, 0);
-    expect(far.radius).toBe(250);
+    expect(far.radius).toBeCloseTo(250 - CONFIG.milk.pulse.backwash, 0);
     expect(game.drainEvents().find((e) => e.type === 'milk').pushed).toBe(1);
   });
 
@@ -203,6 +203,127 @@ describe('milk backwash', () => {
     placeEnemy(game.state, { lane: 0, radius: 100 });
     game.pourMilk();
     expect(game.state.roundStats.nearMisses).toBe(1);
+  });
+});
+
+describe('milk’s recovery pulse', () => {
+  const P = CONFIG.milk.pulse;
+
+  it('pushes every leaf in the cup back and slows it briefly, from any lane', () => {
+    const game = playingGame(); // spoon over lane 0
+    const leaves = [4, 6, 8, 10, 12].map((lane) => placeEnemy(game.state, { lane, radius: 200, speed: 0 }));
+    game.pourMilk();
+    expect(game.state.pulse).toBe(P.duration);
+    expect(types(game)).toEqual(['milk', 'milkPulse']);
+    step(game, 1);
+    for (const leaf of leaves) expect(leaf.radius).toBeCloseTo(200 - P.backwash, 0);
+    // Slowed while it lasts, then back to full speed.
+    const runner = placeEnemy(game.state, { lane: 8, radius: 100, speed: 40 });
+    step(game, 0.25);
+    expect(runner.radius - 100).toBeCloseTo(40 * 0.25 * P.slowFactor, 3);
+    step(game, P.duration);
+    expect(game.state.pulse).toBe(0);
+    const at = runner.radius;
+    step(game, 0.5);
+    expect(runner.radius - at).toBeCloseTo(20, 3);
+  });
+
+  it('gives a leaf under the cloud the cloud’s push and slowdown, never both on top of each other', () => {
+    const game = playingGame();
+    const under = placeEnemy(game.state, { lane: 0, radius: 250, speed: 0 });
+    game.pourMilk();
+    step(game, 1.2);
+    expect(under.radius).toBeCloseTo(250 - CONFIG.milk.backwash, 0); // 120, not 160
+    const runner = placeEnemy(game.state, { lane: 0, radius: 100, speed: 40 });
+    step(game, 0.2); // the pulse is still running: the cloud's 31% wins, not 31% × 65%
+    expect(game.state.pulse).toBeGreaterThan(0);
+    expect(runner.radius - 100).toBeCloseTo(40 * 0.2 * CONFIG.milk.slowFactor, 3);
+  });
+
+  it('starts again with a second pour rather than stacking, and the round still has only two pours', () => {
+    const game = playingGame();
+    const leaf = placeEnemy(game.state, { lane: 8, radius: 200, speed: 0 });
+    game.pourMilk();
+    step(game, 1);
+    expect(game.state.pulse).toBeCloseTo(P.duration - 1, 5);
+    game.pourMilk();
+    expect(game.state.pulse).toBe(P.duration);
+    step(game, 1);
+    // Two pours, two separate pushes (each settles within half a unit of its full distance).
+    expect(leaf.radius).toBeLessThanOrEqual(200 - 2 * P.backwash + 1);
+    expect(leaf.radius).toBeGreaterThanOrEqual(200 - 2 * P.backwash);
+    const runner = placeEnemy(game.state, { lane: 8, radius: 100, speed: 40 });
+    step(game, 0.25);
+    expect(runner.radius - 100).toBeCloseTo(40 * 0.25 * P.slowFactor, 3); // no deeper than one pulse
+    expect(game.pourMilk()).toBe(false);
+    expect(game.state.pulse).toBeGreaterThan(0);
+  });
+
+  it('pushes a leaf already being washed back no further than the stronger of the two pushes', () => {
+    const game = playingGame();
+    const leaf = placeEnemy(game.state, { lane: 8, radius: 200, speed: 0 });
+    leaf.backwash = 100;
+    game.pourMilk();
+    expect(leaf.backwash).toBe(100);
+    leaf.backwash = 10;
+    game.pourMilk();
+    expect(leaf.backwash).toBe(P.backwash);
+  });
+
+  it('awards nothing of its own: no near misses, kills, milk kills, or score', () => {
+    const game = playingGame();
+    for (const lane of [4, 6, 8, 10]) placeEnemy(game.state, { lane, radius: RIM - 10 }); // all well away from the cloud
+    game.pourMilk();
+    step(game, 0.5);
+    const stats = game.state.roundStats;
+    expect(stats.nearMisses).toBe(0);
+    expect(stats.milkKills).toBe(0);
+    expect(stats.milkUses).toBe(1);
+    expect(game.state.kills).toBe(0);
+    expect(game.state.score).toBe(0);
+    expect(game.state.enemies).toHaveLength(4);
+    // A kill outside the cloud while the pulse runs is no milk kill either.
+    killOne(game, 8);
+    expect(stats.milkKills).toBe(0);
+    expect(game.state.kills).toBe(1);
+  });
+
+  it('pauses with the game, and is gone by the reading and the next cup', () => {
+    const game = playingGame();
+    game.pourMilk();
+    game.pause();
+    step(game, 3);
+    expect(game.state.pulse).toBe(P.duration);
+    game.resume();
+    completeRound(game);
+    expect(game.state.pulse).toBe(0);
+    brewNext(game);
+    expect(game.state.pulse).toBe(0);
+  });
+
+  it('never comes with milk against The Daily Grind', () => {
+    const game = playingGame();
+    completeRound(game);
+    game.state.offer = null;
+    game.state.grindDue = true;
+    game.primaryAction();
+    game.primaryAction(); // into the fight
+    game.drainEvents();
+    expect(game.pourMilk()).toBe(true);
+    expect(game.state.pulse).toBe(0);
+    expect(types(game)).not.toContain('milkPulse');
+  });
+
+  it('cannot be poured in Hot Chocolate Havoc', () => {
+    const game = playingGame();
+    completeRound(game);
+    game.state.offer = null;
+    game.state.havocDue = true;
+    game.primaryAction();
+    game.primaryAction();
+    expect(game.state.phase).toBe('chocolate');
+    expect(game.pourMilk()).toBe(false);
+    expect(game.state.pulse).toBe(0);
   });
 });
 

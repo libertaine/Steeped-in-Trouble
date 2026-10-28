@@ -50,6 +50,11 @@ const TUNES = {
   goldenGone: [[600, 0.25, 'sine', 0.02], [450, 0.35, 'sine', 0.02, 0.15]],
   // A pour, then the backwash rolling in.
   milk: [[260, 0.24, 'sine', 0.027], [170, 0.5, 'triangle', 0.022, 0.06]],
+  // The recovery pulse: a soft, low hush as the whole cup slows.
+  milkPulse: [[392, 0.9, 'sine', 0.008, 0.12, 0.7], [523, 0.8, 'sine', 0.005, 0.18, 0.7]],
+  // A new chapter: a warm, unhurried rising chord.
+  chapter: [[523, 0.3, 'triangle', 0.022], [659, 0.3, 'triangle', 0.022, 0.18], [784, 0.3, 'triangle', 0.022, 0.36],
+    [1047, 0.9, 'sine', 0.03, 0.54], [1319, 0.9, 'sine', 0.016, 0.6]],
   // A bright metallic clink.
   strain: [[2637, 0.05, 'square', 0.01], [3136, 0.22, 'triangle', 0.026, 0.03], [2093, 0.3, 'sine', 0.018, 0.07]],
   upgrade: [[659, 0.1, 'triangle', 0.024], [988, 0.1, 'triangle', 0.024, 0.08], [1319, 0.35, 'sine', 0.03, 0.16]],
@@ -199,6 +204,7 @@ export function createAudio() {
       else if (event.type === 'scoop') {
         if (event.how === 'rim') beep([event.points ? 360 : 240, 0.1, 'sine', 0.02]); // plop
       }
+      else if (event.type === 'roundStart' && event.opens) TUNES.chapter.forEach(beep);
       else if (SOUNDS[event.type]) beep(SOUNDS[event.type]);
       else tuneFor(event)?.forEach(beep);
     },

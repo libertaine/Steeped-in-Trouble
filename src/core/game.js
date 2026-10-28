@@ -4,7 +4,7 @@
 // state and queues events ({ type, ...data }) describing what happened, which
 // presentation code (effects, audio, input) drains once per frame.
 //
-// Events: matchStart, roundStart, steam, sugar, sugarRegen, milk, kill, drift,
+// Events: matchStart, roundStart, steam, sugar, sugarRegen, milk, milkPulse, kill, drift,
 // escape, strain, recoil, goldenAppear, goldenCatch, goldenGone, goldenSpoon,
 // goldenSpoonEnd, prismaticAppear, prismaticCatch, prismaticGone, nova, secret,
 // discover, reading, reveal, retract, upgrade, gameover, paused,
@@ -14,13 +14,15 @@
 // valveTurn, valveOpen, barrage, beans, beanCrack, beanSplat, pressureBuild,
 // pressureWarn, pressureBurst, sputter, clank, grindHit, grindRage, scald,
 // grindDefeat, grindEscape; and in Strange Brews: dartWarn, dart, wanderWarn,
-// wander, currentWarn, currentFlow, currentEnd (roundStart also names the tea).
+// wander, currentWarn, currentFlow, currentEnd (roundStart also names the tea,
+// whether it has just come on tap, and the chapter, and whether this cup opens it).
 
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
 import { PHASE, createInitialState, createRoundStats } from './state.js';
 import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
+import { advanceChapter, createProgress, opensChapter, teaAge } from '../gameplay/progress.js';
 import { TEAS, chooseTea, createCurrent, roundModifiers, teaFortuneNudges, updateCurrent } from '../gameplay/teas.js';
 import { updateGolden } from '../gameplay/golden.js';
 import { rollPrismatic, updatePrismatic } from '../gameplay/prismatic.js';
@@ -30,12 +32,12 @@ import { moveSpoon } from '../gameplay/player.js';
 import {
   createHavoc, finishHavoc, fireFlame, firstHavocRound, havocDue, spawnMarshmallow, updateHavoc,
 } from '../gameplay/chocolate.js';
-import { createGrind, firstGrindRound, grindDue, milkTheMachine, updateGrind } from '../gameplay/grind.js';
+import { createGrind, grindDue, milestoneDue, milkTheMachine, updateGrind } from '../gameplay/grind.js';
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import {
-  findStrikingShot, fireSteam, isNearCloud, killScore, pourMilk, spendDart, sugarBurst, sugarCapacity, updateClouds,
-  updateShots, updateSugarRegen,
+  findStrikingShot, fireSteam, isNearCloud, killScore, milkPulse, pourMilk, spendDart, sugarBurst, sugarCapacity,
+  updateClouds, updateShots, updateSugarRegen,
 } from '../gameplay/weapons.js';
 
 const { revealAt, lieRetractAt } = CONFIG.fortunes;
@@ -48,7 +50,8 @@ const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
 /**
  * @param {{ seed?: number, random?: ReturnType<typeof createRandom>, tea?: string }} [options]
  *   Pass a seed (or a generator) to reproduce an exact gameplay sequence.
- *   Pass a tea id (see TEAS) to brew only that variety, every cup.
+ *   Pass a tea id (see TEAS) to brew only that variety, every cup, as if it
+ *   had been on tap from the first; the chapters run as usual around it.
  */
 export function createGame({ seed, random, tea: onlyTea } = {}) {
   const rng = random ?? createRandom(seed);
@@ -83,6 +86,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.stir = { dir: 0, time: 0 };
     state.wake = null;
     state.current = null;
+    state.pulse = 0;
   }
 
   /** Steep this cup's tea. The tea generator always advances by the same two draws. */
@@ -90,19 +94,21 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     const chosen = chooseTea(state, steep);
     const lean = steep.next() < 0.5 ? -1 : 1; // which way Chai's first current runs
     state.tea = pinnedTea ?? chosen;
+    state.teaAge = pinnedTea ? state.round : teaAge(state.progress, state.tea, state.round);
     state.teaServed[state.tea] = state.round;
     return lean;
   }
 
   function startRound() {
+    const R = CONFIG.rounds;
     state.phase = PHASE.PLAYING;
     clearField();
     state.residue = [];
     state.kills = 0;
-    state.target = CONFIG.rounds.baseTarget + (state.round - 1) * CONFIG.rounds.targetPerRound;
+    state.target = Math.min(R.maxTarget, R.baseTarget + (state.round - 1) * R.targetPerRound);
     const lean = steepTea();
-    state.modifiers = roundModifiers(state.fortune, state.tea, state.round);
-    if (state.modifiers.spiceCurrents) state.current = createCurrent(lean, state.round);
+    state.modifiers = roundModifiers(state.fortune, state.tea, state.teaAge);
+    if (state.modifiers.spiceCurrents) state.current = createCurrent(lean, state.teaAge);
     state.milkLeft = CONFIG.milk.perRound;
     state.sugarLeft = sugarCapacity(state) + state.extraSugar;
     state.extraSugar = 0;
@@ -117,7 +123,10 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.shotCooldown = 0;
     state.roundStats = createRoundStats();
     state.angle = CONFIG.player.startAngle;
-    emit('roundStart', { round: state.round, fortune: state.fortune, tea: state.tea });
+    emit('roundStart', {
+      round: state.round, fortune: state.fortune, tea: state.tea, debut: state.round > 1 && state.teaAge === 1,
+      chapter: state.progress.chapter, opens: opensChapter(state.progress, state.round),
+    });
   }
 
   function resetMatch() {
@@ -128,6 +137,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.nextFortune = null;
     state.tea = 'house';
     state.teaServed = {};
+    state.progress = createProgress();
     state.spoon = createSpoon();
     state.goldenSpoon = 0;
     state.extraSugar = 0;
@@ -139,7 +149,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.grind = null;
     state.grindDue = false;
     state.lastGrind = 0;
-    state.grindAfter = firstGrindRound(brew);
+    state.grindAfter = CONFIG.grind.milestoneAfter;
     emit('matchStart');
     startRound();
   }
@@ -156,6 +166,11 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     }, rng);
     state.offer = offerDue(state.round) ? drawOffer(state.spoon, rng) : null;
     state.havocDue = havocDue(state, treats);
+    if (state.havocDue && milestoneDue(state)) {
+      // The milestone never waits: the hot chocolate comes after the next reading instead.
+      state.havocDue = false;
+      state.havocAfter = state.round + 1;
+    }
     state.grindDue = grindDue(state, brew); // never alongside the hot chocolate
     emit('reading', { fortune: state.nextFortune, offer: state.offer });
     state.secrets = findSecrets(state.roundStats);
@@ -242,9 +257,11 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
    * The Daily Grind. Like the hot chocolate it leaves the round, the reading's
    * fortune, the spoon, and the Golden Spoon's time alone, and however it ends
    * the next cup follows. It brings its own milk and sugar, and plays without
-   * the last cup's fortune.
+   * the last cup's fortune. Until it is first beaten it is Chapter 1's
+   * milestone: see leaveGrind().
    */
   function startGrind() {
+    const milestone = milestoneDue(state);
     state.phase = PHASE.GRIND;
     clearField();
     state.residue = [];
@@ -252,14 +269,13 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.shotCooldown = 0;
     state.angle = CONFIG.player.startAngle;
     state.grindDue = false;
-    state.grindAfter = null;
     state.lastGrind = state.round;
     state.modifiers = modifiersFor(null);
     state.milkLeft = CONFIG.milk.perRound;
     state.sugarLeft = sugarCapacity(state);
     state.roundStats = createRoundStats();
-    state.grind = createGrind();
-    emit('grindStart', { round: state.round });
+    state.grind = createGrind({ milestone });
+    emit('grindStart', { round: state.round, milestone });
   }
 
   function beginFight() {
@@ -269,8 +285,21 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     emit('grindFight', {});
   }
 
+  /**
+   * Back to the tea. After the milestone encounter, a victory opens the next
+   * chapter with the coming cup (once: later encounters are not milestones);
+   * an escape brings the machine back a fixed number of rounds later, with
+   * the chapter unchanged.
+   */
   function leaveGrind() {
+    const { milestone, result } = state.grind;
     state.grind = null;
+    if (milestone && result === 'victory') {
+      state.grindAfter = null;
+      advanceChapter(state.progress, state.round + 1);
+    } else if (milestone) {
+      state.grindAfter = state.round + CONFIG.grind.retryAfter;
+    }
     brewNextCup();
   }
 
@@ -530,11 +559,16 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
       if (grinding('fight')) return fireSteam(grindSim);
       return playing() && fireSteam(sim);
     },
+    /** Down / M: pour milk. In a normal round the whole cup gets a recovery pulse as well. */
     pourMilk: () => {
-      if (!grinding('fight')) return playing() && pourMilk(sim);
-      const poured = pourMilk(grindSim);
-      if (poured) milkTheMachine(grindSim);
-      return poured;
+      if (grinding('fight')) {
+        const poured = pourMilk(grindSim);
+        if (poured) milkTheMachine(grindSim);
+        return poured;
+      }
+      if (!playing() || !pourMilk(sim)) return false;
+      milkPulse(sim);
+      return true;
     },
     sugarBurst: () => (grinding('fight') ? sugarBurst(grindSim) : playing() && sugarBurst(sim)),
     /** Remove and return all events queued since the last call. */

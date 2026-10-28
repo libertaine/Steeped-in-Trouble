@@ -40,6 +40,8 @@ const STRAINER_REMARKS = ['Not through this mesh.', 'Strained!', 'The strainer e
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV'];
 
+const CHAPTER_CARD = 3.6; // seconds a new chapter's card stays up
+
 // Hot Chocolate Havoc.
 const COCOA = '#f3c99a';
 const MARSHMALLOW = ['#fffaf2', '#f6ead8'];
@@ -134,7 +136,8 @@ export function createEffects({ random = Math.random } = {}) {
     popups: [], // floating points: { text, x, y, color, time, life }
     ghosts: [], // perfect marshmallows lifting out of the cup: { x, y, size, spin, time, life }
     shake: 0, // seconds of cup shake left
-    teaCard: null, // { tea, time, life }: the round's tea being announced
+    teaCard: null, // { tea, debut, delay, time, life }: the round's tea being announced (after `delay` seconds)
+    chapterCard: null, // { chapter, time, life }: a new chapter being announced
   };
   const queue = [];
   let prankTimer = null; // seconds until The Leaves Lie misbehaves
@@ -221,6 +224,7 @@ export function createEffects({ random = Math.random } = {}) {
     fx.pods = [];
     fx.flyingBeans = [];
     fx.teaCard = null;
+    fx.chapterCard = null;
   }
 
   /** Coffee-coloured steam, billowing up from a point. */
@@ -261,17 +265,38 @@ export function createEffects({ random = Math.random } = {}) {
       explained.clear();
       fx.discovery = null;
     },
-    roundStart({ fortune, tea = 'house', round = 1 }) {
+    roundStart({ fortune, tea = 'house', round = 1, debut = false, chapter = 1, opens = false }) {
       clearScene();
       golden = null;
       prismatic = null;
       bigSpoon = null;
       prankTimer = fortune === 'lie' ? rnd(3, 10) : null;
       herbalTimer = tea === 'herbal' ? rnd(4, 8) : null;
-      // Every cup after the first announces its tea, briefly, and more briefly as the pot goes on.
-      fx.teaCard = round > 1 ? { tea, time: round > 8 ? 2.2 : 2.8, life: round > 8 ? 2.2 : 2.8 } : null;
+      // A new chapter is announced first, with a shower of gold, and the tea card waits for it.
+      if (opens) {
+        fx.chapterCard = { chapter, time: CHAPTER_CARD, life: CHAPTER_CARD };
+        burst(60, () => rnd(170, 255), () => -Math.PI / 2 + rnd(-0.7, 0.7),
+          (i) => [GOLD, '#fff8e2', '#f2c13e', '#ffd6a0'][i % 4], () => rnd(0.7, 1.6), 1.6);
+      }
+      // Every cup after the first announces its tea, briefly, and more briefly as the pot goes on;
+      // a tea that has just come on tap takes a little longer.
+      const life = debut ? 3.4 : round > 8 ? 2.2 : 2.8;
+      fx.teaCard = round > 1 ? { tea, debut, delay: opens ? CHAPTER_CARD : 0, time: life, life } : null;
       if (fortune) say(`“${FORTUNES[fortune].quote}”`, { color: FORTUNES[fortune].color });
       else hush();
+    },
+    milkPulse() {
+      // A ring of cream rushing in from all round the rim.
+      for (let i = 0; i < 28; i++) {
+        const a = (i / 28) * TAU + rnd(-0.05, 0.05);
+        const p = toCanvasPoint(RIM - rnd(2, 10), a);
+        const speed = rnd(70, 120);
+        const life = rnd(0.35, 0.6);
+        fx.particles.push({
+          x: p.x, y: p.y, vx: -Math.cos(a) * speed, vy: -Math.sin(a) * speed, time: life, life, color: '#f4efe4', size: rnd(1.2, 2.4),
+        });
+      }
+      explainOnce('pulse', 'The milk ripples through the whole cup: every leaf slows for a moment.', '#f4efe4');
     },
     dartWarn({ radius, angle }) {
       burst(6, () => radius + rnd(-6, 6), () => angle + rnd(-0.05, 0.05), DART_GREEN, () => rnd(0.2, 0.45), 0.6);
@@ -770,7 +795,12 @@ export function createEffects({ random = Math.random } = {}) {
           fx.discovery.time -= dt;
           if (fx.discovery.time <= 0) fx.discovery = null;
         }
-        if (fx.teaCard) {
+        if (fx.chapterCard) {
+          fx.chapterCard.time -= dt;
+          if (fx.chapterCard.time <= 0) fx.chapterCard = null;
+        }
+        if (fx.teaCard?.delay > 0) fx.teaCard.delay = Math.max(0, fx.teaCard.delay - dt);
+        else if (fx.teaCard) {
           fx.teaCard.time -= dt;
           if (fx.teaCard.time <= 0) fx.teaCard = null;
         }
