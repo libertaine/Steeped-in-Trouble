@@ -23,6 +23,13 @@ const SOUNDS = {
   flame: [240, 0.07, 'sawtooth', 0.006],
   crumble: [150, 0.16, 'triangle', 0.022],
   bump: [250, 0.12, 'sine', 0.014, 0, 1.5], // boing
+  // The Daily Grind.
+  clank: [190, 0.05, 'square', 0.006, 0, 0.8],
+  beans: [520, 0.05, 'triangle', 0.01, 0, 0.5], // a hollow pop
+  beanCrack: [1250, 0.035, 'square', 0.007, 0, 0.5],
+  beanSplat: [300, 0.06, 'triangle', 0.006],
+  valveOpen: [1760, 0.22, 'sine', 0.01, 0, 1.25], // a little whistle
+  pressureBuild: [110, 0.8, 'sawtooth', 0.012, 0, 1.6], // a groan as it swells
 };
 
 // Little tunes: lists of notes.
@@ -64,6 +71,21 @@ const TUNES = {
   catastrophe: [[95, 0.25, 'sine', 0.08, 0, 0.4], [1568, 0.08, 'square', 0.012, 0.03], [2093, 0.35, 'sine', 0.022, 0.06]],
   giantGone: [[392, 0.3, 'sine', 0.02], [294, 0.45, 'sine', 0.02, 0.2]],
   havocEnd: [[784, 0.15, 'triangle', 0.024], [659, 0.15, 'triangle', 0.024, 0.12], [523, 0.45, 'sine', 0.03, 0.24]],
+  // The Daily Grind: something large and metallic arrives.
+  grindStart: [[82, 0.6, 'sawtooth', 0.03, 0, 1], [62, 0.9, 'sawtooth', 0.03, 0.45, 0.9], [1568, 0.06, 'square', 0.01, 0.9]],
+  grindFight: [[165, 0.12, 'square', 0.016], [196, 0.12, 'square', 0.016, 0.12], [247, 0.4, 'sawtooth', 0.018, 0.24]],
+  // A whistle rising to a shriek, then the whoosh of the burst.
+  pressureWarn: [[620, 1.1, 'sine', 0.014, 0, 2.4], [930, 1.1, 'sine', 0.006, 0.05, 2.4]],
+  pressureBurst: [[240, 0.45, 'sawtooth', 0.032, 0, 0.3], [120, 0.55, 'triangle', 0.03, 0.04, 0.5]],
+  sputter: [[300, 0.07, 'square', 0.012], [260, 0.07, 'square', 0.012, 0.1], [180, 0.25, 'square', 0.012, 0.2, 0.5]],
+  scald: [[150, 0.3, 'sawtooth', 0.04], [2600, 0.22, 'sine', 0.01, 0, 0.5]],
+  grindRage: [[98, 0.25, 'sawtooth', 0.03], [104, 0.25, 'sawtooth', 0.03, 0.22], [110, 0.5, 'sawtooth', 0.03, 0.44]],
+  // A cartoon collapse: a boing, a clatter, and a last little puff.
+  grindDefeat: [[880, 0.12, 'square', 0.014], [660, 0.12, 'square', 0.014, 0.12], [440, 0.12, 'square', 0.014, 0.24],
+    [220, 0.5, 'sawtooth', 0.024, 0.36, 0.3], [70, 0.4, 'sine', 0.08, 0.5, 0.5], [1568, 0.4, 'sine', 0.02, 0.9]],
+  // Wah, wah, wah, wahhh.
+  grindEscape: [[392, 0.3, 'sawtooth', 0.016], [370, 0.3, 'sawtooth', 0.016, 0.32], [349, 0.3, 'sawtooth', 0.016, 0.64],
+    [330, 0.9, 'sawtooth', 0.016, 0.96, 0.92]],
   // Steam Nova: a rising whoosh, then a bright chord rippling up.
   nova: [[196, 0.45, 'sawtooth', 0.02], [523, 0.12, 'square', 0.014, 0.05], [659, 0.12, 'square', 0.014, 0.1],
     [784, 0.12, 'square', 0.014, 0.15], [1047, 0.12, 'square', 0.014, 0.2], [1319, 0.6, 'sine', 0.034, 0.25],
@@ -78,6 +100,10 @@ function tuneFor(event) {
     return f.rare ? TUNES.rare : f.tone === 'trouble' ? TUNES.trouble : TUNES.good;
   }
   if (event.type === 'goldenCatch') return event.reward === 'jackpot' ? TUNES.jackpot : TUNES.goldenCatch;
+  if (event.type === 'grindDefeat' && event.perfect) {
+    // A Perfect Brew: the collapse, then the music box.
+    return [...TUNES.grindDefeat, ...TUNES.secret.map(([hz, length, shape, gain, delay]) => [hz, length, shape, gain, delay + 0.8])];
+  }
   return TUNES[event.type];
 }
 
@@ -160,6 +186,8 @@ export function createAudio() {
       // A marshmallow squeaks as it toasts, higher each time.
       else if (event.type === 'toast') beep([1100 + 160 * event.cook, 0.07, 'sine', 0.012, 0, 1.5]);
       else if (event.type === 'giantGrow') beep([280 + 45 * (event.hits ?? 0), 0.12, 'sine', 0.018, 0, 1.25]);
+      // The valve rings higher the angrier the machine gets; sugar hits it harder.
+      else if (event.type === 'grindHit') beep([1200 + 18 * event.hits, 0.07, event.sugar ? 'square' : 'triangle', 0.014, 0, 0.8]);
       else if (event.type === 'scoop') {
         if (event.how === 'rim') beep([event.points ? 360 : 240, 0.1, 'sine', 0.02]); // plop
       }

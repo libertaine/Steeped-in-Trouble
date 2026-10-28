@@ -11,6 +11,8 @@ import { SECRETS } from '../gameplay/secrets.js';
 import { COMBOS } from '../gameplay/combos.js';
 import { spoonLane } from '../gameplay/player.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
+import { grindInProgress } from '../gameplay/grind.js';
+import { createGrindPainter } from './grind.js';
 import { createTeaPainter } from './tea.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
@@ -33,13 +35,17 @@ const AIM = {
   golden: '#ffe08a',
   sugar: '#fff1c4',
   flame: '#ffb36b',
+  valve: '#ffcf6a', // the coffee boss's open safety valve
+  danger: '#ff5a3a', // and the lanes it is about to scald
 };
 const AIM_FADE = 0.12; // seconds for the highlight to cross-fade to a new lane
 
-/** Is the spoon aiming right now (a round or the toasting in progress, or paused during one)? */
+/** Is the spoon aiming right now (a round, the toasting, or the boss fight in progress, or paused during one)? */
 function aiming(state) {
   const havoc = havocInProgress(state);
   if (havoc) return havoc.stage === 'play';
+  const grind = grindInProgress(state);
+  if (grind) return grind.stage === 'fight';
   return state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED;
 }
 
@@ -109,6 +115,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
   let time = 0; // animation clock, independent of the simulation
   let gradients = null;
   const tea = createTeaPainter(ctx);
+  const espresso = createGrindPainter(ctx, { circle, text, laneBeam, highQuality: () => renderer.quality === 'high' });
   const aim = { lane: null, prev: null, fade: 1 }; // the highlighted lane, and the one fading out
 
   function createGradients() {
@@ -532,8 +539,10 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     const { angle, spoon } = state;
     const look = spoonLook(state);
     const size = (fx.spoonScale ?? 1) * (1 + 0.08 * spoon.sugarScoop);
-    // The Golden Spoon flickers as it wears off.
-    const flicker = look.golden && state.goldenSpoon < 1.5 ? 0.6 + 0.4 * Math.abs(Math.sin(time * 14)) : 1;
+    // The Golden Spoon flickers as it wears off, and a scalded spoon blinks while it recovers.
+    const scalded = grindInProgress(state)?.safe > 0;
+    const flicker = scalded ? 0.35 + 0.65 * Math.abs(Math.sin(time * 18))
+      : look.golden && state.goldenSpoon < 1.5 ? 0.6 + 0.4 * Math.abs(Math.sin(time * 14)) : 1;
     // Quick Stir: afterimages trail a hurrying spoon.
     const speed = fx.tea?.spoon.speed ?? 0;
     if (spoon.quickStir && Math.abs(speed) > 0.5 && state.phase === PHASE.PLAYING) {
@@ -1275,11 +1284,13 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       if (fx.tea) tea.paint(fx.tea, state, { quality: renderer.quality, scale: canvas.width / W });
       drawGuides();
       const havoc = havocInProgress(state);
-      const inPlay = !havoc && (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED);
-      const live = inPlay || !!havoc;
+      const grind = grindInProgress(state);
+      const inPlay = !havoc && !grind && (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED);
+      const live = inPlay || !!havoc || !!grind;
       if (inPlay) drawStrainer(state);
       drawAimBeams(state, fx);
       drawClouds(state.clouds);
+      if (grind) espresso.drawField(grind, time);
       drawResidue(state);
       for (const e of state.enemies) drawEnemy(e);
       if (havoc) {
@@ -1292,17 +1303,19 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       if (state.golden) drawGolden(state.golden);
       if (state.prismatic) drawPrismatic(state.prismatic);
       for (const s of state.shots) drawShot(s, state.spoon.polished);
+      if (grind) espresso.drawMachine(grind, state, fx, time);
       if (inPlay) drawWake(state.wake);
       if (inPlay) drawRecovery(state);
       drawPlayer(state, fx);
       drawGlints(fx.glints ?? []);
       drawParticles(fx.particles);
-      if (havoc) drawPopups(fx.popups ?? []);
+      if (havoc || grind) drawPopups(fx.popups ?? []);
+      if (state.phase === PHASE.GRIND) espresso.drawOverlay(grind, time);
       drawOverlay(state, fx);
       if (state.phase === PHASE.CHOCOLATE) drawHavocOverlay(havoc);
       if (live) drawWhisper(fx.whisper);
       if (inPlay) drawDiscovery(fx.discovery);
-      if (havoc) drawBanner(fx.banner);
+      if (havoc || grind) drawBanner(fx.banner);
     },
   };
   return renderer;

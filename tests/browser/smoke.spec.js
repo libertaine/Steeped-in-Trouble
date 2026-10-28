@@ -175,3 +175,49 @@ test('a Hot Chocolate Havoc bonus round plays through and returns to the tea', a
   expect(await page.evaluate((id) => window.__TEACUP__.game.state.spoon[id], picked)).toBe(1);
   expect(problems).toEqual([]);
 });
+
+test('The Daily Grind can be met, fought with Q and E, and escaped without ending the pot', async ({ page, problems }) => {
+  await openGame(page, '&seed=7');
+  await page.keyboard.press('Enter');
+  // Finish round 1 at once, and make the coffee boss due.
+  await page.evaluate(() => {
+    const { game } = window.__TEACUP__;
+    const s = game.state;
+    s.kills = s.target - 1;
+    s.enemies.push({ angle: -Math.PI / 2, radius: 200, speed: 0, wiggle: 0, shifted: false, size: 10, alpha: 1 });
+    s.angle = -Math.PI / 2;
+    s.shotCooldown = 0;
+    game.fireSteam();
+  });
+  await page.waitForFunction(() => window.__TEACUP__.game.state.phase === 'reading');
+  const { nextFortune } = await gameState(page);
+  await page.evaluate(() => {
+    const s = window.__TEACUP__.game.state;
+    s.offer = null;
+    s.havocDue = false;
+    s.grindDue = true;
+  });
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#hudStatus')).toHaveText('SOMEONE ORDERED TROUBLE');
+  await expect(page.locator('#roundNum')).toHaveText('01½');
+
+  await page.keyboard.press('Enter'); // skip the entrance
+  await expect(page.locator('#hudStatus')).toHaveText(/^THE DAILY GRIND · \d+s$/);
+  await expect(page.locator('#hudStrainer')).toHaveText(/^SCALDS/);
+  await page.keyboard.press('q');
+  await expect(page.locator('#milkCount')).toHaveText('1');
+  await page.keyboard.press('e');
+  await expect(page.locator('#sugarCount')).toHaveText('1');
+
+  await page.evaluate(() => { window.__TEACUP__.game.state.grind.left = 0.05; });
+  await expect(page.locator('#hudStatus')).toHaveText('THE MACHINE ESCAPES');
+  await expect(page.locator('#mainBtn')).toHaveText('Back to the tea →');
+  await page.waitForTimeout(1800);
+  await page.keyboard.press('Enter');
+
+  await expect(page.locator('#hudStatus')).toHaveText(/DEFEND THE RIM|GOLDEN SPOON/);
+  await expect(page.locator('#roundNum')).toHaveText('02');
+  await expect(page.locator('#hudLives')).toHaveText(/CUPS ♥ ♥ ♥/);
+  expect((await gameState(page)).fortune).toBe(nextFortune);
+  expect(problems).toEqual([]);
+});

@@ -258,6 +258,53 @@ export const CONFIG = deepFreeze({
     rewardSugar: 1, // an extra sugar burst next cup for a good or great round
   },
 
+  // The Daily Grind: a coffee boss between normal rounds (gameplay/grind.js).
+  // Pairs are [calm, furious]: the machine speeds up as it takes damage.
+  grind: {
+    firstAfterMin: 6, // the first encounter always follows one of these rounds…
+    firstAfterMax: 8,
+    minGap: 4, // later ones: at least this many normal rounds apart…
+    chance: 0.25, // …then this chance after each round (never alongside Hot Chocolate Havoc)
+    introTime: 4.6, // the announcement and the machine rising (Enter skips it)
+    duration: 38, // seconds to defeat it before it leaves anyway
+    outroMin: 1.6, // the result can't be dismissed by accident before this
+
+    health: 56,
+    scalds: 3, // boss-round hits before the machine escapes (they never cost a cup)
+    safeTime: 1.4, // seconds after a scald before another can land
+    hitHalfWidth: 0.55, // lanes either side of the spoon within which a bean or jet scalds it
+    bodyRadius: 84, // steam stops here: on the safety valve if it is open in that lane, else with a clank
+
+    // The safety valve: it turns to face a lane near the spoon, then blows open for a moment.
+    valveTurn: [1.3, 0.85], // seconds spent turning
+    valveOpen: 2.0, // seconds it stays open
+    valveReachMin: 3, // it opens this many lanes from the spoon…
+    valveReachMax: 6,
+    steamDamage: 1,
+    sugarDamage: 3, // per sugar dart that finds the open valve
+    hitPoints: 10,
+    beanPoints: 5,
+
+    // Attacks, one at a time.
+    firstAttack: 2.4, // seconds into the fight
+    attackGap: [2.4, 1.1], // seconds between attacks
+    beanSpeed: [100, 145],
+    beanSize: 7,
+    maxBeans: 30,
+    pressureBuild: 0.8, // the machine swells…
+    pressureWarn: [1.7, 1.15], // …the threatened lanes glow for this long…
+    pressureBurst: 0.7, // …then hot coffee shoots down them
+    jetSpeed: 900,
+    wedgeLanes: [5, 7], // lanes in a wedge-shaped burst
+    milkDelay: 1.3, // milk poured while the pressure builds holds it off this long (once per attack)
+
+    // Rewards.
+    points: 350,
+    goldenSpoon: 12, // seconds of Golden Spoon, which start with the next cup
+    maxLives: 4,
+    fullCupPoints: 150, // instead of a cup the player has no room for
+  },
+
   // Secrets: things the leaves notice about a finished round, and reward.
   secrets: {
     perfectMinVolleys: 12, // Not a Drop Wasted: steam shots needed for a perfect round to count
