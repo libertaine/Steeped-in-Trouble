@@ -16,7 +16,8 @@ src/
 ├── gameplay/            rules, as pure functions over state
 │   ├── arena.js         lanes, angles, polar → canvas mapping
 │   ├── player.js        spoon movement
-│   ├── enemies.js       tea-leaf spawning and movement
+│   ├── enemies.js       tea-leaf spawning and movement, darting and wandering, sideways glides
+│   ├── teas.js          Strange Brews: tea varieties, their draw, modifier composition, Chai's currents
 │   ├── weapons.js       steam, sugar, milk (and its backwash), hit testing, scoring
 │   ├── golden.js        the golden sugar cube and its rewards
 │   ├── prismatic.js     the rare prismatic sugar cube and its Steam Nova
@@ -134,15 +135,63 @@ four). The Golden Spoon a victory awards starts with the next cup.
 (spawn lanes, speeds, timers, residue scatter, Spiral drift direction) comes
 from it. Hot Chocolate Havoc and The Daily Grind each draw from their own
 generator derived from the same seed (`treats` and `brew` in
-`createGame()`), so neither changes the sequence the normal rounds see. Effects use `Math.random`, so changing particles can never change
-gameplay. The URL parameter `?seed=` sets the seed in the browser, and the
-`?debug` parameter exposes `window.__TEACUP__.game` for tests and tinkering.
+`createGame()`), so neither changes the sequence the normal rounds see. The
+tea varieties draw from a fourth (`steep`), which advances by exactly two
+numbers per round start, so the teas come in the same order however the
+cups are played. Effects use `Math.random`, so changing particles can never
+change gameplay. The URL parameter `?seed=` sets the seed in the browser,
+`?tea=<id>` brews only one variety (`createGame({ tea })`; unknown ids are
+ignored), and the `?debug` parameter exposes `window.__TEACUP__.game` for
+tests and tinkering.
+
+## Tea varieties
+
+`gameplay/teas.js` holds Strange Brews. Each normal round has one tea, kept
+in `state.tea`; it is the round's environment, and the fortune is a separate
+layer on top. `startRound()` in `core/game.js`:
+
+1. calls `chooseTea(state, steep)`. Round 1 is always `house`; later rounds
+   draw from `TEA_ROTATION`, never repeating `state.tea`, weighted by rounds
+   since each was last served (`state.teaServed`), with any variety missing
+   for more than `CONFIG.teas.maxAbsence` rounds served next;
+2. sets `state.modifiers = roundModifiers(state.fortune, state.tea)`, which
+   folds the tea's `modifiers` into the fortune's by the rules in `COMBINE`
+   (multiply, add, max, or) and caps leaf speed. As with fortunes, gameplay
+   reads only `state.modifiers` and never checks tea ids, and the next round
+   start recomputes everything;
+3. for Chai (`modifiers.spiceCurrents`), puts a current clock in
+   `state.current` (`createCurrent()`), which `updateCurrent()` runs each
+   frame: `calm` → `warning` → `flowing` → `calm`, on fixed timings, emitting
+   `currentWarn`, `currentFlow`, and `currentEnd`.
+
+`roundStart` carries the tea for the presentation. At a reading,
+`teaFortuneNudges(state.tea)` adds a tea's extra fortune weights to the round
+record (`record.nudges`), which is how Herbal Tea makes The Leaves Lie
+likelier. `startGrind()` resets the modifiers to `modifiersFor(null)` and
+`clearField()` drops the current, so neither bonus encounter ever sees the
+tea. A new match resets `state.tea` and `state.teaServed`.
+
+### Leaf kinds and glides
+
+`spawnEnemy()` gives every leaf a `kind`. With the tea's `dartChance` or
+`wanderChance` it may be a `darter` (with `dart: { stage, at, time }`) or a
+`wanderer` (with `wander: { stage, at, dir, time }`); otherwise it is a
+plain `leaf`, and no random number is drawn for it. `advanceEnemy()` runs each
+behaviour as a little stage machine (`waiting` → `warning` → …), emitting
+`dartWarn`/`dart` and `wanderWarn`/`wander`, and the renderer's `drawEnemy()`
+draws the telegraph from the same stage, so a warning is shown exactly when
+the rules give one.
+
+A glide (`enemy.glide = { shift, length, time, done }`, started by `glide()`)
+moves a leaf sideways smoothly. It adds its movement to the angle each frame
+instead of setting it, so a wanderer's step, a spice current, and The
+Spiral's drift all compose; a new glide folds in what is left of an old one.
 
 ## Input
 
 `controls.js` keeps `held = { left, right, fire }` and calls command
-callbacks for one-shot keys. It prevents page scrolling only for the arrow
-keys and Space, and it ignores key presses that use Ctrl, Alt, or Meta. Held
+callbacks for one-shot keys (milk on Q, ↑, or M; sugar on E, ↓, or S). It
+prevents page scrolling only for the arrow keys and Space, and it ignores key presses that use Ctrl, Alt, or Meta. Held
 state is released on window blur, page hide, pointer up, pointer cancel, and
 lost pointer capture, and (through the game's events) on pause and on a new
 match.
@@ -233,10 +282,22 @@ cup and start a new grace period.
    read `state.modifiers.<name>` where the rule lives.
 4. Put any tuning numbers in `CONFIG.fortunes` and add tests.
 
+### Adding a tea variety
+
+1. Add an entry to `TEAS` in `gameplay/teas.js` (`name`, `quip`, `title`,
+   `info`, `tag`, `color`, `modifiers`, and optionally `fortuneNudges`), and
+   add its id to `TEA_ROTATION`.
+2. If it needs a new effect, add a neutral default to `BASE_MODIFIERS`, a
+   rule to `COMBINE`, and read `state.modifiers.<name>` where the rule lives.
+3. Give it a liquid in `TEA_LIQUIDS` (`rendering/tea.js`), a pill colour in
+   `styles/main.css`, and a touch in `TEA_MUSIC` (`audio/music.js`).
+4. Put tuning numbers in `CONFIG.teas` and add tests.
+
 ### Adding an enemy type
 
 1. Give spawned enemies a `kind` in `spawnEnemy()` (`gameplay/enemies.js`),
-   and decide when each kind spawns.
+   and decide when each kind spawns. `darter` and `wanderer` are examples:
+   their behaviour is plain data on the leaf, advanced in `advanceEnemy()`.
 2. Branch on `kind` in `advanceEnemy()` for movement, and in the renderer's
    `drawEnemy()` for appearance.
 3. If it scores or dies differently, extend `killEnemy()` in `core/game.js`

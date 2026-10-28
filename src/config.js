@@ -305,6 +305,45 @@ export const CONFIG = deepFreeze({
     fullCupPoints: 150, // instead of a cup the player has no room for
   },
 
+  // Strange Brews: the tea variety brewed for each normal round (gameplay/teas.js).
+  teas: {
+    weightCap: 4, // a variety's draw weight grows by 1 per round since it was last served, up to this
+    maxAbsence: 7, // a variety missing for more than this many rounds is served next
+    maxEnemySpeedMultiplier: 1.35, // tea × fortune leaf speed never goes beyond this
+    green: { enemySpeed: 1.1, dartChance: 0.3 },
+    earlGrey: { wanderChance: 0.4 },
+    black: { spawnInterval: 0.88, scoreMultiplier: 1.25 },
+    herbal: { enemySpeed: 0.88, spawnInterval: 1.06, milkBonus: 1, lieWeight: 1 },
+  },
+
+  // Green Tea's darting leaves: a warning crouch, then a short burst of speed.
+  // Even the fastest leaf finishes its sprint well inside the rim.
+  darting: {
+    atMin: 60, // the crouch starts once a leaf passes a radius between these
+    atMax: 100,
+    warnTime: 0.55, // seconds of visible crouch…
+    warnPace: 0.35, // …at this share of its speed
+    dashTime: 0.45, // seconds of dash…
+    dashPace: 2, // …at this multiple of its speed
+  },
+
+  // Earl Grey's wandering leaves: a visible lean, then a glide into the neighbouring lane,
+  // always in the middle of the cup.
+  wandering: {
+    atMin: 65, // the lean starts once a leaf passes a radius between these
+    atMax: 100,
+    warnTime: 0.55,
+    glideTime: 0.35,
+  },
+
+  // Chai's spice currents: on a fixed clock, every leaf in the cup is carried one lane sideways.
+  currents: {
+    firstAt: 5, // seconds into the round before the first warning
+    calmTime: 7.5, // seconds between one current ending and the next warning
+    warnTime: 1.6, // arrows round the rim show the direction for this long…
+    flowTime: 0.9, // …then the leaves glide one lane over this long
+  },
+
   // Secrets: things the leaves notice about a finished round, and reward.
   secrets: {
     perfectMinVolleys: 12, // Not a Drop Wasted: steam shots needed for a perfect round to count

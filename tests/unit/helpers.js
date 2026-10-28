@@ -3,9 +3,13 @@ import { laneAngle } from '../../src/gameplay/arena.js';
 
 export const IDLE = Object.freeze({ left: false, right: false, fire: false });
 
-/** A game already in round 1, with automatic spawning switched off. */
-export function playingGame({ seed = 1, spawning = false } = {}) {
-  const game = createGame({ seed });
+/**
+ * A game already in round 1, with automatic spawning switched off. It brews
+ * only the House Blend unless a `tea` is given, so tests of other rules play
+ * every cup with the same neutral tea.
+ */
+export function playingGame({ seed = 1, spawning = false, tea = 'house' } = {}) {
+  const game = createGame({ seed, tea });
   game.primaryAction();
   if (!spawning) game.state.spawnTimer = Infinity;
   game.drainEvents();

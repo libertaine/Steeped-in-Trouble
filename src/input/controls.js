@@ -5,8 +5,8 @@
 // immediately. Holds are released whenever the window loses focus, the page
 // is hidden, a pointer is released or cancelled, or reset() is called (the
 // game calls it on pause and restart). Upgrade cards are picked with 1 / 2 or
-// a click or tap. Milk and sugar sit on Q / E beside the turning keys, as
-// well as on M / S.
+// a click or tap. Milk and sugar sit on Q / E beside the turning keys, on
+// the up and down arrows beside the other arrows, and on M / S.
 
 const KEY_BINDINGS = {
   ArrowLeft: 'left',
@@ -20,7 +20,10 @@ const KEY_BINDINGS = {
 const CHOICE_KEYS = { Digit1: 0, Numpad1: 0, Digit2: 1, Numpad2: 1 };
 
 // Keys whose default browser action (scrolling) is suppressed.
-const CAPTURED_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp']);
+const CAPTURED_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp', 'ArrowDown']);
+
+const MILK_KEYS = new Set(['KeyQ', 'KeyM', 'ArrowUp']);
+const SUGAR_KEYS = new Set(['KeyE', 'KeyS', 'ArrowDown']);
 
 /**
  * @param {object} options
@@ -60,8 +63,8 @@ export function createControls({ doc = document, commands }) {
     }
     if (e.repeat) return;
     let handled = false;
-    if (code === 'KeyM' || code === 'KeyQ') commands.milk();
-    else if (code === 'KeyS' || code === 'KeyE') commands.sugar();
+    if (MILK_KEYS.has(code)) commands.milk();
+    else if (SUGAR_KEYS.has(code)) commands.sugar();
     else if (code === 'Enter') handled = commands.confirm();
     else if (code === 'KeyP') commands.togglePause();
     else if (code === 'KeyR') commands.restart();

@@ -9,6 +9,7 @@ import { PHASE } from '../core/state.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
 import { grindInProgress } from '../gameplay/grind.js';
+import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
 
@@ -24,7 +25,7 @@ const COPY = {
   },
   title: {
     [PHASE.READY]: () => 'The kettle waits',
-    [PHASE.PLAYING]: (s) => `Cup ${s.round}: the storm stirs`,
+    [PHASE.PLAYING]: (s) => `Cup ${s.round}: ${TEAS[s.tea].title}`,
     [PHASE.PAUSED]: () => 'A moment to steep',
     [PHASE.READING]: () => 'The leaves have spoken',
     [PHASE.CHOCOLATE]: () => HAVOC.title.play,
@@ -133,6 +134,21 @@ function omenText(state, fortune) {
   return `✦ ${fortune.name} · ${fortune.tag} · ${omenStatus(state)}`;
 }
 
+/** The small in-play indicator of the tea brewed for this round. */
+function teaText(state) {
+  if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
+  if (havocInProgress(state) || grindInProgress(state)) return '';
+  const tea = TEAS[state.tea];
+  return `☕ ${tea.name} · ${tea.tag}`;
+}
+
+/** What is in the cup right now, for the side panel. */
+function teaName(state) {
+  if (havocInProgress(state)) return 'Hot chocolate';
+  if (grindInProgress(state)) return 'Espresso, apparently';
+  return TEAS[state.tea].name;
+}
+
 /** The Leaves Lie keeps up appearances until it changes its mind. */
 const stillLying = (state) => state.phase === PHASE.READING && state.nextFortune === 'lie'
   && state.readingTime < CONFIG.fortunes.lieRetractAt;
@@ -147,6 +163,8 @@ export function hudText(state) {
   const fortune = shown ? FORTUNES[shown] : null;
   const offering = state.phase === PHASE.READING && !!state.offer;
   const strainer = `${state.strainerLeft}/${strainerCapacity(state.spoon)}`;
+  const tea = TEAS[state.tea];
+  const teaTip = state.phase === PHASE.PLAYING && tea.id !== 'house' ? `${tea.name}: ${tea.info}` : null;
   const values = {
     hudStatus: statusText(state),
     hudScore: `SCORE ${pad(state.score, 4)}`,
@@ -162,7 +180,9 @@ export function hudText(state) {
     mainBtn: offering ? 'Choose a spoon upgrade (1 / 2)' : COPY.button[state.phase],
     gameTip: offering
       ? 'The cupboard offers assistance. Pick one spoon upgrade; it stays with you until the pot runs dry.'
-      : COPY.tip[state.phase],
+      : teaTip ?? COPY.tip[state.phase],
+    teaName: teaName(state),
+    hudTea: teaText(state),
     fortuneLabel: between
       ? 'Fortune for the next cup'
       : fortune ? 'This cup’s omen' : 'Next cup’s omen',
@@ -233,6 +253,10 @@ export function createHud(doc = document) {
       const omen = (elements.hudOmen ??= doc.getElementById('hudOmen'));
       const tone = values.hudOmen && state.fortune ? FORTUNES[state.fortune].tone : '';
       if (omen && omen.dataset.tone !== tone) omen.dataset.tone = tone;
+      // The tea pill takes the tea's colour.
+      const teaPill = (elements.hudTea ??= doc.getElementById('hudTea'));
+      const teaId = values.hudTea ? state.tea : '';
+      if (teaPill && teaPill.dataset.tea !== teaId) teaPill.dataset.tea = teaId;
       for (const id in values) {
         if (shown[id] === values[id]) continue;
         elements[id] ??= doc.getElementById(id);

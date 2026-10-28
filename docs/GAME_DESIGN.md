@@ -321,6 +321,145 @@ of the time in about 27 seconds, and about a quarter of those are Perfect
 Brews. One that never dodges wins about two-thirds of the time and almost
 never perfectly.
 
+## Added in 0.9.0 — Strange Brews
+
+### Controls
+
+<kbd>↑</kbd> pours milk and <kbd>↓</kbd> fires sugar, beside the turning
+arrows. <kbd>Q</kbd> / <kbd>M</kbd> and <kbd>E</kbd> / <kbd>S</kbd> still work.
+
+### Tea varieties
+
+Until now the tea was only the arena. Now every normal round brews a
+variety, and the variety is the round's environment: it changes how the
+leaves arrive and move, and how the cup looks and sounds. The fortune read
+from the last round's leaves is a separate layer on top.
+
+- **The first cup** is always the **House Blend**, the familiar tea, so a
+  new player can learn the cup.
+- **From the second cup on,** one of five varieties is drawn from its own
+  random generator (so the order depends only on the seed, not on how the
+  cups are played or on any bonus rounds between them). A variety never
+  comes twice in a row. Its chances grow by one for every round since it was
+  last served (up to four times as likely), and one that hasn't been served
+  for more than seven rounds is served next, so a pot sees all five early
+  and keeps seeing them.
+- **Each variety lasts one round** and expires at the next round start, as
+  fortunes do. A new pot starts again with the House Blend.
+- Each cup after the first is **announced** for a few seconds at the top of
+  the cup: *NOW BREWING*, the tea's name, and its motto. The card sits
+  beneath the leaves, so it never hides one, and gets shorter after round 8.
+  The tea's colours ease in over about 1.6 s. The HUD names the tea in the
+  round title ("Cup 3: Earl Grey"), in a pill under the omen, and in a row of
+  the cup status panel, and during play the tip line explains it.
+
+| Tea | Motto | Rules |
+| --- | --- | --- |
+| **House Blend** | *Just tea. For now.* | The rules as they were. First cup only. |
+| **Green Tea** | *A Little Too Refreshing* | Leaves rise 10% faster, and 30% of them dart (below). |
+| **Earl Grey** | *Trouble with a Touch of Class* | 40% of leaves wander (below). |
+| **Chai** | *Spice Things Up* | Spice currents (below). |
+| **Black Tea** | *Properly Strong* | Leaves arrive 12% more often (the gap between them × 0.88), and every leaf scores 25% more. The limit of 18 leaves in the cup is unchanged. |
+| **Herbal Tea** | *What Could Possibly Go Wrong?* | Leaves rise 12% slower and arrive a little less often (× 1.06); milk clouds last 1 s longer. The Leaves Lie is likelier at the next reading (its weight +1, from about 4% to about 11% of readings, never certain). Now and then a chamomile flower or a few petals float by, with a remark. |
+
+### New leaf behaviours
+
+Both are ordinary leaves with one extra behaviour: they die to one hit,
+score like any leaf, and leave residue for the reading. Each has its own
+shape, so colour is never the only clue, and every warning also has a
+sound.
+
+- **Darting leaves** (Green Tea) are slim, notched lances that always point
+  at the rim. Somewhere between radius 60 and 100 a darter **crouches** for
+  0.55 s: it slows to 35% speed, flickers sideways, and shows a pulsing ring
+  and two chevrons pointing outward. Then it **sprints** for 0.45 s at
+  double speed, trailing a streak, and carries on normally. Even the fastest
+  possible darter finishes its sprint well inside the rim.
+- **Wandering leaves** (Earl Grey) have a curling tendril and a lavender
+  edge. Somewhere between radius 65 and 100 a wanderer **leans** for 0.55 s,
+  with a curved arrow towards the neighbouring lane and a dashed ghost where
+  it is going, and does not move sideways. Then it **glides** into that lane
+  over 0.35 s and leaves a short lavender trail. It changes lane once, ends
+  exactly on the new lane, and is always in the middle of the cup.
+
+### Spice currents (Chai)
+
+On a fixed clock, every leaf in the cup is carried one lane sideways:
+
+- 5 s into the round, two rings of amber chevrons appear, pointing the
+  current's way round the cup. They brighten for **1.6 s** of warning, during
+  which nothing moves.
+- Then for **0.9 s** every leaf in the cup glides exactly one lane in that
+  direction, trailing spice. Leaves that appear during the glide aren't
+  carried.
+- 7.5 s of calm follow, and the next current runs the **other way**. The
+  first direction is drawn from the tea generator when the round starts.
+
+The timing never varies, so a player can learn to aim one lane ahead.
+
+### Tea and fortune together
+
+The tea's modifiers are folded into the fortune's by fixed rules
+(`roundModifiers()` in `gameplay/teas.js`): multipliers multiply, bonuses
+add, chances take the larger, and switches combine. Leaf speed from tea and
+fortune together is capped at × 1.35. Nothing is special-cased; these come
+out of the rules:
+
+| Combination | Result |
+| --- | --- |
+| Green Tea + Double Trouble | Quick, darting leaves against paired steam |
+| Green Tea + Tempestuous Tea | Leaves × 1.10 × 1.18 ≈ 1.30 speed |
+| Earl Grey + The Spiral | A wanderer steps first (inside radius 100), then The Spiral nudges it at radius 140; every move ends on a lane |
+| Chai + Tempestuous Tea | Faster leaves and currents together, every current still warned |
+| Black Tea + The Spiral | Kills score × 1.25 × 1.25 ≈ × 1.56, applied once |
+| Black Tea + the Golden Spoon | Twice the steam, and every leaf worth 25% more |
+| Herbal Tea + The Veil | Milk clouds last 2.5 + 1 s longer |
+| Herbal Tea, then The Leaves Lie | Likelier; still whimsical, still harmless |
+
+The unexpected brews and the secrets work as before under every tea.
+
+### Bonus encounters
+
+Hot Chocolate Havoc and The Daily Grind keep their own liquids, music, and
+rules. Neither reads the tea: marshmallows cook, beans fly, and the boss's
+health and rewards are exactly as in 0.8.0. The next normal round brews its
+own tea and its fortune as usual.
+
+### Music
+
+Each tea touches the band during play, on top of the tension layers:
+
+| Tea | What changes |
+| --- | --- |
+| Green Tea | 6 BPM brisker, light hats from the start, the melody an octave up, a lighter pad |
+| Earl Grey | 4 BPM slower, a ninth in the pad, a raised sixth (B♮) in the melody |
+| Chai | 4 BPM quicker, a hand-drum pattern in threes and twos in place of the plain kick |
+| Black Tea | 6 BPM quicker, quarter-note bass and kick even when calm |
+| Herbal Tea | 10 BPM slower, a chattier melody, no drums until the leaves get close |
+
+### Tuning
+
+Bots played 150 pots with each tea brewed every round, and 200 ordinary pots,
+at two skill levels: a casual bot (a quarter-second reaction) and a novice
+(almost half a second, sometimes chasing the wrong leaf). For the novice,
+rounds 2 to 12:
+
+| Tea | Cups lost per round | Points per round | Median round |
+| --- | --- | --- | --- |
+| House Blend | 0.40 | 367 | 30.9 s |
+| Green Tea | 0.45 | 343 | 29.5 s |
+| Earl Grey | 0.41 | 358 | 30.7 s |
+| Chai | 0.40 | 362 | 30.5 s |
+| Black Tea | 0.45 | 446 | 26.8 s |
+| Herbal Tea | 0.32 | 392 | 33.7 s |
+
+The first version of Black Tea (leaves × 0.84 apart) cost novices nearly
+twice as many cups as the other teas, and the first Herbal Tea (× 1.12)
+dragged, so both were softened. Darting and wandering were first tuned so
+that, at the fastest possible speed, a darter could reach the rim
+mid-sprint; they now always finish well inside it. Earl Grey and Chai cost
+little extra: their movements are learnable rather than punishing.
+
 ## Future ideas (not implemented)
 
 These are possibilities for later milestones, recorded so they aren't lost.

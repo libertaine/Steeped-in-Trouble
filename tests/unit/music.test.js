@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../../src/config.js';
-import { arrange, chordAt, createMusic, musicMood, rawTension } from '../../src/audio/music.js';
+import { TEA_MUSIC, arrange, chordAt, createMusic, musicMood, rawTension } from '../../src/audio/music.js';
 import { placeEnemy, playingGame } from './helpers.js';
 
 const RIM = CONFIG.arena.rimRadius;
@@ -187,5 +187,32 @@ describe('the band', () => {
     run(plain, a, game.state, 2);
     run(nova, b, game.state, 2);
     expect(b.starts.length - a.starts.length).toBe(16); // eight bell notes, two oscillators each
+  });
+});
+
+describe('tea flavours in the band', () => {
+  it('nudges the tempo by tea during play only', () => {
+    const at = (tea) => musicMood({ ...playingGame({ tea }).state }, 0).tempo;
+    expect(at('green')).toBe(at('house') + TEA_MUSIC.green.tempo);
+    expect(at('herbal')).toBe(at('house') + TEA_MUSIC.herbal.tempo);
+    const reading = playingGame({ tea: 'black' }).state;
+    expect(musicMood({ ...reading, phase: 'reading' }).tea).toBeUndefined();
+  });
+
+  it('gives each tea a different groove', () => {
+    // Every note of two bars, pitch included: Earl Grey differs in harmony rather than rhythm.
+    const notes = (mood) => JSON.stringify(Array.from({ length: 32 }, (_, step) => arrange(step, mood, () => 0.1)));
+    const grooves = new Set(['house', 'green', 'earlGrey', 'chai', 'black', 'herbal'].map((tea) => notes(play(0.2, { tea }))));
+    expect(grooves.size).toBe(6);
+    expect(bar(play(0.2, { tea: 'chai' })).kick).toEqual([0, 6, 10]);
+    expect(bar(play(0.2, { tea: 'herbal' })).kick).toBeUndefined();
+    expect(bar(play(0.6, { tea: 'herbal' })).kick).toBeDefined(); // the drums come back when it matters
+  });
+
+  it('leaves the hot chocolate and the coffee boss alone', () => {
+    const havoc = { section: 'havoc', tempo: 112, tension: 0, golden: false, stormy: false, chocolate: true };
+    expect(bar({ ...havoc, tea: 'chai' })).toEqual(bar(havoc));
+    const grind = { section: 'grind', tempo: 104, tension: 0.3, pressure: 0, golden: false, stormy: false };
+    expect(bar({ ...grind, tea: 'black' })).toEqual(bar(grind));
   });
 });

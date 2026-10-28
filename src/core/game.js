@@ -13,13 +13,15 @@
 // catastrophe, giantGone, havocEnd; and in The Daily Grind: grindStart, grindFight,
 // valveTurn, valveOpen, barrage, beans, beanCrack, beanSplat, pressureBuild,
 // pressureWarn, pressureBurst, sputter, clank, grindHit, grindRage, scald,
-// grindDefeat, grindEscape.
+// grindDefeat, grindEscape; and in Strange Brews: dartWarn, dart, wanderWarn,
+// wander, currentWarn, currentFlow, currentEnd (roundStart also names the tea).
 
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
 import { PHASE, createInitialState, createRoundStats } from './state.js';
 import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
+import { TEAS, chooseTea, createCurrent, roundModifiers, teaFortuneNudges, updateCurrent } from '../gameplay/teas.js';
 import { updateGolden } from '../gameplay/golden.js';
 import { rollPrismatic, updatePrismatic } from '../gameplay/prismatic.js';
 import { SECRETS, findSecrets } from '../gameplay/secrets.js';
@@ -44,10 +46,11 @@ export const OFFER_AT = revealAt + 0.6;
 const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
 
 /**
- * @param {{ seed?: number, random?: ReturnType<typeof createRandom> }} [options]
+ * @param {{ seed?: number, random?: ReturnType<typeof createRandom>, tea?: string }} [options]
  *   Pass a seed (or a generator) to reproduce an exact gameplay sequence.
+ *   Pass a tea id (see TEAS) to brew only that variety, every cup.
  */
-export function createGame({ seed, random } = {}) {
+export function createGame({ seed, random, tea: onlyTea } = {}) {
   const rng = random ?? createRandom(seed);
   const state = createInitialState();
   const events = [];
@@ -60,6 +63,9 @@ export function createGame({ seed, random } = {}) {
   // So does the coffee boss.
   const brew = createRandom(toSeed(rng.seed ?? 0) ^ 0xc0ffee);
   const grindSim = { state, rng: brew, emit };
+  // And the tea varieties, so the cups are steeped in the same order however they are played.
+  const steep = createRandom(toSeed(rng.seed ?? 0) ^ 0x7ea7ea);
+  const pinnedTea = typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
   const grinding = (stage) => state.phase === PHASE.GRIND && (!stage || state.grind.stage === stage);
@@ -76,6 +82,16 @@ export function createGame({ seed, random } = {}) {
     state.volleys = {};
     state.stir = { dir: 0, time: 0 };
     state.wake = null;
+    state.current = null;
+  }
+
+  /** Steep this cup's tea. The tea generator always advances by the same two draws. */
+  function steepTea() {
+    const chosen = chooseTea(state, steep);
+    const lean = steep.next() < 0.5 ? -1 : 1; // which way Chai's first current runs
+    state.tea = pinnedTea ?? chosen;
+    state.teaServed[state.tea] = state.round;
+    return lean;
   }
 
   function startRound() {
@@ -84,7 +100,9 @@ export function createGame({ seed, random } = {}) {
     state.residue = [];
     state.kills = 0;
     state.target = CONFIG.rounds.baseTarget + (state.round - 1) * CONFIG.rounds.targetPerRound;
-    state.modifiers = modifiersFor(state.fortune);
+    const lean = steepTea();
+    state.modifiers = roundModifiers(state.fortune, state.tea);
+    if (state.modifiers.spiceCurrents) state.current = createCurrent(lean);
     state.milkLeft = CONFIG.milk.perRound;
     state.sugarLeft = sugarCapacity(state) + state.extraSugar;
     state.extraSugar = 0;
@@ -99,7 +117,7 @@ export function createGame({ seed, random } = {}) {
     state.shotCooldown = 0;
     state.roundStats = createRoundStats();
     state.angle = CONFIG.player.startAngle;
-    emit('roundStart', { round: state.round, fortune: state.fortune });
+    emit('roundStart', { round: state.round, fortune: state.fortune, tea: state.tea });
   }
 
   function resetMatch() {
@@ -108,6 +126,8 @@ export function createGame({ seed, random } = {}) {
     state.lives = CONFIG.lives;
     state.fortune = null;
     state.nextFortune = null;
+    state.tea = 'house';
+    state.teaServed = {};
     state.spoon = createSpoon();
     state.goldenSpoon = 0;
     state.extraSugar = 0;
@@ -132,6 +152,7 @@ export function createGame({ seed, random } = {}) {
     state.nextFortune = drawFortune({
       milkKills, milkUses, sugarUses, escapes, nearMisses,
       leafLanes: state.residue.map((leaf) => leaf.lane),
+      nudges: teaFortuneNudges(state.tea),
     }, rng);
     state.offer = offerDue(state.round) ? drawOffer(state.spoon, rng) : null;
     state.havocDue = havocDue(state, treats);
@@ -407,6 +428,7 @@ export function createGame({ seed, random } = {}) {
     if (input.fire) fireSteam(sim);
     updateSugarRegen(sim, dt);
     updateSpawning(sim, dt);
+    updateCurrent(sim, dt);
     updateClouds(state, dt);
     updateShots(state, dt);
     updateGolden(sim, dt);

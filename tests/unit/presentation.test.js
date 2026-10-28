@@ -243,3 +243,46 @@ describe('living tea', () => {
     expect(liquid.flow).toBe(flow);
   });
 });
+
+describe('Strange Brews presentation', () => {
+  it('names the tea in the HUD during play, and the liquid during the bonuses', () => {
+    const house = playingGame();
+    expect(hudText(house.state)).toMatchObject({
+      roundTitle: 'Cup 1: the storm stirs', teaName: 'House Blend', hudTea: '☕ House Blend · house blend',
+    });
+    const earl = playingGame({ tea: 'earlGrey' });
+    const text = hudText(earl.state);
+    expect(text.roundTitle).toBe('Cup 1: Earl Grey');
+    expect(text.hudTea).toBe('☕ Earl Grey · wandering leaves');
+    expect(text.gameTip).toMatch(/^Earl Grey: Some leaves change lanes/);
+    completeRound(earl);
+    expect(hudText(earl.state).hudTea).toBe('');
+    earl.state.offer = null;
+    earl.state.havocDue = true;
+    earl.primaryAction();
+    expect(hudText(earl.state)).toMatchObject({ teaName: 'Hot chocolate', hudTea: '' });
+  });
+
+  it('announces every tea after the first cup, briefly', () => {
+    const effects = createEffects({ random: () => 0.5 });
+    effects.handle({ type: 'roundStart', round: 1, fortune: null, tea: 'house' });
+    expect(effects.fx.teaCard).toBeNull();
+    effects.handle({ type: 'roundStart', round: 2, fortune: 'star', tea: 'chai' });
+    expect(effects.fx.teaCard).toMatchObject({ tea: 'chai' });
+    effects.update(10, { phase: 'playing', angle: 0, enemies: [], shots: [] });
+    expect(effects.fx.teaCard).toBeNull();
+    effects.handle({ type: 'roundStart', round: 12, fortune: null, tea: 'green' });
+    expect(effects.fx.teaCard.life).toBeLessThan(2.8);
+  });
+
+  it('eases the liquid into the new tea’s colours', () => {
+    const tea = createTea({ random: () => 0.5 });
+    tea.handle({ type: 'roundStart', tea: 'herbal' });
+    expect(tea.liquid.variety).toMatchObject({ from: 'house', to: 'herbal', blend: 0 });
+    tea.update(0.8, { phase: 'playing', angle: 0, enemies: [], shots: [] });
+    expect(tea.liquid.variety.blend).toBeGreaterThan(0.3);
+    expect(tea.liquid.variety.blend).toBeLessThan(1);
+    for (let i = 0; i < 60; i++) tea.update(0.05, { phase: 'playing', angle: 0, enemies: [], shots: [] });
+    expect(tea.liquid.variety).toMatchObject({ from: 'herbal', to: 'herbal', blend: 1 });
+  });
+});

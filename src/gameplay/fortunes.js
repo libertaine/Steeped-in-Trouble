@@ -33,6 +33,12 @@ export const BASE_MODIFIERS = Object.freeze({
   enemySpeedMultiplier: 1, // leaf speed
   goldenCube: false, // a golden sugar cube appears once this round
   stormyMilk: false, // milk is caught in the currents (The Perfect Storm)
+
+  // Set by the round's tea variety (gameplay/teas.js); no fortune changes these.
+  spawnIntervalMultiplier: 1, // seconds between new leaves
+  dartChance: 0, // share of new leaves that dart (Green Tea)
+  wanderChance: 0, // share of new leaves that wander (Earl Grey)
+  spiceCurrents: false, // currents sweep the leaves sideways (Chai)
 });
 
 /** Follow a polyline: t ∈ [0, 1] moves evenly from point to point. */
@@ -269,14 +275,15 @@ export function selectFortune(record) {
 
 /**
  * How likely each fortune is after a round: its own weight(record), plus a
- * strong lean towards the pattern the leaves formed.
+ * strong lean towards the pattern the leaves formed, plus any nudges the
+ * round's tea adds (`record.nudges`, fortune id → extra weight).
  * @returns {Record<string, number>}
  */
 export function fortuneWeights(record) {
   const pattern = selectFortune(record);
   const weights = {};
   for (const [id, fortune] of Object.entries(FORTUNES)) {
-    weights[id] = fortune.weight(record) + (id === pattern ? F.patternWeight : 0);
+    weights[id] = fortune.weight(record) + (id === pattern ? F.patternWeight : 0) + (record.nudges?.[id] ?? 0);
   }
   return weights;
 }
@@ -284,7 +291,7 @@ export function fortuneWeights(record) {
 /**
  * Draw the fortune for the next round.
  * @param {{ milkKills: number, milkUses?: number, sugarUses?: number, escapes?: number, nearMisses?: number,
- *   leafLanes: number[] }} record
+ *   leafLanes: number[], nudges?: Record<string, number> }} record
  * @param {{ next(): number }} rng
  * @returns {string} fortune id
  */

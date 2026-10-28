@@ -166,7 +166,8 @@ test('a Hot Chocolate Havoc bonus round plays through and returns to the tea', a
   await page.evaluate(() => { window.__TEACUP__.game.state.chocolate.left = 0.1; });
   await expect(page.locator('#hudStatus')).toHaveText('BACK TO TEA');
   await expect(page.locator('#mainBtn')).toHaveText('Back to the tea →');
-  await page.waitForTimeout(800);
+  // Wait on the game's own clock (CONFIG.chocolate.outroMin is 0.6 s), not the wall clock.
+  await page.waitForFunction(() => window.__TEACUP__.game.state.chocolate?.time >= 0.65);
   await page.locator('#mainBtn').click();
 
   await expect(page.locator('#hudStatus')).toHaveText(/DEFEND THE RIM|GOLDEN SPOON/);
@@ -212,7 +213,8 @@ test('The Daily Grind can be met, fought with Q and E, and escaped without endin
   await page.evaluate(() => { window.__TEACUP__.game.state.grind.left = 0.05; });
   await expect(page.locator('#hudStatus')).toHaveText('THE MACHINE ESCAPES');
   await expect(page.locator('#mainBtn')).toHaveText('Back to the tea →');
-  await page.waitForTimeout(1800);
+  // Wait on the game's own clock (CONFIG.grind.outroMin is 1.6 s): a busy browser's frames can lag the wall clock.
+  await page.waitForFunction(() => window.__TEACUP__.game.state.grind?.time >= 1.65);
   await page.keyboard.press('Enter');
 
   await expect(page.locator('#hudStatus')).toHaveText(/DEFEND THE RIM|GOLDEN SPOON/);

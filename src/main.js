@@ -37,7 +37,8 @@ function boot() {
 
   const params = new URLSearchParams(window.location.search);
   const canvas = document.getElementById('game');
-  const game = createGame({ seed: seedFromUrl(params) });
+  // ?tea=<id> brews only one variety (see gameplay/teas.js); unknown ids are ignored.
+  const game = createGame({ seed: seedFromUrl(params), tea: params.get('tea') ?? undefined });
   const effects = createEffects();
   const renderer = createRenderer(canvas, { quality: initialQuality(params) });
   const hud = createHud(document);

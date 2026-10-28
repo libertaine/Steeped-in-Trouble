@@ -30,6 +30,11 @@ const SOUNDS = {
   beanSplat: [300, 0.06, 'triangle', 0.006],
   valveOpen: [1760, 0.22, 'sine', 0.01, 0, 1.25], // a little whistle
   pressureBuild: [110, 0.8, 'sawtooth', 0.012, 0, 1.6], // a groan as it swells
+  // Strange Brews: every warning has a sound as well as a sight.
+  dartWarn: [1100, 0.12, 'triangle', 0.008, 0, 1.4], // a rising chirp
+  dart: [700, 0.1, 'sawtooth', 0.005, 0, 1.8], // zip
+  wanderWarn: [880, 0.16, 'sine', 0.008, 0, 0.85],
+  wander: [660, 0.2, 'sine', 0.008, 0, 1.25], // a soft swoosh sideways
 };
 
 // Little tunes: lists of notes.
@@ -86,6 +91,9 @@ const TUNES = {
   // Wah, wah, wah, wahhh.
   grindEscape: [[392, 0.3, 'sawtooth', 0.016], [370, 0.3, 'sawtooth', 0.016, 0.32], [349, 0.3, 'sawtooth', 0.016, 0.64],
     [330, 0.9, 'sawtooth', 0.016, 0.96, 0.92]],
+  // Chai: a spicy shimmer as the current gathers, then the whoosh as it sweeps.
+  currentWarn: [[392, 0.5, 'triangle', 0.014, 0, 1.3], [494, 0.5, 'triangle', 0.01, 0.12, 1.3], [587, 0.6, 'sine', 0.01, 0.24, 1.3]],
+  currentFlow: [[180, 0.7, 'sawtooth', 0.014, 0, 1.6], [360, 0.5, 'sine', 0.01, 0.05, 1.4]],
   // Steam Nova: a rising whoosh, then a bright chord rippling up.
   nova: [[196, 0.45, 'sawtooth', 0.02], [523, 0.12, 'square', 0.014, 0.05], [659, 0.12, 'square', 0.014, 0.1],
     [784, 0.12, 'square', 0.014, 0.15], [1047, 0.12, 'square', 0.014, 0.2], [1319, 0.6, 'sine', 0.034, 0.25],

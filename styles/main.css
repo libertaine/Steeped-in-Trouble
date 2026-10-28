@@ -138,6 +138,14 @@ canvas {
   color: #e9d6f8;
 }
 
+/* The tea pill takes its variety's colour (TEAS[id].color in gameplay/teas.js). */
+.tea { border-color: #e0a35a88; color: #f3dcb6; }
+.tea[data-tea="green"] { border-color: #b9e37a99; color: #ddf3bd; }
+.tea[data-tea="earlGrey"] { border-color: #c9b3ef99; color: #e6dcf8; }
+.tea[data-tea="chai"] { border-color: #f0a05099; color: #f8d2a8; }
+.tea[data-tea="black"] { border-color: #e8c48a99; color: #f4e2c2; }
+.tea[data-tea="herbal"] { border-color: #f2b8cf99; color: #f9dfe9; }
+
 .pills {
   display: flex;
   gap: 7px;

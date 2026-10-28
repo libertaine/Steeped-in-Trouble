@@ -52,7 +52,12 @@ export function createInitialState() {
 
     fortune: null, // fortune id active this round
     nextFortune: null, // fortune id revealed by the latest reading
-    modifiers: modifiersFor(null),
+    modifiers: modifiersFor(null), // the fortune's and the tea's, combined (gameplay/teas.js)
+
+    // Strange Brews (gameplay/teas.js).
+    tea: 'house', // tea variety of the current (or latest) normal round
+    teaServed: {}, // tea id -> the round it was last served, for the variety draw
+    current: null, // Chai's spice current clock this round; see createCurrent()
 
     angle: CONFIG.player.startAngle, // spoon position on the rim
     shotCooldown: 0,
@@ -84,7 +89,8 @@ export function createInitialState() {
     grind: null, // the encounter in progress; see createGrind()
 
     shots: [], // { angle, radius, speed, sugar, veer, golden, volley?, nova?, cream? }
-    enemies: [], // { angle, radius, home, speed, wiggle, shifted, size, alpha, backwash }
+    // { kind, angle, radius, home, speed, wiggle, shifted, size, alpha, backwash, glide, dart?, wander? }
+    enemies: [],
     clouds: [], // { angle, time, duration, spread, drift }
     residue: [], // { lane, radius, angle, spin, size }
     roundStats: createRoundStats(),
