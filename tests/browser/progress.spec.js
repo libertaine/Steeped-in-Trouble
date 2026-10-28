@@ -114,19 +114,27 @@ for (const graphics of ['high', 'low']) {
       await openGame(page, `&seed=3&graphics=${graphics}`);
       await page.keyboard.press('Enter');
       await page.evaluate(() => {
-        const s = window.__TEACUP__.game.state;
+        const { game, effects } = window.__TEACUP__;
+        const s = game.state;
         s.spawnTimer = Infinity;
         // Two leaves on the far side of the cup from the spoon, well clear of its cloud.
         for (const lane of [7, 9]) {
           s.enemies.push({ kind: 'leaf', angle: -Math.PI / 2 + (Math.PI / 8) * lane, radius: 200, home: 40, speed: 0, wiggle: 0, shifted: true, size: 10, alpha: 1, backwash: 0, glide: null });
         }
+        // Note what the pulse looks like the moment its event is shown (a busy browser may be slow to ask later).
+        const handle = effects.handle;
+        effects.handle = (event) => {
+          handle(event);
+          if (event.type !== 'milkPulse') return;
+          window.__poured = {
+            pulse: s.pulse, surge: effects.fx.tea.surges.some((sg) => sg.full), glows: effects.fx.tea.glows.length,
+          };
+        };
       });
       await page.keyboard.press('ArrowUp');
       await expect(page.locator('#milkCount')).toHaveText('1');
-      const poured = await page.evaluate(() => {
-        const { game, effects } = window.__TEACUP__;
-        return { pulse: game.state.pulse, surge: effects.fx.tea.surges.some((sg) => sg.full), glows: effects.fx.tea.glows.length };
-      });
+      await page.waitForFunction(() => window.__poured);
+      const poured = await page.evaluate(() => window.__poured);
       expect(poured.pulse).toBeGreaterThan(0);
       if (motion === 'reduce') {
         expect(poured.surge).toBe(false);
