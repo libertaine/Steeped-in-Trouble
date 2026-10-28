@@ -13,18 +13,21 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **0.8.0 — The Daily Grind** is the current release. The game is
-experimental and still changing, but there's plenty in the cup already:
+Version **0.9.0 — Strange Brews** is being prepared: the tea has developed a
+personality. Several, actually. The game is experimental and still changing,
+but there's plenty in the cup already:
 
 - Arcade defence around a living teacup whose tea swirls, ripples, and
   reacts to every shot.
+- New in 0.9.0: five tea varieties, each changing how its round plays, from
+  leaves that dart or change lanes to spice currents that sweep the cup.
 - Tea-leaf fortunes: the leaves you defeat are read at the end of each
-  round, and the reading changes the next one.
+  round, and the reading changes the next one. Tea and fortune combine.
 - Spoon upgrades that last the whole pot, and combinations that sometimes
   brew something unexpected.
-- Occasional bonus rounds and, new in 0.8.0, a very angry espresso machine.
+- Occasional bonus rounds and a very angry espresso machine.
 - Procedurally drawn vector graphics and an adaptive soundtrack that follows
-  the cup.
+  the cup, and the tea.
 
 See the [changelog](CHANGELOG.md) for what changed in each version.
 
@@ -40,6 +43,9 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 - Clear enough leaves to finish the round. The leaves you defeated are then
   read, and their fortune changes the next round. Every other round you also
   choose an upgrade for your spoon, which lasts for the whole pot.
+- From the second cup on, each round brews a different tea, and each tea
+  changes how the leaves behave. The cup announces it, and the side panel
+  says what it does.
 - Now and then something different happens between cups. The side panel
   explains what to do, and none of it costs a cup.
 - Experiment. The cup rewards curiosity, and some things are best found for
@@ -52,8 +58,8 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 | --- | --- | --- |
 | Move the silver spoon | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> | hold **◀ TURN** / **TURN ▶** |
 | Fire steam (hold for continuous fire) | <kbd>Space</kbd> | hold **STEAM ↑** |
-| Milk: wash back and slow a wedge of the cup | <kbd>Q</kbd> or <kbd>M</kbd> | **MILK** |
-| Sugar: three-lane burst | <kbd>E</kbd> or <kbd>S</kbd> | **SUGAR** |
+| Milk: wash back and slow a wedge of the cup | <kbd>Q</kbd>, <kbd>↑</kbd>, or <kbd>M</kbd> | **MILK** |
+| Sugar: three-lane burst | <kbd>E</kbd>, <kbd>↓</kbd>, or <kbd>S</kbd> | **SUGAR** |
 | Pause / resume | <kbd>P</kbd> | main button |
 | Start, next cup, new pot | <kbd>Enter</kbd> | main button |
 | Pick a spoon upgrade | <kbd>1</kbd> / <kbd>2</kbd> | tap a card |
@@ -67,6 +73,8 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
   glowing currents) and low quality for older machines. You can also add
   `?graphics=low` or `?graphics=high` to the URL.
 - Add `?seed=<number>` to the URL to replay the same sequence of tea leaves.
+- Add `?tea=<variety>` to brew only one tea, for practice: `green`,
+  `earlGrey`, `chai`, `black`, `herbal`, or `house`.
 
 ## Running locally
 

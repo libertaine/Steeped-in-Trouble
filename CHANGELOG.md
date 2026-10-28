@@ -5,6 +5,42 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+Prepared as **0.9.0 — Strange Brews**. It is not yet tagged or published.
+
+### Added
+
+- **Strange Brews:** the tea has developed a personality. Several, actually.
+  The first cup is still the familiar House Blend; every cup after it brews
+  one of five varieties, announced as it pours, each changing how the round
+  plays. A variety never comes twice in a row, and none stays away for long.
+  - **Green Tea** — *A Little Too Refreshing.* Leaves rise a little faster,
+    and some of them dart: a flickering crouch, then a sprint.
+  - **Earl Grey** — *Trouble with a Touch of Class.* Some leaves change
+    lanes, after a lavender curl shows which way.
+  - **Chai** — *Spice Things Up.* Spice currents sweep every leaf one lane
+    sideways on a steady clock, with arrows round the rim to warn which way.
+  - **Black Tea** — *Properly Strong.* Leaves arrive more often, and every
+    leaf scores 25% more.
+  - **Herbal Tea** — *What Could Possibly Go Wrong?* A gentler cup: slower
+    leaves, and milk lingers. The leaves may get ideas.
+- The tea and the fortune are separate layers, and they combine: Earl Grey
+  under The Spiral, Black Tea with the Golden Spoon, Chai in Tempestuous
+  Tea. Hot Chocolate Havoc and The Daily Grind keep their own liquids and
+  rules.
+- Each tea has its own colours and currents, easing in as the cup is poured,
+  and its own touch on the soundtrack. Every warning has a sound as well as a
+  sight, and each behaviour has its own shape, not just its own colour.
+- <kbd>↑</kbd> pours milk and <kbd>↓</kbd> fires sugar, beside the turning
+  arrows. <kbd>Q</kbd> / <kbd>M</kbd> and <kbd>E</kbd> / <kbd>S</kbd> still work.
+- `?tea=<id>` (`green`, `earlGrey`, `chai`, `black`, `herbal`, or `house`)
+  brews only that variety, for practice.
+
+### Changed
+
+- The HUD names the tea: in the round's title, in a pill under the omen, and
+  in a new row of the cup status panel.
+- README: a "Support the Project" section.
+
 ## [0.8.0] - 2026-10-27 — The Daily Grind
 
 ### Added
