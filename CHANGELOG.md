@@ -160,7 +160,9 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.6.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.8.0...main
+[0.8.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/13b097c...v0.5.0
 [0.4.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/73e1fad...13b097c
