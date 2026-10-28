@@ -11,11 +11,12 @@ pattern is read as a fortune that changes the next round.
 
 ## Status
 
-Version **0.7.0 — Hot Chocolate Havoc** adds the game's first bonus round.
-Every so often, between cups, the leaves foresee something sweeter, and the
-tea is no longer quite tea. Aiming is easier too: the lane the spoon will
-fire down now glows. See the [changelog](CHANGELOG.md) for earlier versions.
-The game is experimental, so expect it to keep changing.
+Version **0.8.0 — The Daily Grind** brings the game's first boss. Somebody
+ordered trouble, and it has arrived as a very angry espresso machine. Milk
+and sugar also have new keys, <kbd>Q</kbd> and <kbd>E</kbd>, beside the
+turning keys, and marshmallows are a little easier to toast. See the
+[changelog](CHANGELOG.md) for earlier versions. The game is experimental, so
+expect it to keep changing.
 
 The game was called *Storm in a Teacup* up to version 0.1.0.
 
@@ -35,6 +36,9 @@ The game was called *Storm in a Teacup* up to version 0.1.0.
   them brew something unexpected.
 - Now and then, between cups, a bonus round turns the tea into hot
   chocolate. Nothing in it can spill. Be gentle with the fire button.
+- Later on, something with a lot more pressure turns up between cups. Hit
+  its weak spot when it shows, and get out of the way when it glows red.
+  Losing that fight never costs a cup, and winning it is worth your while.
 
 ## Controls
 
