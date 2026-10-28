@@ -88,6 +88,7 @@ export function createEffects({ random = Math.random } = {}) {
     spoonScale: 1, // The Leaves Lie can make the spoon briefly enormous
     upgradeGlow: 0, // seconds of the ring that marks a new upgrade
     discovery: null, // { id, time, life }: an unexpected brew being announced
+    aimPulses: [], // lanes that just fired, flashing briefly: { lanes, tone, time, life }
   };
   const queue = [];
   let prankTimer = null; // seconds until The Leaves Lie misbehaves
@@ -135,6 +136,12 @@ export function createEffects({ random = Math.random } = {}) {
     words.forEach((text, i) => say(text, { color: FORTUNES.lie.color, then: i > 0 }));
   }
 
+  /** Flash the lanes a shot just went down (the renderer draws it over the aim highlight). */
+  function pulseLanes(lanes, tone, life = 0.22) {
+    fx.aimPulses.push({ lanes, tone, time: life, life });
+    if (fx.aimPulses.length > 12) fx.aimPulses.shift();
+  }
+
   /** Spoon sparkles: silver, or gold. */
   function spoonBurst(count, angle, colors, speed = 1.4) {
     burst(count, () => SPOON_RADIUS + rnd(-10, 6), () => angle + rnd(-0.08, 0.08),
@@ -150,6 +157,7 @@ export function createEffects({ random = Math.random } = {}) {
       fx.particles = [];
       fx.flash = 0;
       fx.glints = [];
+      fx.aimPulses = [];
       golden = null;
       prismatic = null;
       bigSpoon = null;
@@ -157,7 +165,8 @@ export function createEffects({ random = Math.random } = {}) {
       if (fortune) say(`“${FORTUNES[fortune].quote}”`, { color: FORTUNES[fortune].color });
       else hush();
     },
-    steam({ twin }) {
+    steam({ lane, twin, golden: gilded }) {
+      pulseLanes([lane], gilded ? 'golden' : 'steam');
       if (!twin) return;
       // A puff of sparkle from the spoon for each pair of darts.
       const angle = fx.spoonAngle;
@@ -200,7 +209,11 @@ export function createEffects({ random = Math.random } = {}) {
       burst(10, () => radius + rnd(-5, 5), () => angle + rnd(-0.04, 0.04), '#a99bc0', () => rnd(0.3, 0.6));
       say('The prism fades. Blink and you miss it.', { color: '#a99bc0', life: 2.6 });
     },
+    sugar({ lanes }) {
+      pulseLanes(lanes, 'sugar', 0.4);
+    },
     nova({ count, golden: gilded }) {
+      pulseLanes(Array.from({ length: CONFIG.arena.lanes }, (_, lane) => lane), 'nova', 0.6);
       // A ring of colour bursting out from the middle of the cup.
       for (let i = 0; i < 90; i++) {
         const a = rnd(0, TAU);
@@ -339,9 +352,11 @@ export function createEffects({ random = Math.random } = {}) {
       fx.glitch = Math.max(0, fx.glitch - dt);
       fx.upgradeGlow = Math.max(0, fx.upgradeGlow - dt * 1.2);
       if (state) fx.spoonAngle = state.angle;
-      for (let i = fx.glints.length - 1; i >= 0; i--) {
-        fx.glints[i].time -= dt;
-        if (fx.glints[i].time <= 0) fx.glints.splice(i, 1);
+      for (const list of [fx.glints, fx.aimPulses]) {
+        for (let i = list.length - 1; i >= 0; i--) {
+          list[i].time -= dt;
+          if (list[i].time <= 0) list.splice(i, 1);
+        }
       }
 
       const playing = state?.phase === PHASE.PLAYING;

@@ -55,9 +55,10 @@ export function fireSteam({ state, emit }) {
   state.shotCooldown = steamCooldown(state);
   const volley = ++state.roundStats.volleys;
   const before = state.shots.length;
-  launchSteam(state, spoonLane(state), { volley });
+  const lane = spoonLane(state);
+  launchSteam(state, lane, { volley });
   state.volleys[volley] = state.shots.length - before; // darts still in flight
-  emit('steam', { twin: state.modifiers.twinSteam, golden: state.goldenSpoon > 0 });
+  emit('steam', { lane, twin: state.modifiers.twinSteam, golden: state.goldenSpoon > 0 });
   return true;
 }
 
@@ -110,7 +111,7 @@ export function sugarBurst({ state, emit }) {
     });
   }
   state.roundStats.sugarUses++;
-  emit('sugar');
+  emit('sugar', { lanes: CONFIG.sugar.laneOffsets.map((offset) => wrapLane(lane + offset)) });
   return true;
 }
 

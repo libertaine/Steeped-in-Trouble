@@ -9,6 +9,7 @@ import { LANES, LANE_STEP, TAU, laneAngle, toCanvasPoint as polar } from '../gam
 import { FORTUNES, glyphPoint } from '../gameplay/fortunes.js';
 import { SECRETS } from '../gameplay/secrets.js';
 import { COMBOS } from '../gameplay/combos.js';
+import { spoonLane } from '../gameplay/player.js';
 import { createTeaPainter } from './tea.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
@@ -18,6 +19,35 @@ const GOLD = '#ffd45e';
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const smoothstep = (t) => t * t * (3 - 2 * t);
 const MONO = 'ui-monospace,monospace';
+
+/**
+ * The lane the aim highlight shows. It is always the lane the next shot takes,
+ * because it asks the same question the weapons do (spoonLane()).
+ */
+export const aimedLane = (state) => spoonLane(state);
+
+const AIM = {
+  steam: '#d4ecff',
+  golden: '#ffe08a',
+  sugar: '#fff1c4',
+};
+const AIM_FADE = 0.12; // seconds for the highlight to cross-fade to a new lane
+
+/** Is the spoon aiming right now (a round in progress, or paused mid-round)? */
+const aiming = (state) => state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED;
+
+const aimColor = (state) => (state.goldenSpoon > 0 ? AIM.golden : AIM.steam);
+
+/** A colour at a given opacity: '#rrggbb' or 'hsl(h, s%, l%)'. */
+function fade(color, alpha) {
+  if (color.startsWith('#')) return `${color}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+  return color.replace(/^hsl\((.*)\)$/, `hsla($1, ${alpha})`);
+}
+
+function pulseColor(tone, lane) {
+  if (tone === 'nova') return `hsl(${Math.round((lane / LANES) * 360)}, 100%, 78%)`;
+  return AIM[tone] ?? AIM.steam;
+}
 
 const OVERLAY_TEXT = {
   [PHASE.READY]: {
@@ -49,6 +79,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
   let time = 0; // animation clock, independent of the simulation
   let gradients = null;
   const tea = createTeaPainter(ctx);
+  const aim = { lane: null, prev: null, fade: 1 }; // the highlighted lane, and the one fading out
 
   function createGradients() {
     const glare = ctx.createLinearGradient(CX - 250, CY - 240, CX + 220, CY + 240);
@@ -162,6 +193,100 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     ctx.fillStyle = gradients.glare;
     ctx.fillRect(CX - OUTER, CY - OUTER, OUTER * 2, OUTER * 2);
     ctx.restore();
+  }
+
+  /** Follow the aimed lane, cross-fading from the previous one. Hidden between rounds. */
+  function trackAim(state, dt) {
+    const lane = aiming(state) ? aimedLane(state) : null;
+    if (lane !== aim.lane) {
+      aim.prev = aim.lane;
+      aim.lane = lane;
+      aim.fade = 0;
+    }
+    aim.fade = Math.min(1, aim.fade + dt / AIM_FADE);
+  }
+
+  /** A soft beam down one lane, brightest at the rim and fading towards the centre. */
+  function laneBeam(lane, strength, color) {
+    if (strength <= 0.01) return;
+    const a = laneAngle(lane);
+    const rim = polar(OUTER - 8, a);
+    const hub = polar(32, a);
+    const beam = ctx.createLinearGradient(rim.x, rim.y, hub.x, hub.y);
+    beam.addColorStop(0, color);
+    beam.addColorStop(0.5, fade(color, 0.4));
+    beam.addColorStop(1, fade(color, 0));
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = beam;
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = Math.min(1, 0.13 * strength);
+    ctx.lineWidth = 16;
+    ctx.beginPath();
+    ctx.moveTo(rim.x, rim.y);
+    ctx.lineTo(hub.x, hub.y);
+    ctx.stroke();
+    ctx.globalAlpha = Math.min(1, 0.42 * strength);
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /**
+   * The aimed lane, highlighted beneath the action, plus a flash down each
+   * lane that has just fired.
+   */
+  function drawAimBeams(state, fx) {
+    const color = aimColor(state);
+    if (aim.prev !== null && aim.fade < 1) laneBeam(aim.prev, 1 - aim.fade, color);
+    if (aim.lane !== null) laneBeam(aim.lane, aim.fade, color);
+    for (const pulse of fx.aimPulses ?? []) {
+      const u = pulse.time / pulse.life;
+      for (const lane of pulse.lanes) {
+        laneBeam(lane, 2.6 * u * u, pulseColor(pulse.tone, lane));
+      }
+    }
+  }
+
+  /** The firing point: a bright chevron where the shot will appear, and a short arc of rim above it. */
+  function rimMarker(lane, strength, color, pulse = 0) {
+    if (strength <= 0.01) return;
+    const a = laneAngle(lane);
+    const tip = polar(OUTER - 13, a);
+    ctx.save();
+    ctx.globalAlpha = strength * (0.7 + 0.3 * pulse);
+    ctx.strokeStyle = color;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 2.4 + 1.6 * pulse;
+    ctx.beginPath();
+    ctx.arc(CX, CY, OUTER - 2, a - LANE_STEP * 0.26, a + LANE_STEP * 0.26);
+    ctx.stroke();
+    ctx.translate(tip.x, tip.y);
+    ctx.rotate(a);
+    if (renderer.quality === 'high') {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10 + 10 * pulse;
+    }
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(-6.5, 0); // points into the cup
+    ctx.lineTo(1.5, -4.6);
+    ctx.lineTo(-0.5, 0);
+    ctx.lineTo(1.5, 4.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    if (pulse > 0) circle(tip.x, tip.y, 6 + 16 * (1 - pulse), color, 1.6, false, pulse * strength);
+  }
+
+  function drawAimMarkers(state, fx) {
+    const color = aimColor(state);
+    let flash = 0;
+    for (const pulse of fx.aimPulses ?? []) {
+      if (pulse.lanes.includes(aim.lane)) flash = Math.max(flash, pulse.time / pulse.life);
+    }
+    if (aim.prev !== null && aim.fade < 1) rimMarker(aim.prev, 1 - aim.fade, color);
+    if (aim.lane !== null) rimMarker(aim.lane, aim.fade, color, flash);
   }
 
   /** The slowed wedge under each milk cloud; the marbled wisps live in the tea. */
@@ -389,8 +514,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     const at = polar(OUTER + 7, angle);
     if (look.golden) circle(at.x, at.y, 30 * size, GOLD, 0, true, 0.12 * flicker);
     drawSpoonAt(state, angle, size, look, flicker);
-    const p = polar(OUTER - 11, angle);
-    circle(p.x, p.y, 3, look.golden ? '#fff1b0' : '#c4fbeb', 0, true, 0.8);
+    drawAimMarkers(state, fx);
     if (fx.upgradeGlow > 0) {
       const u = 1 - fx.upgradeGlow;
       circle(at.x, at.y, 18 + 46 * u, '#f4f8f2', 2.5 * (1 - u), false, 0.8 * (1 - u));
@@ -796,11 +920,13 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       gradients ??= createGradients();
       ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
       ctx.clearRect(0, 0, W, H);
+      trackAim(state, dt);
       drawCup();
       if (fx.tea) tea.paint(fx.tea, state, { quality: renderer.quality, scale: canvas.width / W });
       drawGuides();
       const inPlay = state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED;
       if (inPlay) drawStrainer(state);
+      drawAimBeams(state, fx);
       drawClouds(state.clouds);
       drawResidue(state);
       for (const e of state.enemies) drawEnemy(e);
