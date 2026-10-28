@@ -32,7 +32,8 @@ The game was called *Storm in a Teacup* up to version 0.1.0.
 | Pick a spoon upgrade | <kbd>1</kbd> / <kbd>2</kbd> | tap a card |
 | Restart after game over | <kbd>R</kbd> | main button |
 
-Sound is off by default. Use the **Sound** toggle to enable it.
+Sound is off by default. Use the **Sound** toggle to enable sound effects and
+an adaptive soundtrack that follows the tension in the cup.
 
 Add `?seed=<number>` to the URL to replay the same sequence of tea leaves.
 
