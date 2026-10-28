@@ -771,6 +771,35 @@ and statistics; it never steers or chooses milk/sugar. Hot chocolate remains
 manual (hold the cup for flames in Easy Touch). Runner pads replace cup
 input for the errand, and unfinished gestures never carry between phases.
 
+### Compact View and the Tea Break (0.11.0 development)
+
+Presentation, controls, and firing are separate choices: Compact / Full,
+Easy / Classic Touch, and Auto / Manual Steam. Easy Touch still requires
+Auto Steam because it has no steam button; its relaxed difficulty is intentional.
+No combat tuning changes accompany the mobile presentation.
+
+Touch-capable devices default to Compact, including large and desktop-site
+tablets. A saved choice wins; a visible switch and a visit-only `view` URL
+override let mouse or hybrid devices use either view. Full retains the sidebar.
+Compact uses available viewport height as well as width: a small HUD sits
+above an undistorted canvas, thumb controls and actions below it. Short
+landscape screens use a right-hand control rail. Safe areas and dynamic
+viewport units protect the bottom actions without forcing rotation or fullscreen.
+
+The Tea Break is optional at Ready, after the fortune reveal (including while
+an upgrade awaits selection), or when explicitly pausing. It reuses pot, tea,
+fortune, settings, and controls panels. Opening it freezes simulation time and resets input;
+dismissing resumes only a game it paused itself, unless backgrounded meanwhile.
+An existing pause remains paused. Escape and the visible close button dismiss it.
+The leaf-reading animation remains unobscured before reveal. Upgrade offers
+and Tea Shortage choices remain directly reachable outside the canvas in
+Compact View, with their existing ordering and consequences.
+
+Context menus and text selection are suppressed only on the gameplay surface.
+Normal document text and links retain browser behavior. Chrome's Desktop Site
+configuration and system edge gestures remain browser/system controlled;
+emulation is not native Samsung qualification.
+
 ## Future ideas (not implemented)
 
 These are possibilities for later milestones, recorded so they aren't lost.

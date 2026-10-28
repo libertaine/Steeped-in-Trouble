@@ -5,6 +5,31 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+### Added
+
+- **0.11.0 development — The Pocket Teacup:** independent, remembered Compact
+  / Full View. Touch capabilities choose the initial view, including wide
+  tablets and mixed-input devices; a visible switch always overrides it.
+- Compact HUD outside the canvas, viewport-fitted portrait and landscape
+  layouts, safe-area spacing, reachable actions, and large steering/runner
+  controls. Upgrade and Tea Shortage cards sit outside the playfield.
+- **The Tea Break:** pause safely to read pot statistics, tea mechanics,
+  fortunes, and controls or change settings. Required choices and the
+  existing side-mission sequence retain their own flow.
+- Focused capability, persistence, responsive, menu, and input regression
+  checks, plus browser screenshots for human device testing.
+
+### Fixed
+
+- Scoped long-press callout and selection protection across the game surface
+  in Easy and Classic Touch; pointer cancellation and phase changes release
+  holds. Keyboard and assistive activation work on steering and runner pads.
+- Menu keyboard input cannot leak into gameplay, and dismissing a backgrounded
+  or previously paused menu does not resume the simulation.
+
+Auto Steam, combat rules, and Tea Run mechanics are unchanged. Samsung
+hardware qualification and the Tea Run expansion remain future work.
+
 ## [0.10.0] - 2026-10-28 — The Tea Run
 
 ### Added
