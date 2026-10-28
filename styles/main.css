@@ -325,6 +325,7 @@ body[data-mode="run"] .controls-run {
 }
 
 .easy-hint {
+  white-space: pre-line;
   flex: 1.1;
   align-self: center;
   margin: 0;
@@ -694,4 +695,104 @@ kbd {
   .errand-cards small {
     font-size: 10px;
   }
+}
+
+/* The Pocket Teacup: the canvas owns the space between a small HUD and thumb controls.
+   Container units fit BOTH dimensions, retaining the logical 920:790 aspect ratio. */
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.compact-stats, #phaseChoices, .action-dock { display: none; }
+#teaBreak { color: var(--ink); background: #12251f; border: 1px solid #87aa8e;
+  border-radius: 18px; width: min(680px, calc(100% - 20px)); max-height: calc(100dvh - 24px);
+  padding: 0 14px 14px; overscroll-behavior: contain; }
+#teaBreak::backdrop { background: #06140de0; }
+.break-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  position: sticky; top: 0; z-index: 2; background: #12251f; padding: 10px 0; }
+.break-head h2 { margin: 0; }
+#teaBreak aside { display: grid; grid-template-columns: 1fr; }
+#teaBreak details { min-width: 0; }
+#teaBreak summary { padding: 12px; min-height: 48px; cursor: pointer; font-size: 16px;
+  color: #f1dfbd; border-bottom: 1px solid #66816c54; }
+#teaBreak summary:focus-visible { outline: 3px solid #ffe5a5; }
+#teaBreak .panel { grid-column: auto; }
+#teaBreak button { min-height: 44px; }
+button:focus-visible { outline: 3px solid #ffe5a5; outline-offset: 2px; }
+.playfield, .playfield * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.playfield canvas { touch-action: none; }
+.playfield button { touch-action: none; }
+
+body[data-view="compact"] { height: 100dvh; min-height: 0; display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+body[data-view="compact"] header { padding: 6px 12px; min-height: 44px; flex: 0 0 auto; }
+body[data-view="compact"] .brand { font-size: clamp(18px, 3vw, 23px); }
+body[data-view="compact"] .kicker, body[data-view="compact"] .version,
+body[data-view="compact"] .bottom { display: none; }
+body[data-view="compact"] #viewBtn { min-height: 36px; padding: 5px 9px; font-size: 12px; }
+body[data-view="compact"] main { display: flex; width: 100%; max-width: 1500px; min-height: 0;
+  flex: 1; padding: 5px 8px 8px; margin: 0 auto; align-items: stretch; }
+body[data-view="compact"] main > aside { display: none; }
+body[data-view="compact"] .playfield { flex: 1; min-width: 0; display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto; grid-template-columns: minmax(0, 1fr); border-radius: 14px; }
+body[data-view="compact"] .hud-top { position: static; grid-row: 1; flex-wrap: wrap;
+  padding: 8px 10px; gap: 5px 8px; border-bottom: 1px solid #4f7c6650; }
+body[data-view="compact"] .hud-left { flex: 1; }
+body[data-view="compact"] .hudlabel { font-size: 11px; letter-spacing: 0; }
+body[data-view="compact"] .pill { padding: 3px 6px; }
+body[data-view="compact"] .pills { gap: 4px; }
+body[data-view="compact"] #hudTea, body[data-view="compact"] #hudOmen,
+body[data-view="compact"] #hudStrainer { display: none; }
+body[data-view="compact"] .compact-stats { display: flex; width: 100%; flex-wrap: wrap;
+  justify-content: space-between; gap: 4px 12px; font-size: 13px; color: #f1dfbd; }
+body[data-view="compact"] .stage { grid-row: 2; min-height: 0; min-width: 0;
+  container-type: size; display: grid; place-items: center; }
+body[data-view="compact"] canvas { width: min(100cqw, calc(100cqh * 920 / 790)); height: auto; }
+body[data-view="compact"] #phaseChoices { display: block; grid-row: 3; }
+body[data-view="compact"] #compactFortune { margin: 0; padding: 6px 12px;
+  font: 700 17px/1.3 Georgia, serif; color: #f1dfbd; text-align: center; }
+body[data-view="compact"] #compactFortune:empty { display: none; }
+body[data-view="compact"] .upgrade-offer { position: static; transform: none; width: auto;
+  margin: 0 8px 5px; padding: 8px; animation: none; }
+body[data-view="compact"] .upgrade-offer[hidden] { display: none; }
+body[data-view="compact"] .offer-head em { display: none; }
+body[data-view="compact"] .offer-cards { margin-top: 5px; gap: 6px; }
+body[data-view="compact"] .upgrade-card, body[data-view="compact"] .errand-card { min-height: 56px; padding: 8px; }
+body[data-view="compact"] .upgrade-card strong, body[data-view="compact"] .errand-card strong { font-size: 16px; }
+body[data-view="compact"] .upgrade-card small, body[data-view="compact"] .errand-card small { font-size: 12px; }
+body[data-view="compact"] .upgrade-card kbd, body[data-view="compact"] .errand-card kbd { display: none; }
+body[data-view="compact"] .controls-mobile { grid-row: 4; padding: 6px 8px; gap: 10px; }
+body[data-view="compact"] .controls-mobile button { min-height: 52px; font-size: 14px; }
+body[data-view="compact"] .controls-mobile .steer { min-height: 64px; font-size: 28px; }
+body[data-view="compact"] .controls-mobile .run-pad { min-height: 74px; font-size: 18px; }
+body[data-view="compact"] .easy-hint { font-size: 12px; }
+body[data-view="compact"] .action-dock { display: flex; grid-row: 5; gap: 8px; padding: 0 8px 8px; }
+body[data-view="compact"] .action-dock button { min-height: 44px; font-size: 13px; }
+body[data-view="compact"] #mainBtn { margin: 0; padding: 8px; flex: 1; }
+body[data-view="compact"] #menuBtn { flex: 0 0 auto; padding: 8px 12px; }
+body[data-view="compact"][data-mode="run"] #compactMilk,
+body[data-view="compact"][data-mode="run"] #compactSugar { display: none; }
+body[data-view="compact"][data-active="true"] #mainBtn,
+body[data-view="compact"][data-phase="shortage"] #mainBtn,
+body[data-view="compact"][data-phase="reading"]:has(#upgradeOffer:not([hidden])) #mainBtn { display: none; }
+
+@media (max-width: 600px) {
+  body[data-view="compact"][data-mode="cup"][data-phase="playing"] #hudScore { display: none; }
+}
+
+/* Short, wide screens use a thumb rail, freeing the full remaining height for the cup. */
+@media (orientation: landscape) and (max-height: 600px) {
+  body[data-view="compact"] header { min-height: 36px; padding: 2px 10px; }
+  body[data-view="compact"] .playfield { grid-template-columns: minmax(0, 1fr) 190px;
+    grid-template-rows: auto minmax(0, 1fr) auto; }
+  body[data-view="compact"] .hud-top { grid-column: 1 / -1; padding: 4px 8px; }
+  body[data-view="compact"] .compact-stats { width: auto; flex: 1; justify-content: flex-end; }
+  body[data-view="compact"] .stage { grid-row: 2 / 4; grid-column: 1; }
+  body[data-view="compact"] #phaseChoices { grid-row: 2; grid-column: 2; align-self: center; }
+  body[data-view="compact"] .controls-mobile { grid-column: 2; grid-row: 2; align-self: end;
+    flex-wrap: wrap; border: 0; }
+  body[data-view="compact"] .easy-hint { flex-basis: 100%; order: -1; }
+  body[data-view="compact"] .controls-classic button { flex-basis: 28%; }
+  body[data-view="compact"] .action-dock { grid-column: 2; grid-row: 3; flex-direction: column; }
+  body[data-view="compact"] .offer-cards { grid-template-columns: 1fr; }
+  body[data-view="compact"] .upgrade-card small { font-size: 12px; }
+  body[data-view="compact"] .offer-head strong { font-size: 15px; }
+  body[data-view="compact"]:has(.upgrade-offer:not([hidden])) .controls-mobile { display: none; }
 }
