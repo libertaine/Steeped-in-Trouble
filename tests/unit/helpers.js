@@ -34,8 +34,21 @@ export function killOne(game, lane = 0) {
   step(game, 0.25);
 }
 
-/** Hurry through a Hot Chocolate Havoc bonus round, if one is under way, to the next cup. */
+/** Hurry through The Daily Grind, if it is under way (letting the machine escape), to the next cup. */
+export function finishGrind(game) {
+  if (game.state.phase !== 'grind') return;
+  if (game.state.grind.stage === 'intro') game.primaryAction();
+  if (game.state.grind.stage === 'fight') {
+    game.state.grind.left = 0;
+    game.update(1 / 60);
+  }
+  game.state.grind.time = Math.max(game.state.grind.time, 5);
+  game.primaryAction();
+}
+
+/** Hurry through a Hot Chocolate Havoc bonus round or The Daily Grind, if one is under way, to the next cup. */
 export function finishBonus(game) {
+  finishGrind(game);
   if (game.state.phase !== 'chocolate') return;
   if (game.state.chocolate.stage === 'intro') game.primaryAction();
   if (game.state.chocolate.stage === 'play') {

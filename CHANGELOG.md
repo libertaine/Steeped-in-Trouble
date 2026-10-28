@@ -5,6 +5,25 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-27 — The Daily Grind
+
+### Added
+
+- **The Daily Grind:** the game's first boss. Somewhere around round 7, and
+  now and then after that, someone orders trouble, and a furious little
+  espresso machine rises out of the cup. Steam its safety valve while it's
+  open, dodge the lanes it warns about, and deal with the beans. Beat it for
+  a big bonus and a Golden Spoon for the next cup. If it gets away, your
+  cups, spoon, and next fortune are untouched; the pot carries on.
+
+### Changed
+
+- **Controls:** <kbd>Q</kbd> pours milk and <kbd>E</kbd> fires sugar, next to
+  the turning keys. <kbd>M</kbd> and <kbd>S</kbd> still work.
+- **Hot Chocolate Havoc:** marshmallows cool a little faster, so flames about
+  0.3 s apart toast them perfectly (it was about 0.4 s). Holding fire still
+  burns them.
+
 ## [0.7.0] - 2026-10-27 — Hot Chocolate Havoc
 
 ### Added

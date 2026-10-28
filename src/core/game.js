@@ -10,7 +10,10 @@
 // discover, reading, reveal, retract, upgrade, gameover, paused,
 // resumed; and in Hot Chocolate Havoc: chocolateStart, havocStart, flame,
 // toast, burn, perfect, scoop, crumble, bump, giantAppear, giantGrow,
-// catastrophe, giantGone, havocEnd.
+// catastrophe, giantGone, havocEnd; and in The Daily Grind: grindStart, grindFight,
+// valveTurn, valveOpen, barrage, beans, beanCrack, beanSplat, pressureBuild,
+// pressureWarn, pressureBurst, sputter, clank, grindHit, grindRage, scald,
+// grindDefeat, grindEscape.
 
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
@@ -25,6 +28,7 @@ import { moveSpoon } from '../gameplay/player.js';
 import {
   createHavoc, finishHavoc, fireFlame, firstHavocRound, havocDue, spawnMarshmallow, updateHavoc,
 } from '../gameplay/chocolate.js';
+import { createGrind, firstGrindRound, grindDue, milkTheMachine, updateGrind } from '../gameplay/grind.js';
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import {
@@ -53,8 +57,12 @@ export function createGame({ seed, random } = {}) {
   // out identically whether or not one happens.
   const treats = createRandom(toSeed(rng.seed ?? 0) ^ 0x5eedc0c0);
   const havoc = { state, rng: treats, emit };
+  // So does the coffee boss.
+  const brew = createRandom(toSeed(rng.seed ?? 0) ^ 0xc0ffee);
+  const grindSim = { state, rng: brew, emit };
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
+  const grinding = (stage) => state.phase === PHASE.GRIND && (!stage || state.grind.stage === stage);
   const offerOpen = () => state.phase === PHASE.READING && !!state.offer && state.readingTime >= OFFER_AT;
 
   function clearField() {
@@ -108,6 +116,10 @@ export function createGame({ seed, random } = {}) {
     state.havocDue = false;
     state.lastHavoc = 0;
     state.havocAfter = firstHavocRound(treats);
+    state.grind = null;
+    state.grindDue = false;
+    state.lastGrind = 0;
+    state.grindAfter = firstGrindRound(brew);
     emit('matchStart');
     startRound();
   }
@@ -123,6 +135,7 @@ export function createGame({ seed, random } = {}) {
     }, rng);
     state.offer = offerDue(state.round) ? drawOffer(state.spoon, rng) : null;
     state.havocDue = havocDue(state, treats);
+    state.grindDue = grindDue(state, brew); // never alongside the hot chocolate
     emit('reading', { fortune: state.nextFortune, offer: state.offer });
     state.secrets = findSecrets(state.roundStats);
     for (const id of state.secrets) {
@@ -137,9 +150,10 @@ export function createGame({ seed, random } = {}) {
     startRound();
   }
 
-  /** Leave a reading: on to the next cup, or first a detour into hot chocolate. */
+  /** Leave a reading: on to the next cup, or first a detour into hot chocolate or the coffee boss. */
   function continueFromReading() {
     if (state.havocDue) startHavoc();
+    else if (state.grindDue) startGrind();
     else brewNextCup();
   }
 
@@ -201,6 +215,59 @@ export function createGame({ seed, random } = {}) {
     updateHavoc(havoc, dt);
     c.left = Math.max(0, c.left - dt);
     if (c.left === 0) endHavoc();
+  }
+
+  /**
+   * The Daily Grind. Like the hot chocolate it leaves the round, the reading's
+   * fortune, the spoon, and the Golden Spoon's time alone, and however it ends
+   * the next cup follows. It brings its own milk and sugar, and plays without
+   * the last cup's fortune.
+   */
+  function startGrind() {
+    state.phase = PHASE.GRIND;
+    clearField();
+    state.residue = [];
+    state.graceTime = 0;
+    state.shotCooldown = 0;
+    state.angle = CONFIG.player.startAngle;
+    state.grindDue = false;
+    state.grindAfter = null;
+    state.lastGrind = state.round;
+    state.modifiers = modifiersFor(null);
+    state.milkLeft = CONFIG.milk.perRound;
+    state.sugarLeft = sugarCapacity(state);
+    state.roundStats = createRoundStats();
+    state.grind = createGrind();
+    emit('grindStart', { round: state.round });
+  }
+
+  function beginFight() {
+    const g = state.grind;
+    g.stage = 'fight';
+    g.time = 0;
+    emit('grindFight', {});
+  }
+
+  function leaveGrind() {
+    state.grind = null;
+    brewNextCup();
+  }
+
+  function updateGrindPhase(dt, input) {
+    const g = state.grind;
+    g.time += dt;
+    if (g.stage === 'intro') {
+      if (g.time >= CONFIG.grind.introTime) beginFight();
+      return;
+    }
+    if (g.stage !== 'fight') return;
+    // As in the hot chocolate, the Golden Spoon's time stands still.
+    moveSpoon(state, input, dt);
+    state.shotCooldown -= dt;
+    if (input.fire) fireSteam(grindSim);
+    updateClouds(state, dt);
+    updateShots(state, dt);
+    updateGrind(grindSim, dt);
   }
 
   function finishGame() {
@@ -323,6 +390,10 @@ export function createGame({ seed, random } = {}) {
       updateChocolate(dt, input);
       return;
     }
+    if (state.phase === PHASE.GRIND) {
+      updateGrindPhase(dt, input);
+      return;
+    }
     if (!playing()) return;
     state.graceTime = Math.max(0, state.graceTime - dt);
     if (state.goldenSpoon > 0) {
@@ -344,7 +415,7 @@ export function createGame({ seed, random } = {}) {
   }
 
   function pause() {
-    if (!playing() && !chocolate('intro') && !chocolate('play')) return;
+    if (!playing() && !chocolate('intro') && !chocolate('play') && !grinding('intro') && !grinding('fight')) return;
     state.pausedFrom = state.phase;
     state.phase = PHASE.PAUSED;
     emit('paused');
@@ -371,6 +442,11 @@ export function createGame({ seed, random } = {}) {
         else if (chocolate('play')) pause();
         else if (state.chocolate.time >= CONFIG.chocolate.outroMin) leaveHavoc();
         break;
+      case PHASE.GRIND:
+        if (grinding('intro')) beginFight(); // skip the entrance
+        else if (grinding('fight')) pause();
+        else if (state.grind.time >= CONFIG.grind.outroMin) leaveGrind();
+        break;
       case PHASE.PLAYING:
         pause();
         break;
@@ -391,8 +467,8 @@ export function createGame({ seed, random } = {}) {
      * upgrade card can take it as a click.
      */
     confirm() {
-      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE].includes(state.phase)) return false;
-      if (state.offer || chocolate('play')) return false;
+      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND].includes(state.phase)) return false;
+      if (state.offer || chocolate('play') || grinding('fight')) return false;
       primaryAction();
       return true;
     },
@@ -414,7 +490,7 @@ export function createGame({ seed, random } = {}) {
     },
     /** P: pause or resume during a round. Returns true if handled. */
     togglePause() {
-      if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED && !chocolate('play')) return false;
+      if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED && !chocolate('play') && !grinding('fight')) return false;
       primaryAction();
       return true;
     },
@@ -427,9 +503,18 @@ export function createGame({ seed, random } = {}) {
     pause,
     resume,
     /** Space: steam, or in the hot chocolate a little flame. */
-    fireSteam: () => (chocolate('play') ? fireFlame(havoc) : playing() && fireSteam(sim)),
-    pourMilk: () => playing() && pourMilk(sim),
-    sugarBurst: () => playing() && sugarBurst(sim),
+    fireSteam: () => {
+      if (chocolate('play')) return fireFlame(havoc);
+      if (grinding('fight')) return fireSteam(grindSim);
+      return playing() && fireSteam(sim);
+    },
+    pourMilk: () => {
+      if (!grinding('fight')) return playing() && pourMilk(sim);
+      const poured = pourMilk(grindSim);
+      if (poured) milkTheMachine(grindSim);
+      return poured;
+    },
+    sugarBurst: () => (grinding('fight') ? sugarBurst(grindSim) : playing() && sugarBurst(sim)),
     /** Remove and return all events queued since the last call. */
     drainEvents() {
       return events.splice(0, events.length);

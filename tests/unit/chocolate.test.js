@@ -170,10 +170,18 @@ describe('toasting marshmallows', () => {
     expect(types(game)).toContain('perfect');
   });
 
+  it('toasts perfectly with flames about 0.3 s apart', () => {
+    const game = toastingGame();
+    const m = placeMarshmallow(game.state);
+    for (let i = 0; i < C.perfectAt; i++) flameAt(game, 0, 0.31);
+    expect(m.burned).toBe(false);
+    expect(game.state.chocolate.tally.perfect).toBe(1);
+  });
+
   it('burns a marshmallow that gets too much heat too fast, as holding fire does', () => {
     const game = toastingGame();
     const m = placeMarshmallow(game.state);
-    for (let i = 0; i < 3; i++) flameAt(game, 0, CONFIG.chocolate.flameCooldown);
+    for (let i = 0; i < C.perfectAt; i++) flameAt(game, 0, CONFIG.chocolate.flameCooldown);
     expect(m.burned).toBe(true);
     expect(toastStage(m)).toBe('burned');
     expect(types(game)).toContain('burn');

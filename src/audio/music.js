@@ -38,6 +38,15 @@ const CHOCO_MELODY = [65, 67, 69, 72, 74, 77, 79]; // F major pentatonic
 const CHOCO_MELODY_STEPS = [0, 2, 4, 7, 8, 10, 12, 14];
 const CHOCO_BASS = { 0: 0, 3: 12, 6: 7, 8: 0, 11: 12, 14: 7 }; // step → interval above the root
 
+// The Daily Grind: E minor and F major, a semitone apart, grinding against each other.
+const GRIND_CHORDS = Object.freeze([
+  { root: 40, tones: [64, 67, 71] }, // E minor
+  { root: 41, tones: [65, 69, 72] }, // F
+  { root: 40, tones: [64, 67, 71] }, // E minor
+  { root: 38, tones: [62, 66, 69] }, // D
+]);
+const GRIND_ACCENT = [1, 0.35, 0.6, 0.35]; // the machine's ticking, a sixteenth at a time
+
 // The music-box melody wanders over D minor pentatonic on these sixteenths,
 // landing on chord tones on the strong ones.
 const MELODY = [62, 65, 67, 69, 72, 74, 77];
@@ -93,6 +102,19 @@ export function musicMood(state, tension = 0) {
         section: 'havoc', tempo: 112 + 14 * hurry, tension: hurry, golden: state.goldenSpoon > 0, stormy: false, chocolate: true,
       };
     }
+    case PHASE.GRIND: {
+      // Mechanical and menacing, faster and busier as the machine loses health,
+      // with a rising alarm while a pressure attack is on its way.
+      const g = state.grind;
+      if (g.stage === 'intro') return { section: 'grindIntro', tempo: 96, tension: 0, golden: false, stormy: false };
+      if (g.stage !== 'fight') return { section: 'reading', tempo: 70, tension: 0, golden: false, stormy: false, chocolate: true };
+      const fury = 1 - g.health / CONFIG.grind.health;
+      const a = g.attack;
+      const pressure = a?.kind === 'pressure' ? (a.stage === 'build' ? 0.2 : a.stage === 'warn' ? 0.3 + 0.7 * Math.min(1, a.time / a.length) : 0) : 0;
+      return {
+        section: 'grind', tempo: 104 + 34 * fury, tension: fury, pressure, golden: state.goldenSpoon > 0, stormy: false,
+      };
+    }
     case PHASE.PLAYING: {
       const stormy = state.fortune === 'tempest';
       const base = Math.min(120, 92 + 3 * (state.round - 1));
@@ -136,6 +158,40 @@ function arrangeHavoc(step, mood, random, add) {
   if (golden && beat % 2 === 1) add('bell', chord.tones[(beat >> 1) % 3] + 24, 2, 0.4);
 }
 
+/** The Daily Grind: pulsing bass, ticking percussion, and an alarm when the pressure rises. */
+function arrangeGrind(step, mood, add) {
+  const beat = step % STEPS_PER_BAR;
+  const chord = GRIND_CHORDS[Math.floor(step / STEPS_PER_BAR) % GRIND_CHORDS.length];
+  const { tension: fury, pressure, golden } = mood;
+  if (mood.section === 'grindIntro') {
+    // Something heavy is coming up out of the cup.
+    if (beat === 0) {
+      add('pad', 52, STEPS_PER_BAR, 0.8);
+      add('bass', 28, 4, 1);
+      add('kick', 0, 1, 1);
+    }
+    if (beat === 8) add('kick', 0, 1, 0.6);
+    if (beat % 4 === 2) add('hat', 0, 1, 0.5);
+    return;
+  }
+  if (beat === 0) for (const tone of chord.tones) add('pad', tone - 12, STEPS_PER_BAR, 0.45);
+  // Bass: driving eighths, then sixteenths as the machine gets desperate.
+  if (beat % (fury > 0.6 ? 1 : 2) === 0) add('bass', chord.root + (beat % 8 === 6 ? 12 : 0), 1, beat % 4 === 0 ? 1 : 0.7);
+  if (beat % 4 === 0) add('kick', 0, 1, 1);
+  if (beat === 4 || beat === 12 || (fury > 0.5 && beat === 15)) add('snare', 0, 1, beat === 15 ? 0.4 : 0.7);
+  // Mechanical ticking, and a clank on the offbeats.
+  add('hat', 0, 1, GRIND_ACCENT[beat % 4] * (0.6 + 0.4 * fury));
+  if (beat === 3 || beat === 11) add('arp', 96, 1, 0.5);
+  // The riff: the chord, stabbed out, joining in once it's hurt.
+  if (fury > 0.25 && beat % 2 === 0) {
+    const tones = [...chord.tones, chord.tones[0] + 12];
+    add('arp', tones[ARP[(beat >> 1) % ARP.length]], 1, 0.4 + 0.5 * fury);
+  }
+  // Pressure: an alarm that climbs as the burst comes nearer.
+  if (pressure > 0 && beat % 2 === 0) add('alarm', 76 + Math.round(10 * pressure) + (beat % 4 ? 1 : 0), 1, 0.4 + 0.6 * pressure);
+  if (golden && beat % 2 === 1) add('bell', chord.tones[(beat >> 1) % 3] + 24, 2, 0.4);
+}
+
 /**
  * The notes to start on one sixteenth-note step: { voice, midi, len (steps), gain }.
  * Pure apart from `random`, which only decides the melody.
@@ -146,6 +202,10 @@ export function arrange(step, mood, random = Math.random) {
   const add = (voice, midi, len, gain) => notes.push({ voice, midi, len, gain });
   if (mood.section === 'havoc') {
     arrangeHavoc(step, mood, random, add);
+    return notes;
+  }
+  if (mood.section === 'grind' || mood.section === 'grindIntro') {
+    arrangeGrind(step, mood, add);
     return notes;
   }
   const beat = step % STEPS_PER_BAR;
@@ -331,9 +391,12 @@ export function createMusic({ random = Math.random } = {}) {
       if (context !== ctx) connect(context);
       const now = ctx.currentTime;
       // The band swells a little with the tension, on top of the layers it adds.
-      const level = VOLUME * (mood.section === 'silent' ? 0 : mood.section === 'play' ? 0.7 + 0.3 * tension : 0.8);
+      const intensity = mood.section === 'grind' ? mood.tension : tension;
+      const level = VOLUME * (mood.section === 'silent' ? 0 : mood.section === 'play' || mood.section === 'grind' ? 0.7 + 0.3 * intensity : 0.8);
       bus.gain.setTargetAtTime(level, now, mood.section === 'silent' ? 0.25 : 0.6);
-      const brightness = mood.section === 'play' ? 1400 + 5600 * tension : mood.section === 'havoc' ? 3000 + 2000 * tension : 1100;
+      const brightness = mood.section === 'play' ? 1400 + 5600 * tension
+        : mood.section === 'havoc' ? 3000 + 2000 * tension
+          : mood.section === 'grind' ? 1800 + 4200 * mood.tension + 1500 * mood.pressure : 1100;
       tone.frequency.setTargetAtTime(brightness, now, 0.3);
       if (mood.section === 'silent') {
         nextTime = 0;
@@ -361,6 +424,20 @@ export function createMusic({ random = Math.random } = {}) {
     handle(event) {
       if (event.type === 'matchStart' || event.type === 'roundStart' || event.type === 'chocolateStart') {
         step = 0; // start each cup on the downbeat
+      } else if (event.type === 'grindStart') {
+        step = 0;
+      } else if (event.type === 'grindFight') {
+        // The entrance: three stabs, a beat apart, then the band kicks in.
+        step = 0;
+        const stab = [{ voice: 'bass', midi: 28, len: 2, gain: 1 }, { voice: 'kick', midi: 0, len: 1, gain: 1 },
+          { voice: 'arp', midi: 64, len: 2, gain: 1 }, { voice: 'arp', midi: 65, len: 2, gain: 0.8 }];
+        pending = [stab, [], [], stab, [], [], stab];
+      } else if (event.type === 'grindDefeat') {
+        // A ridiculous descent: down two octaves of semitones, landing with a thud.
+        pending = Array.from({ length: 13 }, (_, i) => [
+          { voice: 'bell', midi: 88 - 2 * i, len: 2, gain: 1 },
+          ...(i === 12 ? [{ voice: 'bass', midi: 28, len: 6, gain: 1 }, { voice: 'kick', midi: 0, len: 1, gain: 1 }] : []),
+        ]);
       } else if (event.type === 'havocStart') {
         // A little announcement: up the F major chord, a note a sixteenth.
         step = 0;

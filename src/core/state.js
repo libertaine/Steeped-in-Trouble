@@ -9,6 +9,7 @@ export const PHASE = Object.freeze({
   PAUSED: 'paused',
   READING: 'reading',
   CHOCOLATE: 'chocolate', // Hot Chocolate Havoc, between a reading and the next cup
+  GRIND: 'grind', // The Daily Grind, the coffee boss, likewise between rounds
   GAME_OVER: 'gameover',
 });
 
@@ -75,6 +76,12 @@ export function createInitialState() {
     lastHavoc: 0, // the round after which the latest bonus came
     havocDue: false, // decided at each reading: a bonus before the next cup?
     chocolate: null, // the bonus round in progress; see createHavoc()
+
+    // The Daily Grind (gameplay/grind.js).
+    grindAfter: null, // the round after which the first encounter comes, until it has
+    lastGrind: 0, // the round after which the latest encounter came
+    grindDue: false, // decided at each reading: the coffee boss before the next cup?
+    grind: null, // the encounter in progress; see createGrind()
 
     shots: [], // { angle, radius, speed, sugar, veer, golden, volley?, nova?, cream? }
     enemies: [], // { angle, radius, home, speed, wiggle, shifted, size, alpha, backwash }

@@ -11,10 +11,12 @@ import { PHASE } from '../core/state.js';
 import { FIBS, FORTUNES } from '../gameplay/fortunes.js';
 import { UPGRADES } from '../gameplay/upgrades.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
+import { fury, grindInProgress } from '../gameplay/grind.js';
 import { createTea } from './tea.js';
 
 const GOLD = '#ffd45e';
 const RIM = CONFIG.arena.rimRadius;
+const { centerX: CX, centerY: CY } = CONFIG.arena;
 const SPOON_RADIUS = RIM + 7;
 
 const PRISM = ['#ff7aa8', '#ffd36b', '#8dffb8', '#7ccfff', '#c79bff', '#ffffff'];
@@ -45,6 +47,16 @@ const RAW_REMARKS = ['Raw. A bold choice.', 'That one escaped untoasted.', 'Plop
 const PERFECT_REMARKS = ['Perfectly toasted!', 'Golden. Flawless. Gone.', 'The cup applauds.', 'Caramel perfection.'];
 const CATASTROPHE_WORDS = ['Nobody could have foreseen this.', 'The leaves foresaw this. They said nothing.',
   'It had a face. Briefly.', 'Structural marshmallow failure.'];
+
+// The Daily Grind.
+const CREMA = '#e0b48a';
+const BEAN = ['#4a2a16', '#6b3d1f', '#2e1a0d'];
+const CUP_VOICE = '#f1dfbd';
+const COMPLAINTS = ['Ow.', 'I have a warranty!', 'That is my good valve!', 'I am a PROFESSIONAL.', 'Do you know what I cost?',
+  'Rude.', 'I was descaled on TUESDAY.', 'Stop that. Stop that at once.', 'My crema!'];
+const SCALD_REMARKS = ['Scalding!', 'Ow, hot! Who serves it this hot?', 'That was a direct pour.', 'Extra hot, as requested.'];
+const VICTORY_WORDS = ['The machine is out of order.', 'Order up!', 'Descaled. Permanently.'];
+const POD_WORDS = ['It spat out a defective pod.', 'A pod. Possibly decaf. Definitely broken.'];
 
 const UPGRADE_WORDS = {
   polished: 'The spoon gleams.',
@@ -99,7 +111,9 @@ export function createEffects({ random = Math.random } = {}) {
     upgradeGlow: 0, // seconds of the ring that marks a new upgrade
     discovery: null, // { id, time, life }: an unexpected brew being announced
     aimPulses: [], // lanes that just fired, flashing briefly: { lanes, tone, time, life }
-    banner: null, // { title, words, time, life }: a big moment in the hot chocolate
+    banner: null, // { title, words, time, life }: a big moment in the hot chocolate or the coffee boss
+    pods: [], // defective coffee pods the machine spits out: { x, y, vx, vy, spin, time, life }
+    flyingBeans: [], // beans erupting from the defeated machine: { x, y, vx, vy, spin, time, life }
     popups: [], // floating points: { text, x, y, color, time, life }
     ghosts: [], // perfect marshmallows lifting out of the cup: { x, y, size, spin, time, life }
     shake: 0, // seconds of cup shake left
@@ -112,6 +126,9 @@ export function createEffects({ random = Math.random } = {}) {
   let strained = false; // has the strainer been explained this pot?
   let burnedOnce = false; // has the first burn been explained this pot?
   let perfects = 0; // perfect marshmallows this bonus round
+  let grindMet = false; // has the machine explained itself this pot?
+  let warned = false; // has the first pressure warning been explained this pot?
+  let podTimer = null; // seconds until the furious machine spits out a defective pod
 
   /** Show a message under the cup; `then` queues it behind the current one. */
   function say(text, { color = '#f1dfbd', life = 3.4, then = false } = {}) {
@@ -174,6 +191,31 @@ export function createEffects({ random = Math.random } = {}) {
     fx.popups = [];
     fx.ghosts = [];
     fx.shake = 0;
+    fx.pods = [];
+    fx.flyingBeans = [];
+  }
+
+  /** Coffee-coloured steam, billowing up from a point. */
+  function steamCloud(count, x, y, spread, speed = 1) {
+    for (let i = 0; i < count; i++) {
+      const life = rnd(0.7, 1.8);
+      fx.particles.push({
+        x: x + rnd(-spread, spread), y: y + rnd(-spread * 0.6, spread * 0.6),
+        vx: rnd(-40, 40) * speed, vy: rnd(-70, -10) * speed, time: life, life,
+        color: ['#b08a6a', '#d8c0a8', '#8a6a52', '#e8dccb'][i % 4], size: rnd(3, 8),
+      });
+    }
+  }
+
+  /** Beans (or pods) flung out from the middle of the cup. */
+  function fling(list, count, speedMin, speedMax, [lifeMin, lifeMax] = [0.8, 1.6]) {
+    for (let i = 0; i < count; i++) {
+      const a = rnd(0, TAU);
+      const speed = rnd(speedMin, speedMax);
+      const p = toCanvasPoint(rnd(0, 40), a);
+      const life = rnd(lifeMin, lifeMax);
+      list.push({ x: p.x, y: p.y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed - 60, spin: rnd(0, TAU), time: life, life });
+    }
   }
 
   /** Spoon sparkles: silver, or gold. */
@@ -186,6 +228,8 @@ export function createEffects({ random = Math.random } = {}) {
     matchStart() {
       strained = false;
       burnedOnce = false;
+      grindMet = false;
+      warned = false;
       fx.discovery = null;
     },
     roundStart({ fortune }) {
@@ -447,6 +491,113 @@ export function createEffects({ random = Math.random } = {}) {
       hush();
       fx.banner = null;
     },
+
+    // The Daily Grind.
+    grindStart() {
+      clearScene();
+      hush();
+      podTimer = null;
+      fx.shake = 0.3;
+    },
+    grindFight() {
+      fx.shake = 0.35;
+      podTimer = rnd(8, 14);
+      if (!grindMet) {
+        grindMet = true;
+        say('Steam the safety valve while it’s open!', { color: CREMA, life: 3 });
+        say('Mind the beans.', { color: CREMA, then: true, life: 2.2 });
+      } else {
+        say('It’s back. And it has brewed a grudge.', { color: CREMA, life: 2.6 });
+      }
+    },
+    valveOpen({ lane }) {
+      pulseLanes([lane], 'valve', 0.5);
+    },
+    beans({ lanes }) {
+      for (const lane of lanes) {
+        const angle = -Math.PI / 2 + lane * LANE_STEP;
+        burst(2, () => CONFIG.grind.bodyRadius + rnd(0, 6), () => angle + rnd(-0.05, 0.05), BEAN[lane % 3], () => rnd(0.2, 0.4), 0.6);
+      }
+    },
+    beanCrack({ radius, angle, sugar }) {
+      burst(sugar ? 10 : 7, () => radius + rnd(-5, 5), () => angle + rnd(-0.05, 0.05),
+        (i) => (i % 3 ? BEAN[i % 2] : '#c89a6a'), () => rnd(0.25, 0.6), 1.1, [1.2, 2.8]);
+    },
+    beanSplat({ angle }) {
+      burst(6, () => RIM - rnd(0, 6), () => angle + rnd(-0.06, 0.06), (i) => BEAN[i % 3], () => rnd(0.3, 0.6), 1.2, [1.2, 2.6]);
+    },
+    pressureWarn({ lanes }) {
+      pulseLanes(lanes, 'danger', 0.35);
+      if (!warned) {
+        warned = true;
+        say('Pressure building! Get out of the red lanes.', { color: '#ff9a7a', life: 2.6 });
+      }
+    },
+    pressureBurst({ lanes }) {
+      fx.shake = Math.max(fx.shake, 0.3);
+      for (const lane of lanes) {
+        const angle = -Math.PI / 2 + lane * LANE_STEP;
+        burst(6, () => RIM - rnd(0, 10), () => angle + rnd(-0.08, 0.08), (i) => (i % 2 ? '#6b3d1f' : '#c8915a'),
+          () => rnd(0.3, 0.8), 2, [1.5, 3.6]);
+      }
+    },
+    sputter() {
+      steamCloud(14, CX, CY - 40, 24, 0.6);
+      say('The milk takes the edge off. Briefly.', { color: '#e4eef0', life: 2.4 });
+    },
+    clank({ angle }) {
+      if (random() < 0.5) return;
+      burst(2, () => CONFIG.grind.bodyRadius + rnd(0, 6), () => angle + rnd(-0.04, 0.04), '#e8eef0', () => rnd(0.12, 0.3), 1.4, [1, 2]);
+    },
+    grindHit({ angle, damage, hits }) {
+      burst(damage > 1 ? 18 : 8, () => CONFIG.grind.bodyRadius + rnd(0, 10), () => angle + rnd(-0.08, 0.08),
+        (i) => (i % 3 ? '#ffb36b' : '#fff1c4'), () => rnd(0.2, 0.6), 1.8, [1.2, 3]);
+      popup(`-${damage}`, CONFIG.grind.bodyRadius + 18, angle, damage > 1 ? GOLD : '#ffd0a0', 0.8);
+      if (hits % 9 === 4 || (damage > 1 && random() < 0.5)) say(pick(COMPLAINTS), { color: CREMA, life: 1.8 });
+    },
+    grindRage({ level }) {
+      fx.shake = 0.5;
+      steamCloud(24, CX, CY - 50, 30, 1.2);
+      if (level === 1) {
+        fx.banner = { title: 'PRESSURE RISING', words: 'The gauge now reads TOO MUCH.', time: 2.8, life: 2.8 };
+        say('I specifically ordered decaf.', { color: CUP_VOICE, life: 2.6 });
+      } else {
+        fx.banner = { title: 'CRITICAL CAFFEINE', words: 'It is making a noise it should not make.', time: 2.8, life: 2.8 };
+      }
+    },
+    scald({ angle, left }) {
+      fx.flash = 0.35;
+      fx.shake = Math.max(fx.shake, 0.4);
+      burst(22, () => RIM - rnd(0, 10), () => angle + rnd(-0.1, 0.1), (i) => (i % 2 ? '#c8915a' : '#f0a878'), 0.7, 1.6);
+      if (left > 0) say(`${pick(SCALD_REMARKS)}${left === 1 ? ' One more and it gets away.' : ''}`, { color: '#ff9a7a', life: 2.4 });
+    },
+    grindDefeat({ perfect }) {
+      hush();
+      podTimer = null;
+      fx.banner = null;
+      fx.shake = 0.8;
+      // Coffee everywhere, and every bean it was saving.
+      fling(fx.flyingBeans, 70, 120, 420);
+      steamCloud(40, CX, CY - 20, 40, 1.6);
+      for (let i = 0; i < 80; i++) {
+        const a = rnd(0, TAU);
+        const speed = rnd(80, 380);
+        const life = rnd(0.5, 1.3);
+        fx.particles.push({
+          x: CX, y: CY, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, time: life, life,
+          color: ['#6b3d1f', '#c8915a', '#3b200e', '#e0b48a'][i % 4], size: rnd(1.5, 4),
+        });
+      }
+      say(pick(VICTORY_WORDS), { color: CREMA, life: 2.4 });
+      if (perfect) say('Not a single drop spilled.', { color: GOLD, then: true, life: 3 });
+    },
+    grindEscape() {
+      hush();
+      podTimer = null;
+      fx.banner = null;
+      steamCloud(70, CX, CY - 10, 60, 1);
+      say('“You’ll be hearing from my manager.”', { color: CREMA, life: 3.2 });
+    },
   };
 
   return {
@@ -484,7 +635,9 @@ export function createEffects({ random = Math.random } = {}) {
       } else if (!bigSpoon) {
         fx.spoonScale = 1;
       }
-      const toasting = havocInProgress(state)?.stage === 'play' && state.phase !== PHASE.PAUSED;
+      const grind = grindInProgress(state);
+      const fighting = grind?.stage === 'fight' && state.phase !== PHASE.PAUSED;
+      const toasting = (havocInProgress(state)?.stage === 'play' && state.phase !== PHASE.PAUSED) || fighting;
       if ((playing || toasting) && state.goldenSpoon > 0 && random() < dt * 18) {
         spoonBurst(1, state.angle, [GOLD, '#fff8e2'], 0.6);
       }
@@ -503,8 +656,33 @@ export function createEffects({ random = Math.random } = {}) {
           () => pick(PRISM), () => rnd(0.3, 0.6), 0.6);
       }
 
+      if (fighting) {
+        // The machine leaks steam, more the angrier it gets, and later spits out defective pods.
+        const f = fury(grind);
+        if (random() < dt * (1.5 + 10 * f)) steamCloud(1, CX + rnd(-30, 30), CY - 62, 4, 0.5 + f);
+        if (podTimer !== null && f > 0.45) {
+          podTimer -= dt;
+          if (podTimer <= 0) {
+            podTimer = rnd(6, 11);
+            fling(fx.pods, 1, 160, 240, [1.2, 1.6]);
+            if (random() < 0.6) say(pick(POD_WORDS), { color: CUP_VOICE, life: 2.2 });
+          }
+        }
+      }
+
       if (state?.phase !== PHASE.PAUSED) {
         fx.shake = Math.max(0, fx.shake - dt);
+        for (const list of [fx.pods, fx.flyingBeans]) {
+          for (let i = list.length - 1; i >= 0; i--) {
+            const b = list[i];
+            b.x += b.vx * dt;
+            b.y += b.vy * dt;
+            b.vy += 240 * dt; // they arc and fall
+            b.spin += dt * 9;
+            b.time -= dt;
+            if (b.time <= 0) list.splice(i, 1);
+          }
+        }
         if (fx.banner) {
           fx.banner.time -= dt;
           if (fx.banner.time <= 0) fx.banner = null;

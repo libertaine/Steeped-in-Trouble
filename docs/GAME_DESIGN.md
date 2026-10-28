@@ -234,11 +234,12 @@ Enter.
   round (the HUD shows it as "03½"), and it has its own random generator, so
   the next cup plays out exactly as it would have without it.
 - **Cooking:** every flame that lands adds one level of doneness and one unit
-  of heat. Heat cools at 1.9 per second, and a marshmallow catches fire if
-  its heat goes over 1.75. Two flames make it toasted, and four make it
-  perfect, at which point it pops out of the cup at once for 30 points.
-  Holding fire lands flames about 0.22 s apart, which burns a marshmallow on
-  the third. Flames spaced about 0.4 s or more apart never do. Flames burn
+  of heat. Heat cools at 2.6 per second (1.9 before 0.8.0), and a
+  marshmallow catches fire if its heat goes over 1.75. Two flames make it
+  toasted, and four make it perfect, at which point it pops out of the cup at
+  once for 30 points. Holding fire lands flames about 0.22–0.25 s apart,
+  which burns a marshmallow on the fourth. Flames spaced about 0.3 s or more
+  apart never do. Flames burn
   out after 175 units, so only the outer two-thirds of the cup is in reach.
 - **Scoring:** marshmallows reaching the rim are scooped up, as is anything
   still in the cup at the end: toasted 12, burned 2, raw nothing. A flame
@@ -261,6 +262,64 @@ Enter.
 Tuning came from simple bots playing 40 rounds each: holding fire on one
 marshmallow scored about 100, sweeping the rim with fire held about 340,
 and a bot that spread its flames between cool marshmallows about 630.
+
+## Added in 0.8.0 — The Daily Grind
+
+### Controls
+
+<kbd>Q</kbd> pours milk and <kbd>E</kbd> fires sugar, beside the turning keys.
+<kbd>M</kbd> and <kbd>S</kbd> still work.
+
+### The coffee boss (spoilers)
+
+Between two rounds the cup announces *"Someone ordered trouble. Double
+shot."* and a furious little copper espresso machine rises out of a cup of
+coffee. Its gauge eyes follow the spoon, and so does its steam wand.
+
+- **When:** the first encounter always follows round 6, 7, or 8. After that
+  it has a 25% chance after each round, at least four rounds after the last.
+  It never shares a reading with Hot Chocolate Havoc: if both are due, the
+  hot chocolate goes first and the machine waits for the next reading. Like
+  the hot chocolate it isn't a numbered round, and it has its own random
+  generator.
+- **Hurting it:** steam stops at a chrome collar round the machine and just
+  clanks. The **safety valve** on that collar turns to a lane three to six
+  lanes from the spoon (a dashed ring marks where), then blows open for
+  2 s with the lane lit gold. Steam down that lane while it's open does 1
+  damage; a sugar dart does 3. It has 56 pressure and 38 seconds.
+- **Coffee Bean Barrage:** beans fly out along the lanes in a ring (every
+  other lane, then the others), a fan aimed at the spoon, or a two- or
+  three-armed pinwheel. Steam cracks a bean but is spent doing it; sugar
+  crunches straight through. Milk washes beans back and slows them, as it
+  does leaves. A bean that reaches the spoon scalds it; anywhere else it
+  splats harmlessly.
+- **Pressure Release:** the machine swells, then marks a wedge of five to
+  seven lanes, every other lane, or four pairs of lanes in red, always
+  including the spoon's. After 1.7 s (1.15 s when furious) hot coffee shoots
+  down them. Milk poured while it builds makes it sputter and wait 1.3 s
+  longer, once per attack.
+- **Escalation:** as it loses pressure the valve turns faster, attacks come
+  closer together, beans fly faster, wedges widen, and the music speeds up.
+  At half health the gauge reads TOO MUCH; past four-fifths it hops, rattles,
+  spits defective pods, and complains.
+- **Losing:** three scalds (with a moment's protection after each), or the
+  clock running out, and it escapes: *"You'll be hearing from my manager."*
+  Nothing else changes. The cups, spoon, round, Golden Spoon time, and next
+  fortune are exactly as they were.
+- **Winning:** +350, and a 12-second Golden Spoon that starts with the next
+  cup. Without a single scald it's a **Perfect Brew** (*"Not a single drop
+  spilled."*), which restores a cup, up to four, or pays +150 if the cups are
+  already full. Valve hits score 10 and beans 5 along the way.
+- **Music:** E minor grinding against F, a pulsing eighth-note bass that
+  turns to sixteenths when it's desperate, ticking hats and offbeat clanks,
+  stabs as the fight starts, a climbing alarm while a pressure attack is
+  warned, and a two-octave chromatic tumble when it falls.
+
+Tuning came from bots fighting 300 encounters each. One that chases the
+valve and dodges the red lanes with a quarter-second reaction wins about 90%
+of the time in about 27 seconds, and about a quarter of those are Perfect
+Brews. One that never dodges wins about two-thirds of the time and almost
+never perfectly.
 
 ## Future ideas (not implemented)
 

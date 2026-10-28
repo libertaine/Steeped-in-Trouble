@@ -23,12 +23,14 @@ src/
 │   ├── secrets.js       hidden feats judged when a round is read, and their rewards
 │   ├── combos.js        unexpected brews: combinations that unlock new behaviour
 │   ├── chocolate.js     Hot Chocolate Havoc: the bonus round's schedule, marshmallows, flames, scoring
+│   ├── grind.js         The Daily Grind: the coffee boss's schedule, valve, attacks, scalds, rewards
 │   ├── upgrades.js      spoon upgrades: definitions, offers, stacking limits
 │   └── fortunes.js      leaf reading, fortune selection, modifiers, glyphs
 ├── rendering/
 │   ├── canvas.js        device-pixel-ratio-aware canvas sizing
 │   ├── renderer.js      draws state onto the canvas
-│   └── effects.js       cosmetic particles and the spill flash
+│   ├── effects.js       cosmetic particles and the spill flash
+│   └── grind.js         draws the espresso machine and its attacks
 ├── input/controls.js    keyboard and pointer input
 ├── audio/
 │   ├── audio.js         optional synthesized sound effects; owns the AudioContext
@@ -101,6 +103,16 @@ the next cup as usual. The bonus round never touches the round number,
 `nextFortune`, the spoon, or the lives, and the Golden Spoon's timer doesn't
 run during it. Rewards go through `state.score` and `state.extraSugar`.
 
+The Daily Grind, the coffee boss, works the same way. `grindDue()` is decided
+at the reading after `havocDue()` and is never true alongside it, and a due
+boss goes to the `grind` phase: `state.grind.stage` `intro` (Enter skips it)
+→ `fight` (P pauses) → `outro` (Enter, after a moment), then the next cup.
+The fight reuses the real `fireSteam()`, `sugarBurst()`, and `pourMilk()`
+(so upgrades and the Golden Spoon apply) with neutral fortune modifiers and
+fresh milk and sugar. Its three scalds are its own; losing never touches the
+cups, and only a victory changes them (a Perfect Brew restores one, up to
+four). The Golden Spoon a victory awards starts with the next cup.
+
 ## Coordinate system
 
 - **Logical canvas:** 920 × 790 units, origin at the top-left, y pointing
@@ -120,9 +132,9 @@ run during it. Rewards go through `state.score` and `state.extraSugar`.
 
 `createGame({ seed })` builds a seeded generator. All gameplay randomness
 (spawn lanes, speeds, timers, residue scatter, Spiral drift direction) comes
-from it. Hot Chocolate Havoc draws from a second generator derived from the
-same seed (`treats` in `createGame()`), so a bonus round never changes the
-sequence the normal rounds see. Effects use `Math.random`, so changing particles can never change
+from it. Hot Chocolate Havoc and The Daily Grind each draw from their own
+generator derived from the same seed (`treats` and `brew` in
+`createGame()`), so neither changes the sequence the normal rounds see. Effects use `Math.random`, so changing particles can never change
 gameplay. The URL parameter `?seed=` sets the seed in the browser, and the
 `?debug` parameter exposes `window.__TEACUP__.game` for tests and tinkering.
 
