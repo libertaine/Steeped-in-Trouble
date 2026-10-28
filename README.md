@@ -13,7 +13,7 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **0.9.0 — Strange Brews** is being prepared: the tea has developed a
+Version **0.9.0 — Strange Brews** is out: the tea has developed a
 personality. Several, actually. The game is experimental and still changing,
 but there's plenty in the cup already:
 

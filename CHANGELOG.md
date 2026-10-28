@@ -5,7 +5,9 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
-Prepared as **0.9.0 — Strange Brews**. It is not yet tagged or published.
+## [0.9.0] - 2026-10-28 — Strange Brews
+
+The tea has developed a personality. Several, actually.
 
 ### Added
 
@@ -225,7 +227,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.8.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.9.0...main
+[0.9.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.5.0...v0.6.0
