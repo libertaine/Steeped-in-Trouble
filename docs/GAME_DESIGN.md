@@ -166,8 +166,8 @@ with its name and reward.
 
 | Secret | Earned when… | Reward |
 | --- | --- | --- |
-| **Not a drop wasted.** | 12+ steam shots in the round, and every one hit something | +250, and one extra sugar burst next cup |
-| **More leaves than steam.** | 8+ steam shots, and steam destroyed more leaves than shots fired | The Golden Spoon (its 9 s run during the next cup) |
+| **Not a drop wasted.** | 12+ steam shots in the round, and every one hit something | +250, and one extra sugar burst next round |
+| **More leaves than steam.** | 8+ steam shots, and steam destroyed more leaves than shots fired | The Golden Spoon (its 9 s run during the next round) |
 
 A *shot* is one press of fire: a Double Trouble pair is one shot, and it hits
 if either dart does. Striking a sugar cube counts as a hit. Sugar bursts and
@@ -183,7 +183,7 @@ Not everything is announced. When a steam dart destroys a leaf inside or
 beside a milk cloud, there is a 20% chance the cream carries it on to the
 next leaf in its path (once per dart, shown only as a pale streak behind it).
 
-## Coming in 0.6.0 — sound
+## Added in 0.6.0 — The Kettle Sings
 
 ### The adaptive soundtrack
 

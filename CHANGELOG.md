@@ -5,12 +5,21 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-27 — The Kettle Sings
+
 ### Added
 
 - **Adaptive soundtrack:** with sound on, a procedural synth band follows the
   cup. Tempo drifts with the round and the fortune; layers build as leaves
   near the rim and relax when they're cleared. The Golden Spoon, Tempestuous
   Tea, and the Steam Nova each colour it.
+
+### Changed
+
+- Fortune descriptions no longer say "next cup" while that cup is being
+  played.
+- README: a new screenshot, a short "How to play", and the sound, graphics,
+  and seed options gathered in one place.
 
 ## [0.5.0] - 2026-10-27 — Something's Brewing
 
@@ -116,7 +125,10 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[0.4.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/73e1fad...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.6.0...main
+[0.6.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/13b097c...v0.5.0
+[0.4.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/73e1fad...13b097c
 [0.3.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/f0357ee...73e1fad
 [0.2.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.1.1...f0357ee
 [0.1.1]: https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.1.1
