@@ -6,23 +6,28 @@
 //      first cup is always the House Blend; after that a variety never repeats
 //      straight away, rounds since it was last served raise its chances, and
 //      one missing for too long is served next.
-//   2. roundModifiers(fortuneId, teaId) folds the tea's modifiers into the
-//      fortune's by fixed rules (multipliers multiply, bonuses add, chances
+//   2. roundModifiers(fortuneId, teaId, round) folds the tea's modifiers into
+//      the fortune's by fixed rules (multipliers multiply, bonuses add, chances
 //      take the larger, switches combine), so nothing stacks twice and
 //      everything expires at the next round start.
 //   3. Chai starts a spice current clock (createCurrent()), which
 //      updateCurrent() runs during play.
+// How strongly a variety's behaviour brews depends on the round: see
+// gameplay/strength.js. A tea's `strength(round)` gives its modifiers that
+// grow with the stage.
 //
 // Hot Chocolate Havoc and The Daily Grind never read the tea.
 //
 // To add a variety, add an entry to TEAS (and to TEA_ROTATION), give any new
 // modifier a neutral default in BASE_MODIFIERS and a rule in COMBINE, and
-// put its tuning numbers in CONFIG.teas.
+// put its tuning numbers in CONFIG.teas (or, if they grow with the stage, in
+// a per-stage list read through byStage()).
 
 import { CONFIG } from '../config.js';
 import { LANE_STEP } from './arena.js';
 import { glide } from './enemies.js';
 import { modifiersFor } from './fortunes.js';
+import { byStage } from './strength.js';
 
 const T = CONFIG.teas;
 const C = CONFIG.currents;
@@ -46,7 +51,8 @@ export const TEAS = Object.freeze({
     info: 'Leaves rise a little faster, and some dart: they crouch and flicker, then sprint.',
     tag: 'darting leaves',
     color: '#b9e37a',
-    modifiers: { enemySpeedMultiplier: T.green.enemySpeed, dartChance: T.green.dartChance },
+    modifiers: { enemySpeedMultiplier: T.green.enemySpeed },
+    strength: (round) => ({ dartChance: byStage(CONFIG.darting.chance, round) }),
   },
   earlGrey: {
     id: 'earlGrey',
@@ -56,7 +62,8 @@ export const TEAS = Object.freeze({
     info: 'Some leaves change lanes. A lavender curl shows which way they are about to step.',
     tag: 'wandering leaves',
     color: '#c9b3ef',
-    modifiers: { wanderChance: T.earlGrey.wanderChance },
+    modifiers: {},
+    strength: (round) => ({ wanderChance: byStage(CONFIG.wandering.chance, round) }),
   },
   chai: {
     id: 'chai',
@@ -117,13 +124,19 @@ const RULES = {
   or: (a, b) => a || b,
 };
 
+/** The modifiers a tea brews with in a given round (its fixed ones, plus those that grow with the stage). */
+export function teaModifiers(teaId, round) {
+  const tea = TEAS[teaId];
+  return { ...tea?.modifiers, ...tea?.strength?.(round) };
+}
+
 /**
  * The modifiers a normal round plays with: the fortune's, with the tea's
- * folded in by COMBINE, and leaf speed capped.
+ * for that round folded in by COMBINE, and leaf speed capped.
  */
-export function roundModifiers(fortuneId, teaId = 'house') {
+export function roundModifiers(fortuneId, teaId = 'house', round = 1) {
   const modifiers = modifiersFor(fortuneId);
-  for (const [key, value] of Object.entries(TEAS[teaId]?.modifiers ?? {})) {
+  for (const [key, value] of Object.entries(teaModifiers(teaId, round))) {
     modifiers[key] = RULES[COMBINE[key]](modifiers[key], value);
   }
   modifiers.enemySpeedMultiplier = Math.min(T.maxEnemySpeedMultiplier, modifiers.enemySpeedMultiplier);
@@ -159,12 +172,17 @@ export function chooseTea(state, rng) {
 
 // ── Chai's spice currents ────────────────────────────────────────────────
 
-/** A current clock for one Chai round. `dir` is the first current's direction (−1 or 1). */
-export function createCurrent(dir) {
+/**
+ * A current clock for one Chai round. `dir` is the first current's direction
+ * (−1 or 1); the round sets how long the warnings and calms last.
+ */
+export function createCurrent(dir, round = 1) {
   return {
     stage: 'calm', // calm → warning → flowing → calm …
     time: 0, // seconds in the current stage
-    wait: C.firstAt, // seconds of calm before the next warning
+    wait: byStage(C.firstAt, round), // seconds of calm before the next warning
+    calm: byStage(C.calmTime, round), // the calm between currents
+    warn: byStage(C.warnTime, round), // how long each warning lasts
     dir, // −1 anticlockwise, 1 clockwise; alternates after each current
     count: 0, // currents so far this round
   };
@@ -172,7 +190,7 @@ export function createCurrent(dir) {
 
 /** Seconds until the current clock leaves its stage. */
 export function currentStageLength(current) {
-  if (current.stage === 'warning') return C.warnTime;
+  if (current.stage === 'warning') return current.warn;
   if (current.stage === 'flowing') return C.flowTime;
   return current.wait;
 }
@@ -185,8 +203,9 @@ export function updateCurrent({ state, emit }, dt) {
   const c = state.current;
   if (!c) return;
   c.time += dt;
-  if (c.time < currentStageLength(c)) return;
-  c.time = 0;
+  const length = currentStageLength(c);
+  if (c.time < length) return;
+  c.time -= length; // keep the overshoot, so the clock keeps time at any frame rate
   if (c.stage === 'calm') {
     c.stage = 'warning';
     emit('currentWarn', { dir: c.dir });
@@ -196,7 +215,7 @@ export function updateCurrent({ state, emit }, dt) {
     emit('currentFlow', { dir: c.dir, carried: state.enemies.length });
   } else {
     c.stage = 'calm';
-    c.wait = C.calmTime;
+    c.wait = c.calm;
     c.count++;
     emit('currentEnd', { dir: c.dir });
     c.dir = -c.dir;

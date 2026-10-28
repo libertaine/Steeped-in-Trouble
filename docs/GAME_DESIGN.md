@@ -356,11 +356,38 @@ from the last round's leaves is a separate layer on top.
 | Tea | Motto | Rules |
 | --- | --- | --- |
 | **House Blend** | *Just tea. For now.* | The rules as they were. First cup only. |
-| **Green Tea** | *A Little Too Refreshing* | Leaves rise 10% faster, and 30% of them dart (below). |
-| **Earl Grey** | *Trouble with a Touch of Class* | 40% of leaves wander (below). |
-| **Chai** | *Spice Things Up* | Spice currents (below). |
+| **Green Tea** | *A Little Too Refreshing* | Leaves rise 10% faster, and some of them dart (below): 10% of leaves at first, 30% at full strength. |
+| **Earl Grey** | *Trouble with a Touch of Class* | Some leaves wander (below): 15% at first, 40% at full strength. |
+| **Chai** | *Spice Things Up* | Spice currents (below), with more warning at first. |
 | **Black Tea** | *Properly Strong* | Leaves arrive 12% more often (the gap between them × 0.88), and every leaf scores 25% more. The limit of 18 leaves in the cup is unchanged. |
 | **Herbal Tea** | *What Could Possibly Go Wrong?* | Leaves rise 12% slower and arrive a little less often (× 1.06); milk clouds last 1 s longer. The Leaves Lie is likelier at the next reading (its weight +1, from about 4% to about 11% of readings, never certain). Now and then a chamomile flower or a few petals float by, with a remark. |
+
+### The learning curve
+
+Darting, wandering, and spice currents start gentle and reach full
+strength in round 9, so a player meets each one with time to learn it
+before it gets demanding. The stage depends only on the round number:
+a variety brews the same way in round 6 however often it has been served
+before, and `?tea=<id>` follows the same curve as an ordinary pot.
+
+| | Rounds 1–4: learn | Rounds 5–8: adapt | Round 9 on: full strength |
+| --- | --- | --- | --- |
+| Green Tea: leaves that dart | 10% | 20% | 30% |
+| Green Tea: crouch before a dash | 0.75 s | 0.65 s | 0.55 s |
+| Green Tea: extra distance of a dash | 12 | 22 | 35 |
+| Earl Grey: leaves that wander | 15% | 25% | 40% |
+| Earl Grey: lean before a glide | 0.8 s | 0.65 s | 0.55 s |
+| Chai: first warning, seconds into the round | 6.5 s | 5.5 s | 5 s |
+| Chai: warning before each current | 2.2 s | 1.9 s | 1.6 s |
+| Chai: calm between currents | 10 s | 8.5 s | 7.5 s |
+
+Round 1 is the House Blend, so in an ordinary pot the learn stage covers
+the first three varieties a player meets. Everything else about each tea
+(Green Tea's 10% hurry, Black Tea's density and +25%, Herbal Tea's pace
+and milk) is the same in every round. The stages are the boundaries in
+`CONFIG.teas.stages`, and each value above is a per-stage list in
+`CONFIG.darting`, `CONFIG.wandering`, or `CONFIG.currents`. They are a
+starting point for today's game, not a limit on future progression.
 
 ### New leaf behaviours
 
@@ -370,32 +397,53 @@ shape, so colour is never the only clue, and every warning also has a
 sound.
 
 - **Darting leaves** (Green Tea) are slim, notched lances that always point
-  at the rim. Somewhere between radius 60 and 100 a darter **crouches** for
-  0.55 s: it slows to 35% speed, flickers sideways, and shows a pulsing ring
-  and two chevrons pointing outward. Then it **sprints** for 0.45 s at
-  double speed, trailing a streak, and carries on normally. Even the fastest
-  possible darter finishes its sprint well inside the rim.
+  at the rim. Somewhere between radius 60 and 100 a darter **crouches**
+  (0.75 s, 0.65 s, or 0.55 s, by stage): it slows to 35% speed, flickers
+  sideways, and shows a pulsing ring and two chevrons pointing outward.
+  Then it **dashes** for 0.45 s, trailing a streak: it accelerates, then
+  settles back into an ordinary rise, having gone a fixed distance further
+  than an ordinary leaf would in that time (12, 22, or 35 units, by stage).
+  - The distance is a fixed budget, not a multiple of the leaf's speed, so
+    a dash doesn't grow as the rounds make leaves faster, and neither Green
+    Tea's own hurry nor Tempestuous Tea stretches it. Milk slows a dash
+    like any other movement, and a leaf being washed back doesn't dash.
+  - The crouch gives back about what the dash takes: a darter never
+    reaches the rim noticeably sooner (more than 0.05 s) than an ordinary
+    leaf passing the same point. The surprise is the danger, not lost
+    reaction time.
+  - Even the fastest possible darter, crouching at the furthest point,
+    ends its dash more than 30 units inside the rim and takes over 1.2 s
+    from its first flicker to reach it. A darter never starts a crouch
+    beyond radius 130.
+  - The movement is the same at any frame rate: a stage that ends partway
+    through a frame is split exactly.
 - **Wandering leaves** (Earl Grey) have a curling tendril and a lavender
-  edge. Somewhere between radius 65 and 100 a wanderer **leans** for 0.55 s,
-  with a curved arrow towards the neighbouring lane and a dashed ghost where
-  it is going, and does not move sideways. Then it **glides** into that lane
-  over 0.35 s and leaves a short lavender trail. It changes lane once, ends
-  exactly on the new lane, and is always in the middle of the cup.
+  edge. Somewhere between radius 65 and 100 a wanderer **leans** (0.8 s,
+  0.65 s, or 0.55 s, by stage), with a curved arrow towards the neighbouring
+  lane and a dashed ghost where it is going, and does not move sideways.
+  Then it **glides** into that lane over 0.35 s and leaves a short lavender
+  trail. It changes lane once, ends exactly on the new lane, and is always
+  in the middle of the cup: even the fastest leaf a stage can bring
+  finishes its glide inside 85% of the rim radius, and a wanderer never
+  starts to lean beyond radius 130.
 
 ### Spice currents (Chai)
 
 On a fixed clock, every leaf in the cup is carried one lane sideways:
 
-- 5 s into the round, two rings of amber chevrons appear, pointing the
-  current's way round the cup. They brighten for **1.6 s** of warning, during
+- Early in the round (6.5 s, 5.5 s, or 5 s in, by stage), two rings of
+  amber chevrons appear, pointing the current's way round the cup. They
+  brighten for the warning (**2.2 s**, **1.9 s**, or **1.6 s**), during
   which nothing moves.
 - Then for **0.9 s** every leaf in the cup glides exactly one lane in that
   direction, trailing spice. Leaves that appear during the glide aren't
   carried.
-- 7.5 s of calm follow, and the next current runs the **other way**. The
-  first direction is drawn from the tea generator when the round starts.
+- A calm follows (10 s, 8.5 s, or 7.5 s, by stage), and the next current
+  runs the **other way**. The first direction is drawn from the tea
+  generator when the round starts.
 
-The timing never varies, so a player can learn to aim one lane ahead.
+The timing never varies within a round, so a player can learn to aim one
+lane ahead. The clock keeps time at any frame rate.
 
 ### Tea and fortune together
 
@@ -459,6 +507,46 @@ dragged, so both were softened. Darting and wandering were first tuned so
 that, at the fastest possible speed, a darter could reach the rim
 mid-sprint; they now always finish well inside it. Earl Grey and Chai cost
 little extra: their movements are learnable rather than punishing.
+
+#### The learning curve, after the first human playtest
+
+The first human playtest found the new behaviours interesting but the
+difficulty rising too quickly, with Green Tea's darts the main culprit:
+the bots that tuned them react faster and know where every leaf is. Two
+things changed. The behaviours now grow through the three stages above
+instead of starting at full strength in round 2. And a dash is now a fixed
+extra distance rather than double speed: the old sprint went further as
+the rounds made leaves faster, about 25 extra units in round 2 and 42 to
+50 from round 9.
+
+The same bots replayed the same seeds before and after (150 pots per
+tea brewed every round, and 300 ordinary pots, at both skill levels).
+For the novice bot with Green Tea every round:
+
+| Rounds | Darters per round | Darters reaching the rim per round | Where a dash ends (median radius) |
+| --- | --- | --- | --- |
+| 2–4 | 5.9 → 1.9 | 0.09 → 0.02 | 150 → 134 |
+| 5–8 | 9.5 → 6.2 | 0.56 → 0.25 | 175 → 158 |
+| 9–14 | 10.5 → 10.5 | 1.09 → 0.96 | 194 → 181 |
+
+Earl Grey's wanderers reaching the rim fell from 0.13 to 0.04 per round
+in rounds 2–4 and from 0.69 to 0.43 in rounds 5–8. Chai's currents cost
+the bots little either way. Cups lost per round barely moved for any tea:
+for both bots the base speed and spawn curve decides most losses, and
+even the novice bot loses only about 0.03 cups a round in rounds 2–4 of
+the House Blend. So base speed was left alone. What the bots can't feel
+is surprise, and that is what the gentler start is for.
+
+Black Tea and Herbal Tea are unchanged. Brewed every round, Black Tea
+costs the novice bot about 0.08 cups a round in rounds 2–4 (House Blend
+0.03, Green Tea 0.06): the most of any tea, as the high-pressure variety
+should, but still about one cup in twelve early rounds. Herbal Tea stays
+the calmest, with rounds about 1.3 s longer than the House Blend early on.
+
+Darting returns to full strength in round 9, so that is where the bots
+feel the step most (novice darters reaching the rim: 0.31 per round in
+round 8, 1.00 in round 9, against 0.86 and 1.08 before). The human
+playtest should watch that step.
 
 ## Future ideas (not implemented)
 

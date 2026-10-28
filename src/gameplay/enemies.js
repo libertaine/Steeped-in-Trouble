@@ -4,8 +4,11 @@
 // Leaves come in kinds. An ordinary 'leaf' just rises. Two behaviours can be
 // layered on, each a little stage machine in plain data with a visible
 // warning before anything happens:
-//   - 'darter' (Green Tea): crouches and flickers, then sprints for a moment.
+//   - 'darter' (Green Tea): crouches and flickers, then dashes a fixed
+//     distance further than an ordinary leaf would go in that time.
 //   - 'wanderer' (Earl Grey): leans one way, then glides into that lane.
+// Each takes its warning time (and a darter its dash distance) from the
+// round it appears in; see gameplay/strength.js.
 // A glide ({ shift, length, time, done }) moves a leaf sideways smoothly;
 // wanderers and Chai's spice currents both use it, and it adds to (rather
 // than overwrites) any other change of angle, such as The Spiral's drift.
@@ -15,6 +18,7 @@
 
 import { CONFIG } from '../config.js';
 import { LANES, LANE_STEP, TAU, laneAngle } from './arena.js';
+import { byStage } from './strength.js';
 import { isNearCloud } from './weapons.js';
 
 const E = CONFIG.enemies;
@@ -53,11 +57,15 @@ export function spawnEnemy({ state, rng }) {
   const kind = pickKind(state.modifiers, rng);
   if (kind === 'darter') {
     enemy.kind = kind;
-    enemy.dart = { stage: 'waiting', at: rng.range(D.atMin, D.atMax), time: 0 };
+    enemy.dart = {
+      stage: 'waiting', at: rng.range(D.atMin, D.atMax), time: 0,
+      warn: byStage(D.warnTime, state.round), distance: byStage(D.dashDistance, state.round),
+    };
   } else if (kind === 'wanderer') {
     enemy.kind = kind;
     enemy.wander = {
       stage: 'waiting', at: rng.range(WANDER.atMin, WANDER.atMax), dir: rng.next() < 0.5 ? -1 : 1, time: 0,
+      warn: byStage(WANDER.warnTime, state.round),
     };
   }
   state.enemies.push(enemy);
@@ -104,27 +112,51 @@ function advanceGlide(enemy, dt) {
   if (g.time >= g.length) enemy.glide = null;
 }
 
-/** Green Tea's darters: the share of normal speed this frame, advancing the crouch and dash. */
-function dartPace(enemy, emit, dt) {
+/**
+ * Green Tea's darters: advance the crouch and the dash through this frame.
+ * Returns `pace`, the seconds of ordinary movement the leaf makes (less
+ * while crouching), and `dash`, the extra outward distance the dash adds.
+ * Stage changes part-way through a frame are split exactly, so the leaf
+ * covers the same ground at any frame rate.
+ */
+function advanceDart(enemy, emit, dt) {
   const d = enemy.dart;
-  if (!d || d.stage === 'done') return 1;
+  if (!d || d.stage === 'done') return { pace: dt, dash: 0 };
   if (d.stage === 'waiting') {
-    if (enemy.radius < d.at) return 1;
+    if (enemy.radius < d.at) return { pace: dt, dash: 0 };
+    if (enemy.radius > D.latestAt) {
+      d.stage = 'done';
+      return { pace: dt, dash: 0 };
+    }
     d.stage = 'warning';
     d.time = 0;
     emit('dartWarn', { radius: enemy.radius, angle: enemy.angle });
   }
-  d.time += dt;
+  let left = dt;
+  let pace = 0;
+  let dash = 0;
   if (d.stage === 'warning') {
-    if (d.time < D.warnTime) return D.warnPace;
-    d.stage = 'darting';
-    d.time = 0;
-    emit('dart', { radius: enemy.radius, angle: enemy.angle });
-    return D.dashPace;
+    const t = Math.min(left, d.warn - d.time);
+    d.time += t;
+    pace += t * D.warnPace;
+    left -= t;
+    if (d.time >= d.warn) {
+      d.stage = 'darting';
+      d.time = 0;
+      emit('dart', { radius: enemy.radius, angle: enemy.angle });
+    }
   }
-  if (d.time < D.dashTime) return D.dashPace;
-  d.stage = 'done';
-  return 1;
+  if (d.stage === 'darting' && left > 0) {
+    // The extra distance eases in and out: a visible burst that settles back into a rise.
+    const t = Math.min(left, D.dashTime - d.time);
+    const before = ease(d.time / D.dashTime);
+    d.time += t;
+    dash = d.distance * (ease(d.time / D.dashTime) - before);
+    pace += t;
+    left -= t;
+    if (d.time >= D.dashTime) d.stage = 'done';
+  }
+  return { pace: pace + left, dash };
 }
 
 /** Earl Grey's wanderers: lean towards the next lane, then glide into it. */
@@ -133,12 +165,16 @@ function advanceWander(enemy, emit, dt) {
   if (!w || w.stage === 'done') return;
   if (w.stage === 'waiting') {
     if (enemy.radius < w.at) return;
+    if (enemy.radius > WANDER.latestAt) {
+      w.stage = 'done';
+      return;
+    }
     w.stage = 'warning';
     w.time = 0;
     emit('wanderWarn', { radius: enemy.radius, angle: enemy.angle, dir: w.dir });
   }
   w.time += dt;
-  if (w.time < WANDER.warnTime) return;
+  if (w.time < w.warn) return;
   w.stage = 'done';
   glide(enemy, w.dir * LANE_STEP, WANDER.glideTime);
   emit('wander', { radius: enemy.radius, angle: enemy.angle, dir: w.dir });
@@ -146,14 +182,17 @@ function advanceWander(enemy, emit, dt) {
 
 /**
  * Move one enemy outward, slowed by milk, hurried by the tea and Tempestuous
- * Tea, sped or held by its own behaviour, nudged by The Spiral, carried by
- * any glide, and washed back by a milk wave or the recovering cup.
+ * Tea, held or dashing by its own behaviour, nudged by The Spiral, carried by
+ * any glide, and washed back by a milk wave or the recovering cup. A dash's
+ * extra distance is fixed (speed modifiers don't stretch it), milk slows it
+ * like any movement, and a leaf being washed back doesn't dash.
  */
 export function advanceEnemy(enemy, { state, rng, emit }, dt) {
   enemy.alpha = Math.min(1, enemy.alpha + dt * E.fadeInRate);
-  const pace = dartPace(enemy, emit, dt);
+  const { pace, dash } = advanceDart(enemy, emit, dt);
   const slowed = isNearCloud(state.clouds, enemy.angle, CONFIG.milk.slowHalfWidthLanes);
-  enemy.radius += enemy.speed * dt * state.modifiers.enemySpeedMultiplier * pace * (slowed ? CONFIG.milk.slowFactor : 1);
+  const rise = enemy.speed * state.modifiers.enemySpeedMultiplier * pace + (enemy.backwash > 0 ? 0 : dash);
+  enemy.radius += rise * (slowed ? CONFIG.milk.slowFactor : 1);
   if (enemy.backwash > 0) {
     // The push eases out: quick at first, then settling.
     const move = enemy.backwash * (1 - Math.exp(-dt * CONFIG.milk.backwashRate));

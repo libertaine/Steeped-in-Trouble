@@ -5,7 +5,10 @@ import { createRandom } from '../../src/core/random.js';
 import { LANE_STEP, angleDifference, laneAngle, laneOf } from '../../src/gameplay/arena.js';
 import { nextSpawnDelay, spawnEnemy } from '../../src/gameplay/enemies.js';
 import { BASE_MODIFIERS, FORTUNES, drawFortune, fortuneWeights, modifiersFor } from '../../src/gameplay/fortunes.js';
-import { COMBINE, TEAS, TEA_ROTATION, chooseTea, roundModifiers, teaFortuneNudges } from '../../src/gameplay/teas.js';
+import { byStage, teaStage } from '../../src/gameplay/strength.js';
+import {
+  COMBINE, TEAS, TEA_ROTATION, chooseTea, createCurrent, roundModifiers, teaFortuneNudges, teaModifiers,
+} from '../../src/gameplay/teas.js';
 import { killScore } from '../../src/gameplay/weapons.js';
 import { IDLE, brewNext, completeRound, killOne, placeEnemy, playingGame, step } from './helpers.js';
 
@@ -36,6 +39,55 @@ function teaSequence(seed, rounds, { bonuses = true } = {}) {
 
 /** Is an angle on a lane's centre line? */
 const onLane = (angle) => Math.abs(angleDifference(angle, laneAngle(laneOf(angle)))) < 1e-9;
+
+/**
+ * A game brewing one tea in the given round, with no fortune and automatic
+ * spawning off, reached by playing through the cups before it.
+ */
+function brewedRound(tea, round, fortune = null) {
+  const game = playingGame({ tea });
+  if (round > 1) {
+    game.state.round = round - 1;
+    completeRound(game);
+    brewNext(game);
+  }
+  expect(game.state.round).toBe(round);
+  game.state.modifiers = roundModifiers(fortune, tea, round);
+  game.state.spawnTimer = Infinity;
+  game.drainEvents();
+  return game;
+}
+
+/** The fastest a leaf can rise in a round: top base speed and round bonus, at the leaf speed cap. */
+function fastestIn(round) {
+  const E = CONFIG.enemies;
+  return (E.speedMax + Math.min(E.maxRoundSpeedBonus, round * E.speedPerRound)) * CONFIG.teas.maxEnemySpeedMultiplier;
+}
+
+/** The last round of each stage (the final stage stands in for any later round). */
+const lastRounds = () => CONFIG.teas.stages.map((stage, i, all) => (all[i + 1] ? all[i + 1].from - 1 : 99));
+
+/** A darter about to start its crouch, as spawned in `round`. */
+function darterAt(state, round, { radius = 80, speed = 50, lane = 0 } = {}) {
+  const leaf = placeEnemy(state, { lane, radius, speed });
+  Object.assign(leaf, {
+    kind: 'darter', home: 40, backwash: 0, glide: null,
+    dart: { stage: 'waiting', at: radius, time: 0, warn: byStage(D.warnTime, round), distance: byStage(D.dashDistance, round) },
+  });
+  return leaf;
+}
+
+/** Follow a darter in the real simulation, stepping by `dt`, until it reaches `untilRadius` or `seconds` pass. */
+function followDart(game, leaf, { dt = 1 / 60, seconds = 10, untilRadius = Infinity } = {}) {
+  const track = { dashEnd: null, time: 0 };
+  while (track.time < seconds - 1e-9 && leaf.radius < untilRadius) {
+    const stage = leaf.dart.stage;
+    game.update(dt);
+    track.time += dt;
+    if (stage !== 'done' && leaf.dart.stage === 'done') track.dashEnd = leaf.radius;
+  }
+  return track;
+}
 
 describe('choosing the tea', () => {
   it('always brews the House Blend for the first cup', () => {
@@ -116,10 +168,12 @@ describe('choosing the tea', () => {
 
 describe('combining the tea with the fortune', () => {
   it('has a rule for every modifier a tea sets, and leaves the rest alone', () => {
-    for (const tea of Object.values(TEAS)) {
-      for (const key of Object.keys(tea.modifiers)) {
-        expect(COMBINE[key]).toBeDefined();
-        expect(BASE_MODIFIERS).toHaveProperty(key);
+    for (const id of Object.keys(TEAS)) {
+      for (const round of [1, 5, 9, 30]) {
+        for (const key of Object.keys(teaModifiers(id, round))) {
+          expect(COMBINE[key]).toBeDefined();
+          expect(BASE_MODIFIERS).toHaveProperty(key);
+        }
       }
     }
     expect(roundModifiers(null, 'house')).toEqual(BASE_MODIFIERS);
@@ -130,21 +184,24 @@ describe('combining the tea with the fortune', () => {
     expect(roundModifiers('tempest', 'green').enemySpeedMultiplier).toBeCloseTo(1.1 * CONFIG.fortunes.tempestEnemySpeed);
     expect(roundModifiers('spiral', 'black').scoreMultiplier).toBeCloseTo(1.25 * 1.25);
     expect(roundModifiers('veil', 'herbal').milkDurationBonus).toBeCloseTo(CONFIG.fortunes.veilMilkBonus + CONFIG.teas.herbal.milkBonus);
-    expect(roundModifiers('spiral', 'earlGrey')).toMatchObject({ laneDrift: true, wanderChance: CONFIG.teas.earlGrey.wanderChance });
+    expect(roundModifiers('spiral', 'earlGrey', 9)).toMatchObject({ laneDrift: true, wanderChance: 0.4 });
+    expect(roundModifiers('spiral', 'earlGrey', 2)).toMatchObject({ laneDrift: true, wanderChance: 0.15 });
     expect(roundModifiers('tempest', 'chai')).toMatchObject({ stormyMilk: true, spiceCurrents: true });
   });
 
   it('never lets leaf speed stack beyond the cap', () => {
     for (const fortune of [null, ...Object.keys(FORTUNES)]) {
       for (const tea of Object.keys(TEAS)) {
-        expect(roundModifiers(fortune, tea).enemySpeedMultiplier).toBeLessThanOrEqual(CONFIG.teas.maxEnemySpeedMultiplier);
+        for (const round of [1, 5, 9]) {
+          expect(roundModifiers(fortune, tea, round).enemySpeedMultiplier).toBeLessThanOrEqual(CONFIG.teas.maxEnemySpeedMultiplier);
+        }
       }
     }
   });
 
   it('applies the tea for one round only', () => {
     const game = playingGame({ tea: 'green' });
-    expect(game.state.modifiers.dartChance).toBe(CONFIG.teas.green.dartChance);
+    expect(game.state.modifiers.dartChance).toBe(byStage(D.chance, 1));
     const plain = playingGame({ tea: 'house' });
     completeRound(plain);
     brewNext(plain);
@@ -152,10 +209,95 @@ describe('combining the tea with the fortune', () => {
     // An unpinned pot: each round's modifiers are exactly that round's tea and fortune.
     const pot = createGame({ seed: 12 });
     pot.primaryAction();
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 12; i++) {
       completeRound(pot);
       brewNext(pot);
-      expect(pot.state.modifiers).toEqual(roundModifiers(pot.state.fortune, pot.state.tea));
+      expect(pot.state.modifiers).toEqual(roundModifiers(pot.state.fortune, pot.state.tea, pot.state.round));
+    }
+  });
+});
+
+describe('the learning curve', () => {
+  /** Leaves spawned in a game's current round, each from its own seed. */
+  const spawned = (game, count) => Array.from({ length: count }, (_, i) => spawnEnemy({ state: game.state, rng: createRandom(i) }));
+
+  it('runs learn for rounds 1-4, adapt for 5-8, and full strength from round 9', () => {
+    expect(CONFIG.teas.stages.map((stage) => [stage.name, stage.from])).toEqual([['learn', 1], ['adapt', 5], ['full', 9]]);
+    expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40].map(teaStage)).toEqual([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]);
+    expect(byStage(['a', 'b', 'c'], 4)).toBe('a');
+    expect(byStage(['a', 'b', 'c'], 5)).toBe('b');
+    expect(byStage(['a', 'b', 'c'], 9)).toBe('c');
+  });
+
+  it('lists one value per stage for everything that grows with it', () => {
+    for (const values of [D.chance, D.warnTime, D.dashDistance, W.chance, W.warnTime, C.firstAt, C.calmTime, C.warnTime]) {
+      expect(values).toHaveLength(CONFIG.teas.stages.length);
+    }
+  });
+
+  it('brews each behaviour at its tuned strength either side of every boundary', () => {
+    // [round, dart chance, dash distance, dart warning, wander chance, wander warning, first current, current warning, calm]
+    const table = [
+      [2, 0.1, 12, 0.75, 0.15, 0.8, 6.5, 2.2, 10],
+      [4, 0.1, 12, 0.75, 0.15, 0.8, 6.5, 2.2, 10],
+      [5, 0.2, 22, 0.65, 0.25, 0.65, 5.5, 1.9, 8.5],
+      [8, 0.2, 22, 0.65, 0.25, 0.65, 5.5, 1.9, 8.5],
+      [9, 0.3, 35, 0.55, 0.4, 0.55, 5, 1.6, 7.5],
+    ];
+    for (const [round, dartChance, distance, dartWarn, wanderChance, wanderWarn, firstAt, warn, calm] of table) {
+      const green = brewedRound('green', round);
+      expect(green.state.modifiers.dartChance).toBe(dartChance);
+      expect(spawned(green, 200).find((e) => e.kind === 'darter').dart).toMatchObject({ warn: dartWarn, distance });
+
+      const earlGrey = brewedRound('earlGrey', round);
+      expect(earlGrey.state.modifiers.wanderChance).toBe(wanderChance);
+      expect(spawned(earlGrey, 200).find((e) => e.kind === 'wanderer').wander.warn).toBe(wanderWarn);
+
+      expect(brewedRound('chai', round).state.current).toMatchObject({ stage: 'calm', wait: firstAt, warn, calm });
+    }
+  });
+
+  it('only ever grows stronger, a step at a time, from one stage to the next', () => {
+    for (let i = 1; i < CONFIG.teas.stages.length; i++) {
+      expect(D.chance[i]).toBeGreaterThan(D.chance[i - 1]);
+      expect(D.chance[i] - D.chance[i - 1]).toBeLessThanOrEqual(0.1 + 1e-9);
+      expect(D.dashDistance[i]).toBeGreaterThan(D.dashDistance[i - 1]);
+      expect(D.dashDistance[i] - D.dashDistance[i - 1]).toBeLessThanOrEqual(15);
+      expect(W.chance[i]).toBeGreaterThan(W.chance[i - 1]);
+      expect(W.chance[i] - W.chance[i - 1]).toBeLessThanOrEqual(0.15 + 1e-9);
+      for (const warn of [D.warnTime, W.warnTime]) {
+        expect(warn[i]).toBeLessThan(warn[i - 1]);
+        expect(warn[i - 1] - warn[i]).toBeLessThanOrEqual(0.15 + 1e-9);
+      }
+      for (const time of [C.firstAt, C.warnTime, C.calmTime]) {
+        expect(time[i]).toBeLessThan(time[i - 1]);
+        expect(time[i - 1] - time[i]).toBeLessThanOrEqual(0.2 * time[i - 1]);
+      }
+    }
+  });
+
+  it('depends on the round alone: a pinned tea brews like the same tea in an ordinary pot', () => {
+    // Find ordinary pots that brew Green Tea in a learn, an adapt, and a full-strength round.
+    const found = {};
+    for (let seed = 1; Object.keys(found).length < 3 && seed < 200; seed++) {
+      const pot = createGame({ seed });
+      pot.primaryAction();
+      for (let i = 0; i < 12; i++) {
+        pot.state.current = null;
+        pot.state.modifiers = { ...pot.state.modifiers, laneDrift: false };
+        completeRound(pot);
+        brewNext(pot);
+        const { round, tea, fortune, modifiers } = pot.state;
+        if (tea === 'green' && !found[teaStage(round)]) found[teaStage(round)] = { round, fortune, modifiers: { ...modifiers } };
+      }
+    }
+    expect(Object.keys(found)).toHaveLength(3);
+    for (const { round, fortune, modifiers } of Object.values(found)) {
+      // The practice pot has brewed Green Tea every cup; the ordinary one only now and then.
+      const pinned = brewedRound('green', round, fortune);
+      expect(pinned.state.modifiers).toEqual(modifiers);
+      const darter = spawned(pinned, 200).find((e) => e.kind === 'darter');
+      expect(darter.dart).toMatchObject({ warn: byStage(D.warnTime, round), distance: byStage(D.dashDistance, round) });
     }
   });
 });
@@ -171,152 +313,364 @@ describe('Green Tea', () => {
     expect(b.radius - 50).toBeCloseTo((a.radius - 50) * CONFIG.teas.green.enemySpeed, 3);
   });
 
-  it('makes roughly the configured share of new leaves darters', () => {
-    const game = playingGame({ tea: 'green' });
-    for (let i = 0; i < 2000; i++) spawnEnemy({ state: game.state, rng: createRandom(i) });
-    const share = game.state.enemies.filter((e) => e.kind === 'darter').length / 2000;
-    expect(share).toBeGreaterThan(CONFIG.teas.green.dartChance - 0.05);
-    expect(share).toBeLessThan(CONFIG.teas.green.dartChance + 0.05);
+  it('makes roughly the share of new leaves darters that the round calls for', () => {
+    for (const round of [2, 5, 9]) {
+      const game = brewedRound('green', round);
+      for (let i = 0; i < 3000; i++) spawnEnemy({ state: game.state, rng: createRandom(i) });
+      const share = game.state.enemies.filter((e) => e.kind === 'darter').length / 3000;
+      expect(share).toBeGreaterThan(byStage(D.chance, round) - 0.03);
+      expect(share).toBeLessThan(byStage(D.chance, round) + 0.03);
+    }
   });
 
-  it('warns before a dart: a slow crouch, then a short sprint, then normal speed', () => {
-    const game = playingGame({ tea: 'green' });
-    const leaf = placeEnemy(game.state, { radius: 60, speed: 50 });
-    Object.assign(leaf, { kind: 'darter', dart: { stage: 'waiting', at: 80, time: 0 } });
-    const speed = 50 * CONFIG.teas.green.enemySpeed;
-    const events = [];
-    const run = (seconds) => {
-      step(game, seconds);
-      events.push(...game.drainEvents().map((e) => e.type));
+  it('warns before a dart: a slow crouch, then a dash a fixed distance further, then normal speed', () => {
+    for (const round of [2, 5, 9]) {
+      const game = brewedRound('green', round);
+      const leaf = darterAt(game.state, round, { radius: 80, speed: 50 });
+      const speed = 50 * CONFIG.teas.green.enemySpeed;
+      const warn = byStage(D.warnTime, round);
+      const distance = byStage(D.dashDistance, round);
+      const events = [];
+      const run = (seconds) => {
+        step(game, seconds);
+        events.push(...game.drainEvents().map((e) => e.type));
+      };
+      run(1 / 60); // the crouch starts on the first frame
+      expect(events).toEqual(['dartWarn']);
+      run(warn - 0.1 - 1 / 60);
+      expect(leaf.dart.stage).toBe('warning');
+      expect(leaf.radius - 80).toBeCloseTo(speed * D.warnPace * (warn - 0.1), 6);
+      run(0.15);
+      expect(events).toContain('dart');
+      expect(leaf.dart.stage).toBe('darting');
+      run(D.dashTime - 0.05 + 1 / 60); // just past the end of the dash
+      expect(leaf.dart.stage).toBe('done');
+      const elapsed = warn + D.dashTime + 1 / 60;
+      expect(leaf.radius - 80).toBeCloseTo(speed * (D.warnPace * warn + (elapsed - warn)) + distance, 6);
+      const after = leaf.radius;
+      run(0.5);
+      expect(leaf.radius - after).toBeCloseTo(speed * 0.5, 6);
+    }
+  });
+
+  it('accelerates into the dash and settles out of it, without a jump', () => {
+    for (const round of [2, 9]) {
+      const game = brewedRound('green', round);
+      const leaf = darterAt(game.state, round, { radius: 80, speed: 0 }); // a still leaf: only the dash moves it
+      while (leaf.dart.stage !== 'darting') step(game, 1 / 60);
+      const steps = [];
+      let last = leaf.radius;
+      while (leaf.dart.stage === 'darting') {
+        step(game, 1 / 60);
+        steps.push(leaf.radius - last);
+        last = leaf.radius;
+      }
+      const peak = Math.max(...steps);
+      expect(steps.indexOf(peak)).toBeGreaterThan(steps.length * 0.3);
+      expect(steps.indexOf(peak)).toBeLessThan(steps.length * 0.7);
+      expect(steps[0]).toBeLessThan(peak * 0.25);
+      expect(steps.at(-1)).toBeLessThan(peak * 0.25);
+      // Still a burst you notice: at its height it adds at least half again to a typical leaf's speed.
+      const E = CONFIG.enemies;
+      const typical = ((E.speedMin + E.speedMax) / 2 + Math.min(E.maxRoundSpeedBonus, round * E.speedPerRound)) * CONFIG.teas.green.enemySpeed;
+      expect(peak * 60).toBeGreaterThan(typical * 0.5);
+    }
+  });
+
+  it('dashes the same extra distance however fast the leaf already rises', () => {
+    for (const round of [2, 5, 9, 14]) {
+      for (const [speed, fortune] of [[35, null], [70, null], [102, null], [102, 'tempest']]) {
+        // A darter beside an ordinary leaf of the same speed, both still well inside the cup when compared.
+        const game = brewedRound('green', round, fortune);
+        const leaf = darterAt(game.state, round, { radius: 60, speed });
+        const twin = placeEnemy(game.state, { lane: 8, radius: 60, speed });
+        step(game, 1.3);
+        expect(leaf.dart.stage).toBe('done');
+        const pace = speed * game.state.modifiers.enemySpeedMultiplier;
+        const crouchLoss = pace * (1 - D.warnPace) * leaf.dart.warn;
+        expect(leaf.radius - twin.radius + crouchLoss).toBeCloseTo(byStage(D.dashDistance, round), 6);
+      }
+    }
+  });
+
+  it('covers the same ground at any frame rate, deterministically', () => {
+    const ends = [];
+    for (const dt of [1 / 30, 1 / 60, 1 / 120, CONFIG.timing.maxFrameSeconds, 0.025]) {
+      const game = brewedRound('green', 6);
+      const leaf = darterAt(game.state, 6, { radius: 80, speed: 64 });
+      followDart(game, leaf, { dt, seconds: 1.2 });
+      expect(leaf.dart.stage).toBe('done');
+      ends.push(leaf.radius);
+    }
+    for (const end of ends) expect(end).toBeCloseTo(ends[0], 6);
+    // And twice with one seed, the same cup to the last decimal.
+    const run = () => {
+      const game = createGame({ seed: 77, tea: 'green' });
+      game.primaryAction();
+      game.state.round = 6;
+      game.state.modifiers = roundModifiers(null, 'green', 6);
+      step(game, 20, { left: false, right: true, fire: true });
+      return JSON.stringify(game.state.enemies);
     };
-    while (leaf.dart.stage === 'waiting') run(1 / 60);
-    expect(events).toEqual(['dartWarn']);
-    let before = leaf.radius;
-    run(D.warnTime - 0.1);
-    expect(leaf.dart.stage).toBe('warning');
-    expect(leaf.radius - before).toBeCloseTo(speed * D.warnPace * (D.warnTime - 0.1), 0);
-    run(0.15);
-    expect(events).toContain('dart');
-    before = leaf.radius;
-    run(0.2);
-    expect(leaf.dart.stage).toBe('darting');
-    expect(leaf.radius - before).toBeCloseTo(speed * D.dashPace * 0.2, 0);
-    run(D.dashTime);
-    expect(leaf.dart.stage).toBe('done');
-    before = leaf.radius;
-    run(0.5);
-    expect(leaf.radius - before).toBeCloseTo(speed * 0.5, 0);
+    expect(run()).toBe(run());
   });
 
-  it('keeps every dart well inside the cup', () => {
-    // The fastest leaf, darting from the furthest point, ends its sprint before the rim.
-    const fastest = (CONFIG.enemies.speedMax + CONFIG.enemies.maxRoundSpeedBonus) * CONFIG.teas.maxEnemySpeedMultiplier;
-    const end = D.atMax + fastest * (D.warnPace * D.warnTime + D.dashPace * D.dashTime);
-    expect(end).toBeLessThan(CONFIG.arena.rimRadius - 20);
+  it('is held back by milk, and never dashes while being washed back', () => {
+    const plain = brewedRound('green', 9);
+    const free = darterAt(plain.state, 9, { radius: 80, speed: 0 });
+    followDart(plain, free, { seconds: 2 });
+    expect(free.radius - 80).toBeCloseTo(byStage(D.dashDistance, 9), 3);
+
+    const milky = brewedRound('green', 9);
+    milky.state.clouds.push({ angle: laneAngle(0), time: 60, duration: 60, spread: 1, drift: 0 });
+    const slowed = darterAt(milky.state, 9, { radius: 80, speed: 0 });
+    followDart(milky, slowed, { seconds: 2 });
+    expect(slowed.radius - 80).toBeCloseTo(byStage(D.dashDistance, 9) * CONFIG.milk.slowFactor, 3);
+
+    const washed = brewedRound('green', 9);
+    const leaf = darterAt(washed.state, 9, { radius: 120, speed: 0 });
+    while (leaf.dart.stage !== 'darting') step(washed, 1 / 60);
+    leaf.backwash = CONFIG.milk.backwash;
+    const before = leaf.radius;
+    step(washed, D.dashTime + 1 / 60);
+    expect(leaf.dart.stage).toBe('done');
+    expect(leaf.radius).toBeLessThan(before);
+  });
+
+  it('keeps every dart well inside the cup, with time to react', () => {
+    for (const round of lastRounds()) {
+      // The fastest leaf this stage can bring, starting its crouch at the furthest point (plus a slow frame).
+      const fastest = fastestIn(round);
+      const game = brewedRound('green', round);
+      game.state.modifiers = { ...game.state.modifiers, enemySpeedMultiplier: CONFIG.teas.maxEnemySpeedMultiplier };
+      const at = D.atMax + fastest * CONFIG.timing.maxFrameSeconds;
+      const leaf = darterAt(game.state, round, { radius: at, speed: fastest / CONFIG.teas.maxEnemySpeedMultiplier });
+      const track = followDart(game, leaf, { untilRadius: CONFIG.arena.rimRadius - CONFIG.enemies.escapeInset });
+      expect(track.dashEnd).toBeLessThan(CONFIG.arena.rimRadius - 30);
+      // From the first flicker to the rim takes longer than it ever did with the ×2 sprint (about 1.1 s).
+      expect(track.time).toBeGreaterThan(1.2);
+    }
+  });
+
+  it('never reaches the rim sooner than an ordinary leaf from the same point, give or take a frame', () => {
+    // The crouch gives back about what the dash takes, so a dart surprises without stealing reaction time.
+    const rim = CONFIG.arena.rimRadius - CONFIG.enemies.escapeInset;
+    const E = CONFIG.enemies;
+    for (const round of [2, 4, 5, 8, 9, 12]) {
+      const bonus = Math.min(E.maxRoundSpeedBonus, round * E.speedPerRound);
+      for (const base of [E.speedMin, (E.speedMin + E.speedMax) / 2, E.speedMax]) {
+        for (const at of [D.atMin, D.atMax]) {
+          const game = brewedRound('green', round);
+          const leaf = darterAt(game.state, round, { radius: at, speed: base + bonus });
+          const track = followDart(game, leaf, { untilRadius: rim });
+          const ordinary = (rim - at) / ((base + bonus) * CONFIG.teas.green.enemySpeed);
+          expect(track.time).toBeGreaterThan(ordinary - 0.05);
+        }
+      }
+    }
+  });
+
+  it('never starts a dart near the rim', () => {
+    const game = brewedRound('green', 9);
+    const leaf = darterAt(game.state, 9, { radius: D.latestAt + 5, speed: 60 });
+    leaf.dart.at = D.atMax; // its turn came and went
+    step(game, 1);
+    expect(leaf.dart.stage).toBe('done');
+    expect(game.drainEvents().map((e) => e.type)).not.toContain('dartWarn');
   });
 });
 
 describe('Earl Grey', () => {
-  it('leans first, then glides exactly one lane, smoothly', () => {
-    const game = playingGame({ tea: 'earlGrey' });
-    const leaf = placeEnemy(game.state, { lane: 3, radius: 60, speed: 50 });
-    Object.assign(leaf, { kind: 'wanderer', wander: { stage: 'waiting', at: 80, dir: 1, time: 0 } });
-    while (leaf.wander.stage === 'waiting') step(game, 1 / 60);
-    expect(game.drainEvents().map((e) => e.type)).toEqual(['wanderWarn']);
-    step(game, W.warnTime - 0.05);
-    expect(leaf.angle).toBeCloseTo(laneAngle(3)); // no surprise moves during the warning
-    step(game, 0.1);
-    expect(game.drainEvents().map((e) => e.type)).toContain('wander');
-    const midway = [];
-    for (let t = 0; t < W.glideTime; t += 1 / 60) {
-      step(game, 1 / 60);
-      midway.push(leaf.angle);
+  /** A wanderer about to lean, as spawned in `round`. */
+  function wandererAt(state, round, { lane = 3, radius = 80, speed = 50, dir = 1 } = {}) {
+    const leaf = placeEnemy(state, { lane, radius, speed });
+    Object.assign(leaf, {
+      kind: 'wanderer', home: 40, backwash: 0, glide: null,
+      wander: { stage: 'waiting', at: radius, dir, time: 0, warn: byStage(W.warnTime, round) },
+    });
+    return leaf;
+  }
+
+  it('makes roughly the share of new leaves wanderers that the round calls for', () => {
+    for (const round of [2, 5, 9]) {
+      const game = brewedRound('earlGrey', round);
+      for (let i = 0; i < 3000; i++) spawnEnemy({ state: game.state, rng: createRandom(i) });
+      const share = game.state.enemies.filter((e) => e.kind === 'wanderer').length / 3000;
+      expect(share).toBeGreaterThan(byStage(W.chance, round) - 0.03);
+      expect(share).toBeLessThan(byStage(W.chance, round) + 0.03);
     }
-    for (let i = 1; i < midway.length; i++) {
-      expect(midway[i] - midway[i - 1]).toBeLessThan(LANE_STEP * 0.15); // no jumps
+  });
+
+  it('leans for as long as the round allows, then glides exactly one lane, smoothly', () => {
+    for (const round of [2, 5, 9]) {
+      const game = brewedRound('earlGrey', round);
+      const warn = byStage(W.warnTime, round);
+      const leaf = wandererAt(game.state, round, { lane: 3, radius: 60 });
+      leaf.wander.at = 80;
+      while (leaf.wander.stage === 'waiting') step(game, 1 / 60);
+      expect(game.drainEvents().map((e) => e.type)).toEqual(['wanderWarn']);
+      step(game, warn - 0.05);
+      expect(leaf.angle).toBeCloseTo(laneAngle(3)); // no surprise moves during the warning
+      expect(leaf.wander.stage).toBe('warning');
+      step(game, 0.1);
+      expect(game.drainEvents().map((e) => e.type)).toContain('wander');
+      const midway = [];
+      for (let t = 0; t < W.glideTime; t += 1 / 60) {
+        step(game, 1 / 60);
+        midway.push(leaf.angle);
+      }
+      for (let i = 1; i < midway.length; i++) {
+        expect(midway[i] - midway[i - 1]).toBeLessThan(LANE_STEP * 0.15); // no jumps
+      }
+      step(game, 0.1);
+      expect(leaf.angle).toBeCloseTo(laneAngle(4));
+      expect(leaf.glide).toBeNull();
+      expect(leaf.wander.stage).toBe('done');
     }
-    step(game, 0.1);
-    expect(leaf.angle).toBeCloseTo(laneAngle(4));
-    expect(leaf.glide).toBeNull();
-    expect(leaf.wander.stage).toBe('done');
   });
 
   it('wanders in the middle of the cup, never near the rim', () => {
-    const fastest = (CONFIG.enemies.speedMax + CONFIG.enemies.maxRoundSpeedBonus) * CONFIG.teas.maxEnemySpeedMultiplier;
-    expect(W.atMax + fastest * (W.warnTime + W.glideTime)).toBeLessThan(CONFIG.arena.rimRadius * 0.85);
+    for (const round of lastRounds()) {
+      // The fastest leaf this stage can bring, starting to lean from the furthest point.
+      const reach = W.atMax + fastestIn(round) * (byStage(W.warnTime, round) + W.glideTime);
+      expect(reach).toBeLessThan(CONFIG.arena.rimRadius * 0.85);
+    }
   });
 
-  it('composes with The Spiral: every move stays on a lane once it settles', () => {
-    const game = playingGame({ tea: 'earlGrey' });
-    game.state.modifiers = roundModifiers('spiral', 'earlGrey');
-    const leaf = placeEnemy(game.state, { lane: 6, radius: 60, speed: 90 });
-    Object.assign(leaf, { kind: 'wanderer', wander: { stage: 'waiting', at: 125, dir: -1, time: 0 } });
-    while (leaf.radius < 240) step(game, 1 / 60);
-    expect(leaf.shifted).toBe(true);
+  it('never starts to wander near the rim', () => {
+    const game = brewedRound('earlGrey', 9);
+    const leaf = wandererAt(game.state, 9, { radius: W.latestAt + 5 });
+    leaf.wander.at = W.atMax; // its turn came and went
+    step(game, 2);
     expect(leaf.wander.stage).toBe('done');
-    expect(leaf.glide).toBeNull();
-    expect(onLane(leaf.angle)).toBe(true);
-    const events = game.drainEvents().map((e) => e.type);
-    expect(events.indexOf('wanderWarn')).toBeLessThan(events.indexOf('wander'));
-    expect(events).toContain('drift');
+    expect(leaf.angle).toBeCloseTo(laneAngle(3));
+    expect(game.drainEvents().map((e) => e.type)).not.toContain('wanderWarn');
+  });
+
+  it('ends in the same lane at any frame rate', () => {
+    for (const dt of [1 / 30, 1 / 60, 1 / 144, CONFIG.timing.maxFrameSeconds]) {
+      const game = brewedRound('earlGrey', 5);
+      const leaf = wandererAt(game.state, 5, { lane: 7, dir: -1 });
+      for (let t = 0; t < 1.5; t += dt) game.update(dt);
+      expect(leaf.angle).toBeCloseTo(laneAngle(6));
+      expect(leaf.glide).toBeNull();
+    }
+  });
+
+  it('composes with The Spiral: every move stays on a lane once it settles, well inside the rim', () => {
+    for (const round of [2, 5, 9]) {
+      const game = brewedRound('earlGrey', round, 'spiral');
+      const leaf = wandererAt(game.state, round, { lane: 6, radius: 60, speed: 90, dir: -1 });
+      leaf.wander.at = 100;
+      let lastMove = 0; // the furthest out the leaf was still changing lanes
+      let angle = leaf.angle;
+      while (leaf.radius < 240) {
+        step(game, 1 / 60);
+        if (leaf.angle !== angle) lastMove = leaf.radius;
+        angle = leaf.angle;
+      }
+      expect(leaf.shifted).toBe(true);
+      expect(leaf.wander.stage).toBe('done');
+      expect(leaf.glide).toBeNull();
+      expect(onLane(leaf.angle)).toBe(true);
+      expect(lastMove).toBeLessThan(CONFIG.arena.rimRadius * 0.85);
+      const events = game.drainEvents().map((e) => e.type);
+      expect(events.indexOf('wanderWarn')).toBeLessThan(events.indexOf('wander'));
+      expect(events).toContain('drift');
+    }
   });
 });
 
 describe('Chai', () => {
   /** A Chai round with a few leaves held still in the middle of the cup. */
-  function chaiGame(lanes = [0, 5, 9]) {
-    const game = playingGame({ tea: 'chai' });
+  function chaiGame(lanes = [0, 5, 9], round = 1) {
+    const game = brewedRound('chai', round);
     const leaves = lanes.map((lane) => placeEnemy(game.state, { lane, radius: 120, speed: 0 }));
     return { game, leaves };
   }
 
-  it('warns, then carries every leaf exactly one lane, on a fixed clock', () => {
-    const { game, leaves } = chaiGame();
-    const dir = game.state.current.dir;
+  /** Each current event in the next `seconds` of a Chai round, stepping by `dt`, with when it happened. */
+  function currentLog(game, seconds, dt = 1 / 60, onEvent = () => {}) {
     const log = [];
-    let settled = null; // where the leaves are once the first current has passed
-    for (let t = 0; t < C.firstAt + C.warnTime + C.flowTime + C.calmTime + C.warnTime + 0.5; t += 1 / 60) {
-      step(game, 1 / 60);
+    const frames = Math.round(seconds / dt);
+    for (let i = 1; i <= frames; i++) {
+      game.update(dt);
       for (const e of game.drainEvents()) {
-        log.push({ type: e.type, t, dir: e.dir });
-        if (e.type === 'currentEnd' && !settled) settled = leaves.map((leaf) => leaf.angle);
+        log.push({ type: e.type, t: i * dt, dir: e.dir });
+        onEvent(e);
       }
     }
-    const times = (type) => log.filter((e) => e.type === type).map((e) => e.t);
-    expect(times('currentWarn')[0]).toBeCloseTo(C.firstAt, 1);
-    expect(times('currentFlow')[0]).toBeCloseTo(C.firstAt + C.warnTime, 1);
-    expect(times('currentEnd')[0]).toBeCloseTo(C.firstAt + C.warnTime + C.flowTime, 1);
-    expect(times('currentWarn')[1]).toBeCloseTo(C.firstAt + C.warnTime + C.flowTime + C.calmTime, 1);
-    // The next current runs the other way.
-    const warns = log.filter((e) => e.type === 'currentWarn');
-    expect(warns[0].dir).toBe(dir);
-    expect(warns[1].dir).toBe(-dir);
-    for (const [i, lane] of [0, 5, 9].entries()) {
-      expect(angleDifference(settled[i], laneAngle(lane + dir))).toBeCloseTo(0);
+    return log;
+  }
+
+  it('warns, then carries every leaf exactly one lane, on a fixed clock', () => {
+    for (const round of [2, 5, 9]) {
+      const { game, leaves } = chaiGame([0, 5, 9], round);
+      const { dir, wait: firstAt, warn, calm } = game.state.current;
+      let settled = null; // where the leaves are once the first current has passed
+      const log = currentLog(game, firstAt + warn + C.flowTime + calm + warn + 0.5, 1 / 60, (e) => {
+        if (e.type === 'currentEnd' && !settled) settled = leaves.map((leaf) => leaf.angle);
+      });
+      const times = (type) => log.filter((e) => e.type === type).map((e) => e.t);
+      expect(times('currentWarn')[0]).toBeCloseTo(firstAt, 1);
+      expect(times('currentFlow')[0]).toBeCloseTo(firstAt + warn, 1);
+      expect(times('currentEnd')[0]).toBeCloseTo(firstAt + warn + C.flowTime, 1);
+      expect(times('currentWarn')[1]).toBeCloseTo(firstAt + warn + C.flowTime + calm, 1);
+      // The next current runs the other way.
+      const warns = log.filter((e) => e.type === 'currentWarn');
+      expect(warns[0].dir).toBe(dir);
+      expect(warns[1].dir).toBe(-dir);
+      for (const [i, lane] of [0, 5, 9].entries()) {
+        expect(angleDifference(settled[i], laneAngle(lane + dir))).toBeCloseTo(0);
+      }
+      // The second current is carrying them back the other way.
+      expect(angleDifference(leaves[0].angle, laneAngle(0 + dir)) * dir).toBeLessThan(0);
     }
-    // The second current is carrying them back the other way.
-    expect(angleDifference(leaves[0].angle, laneAngle(0 + dir)) * dir).toBeLessThan(0);
+  });
+
+  it('gives more warning and more calm in the first cups, down to full strength by round 9', () => {
+    expect(createCurrent(1, 2)).toMatchObject({ wait: 6.5, warn: 2.2, calm: 10 });
+    expect(createCurrent(1, 4)).toMatchObject({ wait: 6.5, warn: 2.2, calm: 10 });
+    expect(createCurrent(1, 5)).toMatchObject({ wait: 5.5, warn: 1.9, calm: 8.5 });
+    expect(createCurrent(1, 8)).toMatchObject({ wait: 5.5, warn: 1.9, calm: 8.5 });
+    expect(createCurrent(1, 9)).toMatchObject({ wait: 5, warn: 1.6, calm: 7.5 });
+    expect(createCurrent(1, 25)).toEqual(createCurrent(1, 9));
   });
 
   it('moves nothing during the warning', () => {
-    const { game, leaves } = chaiGame([2]);
-    step(game, C.firstAt + C.warnTime - 0.05);
-    expect(game.state.current.stage).toBe('warning');
-    expect(leaves[0].angle).toBeCloseTo(laneAngle(2));
+    for (const round of [2, 5, 9]) {
+      const { game, leaves } = chaiGame([2], round);
+      const { wait, warn } = game.state.current;
+      step(game, wait + warn - 0.05);
+      expect(game.state.current.stage).toBe('warning');
+      expect(leaves[0].angle).toBeCloseTo(laneAngle(2));
+    }
+  });
+
+  it('keeps time at any frame rate', () => {
+    const reference = currentLog(chaiGame([], 6).game, 40);
+    expect(reference.filter((e) => e.type === 'currentWarn').length).toBeGreaterThanOrEqual(3);
+    for (const dt of [1 / 30, 1 / 144, CONFIG.timing.maxFrameSeconds]) {
+      const log = currentLog(chaiGame([], 6).game, 40, dt);
+      expect(log.map((e) => e.type)).toEqual(reference.map((e) => e.type));
+      for (const [i, { t }] of log.entries()) expect(Math.abs(t - reference[i].t)).toBeLessThanOrEqual(dt + 1 / 60);
+    }
   });
 
   it('runs the same way for the same seed, and stops while paused', () => {
     const a = chaiGame([1]);
     const b = chaiGame([1]);
-    step(a.game, C.firstAt + 1);
-    step(b.game, C.firstAt + 1);
+    const firstAt = a.game.state.current.wait;
+    step(a.game, firstAt + 1);
+    step(b.game, firstAt + 1);
     expect(a.game.state.current).toEqual(b.game.state.current);
+    expect(a.game.state.current.stage).toBe('warning');
     a.game.pause();
     const frozen = JSON.stringify(a.game.state.current);
     step(a.game, 5);
     expect(JSON.stringify(a.game.state.current)).toBe(frozen);
     a.game.resume();
-    step(a.game, 1);
+    step(a.game, a.game.state.current.warn);
     expect(a.game.state.current.stage).not.toBe('warning');
   });
 
@@ -401,9 +755,9 @@ describe('Herbal Tea', () => {
 });
 
 describe('the rest of the game, under every tea', () => {
-  it('keeps kill, volley, escape, and strainer accounting as before', () => {
-    for (const tea of Object.keys(TEAS)) {
-      const game = playingGame({ tea });
+  it('keeps kill, volley, escape, and strainer accounting as before, early and at full strength', () => {
+    for (const [tea, round] of Object.keys(TEAS).flatMap((id) => [[id, 1], [id, 9]])) {
+      const game = round === 1 ? playingGame({ tea }) : brewedRound(tea, round);
       killOne(game, 2);
       expect(game.state.kills).toBe(1);
       expect(game.state.roundStats.volleys).toBe(1);

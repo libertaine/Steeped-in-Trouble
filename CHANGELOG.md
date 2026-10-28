@@ -23,6 +23,11 @@ Prepared as **0.9.0 — Strange Brews**. It is not yet tagged or published.
     leaf scores 25% more.
   - **Herbal Tea** — *What Could Possibly Go Wrong?* A gentler cup: slower
     leaves, and milk lingers. The leaves may get ideas.
+- The new tricks are introduced gently. In the first cups fewer leaves dart
+  or wander, every warning lasts longer, a darting leaf's dash is short, and
+  Chai's currents leave more calm between them; each variety reaches full
+  strength in round 9. A dash now always covers a set distance, so it no
+  longer grows as the leaves get faster.
 - The tea and the fortune are separate layers, and they combine: Earl Grey
   under The Spiral, Black Tea with the Golden Spoon, Chai in Tempestuous
   Tea. Hot Chocolate Havoc and The Daily Grind keep their own liquids and

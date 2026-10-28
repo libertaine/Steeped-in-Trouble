@@ -18,6 +18,7 @@ src/
 │   ├── player.js        spoon movement
 │   ├── enemies.js       tea-leaf spawning and movement, darting and wandering, sideways glides
 │   ├── teas.js          Strange Brews: tea varieties, their draw, modifier composition, Chai's currents
+│   ├── strength.js      Strange Brews' learning curve: which stage a round is in, per-stage tuning
 │   ├── weapons.js       steam, sugar, milk (and its backwash), hit testing, scoring
 │   ├── golden.js        the golden sugar cube and its rewards
 │   ├── prismatic.js     the rare prismatic sugar cube and its Steam Nova
@@ -154,15 +155,26 @@ layer on top. `startRound()` in `core/game.js`:
    draw from `TEA_ROTATION`, never repeating `state.tea`, weighted by rounds
    since each was last served (`state.teaServed`), with any variety missing
    for more than `CONFIG.teas.maxAbsence` rounds served next;
-2. sets `state.modifiers = roundModifiers(state.fortune, state.tea)`, which
-   folds the tea's `modifiers` into the fortune's by the rules in `COMBINE`
+2. sets `state.modifiers = roundModifiers(state.fortune, state.tea, state.round)`,
+   which folds the tea's modifiers for that round (`teaModifiers()`: its
+   fixed `modifiers` plus whatever its `strength(round)` gives) into the
+   fortune's by the rules in `COMBINE`
    (multiply, add, max, or) and caps leaf speed. As with fortunes, gameplay
    reads only `state.modifiers` and never checks tea ids, and the next round
    start recomputes everything;
 3. for Chai (`modifiers.spiceCurrents`), puts a current clock in
-   `state.current` (`createCurrent()`), which `updateCurrent()` runs each
-   frame: `calm` → `warning` → `flowing` → `calm`, on fixed timings, emitting
-   `currentWarn`, `currentFlow`, and `currentEnd`.
+   `state.current` (`createCurrent(dir, round)`), which `updateCurrent()`
+   runs each frame: `calm` → `warning` → `flowing` → `calm`, emitting
+   `currentWarn`, `currentFlow`, and `currentEnd`. The clock carries its
+   own warning and calm lengths for the round, and keeps any overshoot
+   from one stage into the next, so it keeps time at any frame rate.
+
+How strongly a variety brews grows with the round (`gameplay/strength.js`).
+`teaStage(round)` finds the stage from `CONFIG.teas.stages`, and
+`byStage(values, round)` picks a round's value from a per-stage list in
+`CONFIG` (`CONFIG.darting.chance`, `CONFIG.currents.warnTime`, and so on).
+Only the round number counts, so a pinned tea and an ordinary pot brew a
+round alike.
 
 `roundStart` carries the tea for the presentation. At a reading,
 `teaFortuneNudges(state.tea)` adds a tea's extra fortune weights to the round
@@ -174,13 +186,17 @@ tea. A new match resets `state.tea` and `state.teaServed`.
 ### Leaf kinds and glides
 
 `spawnEnemy()` gives every leaf a `kind`. With the tea's `dartChance` or
-`wanderChance` it may be a `darter` (with `dart: { stage, at, time }`) or a
-`wanderer` (with `wander: { stage, at, dir, time }`); otherwise it is a
+`wanderChance` it may be a `darter` (with `dart: { stage, at, time, warn,
+distance }`) or a `wanderer` (with `wander: { stage, at, dir, time, warn }`),
+taking its warning time and dash distance from the round it appears in;
+otherwise it is a
 plain `leaf`, and no random number is drawn for it. `advanceEnemy()` runs each
 behaviour as a little stage machine (`waiting` → `warning` → …), emitting
 `dartWarn`/`dart` and `wanderWarn`/`wander`, and the renderer's `drawEnemy()`
 draws the telegraph from the same stage, so a warning is shown exactly when
-the rules give one.
+the rules give one. A dash adds `distance` on top of the leaf's ordinary
+movement, eased over `CONFIG.darting.dashTime`, so speed modifiers don't
+stretch it; stage changes partway through a frame are split exactly.
 
 A glide (`enemy.glide = { shift, length, time, done }`, started by `glide()`)
 moves a leaf sideways smoothly. It adds its movement to the angle each frame
@@ -285,13 +301,15 @@ cup and start a new grace period.
 ### Adding a tea variety
 
 1. Add an entry to `TEAS` in `gameplay/teas.js` (`name`, `quip`, `title`,
-   `info`, `tag`, `color`, `modifiers`, and optionally `fortuneNudges`), and
-   add its id to `TEA_ROTATION`.
+   `info`, `tag`, `color`, `modifiers`, and optionally `fortuneNudges`, and
+   `strength(round)` for modifiers that grow with the stage), and add its id
+   to `TEA_ROTATION`.
 2. If it needs a new effect, add a neutral default to `BASE_MODIFIERS`, a
    rule to `COMBINE`, and read `state.modifiers.<name>` where the rule lives.
 3. Give it a liquid in `TEA_LIQUIDS` (`rendering/tea.js`), a pill colour in
    `styles/main.css`, and a touch in `TEA_MUSIC` (`audio/music.js`).
-4. Put tuning numbers in `CONFIG.teas` and add tests.
+4. Put tuning numbers in `CONFIG.teas` (or a per-stage list read with
+   `byStage()`) and add tests.
 
 ### Adding an enemy type
 
