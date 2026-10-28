@@ -28,7 +28,10 @@ The repository owner may push small or experimental changes straight to
 ## Versioning
 
 Public builds use semantic versioning: `0.1.0` is the preserved prototype,
-and experiments continue as `0.2.0`, `0.3.0`, and so on. To release, bump
+and experiments continue as `0.2.0`, `0.3.0`, and so on. Minor versions keep
+counting past nine, so `0.9.0` is followed by `0.10.0`, `0.11.0`, and onward.
+`1.0.0` has no planned date or milestone and doesn't automatically follow
+`0.9.0`; it will come when the game is ready for it. To release, bump
 `version` in `package.json` (the in-game badge reads it), add a
 `CHANGELOG.md` entry, tag the commit `vX.Y.Z`, and create a GitHub release
 from the tag.

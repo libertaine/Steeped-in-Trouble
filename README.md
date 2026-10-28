@@ -1,44 +1,50 @@
 # Steeped in Trouble
 
 An original, experimental, tea-themed vector arcade game. Defend the rim of a
-stormy teacup with a silver spoon: fire steam at rising tea leaves, and spend
-your milk and sugar wisely. The leaves you defeat settle in the cup, and their
-pattern is read as a fortune that changes the next round.
+stormy teacup with a silver spoon, steam the tea leaves that rise towards
+you, and let the leaves you defeat tell your fortune.
 
 **[▶ Play it in your browser](https://libertaine.github.io/Steeped-in-Trouble/)**
 
-![Steeped in Trouble in round 3: the silver spoon on the rim of a teacup fires a sugar burst and steam at tea leaves while a milk cloud covers one side. The side panel shows the spoon's upgrades and this cup's omen, The Veil.](docs/images/screenshot.png)
+![Gameplay of Steeped in Trouble: a silver spoon circles the rim of a teacup of swirling brown tea and fires steam at tea leaves drifting out from the centre, while the side panel tracks the cup. Later the tea turns to hot chocolate for a bonus round full of marshmallows.](docs/images/gameplay.gif)
+
+*A fresh pot: steam the rising leaves, then an unexpected change of drink.*
+Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **0.8.0 — The Daily Grind** brings the game's first boss. Somebody
-ordered trouble, and it has arrived as a very angry espresso machine. Milk
-and sugar also have new keys, <kbd>Q</kbd> and <kbd>E</kbd>, beside the
-turning keys, and marshmallows are a little easier to toast. See the
-[changelog](CHANGELOG.md) for earlier versions. The game is experimental, so
-expect it to keep changing.
+Version **0.8.0 — The Daily Grind** is the current release. The game is
+experimental and still changing, but there's plenty in the cup already:
 
-The game was called *Storm in a Teacup* up to version 0.1.0.
+- Arcade defence around a living teacup whose tea swirls, ripples, and
+  reacts to every shot.
+- Tea-leaf fortunes: the leaves you defeat are read at the end of each
+  round, and the reading changes the next one.
+- Spoon upgrades that last the whole pot, and combinations that sometimes
+  brew something unexpected.
+- Occasional bonus rounds and, new in 0.8.0, a very angry espresso machine.
+- Procedurally drawn vector graphics and an adaptive soundtrack that follows
+  the cup.
+
+See the [changelog](CHANGELOG.md) for what changed in each version.
 
 ## How to play
 
 - Tea leaves drift out from the centre of the cup. Each one that reaches the
   rim spills, costing one of your three cups. Lose them all and the pot runs
   dry.
-- The spoon circles the rim and fires down the nearest lane, which glows
-  so you can see where the shot will go. Steam is unlimited. Each round you also get a couple of milk pours, which push leaves
-  back and slow them, and a couple of sugar bursts, which fire down three
-  lanes at once.
+- The spoon circles the rim and fires down the lane that glows. Steam is
+  unlimited. Each round you also get a couple of milk pours, which push
+  leaves back and slow them, and a couple of sugar bursts, which fire down
+  three lanes at once.
 - Clear enough leaves to finish the round. The leaves you defeated are then
   read, and their fortune changes the next round. Every other round you also
   choose an upgrade for your spoon, which lasts for the whole pot.
-- Keep an eye out for sugar cubes, and try unusual combinations. Some of
-  them brew something unexpected.
-- Now and then, between cups, a bonus round turns the tea into hot
-  chocolate. Nothing in it can spill. Be gentle with the fire button.
-- Later on, something with a lot more pressure turns up between cups. Hit
-  its weak spot when it shows, and get out of the way when it glows red.
-  Losing that fight never costs a cup, and winning it is worth your while.
+- Now and then something different happens between cups. The side panel
+  explains what to do, and none of it costs a cup.
+- Experiment. The cup rewards curiosity, and some things are best found for
+  yourself. The full rules are in [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md),
+  spoilers and all.
 
 ## Controls
 
