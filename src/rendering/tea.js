@@ -9,6 +9,7 @@
 import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { LANE_STEP, TAU, angleDifference, toCanvasPoint as polar } from '../gameplay/arena.js';
+import { havocInProgress } from '../gameplay/chocolate.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
 
 const { centerX: CX, centerY: CY, rimRadius: RIM } = CONFIG.arena;
@@ -16,7 +17,24 @@ const { centerX: CX, centerY: CY, rimRadius: RIM } = CONFIG.arena;
 // The Prismatic Sugar Cube's colours (a fixed set, so glow sprites stay cached).
 const PRISM = ['#ff7aa8', '#ffd36b', '#8dffb8', '#7ccfff', '#c79bff'];
 
+// Hot chocolate: the same currents, in cream and copper.
+const COCOA_TONES = ['#c58a5a', '#e2b98e', '#a8653a', '#f0d6b4'];
+const COCOA_DARK = '#0b0300';
+
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+const rgbCache = new Map();
+function rgb(hex) {
+  if (!rgbCache.has(hex)) rgbCache.set(hex, [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)));
+  return rgbCache.get(hex);
+}
+/** Blend two '#rrggbb' colours. */
+function mixColor(a, b, t) {
+  const A = rgb(a);
+  const B = rgb(b);
+  return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`;
+}
+
 /** 0 → 1 → 0 over a lifetime. */
 const swell = (age, life) => Math.sin(Math.PI * clamp(age / life, 0, 1));
 
@@ -42,6 +60,7 @@ export function createTea({ random = Math.random } = {}) {
     stir: 0, // short-lived agitation from events
     agitation: 0.3,
     milkiness: 0,
+    choco: 0, // 0 = tea, 1 = hot chocolate (eases between them)
     glow: 0, // fortune-reading luminescence
     glowColor: '#ffd27e',
     tint: null, // The Leaves Lie: { color, age, life } — the tea briefly turns an absurd colour
@@ -85,6 +104,7 @@ export function createTea({ random = Math.random } = {}) {
       seed: rnd(0, TAU),
       light,
       tone: light ? ['#d9933f', '#c36f2c', '#f0c070', '#e8a95a'][Math.floor(random() * 4) % 4] : '#120602',
+      cocoa: light ? COCOA_TONES[Math.floor(random() * 4) % 4] : COCOA_DARK,
       alpha: light ? rnd(0.05, 0.11) : rnd(0.14, 0.26),
     };
   }
@@ -387,6 +407,75 @@ export function createTea({ random = Math.random } = {}) {
     gameover() {
       ripple(CX, CY, { size: RIM * 1.1, life: 4, strength: 1, rings: 1, tone: 'dark' });
     },
+
+    // Hot Chocolate Havoc.
+    chocolateStart() {
+      // The tea darkens from the middle outward.
+      liquid.milkiness = 0;
+      liquid.wisps = [];
+      kick(0.4);
+      ripple(CX, CY, { size: RIM * 1.05, life: 3.2, strength: 1.1, rings: 1, tone: 'dark' });
+      glow(CX, CY, 200, '#8a4a22', 3, 0.9);
+    },
+    havocStart() {
+      kick(0.5);
+      ripple(CX, CY, { size: RIM, life: 1.8, strength: 1.2, rings: 3, tone: '#f3d6b0' });
+      for (let i = 0; i < 8; i++) {
+        const at = randomSpot(RIM - 40, 30);
+        oddity('bubble', { ...at, size: rnd(3, 8), life: rnd(0.8, 2) });
+      }
+    },
+    havocEnd() {
+      ripple(CX, CY, { size: RIM * 1.05, life: 2.6, strength: 1, rings: 2, tone: '#f0c070' });
+    },
+    flame({ lane }) {
+      if (!chance(0.5)) return;
+      const p = rimPoint(-Math.PI / 2 + lane * LANE_STEP, 14);
+      ripple(p.x, p.y, { size: 12, life: 0.5, strength: 0.5, rings: 1, tone: '#ffb36b' });
+    },
+    toast({ radius, angle, heat }) {
+      // The flame lights up the chocolate around it.
+      const p = polar(radius, angle);
+      glow(p.x, p.y, 34 + 14 * heat, heat > 1.2 ? '#ff6a2a' : '#ffa94a', 0.6, 0.9);
+      ripple(p.x, p.y, { size: 22, life: 0.7, strength: 0.6, rings: 1, tone: '#f3d6b0' });
+    },
+    burn({ radius, angle }) {
+      const p = polar(radius, angle);
+      glow(p.x, p.y, 70, '#ff4a1a', 1, 1.2);
+      ripple(p.x, p.y, { size: 40, life: 1.2, strength: 1, rings: 1, tone: 'dark' });
+    },
+    perfect({ radius, angle }) {
+      const p = polar(radius, angle);
+      glow(p.x, p.y, 60, '#ffcf6a', 1.2, 1);
+      ripple(p.x, p.y, { size: 46, life: 1.1, strength: 1, rings: 2, tone: '#ffd57a' });
+      for (let i = 0; i < 16; i++) crystal(p.x, p.y, 70, rnd(0.4, 1), chance(0.5) ? '#ffd57a' : '#fff4c8');
+    },
+    scoop({ angle, how }) {
+      if (how !== 'rim') return;
+      // A little chocolate slops against the rim.
+      const p = rimPoint(angle, 6);
+      ripple(p.x, p.y, { size: 34, life: 0.9, strength: 1, rings: 2, tone: '#e2b98e' });
+    },
+    crumble({ radius, angle }) {
+      const p = polar(radius, angle);
+      ripple(p.x, p.y, { size: 26, life: 0.8, strength: 0.6, rings: 1, tone: 'dark' });
+    },
+    bump({ radius, angle }) {
+      const p = polar(radius, angle);
+      ripple(p.x, p.y, { size: 16, life: 0.6, strength: 0.6, rings: 1, tone: '#f3d6b0' });
+    },
+    giantAppear({ radius, angle }) {
+      const p = polar(radius, angle);
+      kick(0.3);
+      ripple(p.x, p.y, { size: 80, life: 1.6, strength: 1.2, rings: 3, tone: '#f3d6b0' });
+    },
+    catastrophe({ radius, angle }) {
+      const p = polar(radius, angle);
+      kick(0.7);
+      ripple(p.x, p.y, { size: 180, life: 1.8, strength: 1.5, rings: 3, tone: '#fff4e6' });
+      glow(p.x, p.y, 150, '#fff0dc', 1.4, 1.2);
+      for (let i = 0; i < 70; i++) crystal(p.x, p.y, 170, rnd(0.5, 1.4), '#fff8ee');
+    },
   };
 
   // ── Per-frame update ──────────────────────────────────────────────────
@@ -449,6 +538,8 @@ export function createTea({ random = Math.random } = {}) {
       const phase = state?.phase;
       const playing = phase === PHASE.PLAYING;
       const reading = phase === PHASE.READING;
+      const havoc = havocInProgress(state);
+      const toasting = phase === PHASE.CHOCOLATE && havoc.stage === 'play';
       const stormy = playing && state.fortune === 'tempest'; // Tempestuous Tea
 
       // Pausing lets the tea settle to a standstill rather than freezing mid-slosh.
@@ -458,7 +549,7 @@ export function createTea({ random = Math.random } = {}) {
       liquid.time += sdt * motion;
 
       // The spoon stirs the tea as it travels around the rim.
-      liquid.spoon.speed = playing && lastSpoon !== null && dt > 0
+      liquid.spoon.speed = (playing || toasting) && lastSpoon !== null && dt > 0
         ? angleDifference(state.angle, lastSpoon) / dt
         : 0;
       if (state) liquid.spoon.angle = state.angle;
@@ -476,7 +567,13 @@ export function createTea({ random = Math.random } = {}) {
       liquid.stir *= Math.exp(-sdt * (reading ? 2 : 0.7));
       liquid.agitation = clamp(liquid.mood + liquid.stir, 0, 1.2);
 
-      const base = liquid.drift * (0.04 + 0.09 * liquid.agitation) * (reading ? 0.4 : stormy ? 2.4 : 1);
+      // The tea becomes chocolate (and back): darker, thicker, slower.
+      const chocoTarget = havoc && havoc.stage !== 'outro' && (havoc.stage !== 'intro' || havoc.time > 0.5) ? 1 : 0;
+      liquid.choco += (chocoTarget - liquid.choco) * Math.min(1, sdt * (chocoTarget ? 0.95 : 1.4));
+      if (liquid.choco < 0.002) liquid.choco = 0;
+
+      const base = liquid.drift * (0.04 + 0.09 * liquid.agitation) * (reading ? 0.4 : stormy ? 2.4 : 1)
+        * (1 - 0.45 * liquid.choco);
       liquid.spin += (liquid.spoon.speed * 0.02 - (liquid.spin - base) * 0.3) * sdt;
       liquid.flow += liquid.spin * sdt * motion;
 
@@ -500,6 +597,18 @@ export function createTea({ random = Math.random } = {}) {
         if (chance(sdt * 1.2 * motion)) {
           const at = randomSpot(RIM - 30, 30);
           oddity('bubble', { ...at, size: rnd(2.5, 7), life: rnd(0.8, 2) });
+        }
+      }
+      // Hot chocolate bubbles up now and then, and flames shed embers.
+      if (liquid.choco > 0.55 && sdt > 0 && chance(sdt * (havoc?.stage === 'intro' ? 4 : 1.3) * motion)) {
+        const at = randomSpot(RIM - 30, 20);
+        oddity('bubble', { ...at, size: rnd(2, 6.5), life: rnd(0.9, 2.6) });
+      }
+      if (toasting && sdt > 0) {
+        for (const flame of havoc.flames) {
+          if (!chance(Math.min(1, sdt * 24))) continue;
+          const p = polar(flame.radius + rnd(4, 14), flame.angle + rnd(-0.02, 0.02));
+          crystal(p.x, p.y, 10, rnd(0.2, 0.45), flame.golden ? '#ffe08a' : chance(0.5) ? '#ffb347' : '#ff7a2a');
         }
       }
       // Sugar Rush: the cup glitters near the spoon.
@@ -652,7 +761,13 @@ export function createTeaPainter(main) {
     const shadow = ctx.createRadialGradient(CX, CY, RIM - 48, CX, CY, RIM);
     shadow.addColorStop(0, 'rgba(10,4,1,0)');
     shadow.addColorStop(1, 'rgba(10,4,1,0.55)');
-    return { base, shadow };
+    // Hot chocolate: deeper, redder, and opaque.
+    const cocoa = ctx.createRadialGradient(CX - 70, CY - 90, 10, CX, CY, RIM + 8);
+    cocoa.addColorStop(0, '#7a3f1f');
+    cocoa.addColorStop(0.35, '#5a2a13');
+    cocoa.addColorStop(0.75, '#3a190a');
+    cocoa.addColorStop(1, '#1e0b04');
+    return { base, shadow, cocoa };
   }
 
   /** Nudge a point outward from any ripple ring passing over it. */
@@ -704,7 +819,11 @@ export function createTeaPainter(main) {
 
   function drawStrands(liquid, light) {
     const POINTS = detail.points;
-    const { time: t, flow, agitation } = liquid;
+    const { time: t, flow, agitation, choco } = liquid;
+    // In hot chocolate the currents go thick and lazy, then change colour.
+    const thick = 1 + 0.4 * choco;
+    const lazy = 1 - 0.45 * choco;
+    const recolor = clamp((choco - 0.15) / 0.7, 0, 1);
     ctx.globalCompositeOperation = light ? 'lighter' : 'source-over';
     for (let n = 0; n < Math.min(detail.strands, liquid.strands.length); n++) {
       const s = liquid.strands[n];
@@ -713,17 +832,44 @@ export function createTeaPainter(main) {
         const u = i / (POINTS - 1);
         const r = s.r0 + (s.r1 - s.r0) * u;
         const a = s.angle + s.twist * u + (flow - s.flow0) * shear(r)
-          + s.amp * (0.4 + agitation) * Math.sin(u * s.freq + t * s.speed + s.seed);
+          + s.amp * lazy * (0.4 + agitation) * Math.sin(u * s.freq + t * s.speed + s.seed);
         xs[i] = CX + r * Math.cos(a);
         ys[i] = CY + r * Math.sin(a);
-        ws[i] = s.width * Math.sin(Math.PI * u) ** 0.7 * (0.65 + 0.35 * Math.sin(u * 4 + t * 0.6 + s.seed));
+        ws[i] = thick * s.width * Math.sin(Math.PI * u) ** 0.7 * (0.65 + 0.35 * Math.sin(u * 4 + t * 0.6 + s.seed));
         displace(liquid, i);
       }
-      ctx.globalAlpha = s.alpha * swell(s.age, s.life) * (0.75 + 0.45 * agitation) * (light ? detail.glow : 1);
-      ctx.fillStyle = s.tone;
+      ctx.globalAlpha = s.alpha * swell(s.age, s.life) * (0.75 + 0.45 * agitation)
+        * (light ? detail.glow * (1 - 0.25 * choco) : 1);
+      ctx.fillStyle = recolor > 0 ? mixColor(s.tone, s.cocoa, recolor) : s.tone;
       ribbon(POINTS);
     }
     ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** Hot chocolate: a few thick ribbons of cream, curling slowly round the cup. */
+  function drawCocoaSwirls(liquid) {
+    const amount = clamp((liquid.choco - 0.35) / 0.65, 0, 1);
+    if (amount <= 0) return;
+    const POINTS = detail.points;
+    const { time: t, flow } = liquid;
+    ctx.fillStyle = '#efd3ae';
+    for (let k = 0; k < 3; k++) {
+      const turn = flow * 0.55 + k * (TAU / 3) + 0.25 * Math.sin(t * 0.11 + k);
+      for (let i = 0; i < POINTS; i++) {
+        const u = i / (POINTS - 1);
+        const r = 30 + 205 * u;
+        const a = turn + u * 2.6 + 0.12 * Math.sin(u * 5 + t * 0.4 + k * 2);
+        xs[i] = CX + r * Math.cos(a);
+        ys[i] = CY + r * Math.sin(a);
+        ws[i] = (7 + 10 * Math.sin(Math.PI * u)) * (0.8 + 0.2 * Math.sin(t * 0.5 + k + u * 3));
+        displace(liquid, i);
+      }
+      ctx.globalAlpha = 0.11 * amount;
+      ribbon(POINTS, 1.6);
+      ctx.globalAlpha = 0.16 * amount;
+      ribbon(POINTS, 0.55);
+    }
+    ctx.globalAlpha = 1;
   }
 
   function drawWisps(liquid) {
@@ -768,12 +914,14 @@ export function createTeaPainter(main) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
-  /** Faint V-shaped wakes behind leaves and grooves behind darts. */
+  /** Faint V-shaped wakes behind leaves and marshmallows, and grooves behind darts and flames. */
   function drawWakes(state) {
     ctx.globalCompositeOperation = 'lighter';
     ctx.strokeStyle = '#f3d9a4';
     ctx.lineWidth = 1.1;
-    for (const e of state.enemies) {
+    const havoc = havocInProgress(state);
+    const floaters = havoc && havoc.stage !== 'outro' ? havoc.marshmallows.map((m) => ({ ...m, alpha: 0.55 })) : state.enemies;
+    for (const e of floaters) {
       const ux = Math.cos(e.angle);
       const uy = Math.sin(e.angle);
       const p = polar(e.radius, e.angle);
@@ -793,6 +941,16 @@ export function createTeaPainter(main) {
       ctx.stroke();
     }
     ctx.lineWidth = 3;
+    for (const flame of havoc?.flames ?? []) {
+      const a = polar(flame.radius + 6, flame.angle);
+      const b = polar(flame.radius + 30, flame.angle);
+      ctx.globalAlpha = 0.14;
+      ctx.strokeStyle = flame.golden ? '#ffe08a' : '#ff9a4a';
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
     for (const shot of state.shots) {
       const a = polar(shot.radius + 4, shot.angle);
       const b = polar(shot.radius + (shot.sugar ? 34 : 26), shot.angle);
@@ -991,7 +1149,8 @@ export function createTeaPainter(main) {
     HIGHLIGHTS.forEach((h, i) => {
       const angle = h.angle + h.swing * Math.sin(t * h.rate + i * 2);
       const p = polar(h.r + h.bob * Math.sin(t * (h.rate + 0.06) + i), angle);
-      ctx.globalAlpha = h.alpha * (1 + 0.3 * Math.sin(t * 0.7 + h.r) + 0.4 * liquid.agitation);
+      // Hot chocolate is glossier than tea.
+      ctx.globalAlpha = h.alpha * (1 + 0.3 * Math.sin(t * 0.7 + h.r) + 0.4 * liquid.agitation) * (1 + 2.2 * liquid.choco);
       ctx.drawImage(highlightSprites[i], p.x - h.size, p.y - h.size, h.size * 2, h.size * 2);
     });
     ctx.globalAlpha = 1;
@@ -1105,6 +1264,12 @@ export function createTeaPainter(main) {
       cached ??= gradients();
       ctx.fillStyle = cached.base;
       ctx.fillRect(CX - RIM, CY - RIM, RIM * 2, RIM * 2);
+      if (liquid.choco > 0.01) {
+        ctx.globalAlpha = liquid.choco;
+        ctx.fillStyle = cached.cocoa;
+        ctx.fillRect(CX - RIM, CY - RIM, RIM * 2, RIM * 2);
+        ctx.globalAlpha = 1;
+      }
       if (liquid.milkiness > 0.01) {
         ctx.globalAlpha = liquid.milkiness * 0.08;
         ctx.fillStyle = '#e9dcc4';
@@ -1136,6 +1301,7 @@ export function createTeaPainter(main) {
       } else {
         drawStrands(liquid, true);
       }
+      drawCocoaSwirls(liquid);
       drawWisps(liquid);
       drawTint(liquid);
       drawGlows(liquid);

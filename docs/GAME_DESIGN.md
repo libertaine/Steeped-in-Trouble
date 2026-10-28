@@ -208,6 +208,60 @@ quickly and eases off slowly, and a spill spikes it. Tempo drifts towards its
 target (tension adds up to 12 BPM), so it never lurches. The layers carry the
 moment-to-moment drama.
 
+## Added in 0.7.0 — Hot Chocolate Havoc
+
+### Aiming
+
+The spoon still circles the rim continuously, but the lane it will fire down
+is now highlighted: a pale beam down the lane, a chevron at the firing point,
+and a flash when a shot goes. The highlight comes from the same `spoonLane()`
+the weapons use, so it can never show a different lane from the one the shot
+takes. It cross-fades between lanes instead of sliding. Double Trouble
+highlights the shared starting lane, sugar flashes its three lanes, and a
+Steam Nova lights all sixteen. Milk keeps its own wedge.
+
+### The bonus round (spoilers)
+
+Sometimes, after the leaves are read (and any spoon upgrade is chosen), the
+cup announces **The Chocolate Prophecy** before the next cup. The tea darkens
+into hot chocolate, and for 25 seconds marshmallows float up in place of
+leaves while the spoon fires little flames. The intro can be skipped with
+Enter.
+
+- **When:** the first bonus round always follows round 3, 4, or 5 (chosen at
+  random when the pot starts). After that it has a 30% chance after each
+  round, never sooner than three rounds after the last. It isn't a numbered
+  round (the HUD shows it as "03½"), and it has its own random generator, so
+  the next cup plays out exactly as it would have without it.
+- **Cooking:** every flame that lands adds one level of doneness and one unit
+  of heat. Heat cools at 1.9 per second, and a marshmallow catches fire if
+  its heat goes over 1.75. Two flames make it toasted, and four make it
+  perfect, at which point it pops out of the cup at once for 30 points.
+  Holding fire lands flames about 0.22 s apart, which burns a marshmallow on
+  the third. Flames spaced about 0.4 s or more apart never do. Flames burn
+  out after 175 units, so only the outer two-thirds of the cup is in reach.
+- **Scoring:** marshmallows reaching the rim are scooped up, as is anything
+  still in the cup at the end: toasted 12, burned 2, raw nothing. A flame
+  that hits a burned marshmallow crumbles it to ash, clearing the lane. Five
+  perfect marshmallows earn +75 and an extra sugar burst next cup; nine earn
+  +200 and the sugar burst.
+- **The giant marshmallow** (40% of bonus rounds) can't burn. Every flame
+  makes it swell, it looks alarmed towards the end, and the eighth flame
+  bursts it into seven little marshmallows: **Marshmallow Catastrophe!**
+- **Nothing costs a cup.** The spoon's upgrades carry over: Quick Stir turns
+  as usual, and the Polished Spoon makes flames faster and reach further. The
+  Golden Spoon fires twice as fast, with gentler flames that toast without
+  scorching, and its time stands still until the tea returns. Fortunes don't
+  apply in the chocolate; the reading's fortune waits for the next cup.
+- **Music:** the band switches to a bouncy F major (I – vi – IV – V, a chord a
+  bar) with lighter drums, a busier melody, a little fanfare at the start, a
+  quickening beat in the last six seconds, and a flourish when the giant
+  bursts.
+
+Tuning came from simple bots playing 40 rounds each: holding fire on one
+marshmallow scored about 100, sweeping the rim with fire held about 340,
+and a bot that spread its flames between cool marshmallows about 630.
+
 ## Future ideas (not implemented)
 
 These are possibilities for later milestones, recorded so they aren't lost.

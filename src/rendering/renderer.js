@@ -10,10 +10,12 @@ import { FORTUNES, glyphPoint } from '../gameplay/fortunes.js';
 import { SECRETS } from '../gameplay/secrets.js';
 import { COMBOS } from '../gameplay/combos.js';
 import { spoonLane } from '../gameplay/player.js';
+import { havocInProgress } from '../gameplay/chocolate.js';
 import { createTeaPainter } from './tea.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
 const { revealAt, lieRetractAt } = CONFIG.fortunes;
+const CHOC = CONFIG.chocolate;
 const GOLD = '#ffd45e';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -30,13 +32,41 @@ const AIM = {
   steam: '#d4ecff',
   golden: '#ffe08a',
   sugar: '#fff1c4',
+  flame: '#ffb36b',
 };
 const AIM_FADE = 0.12; // seconds for the highlight to cross-fade to a new lane
 
-/** Is the spoon aiming right now (a round in progress, or paused mid-round)? */
-const aiming = (state) => state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED;
+/** Is the spoon aiming right now (a round or the toasting in progress, or paused during one)? */
+function aiming(state) {
+  const havoc = havocInProgress(state);
+  if (havoc) return havoc.stage === 'play';
+  return state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED;
+}
 
-const aimColor = (state) => (state.goldenSpoon > 0 ? AIM.golden : AIM.steam);
+function aimColor(state) {
+  if (state.goldenSpoon > 0) return AIM.golden;
+  return havocInProgress(state) ? AIM.flame : AIM.steam;
+}
+
+// Marshmallow colours by doneness (one step per flame), and once burned.
+const COOKED = ['#fffaf2', '#f7e6c6', '#ebb86e', '#dc9c4c', '#c7792b'];
+const BURNED = '#3a2417';
+
+/** What the cup says when the havoc is over. Picked from the result, so it never changes mid-card. */
+function havocQuip(summary) {
+  const burned = summary.burned + summary.crumbled;
+  if (summary.perfect + summary.toasted === 0) return 'The marshmallows remain uncooked. The cup is not angry, just disappointed.';
+  if (burned >= 4 && burned > summary.perfect) return 'The cup would like a word about the smoke.';
+  if (summary.grade === 'great') return 'The leaves are speechless. Briefly.';
+  if (summary.grade === 'good') return 'A respectable toast. The cup is mildly impressed.';
+  return 'Back to the tea, then.';
+}
+
+const HAVOC_REWARD = {
+  great: (s) => `Master chocolatier: +${s.bonus}, and an extra sugar burst next cup`,
+  good: (s) => `Nicely toasted: +${s.bonus}, and an extra sugar burst next cup`,
+  modest: () => `Five perfect marshmallows earn a bonus. Next time!`,
+};
 
 /** A colour at a given opacity: '#rrggbb' or 'hsl(h, s%, l%)'. */
 function fade(color, alpha) {
@@ -514,6 +544,12 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     const at = polar(OUTER + 7, angle);
     if (look.golden) circle(at.x, at.y, 30 * size, GOLD, 0, true, 0.12 * flicker);
     drawSpoonAt(state, angle, size, look, flicker);
+    const havoc = havocInProgress(state);
+    if (havoc && havoc.stage !== 'outro') {
+      // In the hot chocolate the spoon carries a little pilot flame.
+      const tip = polar(OUTER - 3, angle);
+      flameShape(tip.x, tip.y, angle, 2.6, look.golden ? GOLD_FLAME : FLAME, 0.9);
+    }
     drawAimMarkers(state, fx);
     if (fx.upgradeGlow > 0) {
       const u = 1 - fx.upgradeGlow;
@@ -602,6 +638,316 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     ctx.beginPath();
     ctx.arc(CX, CY, OUTER - 3, 0, TAU);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  /**
+   * A little flame, head first in the direction it travels (into the cup),
+   * flickering. `palette` is outer, middle, and core colours.
+   */
+  function flameShape(x, y, angle, size, palette, opacity = 1) {
+    const flick = 0.85 + 0.15 * Math.sin(time * 47 + x * 0.3 + y * 0.17);
+    const s = size * flick;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.globalAlpha = opacity;
+    palette.forEach((color, i) => {
+      const k = [1, 0.66, 0.36][i];
+      const tail = s * (2.7 + 0.5 * Math.sin(time * 31 + x)) * k;
+      const r = s * 0.75 * k;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(tail, 0);
+      ctx.quadraticCurveTo(s * 0.6 * k, -s * 1.1 * k, -r * 0.2, -r);
+      ctx.arc(-r * 0.2, 0, r, -Math.PI / 2, Math.PI / 2, true);
+      ctx.quadraticCurveTo(s * 0.6 * k, s * 1.1 * k, tail, 0);
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  const FLAME = ['#ff6a1a', '#ffb347', '#fff3c4'];
+  const GOLD_FLAME = ['#f2a516', '#ffe08a', '#ffffff'];
+
+  /** A flame shot: it lights the chocolate beneath it and burns down as it goes. */
+  function drawFlame(f) {
+    const p = polar(f.radius, f.angle);
+    const left = Math.max(0, 1 - f.travelled / f.reach);
+    const size = 3.4 + 2.6 * Math.min(1, left * 1.5);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    circle(p.x, p.y, size * 3.4, f.golden ? GOLD : '#ff8a2a', 0, true, 0.13 + 0.1 * left);
+    ctx.restore();
+    flameShape(p.x, p.y, f.angle, size, f.golden ? GOLD_FLAME : FLAME, 0.5 + 0.5 * Math.min(1, left * 3));
+  }
+
+  /** The puffy outline of a marshmallow seen from above, centred on the origin. */
+  function pillow(s) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(-s, -s * 0.84, s * 2, s * 1.68, s * 0.58);
+    else ctx.ellipse(0, 0, s, s * 0.84, 0, 0, TAU);
+  }
+
+  /**
+   * A marshmallow: it bobs up out of the chocolate, turns slowly, and takes on
+   * colour as it cooks. Heat glows orange beneath it and makes it sizzle;
+   * burned ones smoke. The giant one breathes, and looks alarmed near the end.
+   */
+  function drawMarshmallow(m, opacity = 1) {
+    const p = polar(m.radius, m.angle);
+    const rise = Math.min(1, m.age / 0.45);
+    const hot = clamp(m.heat / CHOC.flashPoint, 0, 1);
+    const breathe = m.giant ? 1 + 0.05 * Math.sin(time * 2.2) : 1 + 0.045 * Math.sin(time * 3.1 + m.seed);
+    const s = m.size * breathe * (0.35 + 0.65 * smoothstep(rise));
+    const shiver = hot > 0.55 ? Math.sin(time * 70 + m.seed) * 1.4 * hot : 0;
+    const spin = m.seed + time * (0.25 + 0.2 * Math.sin(m.seed)) * (m.seed > Math.PI ? 1 : -1);
+    const nervous = m.giant && m.hits >= CHOC.giantHits - 3;
+    ctx.save();
+    ctx.translate(p.x + shiver + (nervous ? Math.sin(time * 40) * 1.2 : 0), p.y);
+    ctx.globalAlpha = opacity * rise;
+    // Sitting in the chocolate: a soft shadow, and the heat glowing beneath.
+    ctx.fillStyle = '#0c0400';
+    ctx.globalAlpha = opacity * rise * 0.45;
+    ctx.beginPath();
+    ctx.ellipse(2, 3.5, s * 1.08, s * 0.98, 0, 0, TAU);
+    ctx.fill();
+    if (hot > 0.04 && !m.burned) {
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = opacity * (0.18 + 0.3 * hot) * (0.8 + 0.2 * Math.sin(time * 18 + m.seed));
+      ctx.fillStyle = hot > 0.68 ? '#ff4a1a' : '#ff9a3c';
+      ctx.beginPath();
+      ctx.arc(0, 0, s * (1.5 + 0.6 * hot), 0, TAU);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    if (m.giant) {
+      // Something is different about this one.
+      ctx.globalAlpha = opacity * (0.35 + 0.15 * Math.sin(time * 3));
+      ctx.strokeStyle = '#ffd6f0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, s * 1.35, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = opacity * rise;
+    ctx.save();
+    ctx.rotate(spin);
+    const body = m.burned ? BURNED : COOKED[Math.min(COOKED.length - 1, m.cook)];
+    ctx.fillStyle = body;
+    ctx.strokeStyle = m.burned ? '#120a05' : m.cook >= 2 ? '#8a5a2a' : '#b9a58e';
+    ctx.lineWidth = 1.2;
+    pillow(s);
+    ctx.fill();
+    ctx.stroke();
+    // A soft, puffy highlight, warmer as it toasts; scorch marks once burned.
+    ctx.fillStyle = m.burned ? '#5a3a26' : m.cook >= 2 ? '#ffe2a8' : '#ffffff';
+    ctx.globalAlpha = opacity * rise * (m.burned ? 0.6 : 0.7);
+    ctx.beginPath();
+    ctx.ellipse(-s * 0.28, -s * 0.3, s * 0.52, s * 0.28, -0.3, 0, TAU);
+    ctx.fill();
+    if (m.cook >= 2 && !m.burned) {
+      // Toasty freckles.
+      ctx.fillStyle = '#9a5a22';
+      ctx.globalAlpha = opacity * rise * 0.5;
+      for (let k = 0; k < 4; k++) circleAt(Math.cos(m.seed + k * 1.7) * s * 0.55, Math.sin(m.seed * 2 + k * 2.1) * s * 0.45, s * 0.09);
+    }
+    ctx.restore();
+    if (nervous) {
+      // For a moment, it has a face. It does not look happy.
+      ctx.fillStyle = '#3a2417';
+      ctx.globalAlpha = opacity;
+      circleAt(-s * 0.32, -s * 0.12, s * 0.09);
+      circleAt(s * 0.32, -s * 0.12, s * 0.09);
+      ctx.beginPath();
+      ctx.ellipse(0, s * 0.3, s * 0.1, s * (0.12 + 0.04 * Math.sin(time * 9)), 0, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+    if (m.burned) {
+      // Smoke curling up, and an ember or two.
+      for (let k = 0; k < 3; k++) {
+        const u = ((time * 0.8 + k / 3 + m.seed) % 1);
+        circle(p.x + Math.sin(u * 6 + k + m.seed) * 4, p.y - s - u * 26, 2.5 + u * 5, '#8a807a', 0, true, opacity * 0.35 * (1 - u));
+      }
+      circle(p.x + Math.cos(time * 3 + m.seed) * s * 0.4, p.y + Math.sin(time * 2 + m.seed) * s * 0.3, 1.4, '#ff7a2a', 0, true, opacity * (0.5 + 0.5 * Math.sin(time * 11 + m.seed)));
+    }
+  }
+
+  /** A perfect marshmallow lifting out of the cup, sparkling. */
+  function drawGhost(g) {
+    const u = 1 - g.time / g.life;
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    ctx.scale(1 + 0.4 * u, 1 + 0.4 * u);
+    ctx.globalAlpha = 1 - u;
+    ctx.save();
+    ctx.rotate(g.spin + u * 2);
+    ctx.fillStyle = COOKED[COOKED.length - 1];
+    ctx.strokeStyle = '#8a5a2a';
+    ctx.lineWidth = 1.2;
+    pillow(g.size);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffe2a8';
+    ctx.beginPath();
+    ctx.ellipse(-g.size * 0.28, -g.size * 0.3, g.size * 0.52, g.size * 0.28, -0.3, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+    // A four-point sparkle.
+    ctx.fillStyle = '#fff8e2';
+    const r = g.size * (1.2 + u);
+    ctx.rotate(u * 3);
+    ctx.beginPath();
+    ctx.moveTo(0, -r);
+    ctx.lineTo(r * 0.16, 0);
+    ctx.lineTo(0, r);
+    ctx.lineTo(-r * 0.16, 0);
+    ctx.moveTo(-r, 0);
+    ctx.lineTo(0, -r * 0.16);
+    ctx.lineTo(r, 0);
+    ctx.lineTo(0, r * 0.16);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPopups(popups) {
+    for (const p of popups) {
+      const u = 1 - p.time / p.life;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (1 - u) * 1.6);
+      text(p.text, p.x, p.y, 14 + 4 * (1 - u), p.color, 'center', MONO, 'bold ');
+      ctx.restore();
+    }
+  }
+
+  /** The toasting clock: an arc round the outside of the cup that runs down. */
+  function drawHavocClock(c) {
+    const left = c.left / CHOC.duration;
+    const hurry = c.left < 5;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = hurry ? '#ff8a5a' : '#f3c99a';
+    ctx.globalAlpha = hurry ? 0.55 + 0.35 * Math.sin(time * 10) : 0.5;
+    ctx.beginPath();
+    ctx.arc(CX, CY, OUTER + 33, -Math.PI / 2, -Math.PI / 2 + TAU * left);
+    ctx.stroke();
+    ctx.restore();
+    if (c.left <= 3 && c.left > 0) {
+      const n = Math.ceil(c.left);
+      const u = n - c.left; // 0 → 1 within each second
+      ctx.save();
+      ctx.globalAlpha = 0.3 * (1 - u);
+      text(String(n), CX, CY, 90 + 40 * u, '#ffe9cc', 'center', 'Georgia,serif', 'bold ');
+      ctx.restore();
+    }
+  }
+
+  /** A card in the middle of the cup, in the chocolate's colours. */
+  function chocolateCard(y0, h, alpha, edge = '#e8a96a') {
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.92;
+    ctx.fillStyle = '#2a1209';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(CX - 215, y0, 430, h, 12);
+    else ctx.rect(CX - 215, y0, 430, h);
+    ctx.fill();
+    ctx.strokeStyle = edge;
+    ctx.lineWidth = 1.3;
+    ctx.globalAlpha = alpha * (0.6 + 0.25 * Math.sin(time * 3));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** HOT CHOCOLATE HAVOC! It pops in, wobbles, and lingers into the first second of toasting. */
+  function drawHavocTitle(appear, fade = 1) {
+    if (appear <= 0 || fade <= 0) return;
+    const pop = 1 + 0.35 * (1 - smoothstep(appear));
+    ctx.save();
+    ctx.globalAlpha = appear * fade;
+    ctx.translate(CX, CY - 8);
+    ctx.rotate(Math.sin(time * 4) * 0.025);
+    ctx.scale(pop, pop);
+    if (renderer.quality === 'high') {
+      ctx.shadowColor = '#ff8a2a';
+      ctx.shadowBlur = 24;
+    }
+    text('HOT CHOCOLATE HAVOC!', 0, 0, 34, '#ffe1b8', 'center', 'Georgia,serif', 'bold ');
+    ctx.restore();
+  }
+
+  /** The prophecy, the title, and at the end the summary. */
+  function drawHavocOverlay(c) {
+    const t = c.time;
+    if (c.stage === 'intro') {
+      const prophecy = clamp(Math.min(t / 0.4, (2.4 - t) / 0.4), 0, 1);
+      if (prophecy > 0) {
+        chocolateCard(CY - 60, 92, prophecy);
+        ctx.save();
+        ctx.globalAlpha = prophecy;
+        text('THE CHOCOLATE PROPHECY', CX, CY - 36, 13, '#f0c48a', 'center', MONO);
+        text('“The leaves foresee a sweeter future.”', CX, CY, 20, '#f5dfb6', 'center', 'Georgia,serif', 'italic ');
+        ctx.restore();
+      }
+      const title = clamp((t - 2.2) / 0.3, 0, 1);
+      drawHavocTitle(title);
+      if (title > 0) {
+        ctx.save();
+        ctx.globalAlpha = clamp((t - 2.6) / 0.4, 0, 1);
+        text('Toast the marshmallows. Gently.', CX, CY + 36, 17, '#f3d6b0', 'center', 'Georgia,serif', 'italic ');
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.globalAlpha = 0.45 + 0.25 * Math.sin(time * 2.5);
+      text('ENTER — SKIP', CX, CY + 132, 10, '#e8c9a0', 'center', MONO);
+      ctx.restore();
+      return;
+    }
+    if (c.stage === 'play') {
+      drawHavocClock(c);
+      // Skipping the intro still shows the title, briefly.
+      drawHavocTitle(clamp(c.time / 0.25, 0, 1), clamp((1.3 - c.time) / 0.4, 0, 1));
+      return;
+    }
+    const s = c.summary;
+    const a = clamp((t - 0.2) / 0.5, 0, 1);
+    if (!s || a <= 0) return;
+    const y0 = CY - 92;
+    chocolateCard(y0, 196, a, s.grade === 'great' ? GOLD : '#e8a96a');
+    ctx.save();
+    ctx.globalAlpha = a;
+    text('THE HAVOC SUBSIDES', CX, y0 + 20, 12, '#f0c48a', 'center', MONO);
+    text(`+${s.total}`, CX, y0 + 54, 34, s.grade === 'great' ? GOLD : '#ffe1b8', 'center', 'Georgia,serif', 'bold ');
+    const burned = s.burned + s.crumbled;
+    text(`✦ ${s.perfect} perfect   ·   ${s.toasted} toasted   ·   ${burned} burned`, CX, y0 + 88, 14, '#f3d6b0', 'center', MONO);
+    text(HAVOC_REWARD[s.grade](s), CX, y0 + 114, 14, s.grade === 'modest' ? '#d8bfa0' : '#ffe9a0');
+    text(havocQuip(s), CX, y0 + 142, 14, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
+    ctx.globalAlpha = a * clamp((t - CHOC.outroMin) / 0.4, 0, 1) * (0.65 + 0.35 * Math.sin(time * 2.5));
+    text('ENTER — BACK TO THE TEA', CX, y0 + 176, 10, '#e8c9a0', 'center', MONO);
+    ctx.restore();
+  }
+
+  /** A big moment in the hot chocolate, announced at the top of the cup. */
+  function drawBanner(banner) {
+    if (!banner) return;
+    const age = banner.life - banner.time;
+    const a = clamp(Math.min(age / 0.2, banner.time / 0.6), 0, 1);
+    const y0 = CY - 250;
+    const pop = 1 + 0.3 * Math.max(0, 1 - age / 0.35);
+    ctx.save();
+    ctx.globalAlpha = a * 0.92;
+    ctx.fillStyle = '#2a1209';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(CX - 210, y0, 420, 66, 10);
+    else ctx.rect(CX - 210, y0, 420, 66);
+    ctx.fill();
+    ctx.strokeStyle = '#ffd6f0';
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+    ctx.globalAlpha = a;
+    text(banner.title, CX, y0 + 25, 22 * pop, '#fff4e6', 'center', 'Georgia,serif', 'bold ');
+    text(banner.words, CX, y0 + 50, 13, '#f3d6b0', 'center', 'Georgia,serif', 'italic ');
     ctx.restore();
   }
 
@@ -920,16 +1266,29 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       gradients ??= createGradients();
       ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
       ctx.clearRect(0, 0, W, H);
+      if (fx.shake > 0) {
+        const k = fx.shake * 7;
+        ctx.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
+      }
       trackAim(state, dt);
       drawCup();
       if (fx.tea) tea.paint(fx.tea, state, { quality: renderer.quality, scale: canvas.width / W });
       drawGuides();
-      const inPlay = state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED;
+      const havoc = havocInProgress(state);
+      const inPlay = !havoc && (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED);
+      const live = inPlay || !!havoc;
       if (inPlay) drawStrainer(state);
       drawAimBeams(state, fx);
       drawClouds(state.clouds);
       drawResidue(state);
       for (const e of state.enemies) drawEnemy(e);
+      if (havoc) {
+        // At the end they melt back into the cup.
+        const fade = havoc.stage === 'outro' ? clamp(1 - havoc.time / 0.8, 0, 1) : 1;
+        if (fade > 0) for (const m of havoc.marshmallows) drawMarshmallow(m, fade);
+        for (const f of havoc.flames) drawFlame(f);
+      }
+      for (const g of fx.ghosts ?? []) drawGhost(g);
       if (state.golden) drawGolden(state.golden);
       if (state.prismatic) drawPrismatic(state.prismatic);
       for (const s of state.shots) drawShot(s, state.spoon.polished);
@@ -938,9 +1297,12 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       drawPlayer(state, fx);
       drawGlints(fx.glints ?? []);
       drawParticles(fx.particles);
+      if (havoc) drawPopups(fx.popups ?? []);
       drawOverlay(state, fx);
-      if (inPlay) drawWhisper(fx.whisper);
+      if (state.phase === PHASE.CHOCOLATE) drawHavocOverlay(havoc);
+      if (live) drawWhisper(fx.whisper);
       if (inPlay) drawDiscovery(fx.discovery);
+      if (havoc) drawBanner(fx.banner);
     },
   };
   return renderer;

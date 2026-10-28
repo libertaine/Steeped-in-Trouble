@@ -22,6 +22,7 @@ src/
 │   ├── prismatic.js     the rare prismatic sugar cube and its Steam Nova
 │   ├── secrets.js       hidden feats judged when a round is read, and their rewards
 │   ├── combos.js        unexpected brews: combinations that unlock new behaviour
+│   ├── chocolate.js     Hot Chocolate Havoc: the bonus round's schedule, marshmallows, flames, scoring
 │   ├── upgrades.js      spoon upgrades: definitions, offers, stacking limits
 │   └── fortunes.js      leaf reading, fortune selection, modifiers, glyphs
 ├── rendering/
@@ -92,6 +93,14 @@ input handlers. Their events are handled on the next frame.
 The update only advances during `playing`. During `reading` it advances just
 `readingTime`, which drives the leaf animation.
 
+Leaving a reading normally brews the next cup. When `state.havocDue` is set
+(decided by `havocDue()` at the reading), it goes to `chocolate` instead: Hot
+Chocolate Havoc, which runs through `state.chocolate.stage` `intro` (Enter
+skips it) → `play` (P pauses) → `outro` (Enter, after a moment), then brews
+the next cup as usual. The bonus round never touches the round number,
+`nextFortune`, the spoon, or the lives, and the Golden Spoon's timer doesn't
+run during it. Rewards go through `state.score` and `state.extraSugar`.
+
 ## Coordinate system
 
 - **Logical canvas:** 920 × 790 units, origin at the top-left, y pointing
@@ -111,7 +120,9 @@ The update only advances during `playing`. During `reading` it advances just
 
 `createGame({ seed })` builds a seeded generator. All gameplay randomness
 (spawn lanes, speeds, timers, residue scatter, Spiral drift direction) comes
-from it. Effects use `Math.random`, so changing particles can never change
+from it. Hot Chocolate Havoc draws from a second generator derived from the
+same seed (`treats` in `createGame()`), so a bonus round never changes the
+sequence the normal rounds see. Effects use `Math.random`, so changing particles can never change
 gameplay. The URL parameter `?seed=` sets the seed in the browser, and the
 `?debug` parameter exposes `window.__TEACUP__.game` for tests and tinkering.
 

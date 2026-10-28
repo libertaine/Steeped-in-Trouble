@@ -198,6 +198,66 @@ export const CONFIG = deepFreeze({
     giltSplash: 48, // Double Gilt: a golden twin's kill splashes the nearest leaf within this distance
   },
 
+  // Hot Chocolate Havoc: a bonus round between normal rounds (gameplay/chocolate.js).
+  chocolate: {
+    firstAfterMin: 3, // the first bonus always follows one of these rounds…
+    firstAfterMax: 5, // …so it comes before round 6 starts
+    minGap: 3, // later bonuses: at least this many normal rounds apart…
+    chance: 0.3, // …then this chance after each round
+    introTime: 4.2, // the prophecy and the transformation (Enter skips it)
+    duration: 25, // seconds of toasting
+    outroMin: 0.6, // the summary can't be dismissed by accident before this
+
+    // Flames: slower than steam, and they burn out partway down the lane.
+    flameSpeed: 330,
+    flameRange: 175, // distance from the rim before a flame burns out
+    polishedRange: 0.12, // Polished Spoon: extra range per level (flames are faster too)
+    flameCooldown: 0.22, // seconds between flames (the Golden Spoon halves it)
+
+    // Marshmallows.
+    maxActive: 9,
+    openingBatch: 3, // marshmallows that bob up as the havoc begins
+    spawnMin: 0.75, // seconds between new marshmallows
+    spawnMax: 1.35,
+    spawnRadiusMin: 45,
+    spawnRadiusMax: 75,
+    speedMin: 14,
+    speedMax: 22,
+    size: 11,
+    hopMin: 2.5, // seconds between chances to bob into a neighbouring lane
+    hopMax: 6,
+    hopChance: 0.4,
+    knockback: 10, // a flame nudges a marshmallow this far back towards the centre
+
+    // Cooking: every flame adds one level of doneness and one unit of heat;
+    // heat cools off over time. Too much heat at once and it catches fire.
+    toastAt: 2, // doneness that counts as toasted
+    perfectAt: 4, // doneness that counts as perfect (collected at once)
+    flashPoint: 1.75, // heat above this sets it alight
+    coolRate: 1.9, // heat lost per second
+    goldenHeat: 0.55, // Golden Spoon flames toast as well but scorch less
+    points: { raw: 0, toasted: 12, perfect: 30, burned: 2 },
+
+    // The giant marshmallow.
+    giantChance: 0.4, // per bonus round
+    giantDelayMin: 4,
+    giantDelayMax: 12,
+    giantRadius: 95, // where it surfaces
+    giantSize: 22,
+    giantSpeed: 6,
+    giantGrowth: 0.11, // size gained per flame, as a share of its starting size
+    giantHits: 8, // flames until it bursts
+    giantMinis: 7, // little marshmallows it bursts into
+    miniSize: 8,
+
+    // Rewards at the end, on top of the marshmallows' own points.
+    goodPerfects: 5,
+    goodBonus: 75,
+    greatPerfects: 9,
+    greatBonus: 200,
+    rewardSugar: 1, // an extra sugar burst next cup for a good or great round
+  },
+
   // Secrets: things the leaves notice about a finished round, and reward.
   secrets: {
     perfectMinVolleys: 12, // Not a Drop Wasted: steam shots needed for a perfect round to count

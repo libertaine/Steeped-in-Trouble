@@ -8,6 +8,7 @@ export const PHASE = Object.freeze({
   PLAYING: 'playing',
   PAUSED: 'paused',
   READING: 'reading',
+  CHOCOLATE: 'chocolate', // Hot Chocolate Havoc, between a reading and the next cup
   GAME_OVER: 'gameover',
 });
 
@@ -68,6 +69,12 @@ export function createInitialState() {
     wake: null, // The Silver Tornado's wake this frame: { angle, arc, dir, depth }, or null
 
     volleys: {}, // steam shots still in flight: volley id -> darts left
+
+    // Hot Chocolate Havoc (gameplay/chocolate.js).
+    havocAfter: null, // the round after which the first bonus comes, until it has
+    lastHavoc: 0, // the round after which the latest bonus came
+    havocDue: false, // decided at each reading: a bonus before the next cup?
+    chocolate: null, // the bonus round in progress; see createHavoc()
 
     shots: [], // { angle, radius, speed, sugar, veer, golden, volley?, nova?, cream? }
     enemies: [], // { angle, radius, home, speed, wiggle, shifted, size, alpha, backwash }
