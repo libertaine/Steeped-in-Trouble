@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The project uses
 
 ### Added
 
+- **0.11.0 Milestone 2 — The Flying Spoon:** optional Tea Shortages return
+  after rounds 9, 16, 23, 30, 37 and every seven rounds thereafter. Delayed
+  visits retain their opportunity and skip missed targets without a backlog.
+- Unexpected detours in the existing Tea Run, with vector animation,
+  synthesized sounds, reduced-motion support and discoveries remembered for
+  the current pot. Spoiler details and practical playtest steps are in
+  `docs/FLYING_SPOON_TESTING.md` and the design document.
 - **0.11.0 development — The Pocket Teacup:** independent, remembered Compact
   / Full View. Touch capabilities choose the initial view, including wide
   tablets and mixed-input devices; a visible switch always overrides it.
@@ -27,8 +34,8 @@ All notable changes to this project are documented here. The project uses
 - Menu keyboard input cannot leak into gameplay, and dismissing a backgrounded
   or previously paused menu does not resume the simulation.
 
-Auto Steam, combat rules, and Tea Run mechanics are unchanged. Samsung
-hardware qualification and the Tea Run expansion remain future work.
+Auto Steam and teacup combat rules are unchanged. Real-device human
+qualification remains pending; 0.11.0 is unreleased.
 
 ## [0.10.0] - 2026-10-28 — The Tea Run
 

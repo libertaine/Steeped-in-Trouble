@@ -56,4 +56,7 @@ Windows, Node 24.22.1:
 - Screenshots inspected at all six target sizes, including reading,
   upgrades, the Tea Break, runner, boss warnings, bonus round, and Full View.
 
-Real-device human playtesting is the next step; Tea Run expansion has not begun.
+That was the Milestone 1 handoff. Milestone 2 extends the runner; its
+[spoiler testing guide](FLYING_SPOON_TESTING.md) records the additional
+mechanics, rarity experiment and qualification. Real-device testing remains
+pending for the combined 0.11.0 candidate.

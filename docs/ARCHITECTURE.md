@@ -128,7 +128,9 @@ A reading also decides `shortageDue`: round 9 or later, in Chapter 2, and
 never alongside a milestone. After any upgrade choice,
 `continueFromReading()` enters `shortage` before a pending bonus or rematch.
 The Buy / Run / Skip choice opens after 1.2 seconds. Enter never chooses.
-Starting a shortage consumes its schedule (one per pot); a new match resets it.
+Starting a shortage consumes its schedule; `scheduleNextShortage` advances
+`shortageAfter` to the next future target in 9 + 7n. Delays coalesce into one
+visit, never a queue. A new match resets the target to 9.
 
 Buy deducts Tea Cash and adds next-cup sugar; Skip changes neither.
 Run enters `teaRun`: `intro → run → finish → outro` on success, or
@@ -145,6 +147,37 @@ The progress bar and cards draw after restoring that transform; DOM pills
 show time, pickups, and stumbles. Compact cards depend on displayed canvas
 width, never on simulation coordinates. `ui/hud.js` sets `body[data-mode]`
 for the runner controls and phone HUD layout, including while paused.
+
+The Flying Spoon keeps all movement inside the existing runner. `updateRun`
+accumulates display deltas into 1/120-second ticks. A jump's analytic parabola
+uses `launchHeight`, the original impulse and gravity. Each fresh airborne
+Jump press draws from `runSim.rng` (the errand stream); failure sets `locked`
+until landing, consumes the press, and cannot become a queued ground jump.
+Slide/recovery buffering retains its original scope. The hitbox reads the
+same `spoonHeight` as the painter; passed obstacles cannot hit from behind.
+
+After course planning, one errand-stream draw chooses a hidden opportunity:
+orbit 1%, power 8%, bird 14%, otherwise none. `opportunity` only becomes an
+`encounter` after its configured altitude is reached. `encountered` prevents
+another event in that attempt. `state.aerialDiscoveries` records only found
+ids, emits `runDiscovery` on first discovery in a pot, and resets on restart.
+There are no persistent achievements or score bonuses.
+
+`encounter` is a substate of active running, so existing pause, Tea Break,
+visibility and input isolation continue to work. Only its presentation time
+advances during a detour: course clock, distance, timer, obstacles, pickups
+and stumble protection freeze. Returning retains the same course location;
+hazards overlapping or entering the reaction window are marked `bypassed`,
+without hit/pickup/reward settlement. The normal shop finish is still needed.
+
+The painter follows altitude above the ordinary jump envelope, without
+changing collision coordinates. `run.age` drives all runner animation and
+freezes with simulation. Bird, wire, smoke, Earth, satellite, teapot and
+reentry use canvas paths. Reduced motion suppresses the zap tint and smoke,
+wing flaps and space rotation. Short event sounds reuse the global sound
+toggle. A `?debug` Vite-development-only `previewAerial` helper is removed
+from production; automated production tests use the existing mutable state
+hook and explicit simulation steps, documented in `FLYING_SPOON_TESTING.md`.
 
 ## Chapters and the milestone
 
