@@ -42,8 +42,8 @@ The game was called *Storm in a Teacup* up to version 0.1.0.
 | --- | --- | --- |
 | Move the silver spoon | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> | hold **◀ TURN** / **TURN ▶** |
 | Fire steam (hold for continuous fire) | <kbd>Space</kbd> | hold **STEAM ↑** |
-| Milk: wash back and slow a wedge of the cup | <kbd>M</kbd> | **MILK** |
-| Sugar: three-lane burst | <kbd>S</kbd> | **SUGAR** |
+| Milk: wash back and slow a wedge of the cup | <kbd>Q</kbd> or <kbd>M</kbd> | **MILK** |
+| Sugar: three-lane burst | <kbd>E</kbd> or <kbd>S</kbd> | **SUGAR** |
 | Pause / resume | <kbd>P</kbd> | main button |
 | Start, next cup, new pot | <kbd>Enter</kbd> | main button |
 | Pick a spoon upgrade | <kbd>1</kbd> / <kbd>2</kbd> | tap a card |

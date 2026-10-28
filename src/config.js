@@ -234,7 +234,7 @@ export const CONFIG = deepFreeze({
     toastAt: 2, // doneness that counts as toasted
     perfectAt: 4, // doneness that counts as perfect (collected at once)
     flashPoint: 1.75, // heat above this sets it alight
-    coolRate: 1.9, // heat lost per second
+    coolRate: 2.6, // heat lost per second (flames about 0.3 s apart toast without burning)
     goldenHeat: 0.55, // Golden Spoon flames toast as well but scorch less
     points: { raw: 0, toasted: 12, perfect: 30, burned: 2 },
 
