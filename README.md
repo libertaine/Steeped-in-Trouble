@@ -6,9 +6,9 @@ you, and let the leaves you defeat tell your fortune.
 
 **[▶ Play it in your browser](https://libertaine.github.io/Steeped-in-Trouble/)**
 
-![Gameplay of Steeped in Trouble: a silver spoon circles the rim of a teacup of swirling brown tea and fires steam at tea leaves drifting out from the centre, while the side panel tracks the cup. Later the tea turns to hot chocolate for a bonus round full of marshmallows.](docs/images/gameplay.gif)
+![Gameplay of Steeped in Trouble: a silver spoon circles the rim of a teacup of swirling brown tea and fires steam at tea leaves drifting out from the centre, then pours milk across one side of the cup and fires a three-lane sugar burst, while the side panel tracks the first cup.](docs/images/gameplay.gif)
 
-*A fresh pot: steam the rising leaves, then an unexpected change of drink.*
+*The first cup of a fresh pot: steam, milk, and sugar against the rising leaves.*
 Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
