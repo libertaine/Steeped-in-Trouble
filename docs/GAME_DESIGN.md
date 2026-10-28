@@ -723,9 +723,10 @@ deliberate for 0.9.0, which is about meeting the game's content, and it
 leaves the late-game plateau (issue #13) for the chapters and bosses still
 to come.
 
-## 0.10.0 candidate — The Tea Run (Milestone 1)
+## Added in 0.10.0 — The Tea Run
 
-Pending human playtesting; 0.9.0 remains the published baseline.
+Released after the initial PC playtest. Phone and tablet usability testing
+will guide subsequent mobile improvements.
 
 ### Tea Cash and the shortage
 

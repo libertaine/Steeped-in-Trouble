@@ -5,7 +5,9 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
-### 0.10.0 — The Tea Run (Milestone 1, pending playtesting)
+## [0.10.0] - 2026-10-28 — The Tea Run
+
+### Added
 
 - **The Tea Shortage:** after round 9, once Chapter 2 is open, buy a tin
   with Tea Cash, run to the shop, or skip. The first milestone takes priority;
@@ -246,7 +248,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.9.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.10.0...main
+[0.10.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.6.0...v0.7.0
