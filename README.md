@@ -136,3 +136,11 @@ Bug reports and ideas are welcome in
 sound is synthesized at runtime. The game uses no third-party art, fonts,
 audio, or runtime libraries, and it is not affiliated with or adapted from
 any commercial arcade game.
+
+## Support the Project
+
+Enjoying Steeped in Trouble? If you'd like to help keep the kettle boiling, you
+can [support development via PayPal](https://www.paypal.com/donate/?hosted_button_id=DRJD388WT8DAL).
+
+Contributions are entirely optional. Playing the game, sharing it with others,
+and reporting bugs or suggestions are just as appreciated.
