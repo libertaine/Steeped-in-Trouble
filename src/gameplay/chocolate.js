@@ -29,9 +29,11 @@ export function firstHavocRound(rng) {
 }
 
 /**
- * At a reading: does a bonus round come before the next cup? The first one
- * is fixed in advance; after that it is a simple chance, never sooner than
- * C.minGap rounds after the last.
+ * At a reading: does a bonus round want to come before the next cup? The
+ * first one is fixed in advance; after that it is a simple chance, never
+ * sooner than C.minGap rounds after the last. A milestone boss due at the
+ * same reading goes first, and the bonus is put off to the next reading
+ * (see readLeaves() in game.js).
  */
 export function havocDue(state, rng) {
   if (state.havocAfter !== null) return state.round >= state.havocAfter;

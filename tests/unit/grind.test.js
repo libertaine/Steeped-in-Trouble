@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../../src/config.js';
 import { createRandom } from '../../src/core/random.js';
 import { LANES, laneAngle, wrapLane } from '../../src/gameplay/arena.js';
-import { firstGrindRound, grindDue } from '../../src/gameplay/grind.js';
+import { grindDue, milestoneDue } from '../../src/gameplay/grind.js';
 import { spoonLane } from '../../src/gameplay/player.js';
 import { hudText } from '../../src/ui/hud.js';
 import { brewNext, completeRound, finishBonus, playingGame, step } from './helpers.js';
@@ -61,10 +61,9 @@ function scald(game) {
 const types = (game) => game.drainEvents().map((e) => e.type);
 
 describe('when The Daily Grind happens', () => {
-  it('guarantees the first encounter after round 6, 7, or 8', () => {
-    const seen = new Set();
-    for (let seed = 0; seed < 200; seed++) seen.add(firstGrindRound(createRandom(seed)));
-    expect([...seen].sort()).toEqual([6, 7, 8]);
+  it('guarantees the first encounter after round 5 in every pot', () => {
+    for (let seed = 0; seed < 50; seed++) expect(playingGame({ seed }).state.grindAfter).toBe(G.milestoneAfter);
+    expect(G.milestoneAfter).toBe(5);
   });
 
   it('comes after that round in a real match, between numbered rounds', () => {
@@ -83,7 +82,7 @@ describe('when The Daily Grind happens', () => {
     expect(game.state.round).toBe(after); // not a numbered round
   });
 
-  it('waits for a later reading rather than share one with Hot Chocolate Havoc', () => {
+  it('as the milestone, takes the reading when Hot Chocolate Havoc wants it too, and the hot chocolate waits one', () => {
     const game = playingGame({ seed: 3 });
     const after = game.state.grindAfter;
     game.state.havocAfter = after; // both want the same reading
@@ -92,16 +91,24 @@ describe('when The Daily Grind happens', () => {
       brewNext(game);
     }
     completeRound(game);
-    expect(game.state.havocDue).toBe(true);
-    expect(game.state.grindDue).toBe(false);
+    expect(game.state.havocDue).toBe(false);
+    expect(game.state.grindDue).toBe(true);
     game.state.offer = null;
     game.primaryAction();
-    expect(game.state.phase).toBe('chocolate');
+    expect(game.state.phase).toBe('grind');
     finishBonus(game);
     expect(game.state.round).toBe(after + 1);
     completeRound(game);
-    expect(game.state.havocDue).toBe(false);
-    expect(game.state.grindDue).toBe(true);
+    expect(game.state.havocDue).toBe(true);
+    expect(game.state.grindDue).toBe(false);
+  });
+
+  it('as a rematch once beaten, waits for a later reading rather than share one with Hot Chocolate Havoc', () => {
+    const state = { havocDue: true, grindAfter: null, lastGrind: 1, round: 12 };
+    expect(grindDue(state, createRandom(1))).toBe(false);
+    expect(milestoneDue(state)).toBe(false);
+    expect(milestoneDue({ grindAfter: 7, round: 7 })).toBe(true);
+    expect(milestoneDue({ grindAfter: 7, round: 6 })).toBe(false);
   });
 
   it('later on, returns now and then, never within a few rounds of the last, and never with the hot chocolate', () => {

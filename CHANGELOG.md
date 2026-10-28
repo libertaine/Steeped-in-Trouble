@@ -5,6 +5,73 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-28 — Strange Brews
+
+The tea has developed a personality. Several, actually.
+
+### Added
+
+- **Strange Brews:** the tea has developed a personality. Several, actually.
+  The first cup is still the familiar House Blend; every cup brews a
+  variety, announced as it pours, each changing how the round plays. A
+  variety never comes twice in a row, and none stays away for long.
+  - **Green Tea** — *A Little Too Refreshing.* Leaves rise a little faster,
+    and some of them dart: a flickering crouch, then a sprint.
+  - **Earl Grey** — *Trouble with a Touch of Class.* Some leaves change
+    lanes, after a lavender curl shows which way.
+  - **Chai** — *Spice Things Up.* Spice currents sweep every leaf one lane
+    sideways on a steady clock, with arrows round the rim to warn which way.
+  - **Black Tea** — *Properly Strong.* Leaves arrive more often, and every
+    leaf scores 25% more.
+  - **Herbal Tea** — *What Could Possibly Go Wrong?* A gentler cup: slower
+    leaves, and milk lingers. The leaves may get ideas.
+- **Chapters: a slow burn with milestones.** The pot now unfolds in
+  chapters instead of speeding up every round. *Learning to Steep* keeps a
+  steady, approachable pace with three teas: the House Blend, Herbal Tea,
+  and Earl Grey. Beat The Daily Grind and *Things Heat Up*: the leaves get a
+  little livelier (once, not every round), and the rest of the shelf opens
+  up, one tea at a time, each served the round it arrives and marked as new.
+  A new chapter is announced with a little ceremony: *The next brew awaits.*
+- **The Daily Grind is now a milestone:** it always arrives after round 5.
+  Lose, and it costs nothing; it simply comes back two cups later, no
+  tougher than before, until you beat it. After that it still drops in now
+  and then, just for fun. Hot Chocolate Havoc now comes after round 3 or 4
+  and always makes way for the boss, turning up a cup later instead.
+- **Milk's recovery pulse:** every pour in a tea round now ripples through
+  the whole cup, nudging every leaf back a little and slowing the cup for a
+  moment, on top of the familiar cloud in front of the spoon (the stronger
+  of the two always wins; they never stack). Still two pours a cup.
+- The new tricks are introduced gently. A tea's first rounds on tap bring
+  fewer darting or wandering leaves, longer warnings, shorter dashes, and
+  more calm between Chai's currents; each variety reaches full strength in
+  its ninth round on tap, however late in the pot it arrived. A dash always
+  covers a set distance, so it never grows with faster leaves.
+- The tea and the fortune are separate layers, and they combine: Earl Grey
+  under The Spiral, Black Tea with the Golden Spoon, Chai in Tempestuous
+  Tea. Hot Chocolate Havoc and The Daily Grind keep their own liquids and
+  rules.
+- Each tea has its own colours and currents, easing in as the cup is poured,
+  and its own touch on the soundtrack. Every warning has a sound as well as a
+  sight, and each behaviour has its own shape, not just its own colour.
+- <kbd>↑</kbd> pours milk and <kbd>↓</kbd> fires sugar, beside the turning
+  arrows. <kbd>Q</kbd> / <kbd>M</kbd> and <kbd>E</kbd> / <kbd>S</kbd> still work.
+- `?tea=<id>` (`green`, `earlGrey`, `chai`, `black`, `herbal`, or `house`)
+  brews only that variety, for practice, without waiting for its chapter.
+
+### Changed
+
+- **More approachable pacing.** Leaves no longer speed up or arrive faster
+  every round: each chapter holds its own steady pace, about where rounds 1
+  and 2 used to be, and the second chapter is a single step up. Rounds need
+  two more leaves each time instead of four, up to 32, so they stay brisk.
+- Darting leaves' dashes are shorter (10, 14, and 18 units by stage), to
+  match the calmer leaves: a dart still never reaches the rim noticeably
+  sooner than an ordinary leaf would.
+- The HUD names the tea: in the round's title, in a pill under the omen, and
+  in a new row of the cup status panel. The boss's result card says what
+  happens next.
+- README: a "Support the Project" section.
+
 ## [0.8.0] - 2026-10-27 — The Daily Grind
 
 ### Added
@@ -160,7 +227,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.8.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.9.0...main
+[0.9.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.5.0...v0.6.0

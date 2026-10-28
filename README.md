@@ -13,18 +13,23 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **0.8.0 — The Daily Grind** is the current release. The game is
-experimental and still changing, but there's plenty in the cup already:
+Version **0.9.0 — Strange Brews** is out: the tea has developed a
+personality. Several, actually. The game is experimental and still changing,
+but there's plenty in the cup already:
 
 - Arcade defence around a living teacup whose tea swirls, ripples, and
   reacts to every shot.
+- New in 0.9.0: five tea varieties, each changing how its round plays, from
+  leaves that dart or change lanes to spice currents that sweep the cup.
+  They arrive as you progress, in chapters: a steady first chapter to learn
+  the cup, then a milestone to clear before the next brew is poured.
 - Tea-leaf fortunes: the leaves you defeat are read at the end of each
-  round, and the reading changes the next one.
+  round, and the reading changes the next one. Tea and fortune combine.
 - Spoon upgrades that last the whole pot, and combinations that sometimes
   brew something unexpected.
-- Occasional bonus rounds and, new in 0.8.0, a very angry espresso machine.
+- Occasional bonus rounds and a very angry espresso machine.
 - Procedurally drawn vector graphics and an adaptive soundtrack that follows
-  the cup.
+  the cup, and the tea.
 
 See the [changelog](CHANGELOG.md) for what changed in each version.
 
@@ -35,11 +40,17 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
   dry.
 - The spoon circles the rim and fires down the lane that glows. Steam is
   unlimited. Each round you also get a couple of milk pours, which push
-  leaves back and slow them, and a couple of sugar bursts, which fire down
-  three lanes at once.
+  leaves back and slow them (strongly in front of the spoon, and briefly
+  across the whole cup), and a couple of sugar bursts, which fire down three
+  lanes at once.
 - Clear enough leaves to finish the round. The leaves you defeated are then
   read, and their fortune changes the next round. Every other round you also
   choose an upgrade for your spoon, which lasts for the whole pot.
+- Each round brews a tea, and each tea changes how the leaves behave. The
+  cup announces it, and the side panel says what it does. New teas join the
+  shelf as you progress.
+- The game doesn't simply speed up every round. It moves on in chapters,
+  when you've earned it.
 - Now and then something different happens between cups. The side panel
   explains what to do, and none of it costs a cup.
 - Experiment. The cup rewards curiosity, and some things are best found for
@@ -52,8 +63,8 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 | --- | --- | --- |
 | Move the silver spoon | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> | hold **◀ TURN** / **TURN ▶** |
 | Fire steam (hold for continuous fire) | <kbd>Space</kbd> | hold **STEAM ↑** |
-| Milk: wash back and slow a wedge of the cup | <kbd>Q</kbd> or <kbd>M</kbd> | **MILK** |
-| Sugar: three-lane burst | <kbd>E</kbd> or <kbd>S</kbd> | **SUGAR** |
+| Milk: wash back and slow a wedge of the cup, and the whole cup briefly | <kbd>Q</kbd>, <kbd>↑</kbd>, or <kbd>M</kbd> | **MILK** |
+| Sugar: three-lane burst | <kbd>E</kbd>, <kbd>↓</kbd>, or <kbd>S</kbd> | **SUGAR** |
 | Pause / resume | <kbd>P</kbd> | main button |
 | Start, next cup, new pot | <kbd>Enter</kbd> | main button |
 | Pick a spoon upgrade | <kbd>1</kbd> / <kbd>2</kbd> | tap a card |
@@ -67,6 +78,9 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
   glowing currents) and low quality for older machines. You can also add
   `?graphics=low` or `?graphics=high` to the URL.
 - Add `?seed=<number>` to the URL to replay the same sequence of tea leaves.
+- Add `?tea=<variety>` to brew only one tea, for practice: `green`,
+  `earlGrey`, `chai`, `black`, `herbal`, or `house`. A practice tea is
+  available from the first cup.
 
 ## Running locally
 
@@ -136,3 +150,11 @@ Bug reports and ideas are welcome in
 sound is synthesized at runtime. The game uses no third-party art, fonts,
 audio, or runtime libraries, and it is not affiliated with or adapted from
 any commercial arcade game.
+
+## Support the Project
+
+Enjoying Steeped in Trouble? If you'd like to help keep the kettle boiling, you
+can [support development via PayPal](https://www.paypal.com/donate/?hosted_button_id=DRJD388WT8DAL).
+
+Contributions are entirely optional. Playing the game, sharing it with others,
+and reporting bugs or suggestions are just as appreciated.

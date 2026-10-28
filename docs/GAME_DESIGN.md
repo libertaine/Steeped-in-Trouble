@@ -44,6 +44,8 @@ Themes:
 - Leaves get faster each round (+6 speed per round, capped at +55), and
   spawns come more often (the interval shrinks from about 1.1 s to a floor
   of 0.57 s, with jitter). At most 18 leaves are in the cup at once.
+- *Since 0.9.0, speed and spawning are set by the chapter instead, and the
+  target grows by two a round up to 32: see [Chapters](#chapters-the-slow-burn).*
 - Steam kills score 10 and sugar kills score 15.
 
 ### Tea-leaf residue and fortunes
@@ -93,6 +95,8 @@ one round and is cleared by a new match.
 - **Milk backwash:** pouring milk now also sends a pale wave in from the rim
   that pushes leaves in the slowed wedge 120 units back towards the centre
   (never further in than where they started). The slowing is unchanged.
+  *0.9.0 adds a lighter recovery pulse through the whole cup: see
+  [Milk's recovery pulse](#milks-recovery-pulse).*
 
 ### Spoon upgrades
 
@@ -229,7 +233,8 @@ leaves while the spoon fires little flames. The intro can be skipped with
 Enter.
 
 - **When:** the first bonus round always follows round 3, 4, or 5 (chosen at
-  random when the pot starts). After that it has a 30% chance after each
+  random when the pot starts; round 3 or 4 since 0.9.0, so it never meets
+  the first Daily Grind). After that it has a 30% chance after each
   round, never sooner than three rounds after the last. It isn't a numbered
   round (the HUD shows it as "03½"), and it has its own random generator, so
   the next cup plays out exactly as it would have without it.
@@ -281,7 +286,8 @@ coffee. Its gauge eyes follow the spoon, and so does its steam wand.
   It never shares a reading with Hot Chocolate Havoc: if both are due, the
   hot chocolate goes first and the machine waits for the next reading. Like
   the hot chocolate it isn't a numbered round, and it has its own random
-  generator.
+  generator. *Since 0.9.0 the first encounter is a fixed milestone after
+  round 5: see [The milestone](#the-milestone-the-daily-grind-after-round-5).*
 - **Hurting it:** steam stops at a chrome collar round the machine and just
   clanks. The **safety valve** on that collar turns to a lane three to six
   lanes from the spoon (a dashed ring marks where), then blows open for
@@ -320,6 +326,402 @@ valve and dodges the red lanes with a quarter-second reaction wins about 90%
 of the time in about 27 seconds, and about a quarter of those are Perfect
 Brews. One that never dodges wins about two-thirds of the time and almost
 never perfectly.
+
+## Added in 0.9.0 — Strange Brews
+
+### Controls
+
+<kbd>↑</kbd> pours milk and <kbd>↓</kbd> fires sugar, beside the turning
+arrows. <kbd>Q</kbd> / <kbd>M</kbd> and <kbd>E</kbd> / <kbd>S</kbd> still work.
+
+### Chapters: the slow burn
+
+The first human playtests reached round 8 without meeting the first boss:
+leaves sped up and arrived faster every round, the kill target grew by four,
+and five new teas arrived at once. 0.9.0 replaces that with a progression
+driven by milestones. A pot is told in **chapters**, and within a chapter
+the leaves' speed and the pace of their arrival hold steady whatever the
+round. What changes from cup to cup is the tea, the fortune, and the spoon.
+
+| | Chapter 1 — *Learning to Steep* | Chapter 2 — *Things Heat Up* |
+| --- | --- | --- |
+| Begins | Round 1 | The cup after The Daily Grind is first beaten |
+| Leaf speed | 41–57 | × 1.15 (about 47–66) |
+| Gap between new leaves | 1 s × jitter 0.72–1.36 | the same |
+| Teas on tap | House Blend, Herbal Tea, Earl Grey | + Chai, Green Tea, Black Tea, one at a time |
+
+- Chapter 1's speed sits about where rounds 1 and 2 used to be. Chapter 2
+  is a single step up, not a ramp: its first round is as fast as its
+  twentieth. Teas and fortunes still modify the speed (and the × 1.35 cap
+  on tea and fortune together still applies), and the jitter keeps arrivals
+  from becoming a metronome.
+- **Round length:** round *n* now ends after 16 + 2(*n* − 1) leaves, up to
+  32 (round 9 on), so a round takes about 20–35 seconds rather than
+  stretching towards a minute.
+- **Losing the milestone keeps the chapter:** a pot stays in Chapter 1, at
+  Chapter 1's pace and with its three teas, until the machine is beaten,
+  however many attempts that takes.
+- **The chapter's first cup** is announced with a shower of gold and a card
+  under the leaves, *THE NEXT BREW AWAITS*, naming the chapter and noting
+  that new teas are on the shelf, with a warm rising chord. Then the cup's
+  own tea card follows.
+- Chapters and their teas live in `CONFIG.chapters`; the progress through
+  them is a small piece of state (`state.progress`, see
+  `gameplay/progress.js`). 0.9.0 has exactly two chapters. A later release
+  can add a third with its own milestone.
+
+### The milestone: The Daily Grind after round 5
+
+*(spoilers)* The coffee boss is now Chapter 1's milestone and a
+guaranteed encounter:
+
+1. Round 5 ends, and its leaves are read as usual (with the spoon upgrade
+   offered after round 5).
+2. The machine rises: *"Someone ordered trouble."* The fight itself, its
+   rewards, and its use of milk are exactly as in 0.8.0.
+3. **Beaten:** +350, the Golden Spoon, and a Perfect Brew's cup as before.
+   The next cup opens Chapter 2, once. The result card adds *"Something
+   new is steeping. The next brew awaits…"*.
+4. **Escaped:** nothing is lost, and the card says when it returns: *"It
+   will be back after 2 more cups."* It comes back after every second
+   normal round (rounds 7, 9, 11, …), at exactly the same strength, until it
+   is beaten. The spoon, its upgrades, the cups, and the fortune carry on as
+   usual meanwhile.
+5. **After the first victory** it returns now and then as before (a 25%
+   chance after a round, at least four rounds after the last), but these
+   rematches open nothing and change no difficulty.
+
+**Hot Chocolate Havoc** now first comes after round 3 or 4, so it never
+meets the first milestone. If a hot chocolate ever wants the same reading
+as a milestone attempt (for example a chance bonus landing on a rematch),
+the machine goes first and the hot chocolate follows the very next reading:
+put off, never lost, never both at once. Later rematches still give way to
+the hot chocolate, as in 0.8.0.
+
+### Tea varieties
+
+Until now the tea was only the arena. Now every normal round brews a
+variety, and the variety is the round's environment: it changes how the
+leaves arrive and move, and how the cup looks and sounds. The fortune read
+from the last round's leaves is a separate layer on top.
+
+- **The first cup** is always the **House Blend**, the familiar tea, so a
+  new player can learn the cup.
+- **Teas come on tap by chapter.** Chapter 1 brews the House Blend, Herbal
+  Tea, and Earl Grey; the House Blend stays in the mix as a breather.
+  Chapter 2 brings **Chai** in its first round, **Green Tea** two rounds
+  later, and **Black Tea** two rounds after that. A tea stays on tap for
+  the rest of the pot. Chai comes first because its movement is predictable
+  and whole-cup; Green Tea's darts follow; Black Tea, the high-scoring,
+  high-pressure variety, comes last.
+- **A new tea is served the round it arrives**, so every player actually
+  meets it, with a longer card marked *✦ NEW ON THE SHELF ✦* and *"New on
+  the shelf!"* in the tip line.
+- **Otherwise** each cup's variety is drawn from its own random generator
+  among the teas on tap (so the order depends only on the seed, not on how
+  the cups are played or on any hot chocolate between them). A variety
+  never comes twice in a row. Its chances grow by one for every round since
+  it was last served (up to four times as likely), and one that hasn't been
+  served for more than seven rounds is served next.
+- **Each variety lasts one round** and expires at the next round start, as
+  fortunes do. A new pot starts again in Chapter 1 with the House Blend.
+- Each cup after the first is **announced** for a few seconds at the top of
+  the cup: *NOW BREWING*, the tea's name, and its motto. The card sits
+  beneath the leaves, so it never hides one, and gets shorter after round 8.
+  The tea's colours ease in over about 1.6 s. The HUD names the tea in the
+  round title ("Cup 3: Earl Grey"), in a pill under the omen, and in a row of
+  the cup status panel, and during play the tip line explains it.
+- **Practice:** `?tea=<id>` brews one variety every cup, as if it had been
+  on tap from the first, without waiting for its chapter. The chapters,
+  the milestone, and the leaf speed run as usual around it.
+
+| Tea | Motto | Rules |
+| --- | --- | --- |
+| **House Blend** | *Just tea. For now.* | The rules as they were. |
+| **Green Tea** | *A Little Too Refreshing* | Leaves rise 10% faster, and some of them dart (below): 10% of leaves at first, 30% at full strength. |
+| **Earl Grey** | *Trouble with a Touch of Class* | Some leaves wander (below): 15% at first, 40% at full strength. |
+| **Chai** | *Spice Things Up* | Spice currents (below), with more warning at first. |
+| **Black Tea** | *Properly Strong* | Leaves arrive 12% more often (the gap between them × 0.88), and every leaf scores 25% more. The limit of 18 leaves in the cup is unchanged. |
+| **Herbal Tea** | *What Could Possibly Go Wrong?* | Leaves rise 12% slower and arrive a little less often (× 1.06); milk clouds last 1 s longer. The Leaves Lie is likelier at the next reading (its weight +1, from about 4% to about 11% of readings, never certain). Now and then a chamomile flower or a few petals float by, with a remark. |
+
+### The learning curve
+
+Darting, wandering, and spice currents start gentle and reach full
+strength in a tea's ninth round on tap, so a player meets each one with
+time to learn it before it gets demanding. The stage depends only on the
+tea's **age**: the normal rounds since it came on tap, counting the round
+it arrives as the first. So Green Tea arriving in round 8 (or round 20,
+after a few lost milestones) starts with its gentlest darts, and a tea
+brews the same way at a given age however often it happened to be served
+before. Earl Grey, on tap from the first cup, has the same age as the
+round number. A pinned `?tea=<id>` counts from the first cup too, so it
+brews like an ordinary pot's tea of the same age.
+
+| | Rounds 1–4 on tap: learn | 5–8: adapt | 9 on: full strength |
+| --- | --- | --- | --- |
+| Green Tea: leaves that dart | 10% | 20% | 30% |
+| Green Tea: crouch before a dash | 0.75 s | 0.65 s | 0.55 s |
+| Green Tea: extra distance of a dash | 10 | 14 | 18 |
+| Earl Grey: leaves that wander | 15% | 25% | 40% |
+| Earl Grey: lean before a glide | 0.8 s | 0.65 s | 0.55 s |
+| Chai: first warning, seconds into the round | 6.5 s | 5.5 s | 5 s |
+| Chai: warning before each current | 2.2 s | 1.9 s | 1.6 s |
+| Chai: calm between currents | 10 s | 8.5 s | 7.5 s |
+
+Everything else about each tea
+(Green Tea's 10% hurry, Black Tea's density and +25%, Herbal Tea's pace
+and milk) is the same in every round. The stages are the boundaries in
+`CONFIG.teas.stages`, and each value above is a per-stage list in
+`CONFIG.darting`, `CONFIG.wandering`, or `CONFIG.currents`. They are a
+starting point for today's game, not a limit on future progression.
+
+### New leaf behaviours
+
+Both are ordinary leaves with one extra behaviour: they die to one hit,
+score like any leaf, and leave residue for the reading. Each has its own
+shape, so colour is never the only clue, and every warning also has a
+sound.
+
+- **Darting leaves** (Green Tea) are slim, notched lances that always point
+  at the rim. Somewhere between radius 60 and 100 a darter **crouches**
+  (0.75 s, 0.65 s, or 0.55 s, by stage): it slows to 35% speed, flickers
+  sideways, and shows a pulsing ring and two chevrons pointing outward.
+  Then it **dashes** for 0.45 s, trailing a streak: it accelerates, then
+  settles back into an ordinary rise, having gone a fixed distance further
+  than an ordinary leaf would in that time (10, 14, or 18 units, by stage;
+  12, 22, and 35 before the chapters slowed the leaves, which would have let
+  a slow full-strength darter reach the rim up to 0.3 s early).
+  - The distance is a fixed budget, not a multiple of the leaf's speed, so
+    a dash doesn't grow with Chapter 2's faster leaves, and neither Green
+    Tea's own hurry nor Tempestuous Tea stretches it. Milk slows a dash
+    like any other movement, and a leaf being washed back doesn't dash.
+  - The crouch gives back about what the dash takes: a darter never
+    reaches the rim noticeably sooner (more than 0.05 s) than an ordinary
+    leaf passing the same point. The surprise is the danger, not lost
+    reaction time.
+  - Even the fastest possible darter, crouching at the furthest point,
+    ends its dash more than 30 units inside the rim and takes over 1.2 s
+    from its first flicker to reach it. A darter never starts a crouch
+    beyond radius 130.
+  - The movement is the same at any frame rate: a stage that ends partway
+    through a frame is split exactly.
+- **Wandering leaves** (Earl Grey) have a curling tendril and a lavender
+  edge. Somewhere between radius 65 and 100 a wanderer **leans** (0.8 s,
+  0.65 s, or 0.55 s, by stage), with a curved arrow towards the neighbouring
+  lane and a dashed ghost where it is going, and does not move sideways.
+  Then it **glides** into that lane over 0.35 s and leaves a short lavender
+  trail. It changes lane once, ends exactly on the new lane, and is always
+  in the middle of the cup: even the fastest leaf a stage can bring
+  finishes its glide inside 85% of the rim radius, and a wanderer never
+  starts to lean beyond radius 130.
+
+### Spice currents (Chai)
+
+On a fixed clock, every leaf in the cup is carried one lane sideways:
+
+- Early in the round (6.5 s, 5.5 s, or 5 s in, by stage), two rings of
+  amber chevrons appear, pointing the current's way round the cup. They
+  brighten for the warning (**2.2 s**, **1.9 s**, or **1.6 s**), during
+  which nothing moves.
+- Then for **0.9 s** every leaf in the cup glides exactly one lane in that
+  direction, trailing spice. Leaves that appear during the glide aren't
+  carried.
+- A calm follows (10 s, 8.5 s, or 7.5 s, by stage), and the next current
+  runs the **other way**. The first direction is drawn from the tea
+  generator when the round starts.
+
+The timing never varies within a round, so a player can learn to aim one
+lane ahead. The clock keeps time at any frame rate.
+
+### Tea and fortune together
+
+The tea's modifiers are folded into the fortune's by fixed rules
+(`roundModifiers()` in `gameplay/teas.js`): multipliers multiply, bonuses
+add, chances take the larger, and switches combine. Leaf speed from tea and
+fortune together is capped at × 1.35. Nothing is special-cased; these come
+out of the rules:
+
+| Combination | Result |
+| --- | --- |
+| Green Tea + Double Trouble | Quick, darting leaves against paired steam |
+| Green Tea + Tempestuous Tea | Leaves × 1.10 × 1.18 ≈ 1.30 speed |
+| Earl Grey + The Spiral | A wanderer steps first (inside radius 100), then The Spiral nudges it at radius 140; every move ends on a lane |
+| Chai + Tempestuous Tea | Faster leaves and currents together, every current still warned |
+| Black Tea + The Spiral | Kills score × 1.25 × 1.25 ≈ × 1.56, applied once |
+| Black Tea + the Golden Spoon | Twice the steam, and every leaf worth 25% more |
+| Herbal Tea + The Veil | Milk clouds last 2.5 + 1 s longer |
+| Herbal Tea, then The Leaves Lie | Likelier; still whimsical, still harmless |
+
+The unexpected brews and the secrets work as before under every tea.
+
+### Milk's recovery pulse
+
+Milk used to help only in the wedge in front of the spoon. Now, in a normal
+round, every pour also sends a **recovery pulse** through the whole cup: a
+short chance to catch up when several leaves get away at once.
+
+- **Every leaf** in the cup is pushed **40 units** back towards the centre
+  (never further in than where it started) and moves at **65%** speed for
+  **1.5 s**.
+- **The local cloud is unchanged:** in front of the spoon, the 120-unit
+  backwash and the 5.2 s cloud at 31% speed still apply, with every fortune,
+  tea, combination, and upgrade interaction as before.
+- **They never add up:** a leaf under the cloud gets the cloud's 120-unit
+  push, not 160, and its 31% speed, not 31% × 65%. The stronger push and
+  the stronger slowdown win.
+- **A second pour restarts the pulse** (and gives each leaf a fresh 40-unit
+  push); it never deepens the slowdown. Two pours per round, as before.
+- **It awards nothing of its own:** no near misses, milk kills, Veil credit,
+  secrets, or points. Those stay with the cloud.
+- **Normal rounds only.** Milk against The Daily Grind (washing beans back,
+  making the machine sputter) is unchanged, and Hot Chocolate Havoc has no
+  milk.
+- **Looks and sound:** a pale ripple spreads across the tea while a soft
+  crest rolls in from all round the rim, and a faint white ring glows just
+  inside the rim until the slowdown ends. All of it sits beneath the leaves
+  and aim markers. With reduced motion it is a still glow; Low graphics
+  drops the ring's bloom. A soft, low hush plays with it, and the first
+  pulse of a pot is explained once.
+- Darting, wandering, currents, The Spiral, Tempestuous Tea, and The
+  Perfect Storm all work as before: a leaf being washed back doesn't dash,
+  glides and drifts still carry it sideways, and speed modifiers multiply
+  the slowed speed as usual.
+
+### Bonus encounters
+
+Hot Chocolate Havoc and The Daily Grind keep their own liquids, music, and
+rules. Neither reads the tea or the chapter: marshmallows cook, beans fly,
+and the boss's health and rewards are exactly as in 0.8.0. The next normal
+round brews its own tea and its fortune as usual.
+
+### Music
+
+Each tea touches the band during play, on top of the tension layers:
+
+| Tea | What changes |
+| --- | --- |
+| Green Tea | 6 BPM brisker, light hats from the start, the melody an octave up, a lighter pad |
+| Earl Grey | 4 BPM slower, a ninth in the pad, a raised sixth (B♮) in the melody |
+| Chai | 4 BPM quicker, a hand-drum pattern in threes and twos in place of the plain kick |
+| Black Tea | 6 BPM quicker, quarter-note bass and kick even when calm |
+| Herbal Tea | 10 BPM slower, a chattier melody, no drums until the leaves get close |
+
+### Tuning
+
+Bots played 150 pots with each tea brewed every round, and 200 ordinary pots,
+at two skill levels: a casual bot (a quarter-second reaction) and a novice
+(almost half a second, sometimes chasing the wrong leaf). For the novice,
+rounds 2 to 12:
+
+| Tea | Cups lost per round | Points per round | Median round |
+| --- | --- | --- | --- |
+| House Blend | 0.40 | 367 | 30.9 s |
+| Green Tea | 0.45 | 343 | 29.5 s |
+| Earl Grey | 0.41 | 358 | 30.7 s |
+| Chai | 0.40 | 362 | 30.5 s |
+| Black Tea | 0.45 | 446 | 26.8 s |
+| Herbal Tea | 0.32 | 392 | 33.7 s |
+
+The first version of Black Tea (leaves × 0.84 apart) cost novices nearly
+twice as many cups as the other teas, and the first Herbal Tea (× 1.12)
+dragged, so both were softened. Darting and wandering were first tuned so
+that, at the fastest possible speed, a darter could reach the rim
+mid-sprint; they now always finish well inside it. Earl Grey and Chai cost
+little extra: their movements are learnable rather than punishing.
+
+#### The learning curve, after the first human playtest
+
+The first human playtest found the new behaviours interesting but the
+difficulty rising too quickly, with Green Tea's darts the main culprit:
+the bots that tuned them react faster and know where every leaf is. Two
+things changed. The behaviours now grow through the three stages above
+instead of starting at full strength in round 2. And a dash is now a fixed
+extra distance rather than double speed: the old sprint went further as
+the rounds made leaves faster, about 25 extra units in round 2 and 42 to
+50 from round 9.
+
+The same bots replayed the same seeds before and after (150 pots per
+tea brewed every round, and 300 ordinary pots, at both skill levels).
+For the novice bot with Green Tea every round:
+
+| Rounds | Darters per round | Darters reaching the rim per round | Where a dash ends (median radius) |
+| --- | --- | --- | --- |
+| 2–4 | 5.9 → 1.9 | 0.09 → 0.02 | 150 → 134 |
+| 5–8 | 9.5 → 6.2 | 0.56 → 0.25 | 175 → 158 |
+| 9–14 | 10.5 → 10.5 | 1.09 → 0.96 | 194 → 181 |
+
+Earl Grey's wanderers reaching the rim fell from 0.13 to 0.04 per round
+in rounds 2–4 and from 0.69 to 0.43 in rounds 5–8. Chai's currents cost
+the bots little either way. Cups lost per round barely moved for any tea:
+for both bots the base speed and spawn curve decides most losses, and
+even the novice bot loses only about 0.03 cups a round in rounds 2–4 of
+the House Blend. So base speed was left alone. What the bots can't feel
+is surprise, and that is what the gentler start is for.
+
+Black Tea and Herbal Tea are unchanged. Brewed every round, Black Tea
+costs the novice bot about 0.08 cups a round in rounds 2–4 (House Blend
+0.03, Green Tea 0.06): the most of any tea, as the high-pressure variety
+should, but still about one cup in twelve early rounds. Herbal Tea stays
+the calmest, with rounds about 1.3 s longer than the House Blend early on.
+
+Darting returns to full strength in round 9, so that is where the bots
+feel the step most (novice darters reaching the rim: 0.31 per round in
+round 8, 1.00 in round 9, against 0.86 and 1.08 before). The human
+playtest should watch that step. *(With the chapters, that step now comes
+in Green Tea's ninth round on tap, at the earliest round 16.)*
+
+#### The slow burn, after the second human playtest
+
+A player who reached round 8 several times had still not met the first
+boss, and felt overwhelmed when several new teas arrived together. Hence
+the chapters, the milestone, the staggered teas, and the recovery pulse
+above.
+
+The bots replayed 300 ordinary pots per skill level (seeds 1001–1300, up to
+round 16) on the previous 0.9.0 candidate and on this one. Besides the
+casual (0.25 s) and novice (0.45 s, a third of the time chasing the wrong
+leaf) bots, a **struggling** bot reacts every 0.7 s, chases the wrong leaf
+half the time, and pours milk late. On the old curve it plays much like the
+human playtest did: a median of round 7, and only 28% of pots reaching the
+boss. All bots aim instantly, so they still understate human difficulty;
+read the shape, not the numbers.
+
+| Struggling bot | Before | After |
+| --- | --- | --- |
+| Pots that meet The Daily Grind | 28% | 100% |
+| First encounter (median) | after round 6, 200 s in | after round 5, 147 s in |
+| Pots that reach round 10 | 2% | 99% |
+| Pots that brew Chai / Green Tea / Black Tea | 80% / 84% / 83% | 100% / 100% / 99% |
+| Leaves reaching the rim per round, rounds 1–5 | 0.75 | 0.18 |
+| … rounds 6–10 | 2.78 | 0.41 |
+| Cups lost per round, rounds 1–5 | 0.23 | 0.01 |
+| … rounds 6–10 | 1.14 | 0.04 |
+| Median round length, rounds 1–5 | 25.9 s | 22.7 s |
+| … rounds 6–10 | 34.6 s | 32.2 s |
+
+Round by round (after), leaves reaching the rim go 0.17, 0.14, 0.17, 0.20,
+0.22 through Chapter 1, then 0.26 in Chapter 2's first round (Chai), and
+about 0.5 when Green Tea and Black Tea arrive (rounds 8 and 10). The
+chapter's step is felt without a wall, and most of the added pressure comes
+from the new teas. The novice bot meets the boss in every pot (71% before),
+and the casual and steady bots after round 5 instead of round 7 (about
+145 s in rather than 230 s). The machine itself is unchanged: bots still
+win 82–86% of fights.
+
+For the pulse, the same candidate was replayed with the pulse switched off.
+Of the leaves near the rim (beyond 80% of its radius) when the struggling
+bot poured milk, 72% still reached the rim within 2.5 s without the pulse,
+and 8% with it. Overall it cuts the leaves reaching the rim by about a
+sixth (0.48 → 0.41 per round in rounds 6–10): a recovery tool, not a
+shield. A bot that always loses the boss
+meets it after rounds 5, 7, 9, 11, 13, and 15, stays in Chapter 1 with its
+three teas throughout, and its rounds settle at about 33 s once the target
+reaches 32.
+
+The bots now rarely lose cups at all, in either chapter. That is
+deliberate for 0.9.0, which is about meeting the game's content, and it
+leaves the late-game plateau (issue #13) for the chapters and bosses still
+to come.
 
 ## Future ideas (not implemented)
 

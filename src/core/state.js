@@ -1,5 +1,6 @@
 import { CONFIG } from '../config.js';
 import { modifiersFor } from '../gameplay/fortunes.js';
+import { createProgress } from '../gameplay/progress.js';
 import { createSpoon } from '../gameplay/upgrades.js';
 
 /** Game phases. See docs/ARCHITECTURE.md for the transition diagram. */
@@ -46,13 +47,20 @@ export function createInitialState() {
     graceTime: 0, // seconds left in which the cup is recovering from a spill
 
     // Kept for the whole pot, separate from the round's fortune modifiers.
+    progress: createProgress(), // the chapter, and the round each one began; see gameplay/progress.js
     spoon: createSpoon(), // upgrade levels; see gameplay/upgrades.js
     goldenSpoon: 0, // seconds of Golden Spoon left (only runs during play)
     offer: null, // upgrade ids offered during the current reading, or null
 
     fortune: null, // fortune id active this round
     nextFortune: null, // fortune id revealed by the latest reading
-    modifiers: modifiersFor(null),
+    modifiers: modifiersFor(null), // the fortune's and the tea's, combined (gameplay/teas.js)
+
+    // Strange Brews (gameplay/teas.js).
+    tea: 'house', // tea variety of the current (or latest) normal round
+    teaAge: 1, // normal rounds that tea has been on tap, counting this one; sets its strength
+    teaServed: {}, // tea id -> the round it was last served, for the variety draw
+    current: null, // Chai's spice current clock this round; see createCurrent()
 
     angle: CONFIG.player.startAngle, // spoon position on the rim
     shotCooldown: 0,
@@ -78,14 +86,16 @@ export function createInitialState() {
     chocolate: null, // the bonus round in progress; see createHavoc()
 
     // The Daily Grind (gameplay/grind.js).
-    grindAfter: null, // the round after which the first encounter comes, until it has
+    grindAfter: null, // the round the milestone encounter follows, until it is beaten (then null)
     lastGrind: 0, // the round after which the latest encounter came
     grindDue: false, // decided at each reading: the coffee boss before the next cup?
     grind: null, // the encounter in progress; see createGrind()
 
     shots: [], // { angle, radius, speed, sugar, veer, golden, volley?, nova?, cream? }
-    enemies: [], // { angle, radius, home, speed, wiggle, shifted, size, alpha, backwash }
+    // { kind, angle, radius, home, speed, wiggle, shifted, size, alpha, backwash, glide, dart?, wander? }
+    enemies: [],
     clouds: [], // { angle, time, duration, spread, drift }
+    pulse: 0, // seconds left of milk's recovery pulse, which slows every leaf in a normal round
     residue: [], // { lane, radius, angle, spin, size }
     roundStats: createRoundStats(),
   };

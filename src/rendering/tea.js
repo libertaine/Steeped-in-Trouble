@@ -22,6 +22,40 @@ const PRISM = ['#ff7aa8', '#ffd36b', '#8dffb8', '#7ccfff', '#c79bff'];
 const COCOA_TONES = ['#c58a5a', '#e2b98e', '#a8653a', '#f0d6b4'];
 const COCOA_DARK = '#0b0300';
 
+/**
+ * Strange Brews: each variety's liquid. `base` is the radial gradient from
+ * the lit side to the rim, `light` the four colours of the bright currents,
+ * `dark` the shadowy ones; `spin` scales how lively the currents turn and
+ * `calm` caps how turbulent the cup gets. All stay well clear of the cream
+ * of milk, the pale gold of sugar, the blue-white of steam, and warning red.
+ */
+const TEA_LIQUIDS = {
+  house: {
+    base: ['#7d4a1d', '#643913', '#3a1e0a', '#1d0e05'],
+    light: ['#d9933f', '#c36f2c', '#f0c070', '#e8a95a'], dark: '#120602', spin: 1, calm: 1,
+  },
+  green: {
+    base: ['#6f7428', '#57601f', '#323a12', '#171d08'],
+    light: ['#b8d266', '#98b848', '#dfeb8e', '#c6dc78'], dark: '#0b1104', spin: 1.35, calm: 1,
+  },
+  earlGrey: {
+    base: ['#86592e', '#6a4222', '#3d2516', '#1d110a'],
+    light: ['#d9a35f', '#b28ad6', '#efc68a', '#c6a6e6'], dark: '#140a0c', spin: 0.9, calm: 0.85,
+  },
+  chai: {
+    base: ['#8d401c', '#702c12', '#43180a', '#200a04'],
+    light: ['#f0904a', '#de6f34', '#ffbf6e', '#f4a052'], dark: '#170502', spin: 1.8, calm: 1,
+  },
+  black: {
+    base: ['#4e2b12', '#3a1e0b', '#1f0f05', '#0a0401'],
+    light: ['#e09040', '#b8642a', '#f6b85e', '#ea9442'], dark: '#050100', spin: 1.1, calm: 1,
+  },
+  herbal: {
+    base: ['#8e5a5e', '#734552', '#45283c', '#22121e'],
+    light: ['#f2a2ba', '#e6c070', '#cfe0a0', '#f6c6d6'], dark: '#140810', spin: 0.6, calm: 0.55,
+  },
+};
+
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 const rgbCache = new Map();
@@ -34,6 +68,14 @@ function mixColor(a, b, t) {
   const A = rgb(a);
   const B = rgb(b);
   return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`;
+}
+/** Blend two '#rrggbb' colours into another '#rrggbb', so it can be blended again. */
+function mixHex(a, b, t) {
+  if (t <= 0) return a;
+  if (t >= 1) return b;
+  const A = rgb(a);
+  const B = rgb(b);
+  return `#${A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join('')}`;
 }
 
 /** 0 → 1 → 0 over a lifetime. */
@@ -63,6 +105,7 @@ export function createTea({ random = Math.random } = {}) {
     milkiness: 0,
     choco: 0, // 0 = tea, 1 = hot chocolate (eases between them)
     coffee: 0, // 1 while that thicker liquid is coffee instead (The Daily Grind)
+    variety: { from: 'house', to: 'house', blend: 1 }, // the tea's colours, easing from one variety to the next
     glow: 0, // fortune-reading luminescence
     glowColor: '#ffd27e',
     tint: null, // The Leaves Lie: { color, age, life } — the tea briefly turns an absurd colour
@@ -72,7 +115,7 @@ export function createTea({ random = Math.random } = {}) {
     blobs: [],
     ripples: [],
     wisps: [],
-    surges: [], // milk backwash: a pale wave rolling in from the rim, { angle, reach, age, life }
+    surges: [], // milk backwash: a pale wave rolling in from the rim, { angle, reach, age, life, full? }
     crystals: [],
     glows: [],
     oddities: [],
@@ -105,7 +148,7 @@ export function createTea({ random = Math.random } = {}) {
       speed: rnd(0.25, 0.9),
       seed: rnd(0, TAU),
       light,
-      tone: light ? ['#d9933f', '#c36f2c', '#f0c070', '#e8a95a'][Math.floor(random() * 4) % 4] : '#120602',
+      shade: Math.floor(random() * 4) % 4, // which of the variety's light colours it takes
       cocoa: light ? COCOA_TONES[Math.floor(random() * 4) % 4] : COCOA_DARK,
       alpha: light ? rnd(0.05, 0.11) : rnd(0.14, 0.26),
     };
@@ -222,8 +265,10 @@ export function createTea({ random = Math.random } = {}) {
   const rimPoint = (angle, inset = 6) => polar(RIM - inset, angle);
 
   const handlers = {
-    roundStart() {
-      // A fresh cup: swirl it up.
+    roundStart({ tea = 'house' } = {}) {
+      // A fresh cup: swirl it up, easing into its tea's colours.
+      const v = liquid.variety;
+      if (tea !== v.to) Object.assign(v, { from: v.to, to: tea, blend: 0 });
       liquid.milkiness = 0;
       liquid.wisps = [];
       liquid.surges = [];
@@ -333,6 +378,17 @@ export function createTea({ random = Math.random } = {}) {
         for (let i = 0; i < 5; i++) crystal(p.x, p.y, 40);
       }
     },
+    milkPulse() {
+      // The recovery pulse: a pale ripple spreads through the whole cup while a soft crest
+      // rolls in from every side of the rim. With reduced motion, a still glow instead.
+      liquid.milkiness = Math.min(1, liquid.milkiness + 0.2);
+      if (liquid.reduced) {
+        glow(CX, CY, RIM, '#f3ece0', CONFIG.milk.pulse.duration, 0.45);
+        return;
+      }
+      ripple(CX, CY, { size: RIM * 1.02, life: 1.5, strength: 0.75, rings: 2, tone: '#f8f2e6' });
+      push(liquid.surges, { angle: 0, full: true, reach: CONFIG.milk.pulse.backwash + 30, age: 0, life: 1.1 }, LIMITS.surges);
+    },
     milk({ angle, cloud = angle, spread = 1 }) {
       kick(0.3);
       liquid.milkiness = Math.min(1, liquid.milkiness + 0.5);
@@ -377,6 +433,48 @@ export function createTea({ random = Math.random } = {}) {
     drift({ radius, angle }) {
       const p = polar(radius, angle);
       ripple(p.x, p.y, { size: 20, life: 0.8, strength: 0.7, rings: 1, tone: '#e5d9b0' });
+    },
+
+    // Strange Brews.
+    dart({ radius, angle }) {
+      const p = polar(radius, angle);
+      ripple(p.x, p.y, { size: 26, life: 0.6, strength: 0.9, rings: 2, tone: '#d9f59a' });
+    },
+    wander({ radius, angle }) {
+      const p = polar(radius, angle);
+      ripple(p.x, p.y, { size: 22, life: 0.9, strength: 0.6, rings: 1, tone: '#d7c2f6' });
+    },
+    currentWarn({ dir }) {
+      // The rim shivers in the current's direction.
+      for (let i = 0; i < 6; i++) {
+        const p = rimPoint((i / 6) * TAU + dir * 0.2, 10);
+        ripple(p.x, p.y, { size: 26, life: 1.1, strength: 0.6, rings: 1, tone: '#ffb85c' });
+      }
+    },
+    currentFlow({ dir }) {
+      // The whole cup is swept round.
+      kick(0.4);
+      liquid.spin += dir * 0.45;
+      for (let i = 0; i < 40; i++) {
+        const at = randomSpot(RIM - 20, 40);
+        crystal(at.x, at.y, 30, rnd(0.4, 0.9), chance(0.5) ? '#ffb85c' : '#ffd9a0');
+      }
+    },
+    /** Herbal Tea's harmless oddities. */
+    herbal({ kind }) {
+      if (kind === 'blossom') {
+        const at = randomSpot(RIM - 60, 50);
+        oddity('blossom', { ...at, rot: rnd(0, TAU), spinRate: rnd(-0.5, 0.5), size: rnd(9, 14), life: rnd(6, 9) });
+        ripple(at.x, at.y, { size: 30, life: 1.2, strength: 0.6, rings: 2, tone: '#f6c6d6' });
+      } else {
+        const at = randomSpot(RIM - 70, 40);
+        for (let i = 0; i < 7; i++) {
+          oddity('petal', {
+            x: at.x + rnd(-30, 30), y: at.y + rnd(-30, 30), rot: rnd(0, TAU), spinRate: rnd(-1.4, 1.4),
+            size: rnd(5, 8), life: rnd(4, 7), color: chance(0.6) ? '#f6c6d6' : '#fff2c8',
+          });
+        }
+      }
     },
     strain({ angle }) {
       kick(0.15);
@@ -549,8 +647,8 @@ export function createTea({ random = Math.random } = {}) {
     for (let i = list.length - 1; i >= 0; i--) {
       const o = list[i];
       o.age += sdt;
-      if (o.kind === 'bubble' || o.kind === 'stem' || o.kind === 'whirlpool') carry(o, sdt);
-      if (o.kind === 'stem' || o.kind === 'biscuit') o.rot += o.spinRate * sdt;
+      if (['bubble', 'stem', 'whirlpool', 'blossom', 'petal'].includes(o.kind)) carry(o, sdt);
+      if (['stem', 'biscuit', 'blossom', 'petal'].includes(o.kind)) o.rot += o.spinRate * sdt;
       if (o.kind === 'biscuit') {
         o.x += o.vx * sdt;
         o.y += o.vy * sdt;
@@ -608,7 +706,12 @@ export function createTea({ random = Math.random } = {}) {
         moodTarget = r < 0.5 ? rnd(0.05, 0.3) : r < 0.86 ? rnd(0.3, 0.6) : rnd(0.7, 1);
         if (chance(0.18)) liquid.drift = -liquid.drift;
       }
-      const target = reading ? 0.02 : stormy ? Math.max(moodTarget, 0.9) : moodTarget;
+      // The variety sets the cup's temperament: lively currents for chai, a hush for herbal.
+      const variety = liquid.variety;
+      variety.blend = Math.min(1, variety.blend + sdt / 1.6);
+      if (variety.blend >= 1) variety.from = variety.to;
+      const temper = TEA_LIQUIDS[variety.to] ?? TEA_LIQUIDS.house;
+      const target = reading ? 0.02 : stormy ? Math.max(moodTarget, 0.9) : moodTarget * temper.calm;
       liquid.mood += (target - liquid.mood) * Math.min(1, sdt * (stormy ? 0.8 : 0.4));
       liquid.stir *= Math.exp(-sdt * (reading ? 2 : 0.7));
       liquid.agitation = clamp(liquid.mood + liquid.stir, 0, 1.2);
@@ -620,7 +723,7 @@ export function createTea({ random = Math.random } = {}) {
       if (liquid.choco < 0.002) liquid.choco = 0;
 
       const base = liquid.drift * (0.04 + 0.09 * liquid.agitation) * (reading ? 0.4 : stormy ? 2.4 : 1)
-        * (1 - 0.45 * liquid.choco);
+        * (1 - 0.45 * liquid.choco) * (1 + (temper.spin - 1) * (1 - liquid.choco));
       liquid.spin += (liquid.spoon.speed * 0.02 - (liquid.spin - base) * 0.3) * sdt;
       liquid.flow += liquid.spin * sdt * motion;
 
@@ -800,11 +903,13 @@ export function createTeaPainter(main) {
   const blot = (color, x, y, rx, ry = rx) => ctx.drawImage(sprite(color), x - rx, y - ry, rx * 2, ry * 2);
 
   function gradients() {
-    const base = ctx.createRadialGradient(CX - 62, CY - 84, 16, CX, CY, RIM + 8);
-    base.addColorStop(0, '#7d4a1d');
-    base.addColorStop(0.3, '#643913');
-    base.addColorStop(0.7, '#3a1e0a');
-    base.addColorStop(1, '#1d0e05');
+    // One base gradient per tea variety, lit from the same unseen window.
+    const bases = {};
+    for (const [id, liquid] of Object.entries(TEA_LIQUIDS)) {
+      const g = ctx.createRadialGradient(CX - 62, CY - 84, 16, CX, CY, RIM + 8);
+      [0, 0.3, 0.7, 1].forEach((at, i) => g.addColorStop(at, liquid.base[i]));
+      bases[id] = g;
+    }
     const shadow = ctx.createRadialGradient(CX, CY, RIM - 48, CX, CY, RIM);
     shadow.addColorStop(0, 'rgba(10,4,1,0)');
     shadow.addColorStop(1, 'rgba(10,4,1,0.55)');
@@ -820,7 +925,7 @@ export function createTeaPainter(main) {
     brew.addColorStop(0.35, '#3b200e');
     brew.addColorStop(0.75, '#231206');
     brew.addColorStop(1, '#120802');
-    return { base, shadow, cocoa, brew };
+    return { bases, shadow, cocoa, brew };
   }
 
   /** Nudge a point outward from any ripple ring passing over it. */
@@ -877,6 +982,9 @@ export function createTeaPainter(main) {
     const thick = 1 + 0.4 * choco;
     const lazy = 1 - 0.45 * choco;
     const recolor = clamp((choco - 0.15) / 0.7, 0, 1);
+    const { from, to, blend } = liquid.variety;
+    const was = TEA_LIQUIDS[from] ?? TEA_LIQUIDS.house;
+    const now = TEA_LIQUIDS[to] ?? TEA_LIQUIDS.house;
     ctx.globalCompositeOperation = light ? 'lighter' : 'source-over';
     for (let n = 0; n < Math.min(detail.strands, liquid.strands.length); n++) {
       const s = liquid.strands[n];
@@ -893,7 +1001,8 @@ export function createTeaPainter(main) {
       }
       ctx.globalAlpha = s.alpha * swell(s.age, s.life) * (0.75 + 0.45 * agitation)
         * (light ? detail.glow * (1 - 0.25 * choco) : 1);
-      ctx.fillStyle = recolor > 0 ? mixColor(s.tone, s.cocoa, recolor) : s.tone;
+      const tone = light ? mixHex(was.light[s.shade], now.light[s.shade], blend) : mixHex(was.dark, now.dark, blend);
+      ctx.fillStyle = recolor > 0 ? mixColor(tone, s.cocoa, recolor) : tone;
       ribbon(POINTS);
     }
     ctx.globalCompositeOperation = 'source-over';
@@ -1168,6 +1277,37 @@ export function createTeaPainter(main) {
           ctx.fill();
         }
         ctx.restore();
+      } else if (o.kind === 'blossom') {
+        // Herbal Tea: a chamomile flower, floating serenely. Pale and flat, so it never reads as a foe.
+        const fade = clamp(Math.min(o.age / 0.8, (o.life - o.age) / 1.2), 0, 1);
+        ctx.save();
+        ctx.translate(o.x, o.y);
+        ctx.rotate(o.rot);
+        ctx.globalAlpha = 0.55 * fade;
+        ctx.fillStyle = '#fff6ee';
+        for (let k = 0; k < 11; k++) {
+          ctx.rotate(TAU / 11);
+          ctx.beginPath();
+          ctx.ellipse(o.size * 0.62, 0, o.size * 0.5, o.size * 0.17, 0, 0, TAU);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 0.75 * fade;
+        ctx.fillStyle = '#f2c84a';
+        ctx.beginPath();
+        ctx.arc(0, 0, o.size * 0.3, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      } else if (o.kind === 'petal') {
+        const fade = clamp(Math.min(o.age / 0.6, (o.life - o.age) / 1), 0, 1);
+        ctx.save();
+        ctx.translate(o.x, o.y);
+        ctx.rotate(o.rot);
+        ctx.globalAlpha = 0.62 * fade;
+        ctx.fillStyle = o.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, o.size, o.size * 0.45, 0, 0, TAU);
+        ctx.fill();
+        ctx.restore();
       } else if (o.kind === 'starlight') {
         ctx.globalCompositeOperation = 'lighter';
         ctx.fillStyle = '#fff8e2';
@@ -1233,15 +1373,19 @@ export function createTeaPainter(main) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
-  /** Milk backwash: a creamy crest rolling inward, the wedge behind it clouding over. */
+  /**
+   * Milk backwash: a creamy crest rolling inward, the wedge behind it clouding
+   * over. The recovery pulse's surge (`full`) rolls in from the whole rim,
+   * fainter, and has no ends to curl.
+   */
   function drawSurges(liquid) {
     ctx.lineCap = 'round';
     for (const sg of liquid.surges) {
       const u = sg.age / sg.life;
       const ease = 1 - (1 - u) ** 2.2;
       const front = RIM - 8 - sg.reach * ease;
-      const half = LANE_STEP * 1.65 * (0.85 + 0.35 * u);
-      const fade = (1 - u) ** 1.3;
+      const half = sg.full ? Math.PI : LANE_STEP * 1.65 * (0.85 + 0.35 * u);
+      const fade = (1 - u) ** 1.3 * (sg.full ? 0.6 : 1);
       // The milky body between the rim and the front.
       ctx.globalAlpha = 0.2 * fade;
       ctx.strokeStyle = '#efe6d6';
@@ -1259,7 +1403,7 @@ export function createTeaPainter(main) {
       ctx.stroke();
       ctx.lineWidth = 2;
       ctx.globalAlpha = 0.35 * fade;
-      for (const side of [-1, 1]) {
+      for (const side of sg.full ? [] : [-1, 1]) {
         const end = sg.angle + side * half;
         const tip = polar(front, end);
         ctx.beginPath();
@@ -1316,8 +1460,16 @@ export function createTeaPainter(main) {
       prepare(detail.fullResolution ? Math.max(1, Math.min(2, scale)) : 1);
       ctx = soft;
       cached ??= gradients();
-      ctx.fillStyle = cached.base;
+      // The tea's own colour, cross-fading when a new variety is brewed.
+      const { from, to, blend } = liquid.variety;
+      ctx.fillStyle = cached.bases[from] ?? cached.bases.house;
       ctx.fillRect(CX - RIM, CY - RIM, RIM * 2, RIM * 2);
+      if (blend > 0 && to !== from) {
+        ctx.globalAlpha = blend;
+        ctx.fillStyle = cached.bases[to] ?? cached.bases.house;
+        ctx.fillRect(CX - RIM, CY - RIM, RIM * 2, RIM * 2);
+        ctx.globalAlpha = 1;
+      }
       if (liquid.choco > 0.01) {
         ctx.globalAlpha = liquid.choco;
         ctx.fillStyle = liquid.coffee ? cached.brew : cached.cocoa;

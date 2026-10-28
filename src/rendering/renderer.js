@@ -12,6 +12,7 @@ import { COMBOS } from '../gameplay/combos.js';
 import { spoonLane } from '../gameplay/player.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { grindInProgress } from '../gameplay/grind.js';
+import { TEAS, currentStageLength } from '../gameplay/teas.js';
 import { createGrindPainter } from './grind.js';
 import { createTeaPainter } from './tea.js';
 
@@ -39,6 +40,11 @@ const AIM = {
   danger: '#ff5a3a', // and the lanes it is about to scald
 };
 const AIM_FADE = 0.12; // seconds for the highlight to cross-fade to a new lane
+
+// Strange Brews: leaf behaviours and Chai's currents. Each also has its own shape or arrow, never colour alone.
+const DART = '#d9f59a';
+const WANDER = '#d7c2f6';
+const SPICE = '#ffb85c';
 
 /** Is the spoon aiming right now (a round, the toasting, or the boss fight in progress, or paused during one)? */
 function aiming(state) {
@@ -960,20 +966,256 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
     ctx.restore();
   }
 
-  function drawEnemy(e) {
+  /** Green Tea's darting leaf: a slim lance with a notched tail, always pointing at the rim. */
+  function dartShape(x, y, size, rotation, opacity) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = '#cfe08a';
+    ctx.strokeStyle = '#1c2a0c';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.4);
+    ctx.bezierCurveTo(size * 0.55, -size * 0.6, size * 0.55, size * 0.4, size * 0.3, size * 0.95);
+    ctx.lineTo(0, size * 0.55);
+    ctx.lineTo(-size * 0.3, size * 0.95);
+    ctx.bezierCurveTo(-size * 0.55, size * 0.4, -size * 0.55, -size * 0.6, 0, -size * 1.4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#f6ffe0';
+    ctx.beginPath();
+    ctx.arc(0, -size * 1.15, size * 0.18, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /** Two chevrons along a lane, pointing outward from `radius`. */
+  function laneChevrons(radius, angle, color, opacity, count = 2) {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    for (let k = 0; k < count; k++) {
+      const tip = polar(radius + 10 * k, angle);
+      const back = 6;
+      const left = polar(radius + 10 * k - back, angle - 0.045);
+      const right = polar(radius + 10 * k - back, angle + 0.045);
+      ctx.beginPath();
+      ctx.moveTo(left.x, left.y);
+      ctx.lineTo(tip.x, tip.y);
+      ctx.lineTo(right.x, right.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** A curved arrow from a leaf towards the neighbouring lane it is about to glide into. */
+  function wanderArrow(e, opacity) {
+    const dir = e.wander.dir;
+    const r = e.radius + e.size + 7;
+    const end = e.angle + dir * LANE_STEP * 0.75;
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = WANDER;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(CX, CY, r, e.angle, end, dir < 0);
+    ctx.stroke();
+    const tip = polar(r, end);
+    const tangent = end + (dir * Math.PI) / 2;
+    ctx.translate(tip.x, tip.y);
+    ctx.rotate(tangent);
+    ctx.beginPath();
+    ctx.moveTo(-5, -4);
+    ctx.lineTo(0, 0);
+    ctx.lineTo(-5, 4);
+    ctx.stroke();
+    ctx.restore();
+    // Where it is going: a dashed ghost in the next lane.
+    const ghost = polar(e.radius, e.angle + dir * LANE_STEP);
+    ctx.save();
+    ctx.globalAlpha = opacity * 0.6;
+    ctx.strokeStyle = WANDER;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.arc(ghost.x, ghost.y, e.size + 3, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawEnemy(e, reduced = false) {
     const p = polar(e.radius, e.angle);
-    const scale = e.size * (1 + Math.sin(time * 7 + e.wiggle) * 0.08);
-    const rotation = e.angle + Math.PI / 2 + Math.sin(time * 3 + e.wiggle) * 0.3;
+    const lively = reduced ? 0 : 1;
+    const scale = e.size * (1 + Math.sin(time * 7 + e.wiggle) * 0.08 * lively);
+    const rotation = e.angle + Math.PI / 2 + Math.sin(time * 3 + e.wiggle) * 0.3 * lively;
     // A soft shadow lifts the leaf off the tea so it never melts into the currents.
     circle(p.x + 1.5, p.y + 2.5, scale * 1.15, '#0c0501', 0, true, e.alpha * 0.4);
-    leafShape(p.x, p.y, scale, rotation, '#dcb877', e.alpha);
-    circle(p.x, p.y, scale + 4, '#ead199', 0.65, false, e.alpha * 0.3);
+    if (e.kind === 'darter') {
+      const stage = e.dart?.stage;
+      const crouch = stage === 'warning';
+      // Crouching, it flickers sideways; with reduced motion the ring alone gives it away.
+      const jitter = crouch ? Math.sin(time * 55) * 1.8 * lively : 0;
+      const q = polar(e.radius, e.angle + jitter / Math.max(30, e.radius));
+      dartShape(q.x, q.y, scale, e.angle + Math.PI / 2, e.alpha);
+      if (crouch) {
+        const pulse = 0.5 + 0.5 * Math.sin(time * 18);
+        circle(p.x, p.y, scale + 6 + 3 * pulse, DART, 1.8, false, e.alpha * (0.55 + 0.4 * pulse));
+        laneChevrons(e.radius + scale + 10, e.angle, DART, e.alpha * (0.6 + 0.4 * pulse));
+      } else if (stage === 'darting') {
+        line(polar(e.radius - scale, e.angle), polar(e.radius - scale - 34, e.angle), DART, 3, e.alpha * 0.55);
+      } else {
+        circle(p.x, p.y, scale + 4, DART, 0.65, false, e.alpha * 0.3);
+      }
+    } else if (e.kind === 'wanderer') {
+      leafShape(p.x, p.y, scale, rotation, '#dcc29a', e.alpha);
+      // A curling tendril at its stem, and a lavender edge, mark a wanderer.
+      ctx.save();
+      ctx.globalAlpha = e.alpha * 0.8;
+      ctx.strokeStyle = WANDER;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      const stem = polar(e.radius - scale, e.angle);
+      for (let k = 0; k <= 10; k++) {
+        const t = k / 10;
+        const a = t * 4.5;
+        ctx.lineTo(stem.x + Math.cos(e.angle + Math.PI + a) * (2 + 4 * t), stem.y + Math.sin(e.angle + Math.PI + a) * (2 + 4 * t));
+      }
+      ctx.stroke();
+      ctx.restore();
+      const leaning = e.wander?.stage === 'warning';
+      circle(p.x, p.y, scale + 4, WANDER, leaning ? 1.4 : 0.8, false, e.alpha * (leaning ? 0.8 : 0.45));
+      if (leaning) wanderArrow(e, e.alpha * (0.7 + 0.3 * Math.sin(time * 14) * lively));
+    } else {
+      leafShape(p.x, p.y, scale, rotation, '#dcb877', e.alpha);
+      circle(p.x, p.y, scale + 4, '#ead199', 0.65, false, e.alpha * 0.3);
+    }
     if (e.backwash > 3) {
       // Washed back: a creamy streak on the rim side of the leaf.
       const tail = polar(e.radius + scale + Math.min(40, e.backwash * 0.45), e.angle);
       const head = polar(e.radius + scale * 0.6, e.angle);
       line(head, tail, '#f6efe2', 3.5, Math.min(0.6, e.backwash / 60) * e.alpha);
     }
+  }
+
+  /**
+   * Chai's spice current: rings of chevrons pointing the way it will carry
+   * the leaves. They brighten through the warning and sweep round while it
+   * flows (and simply stay put with reduced motion).
+   */
+  function drawCurrent(current, reduced) {
+    if (!current || current.stage === 'calm') return;
+    const warning = current.stage === 'warning';
+    const u = clamp(current.time / currentStageLength(current), 0, 1);
+    const strength = warning ? 0.4 + 0.6 * u : 1 - 0.7 * u;
+    const pulse = reduced ? 1 : 0.75 + 0.25 * Math.sin(time * (warning ? 10 : 16));
+    const sweep = reduced ? 0 : current.dir * (warning ? u * 0.5 : 0.5 + u) * LANE_STEP;
+    ctx.save();
+    ctx.strokeStyle = SPICE;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const [radius, size, width, alpha] of [[OUTER - 30, 9, 2.6, 0.85], [OUTER * 0.5, 6, 1.8, 0.5]]) {
+      ctx.lineWidth = width;
+      ctx.globalAlpha = strength * pulse * alpha;
+      for (let i = 0; i < LANES; i++) {
+        const a = laneAngle(i) + LANE_STEP * 0.5 + sweep;
+        const p = polar(radius, a);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(a + (current.dir * Math.PI) / 2); // along the rim, the current's way
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.6, -size * 0.7);
+        ctx.lineTo(size * 0.4, 0);
+        ctx.lineTo(-size * 0.6, size * 0.7);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  /** A new chapter, announced at the top of the cup before its first tea, drawn under the leaves. */
+  function drawChapterCard(card, reduced) {
+    const chapter = card && CONFIG.chapters[card.chapter - 1];
+    if (!chapter) return;
+    const age = card.life - card.time;
+    const a = clamp(Math.min(age / 0.3, card.time / 0.6), 0, 1);
+    const pop = reduced ? 1 : 1 + 0.2 * Math.max(0, 1 - age / 0.4);
+    // Lower than the tea card, clear of the HUD pills that overlay the top of the cup on small screens.
+    const y0 = CY - 160;
+    ctx.save();
+    ctx.globalAlpha = a * 0.9;
+    ctx.fillStyle = '#1d1608';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(CX - 190, y0, 380, 86, 12);
+    else ctx.rect(CX - 190, y0, 380, 86);
+    ctx.fill();
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 1.6;
+    if (renderer.quality === 'high' && !reduced) {
+      ctx.shadowColor = GOLD;
+      ctx.shadowBlur = 8 + 6 * Math.sin(time * 3);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = a;
+    text(`CHAPTER ${card.chapter} · ${chapter.name.toUpperCase()}`, CX, y0 + 15, 10, GOLD, 'center', MONO);
+    text('THE NEXT BREW AWAITS', CX, y0 + 43, 24 * pop, '#fff4e0', 'center', 'Georgia,serif', 'bold ');
+    text('New teas are on the shelf.', CX, y0 + 69, 13, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
+    ctx.restore();
+  }
+
+  /**
+   * Milk's recovery pulse: while the whole cup is slowed, a pale ring glows
+   * just inside the rim, fading as the pulse runs out (the wave itself is in
+   * the tea). It sits under the leaves and the aim markers.
+   */
+  function drawPulse(state, reduced) {
+    const left = state.pulse ?? 0;
+    if (left <= 0) return;
+    const total = CONFIG.milk.pulse.duration;
+    const a = clamp(left / 0.45, 0, 1) * clamp((total - left) / 0.15, 0, 1);
+    const shimmer = reduced ? 1 : 0.85 + 0.15 * Math.sin(time * 8);
+    ctx.save();
+    ctx.globalAlpha = 0.45 * a * shimmer;
+    ctx.strokeStyle = '#f6f1e6';
+    ctx.lineWidth = 3;
+    if (renderer.quality === 'high') {
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 10;
+    }
+    ctx.beginPath();
+    ctx.arc(CX, CY, OUTER - 9, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** The round's tea, announced briefly at the top of the cup, drawn under the leaves. */
+  function drawTeaCard(card, reduced) {
+    if (!card || card.delay > 0) return;
+    const tea = TEAS[card.tea];
+    if (!tea) return;
+    const age = card.life - card.time;
+    const a = clamp(Math.min(age / 0.25, card.time / 0.5), 0, 1);
+    const pop = reduced ? 1 : 1 + 0.18 * Math.max(0, 1 - age / 0.3);
+    const y0 = CY - 236;
+    ctx.save();
+    ctx.globalAlpha = a * 0.88;
+    ctx.fillStyle = '#10211d';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(CX - 165, y0, 330, 72, 12);
+    else ctx.rect(CX - 165, y0, 330, 72);
+    ctx.fill();
+    ctx.strokeStyle = tea.color;
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.globalAlpha = a;
+    text(card.debut ? '✦ NEW ON THE SHELF ✦' : 'NOW BREWING', CX, y0 + 14, 10, tea.color, 'center', MONO);
+    text(tea.name, CX, y0 + 35, 22 * pop, '#fff4e0', 'center', 'Georgia,serif', 'bold ');
+    text(`“${tea.quip}”`, CX, y0 + 58, 13, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
+    ctx.restore();
   }
 
   /**
@@ -1288,11 +1530,19 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       const inPlay = !havoc && !grind && (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED);
       const live = inPlay || !!havoc || !!grind;
       if (inPlay) drawStrainer(state);
+      const reduced = !!fx.tea?.reduced;
       drawAimBeams(state, fx);
       drawClouds(state.clouds);
+      if (inPlay) drawPulse(state, reduced);
+      if (inPlay) drawCurrent(state.current, reduced);
+      // The announcements sit beneath the leaves, so they can never hide one.
+      if (state.phase === PHASE.PLAYING) {
+        drawChapterCard(fx.chapterCard, reduced);
+        drawTeaCard(fx.teaCard, reduced);
+      }
       if (grind) espresso.drawField(grind, time);
       drawResidue(state);
-      for (const e of state.enemies) drawEnemy(e);
+      for (const e of state.enemies) drawEnemy(e, reduced);
       if (havoc) {
         // At the end they melt back into the cup.
         const fade = havoc.stage === 'outro' ? clamp(1 - havoc.time / 0.8, 0, 1) : 1;

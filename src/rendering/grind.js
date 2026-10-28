@@ -641,12 +641,14 @@ export function createGrindPainter(ctx, { circle, text, laneBeam, highQuality })
         text(`${s.valveHits} valve hits · ${s.beans} beans cracked · ${s.scalds} scald${s.scalds === 1 ? '' : 's'}`,
           CX, y0 + 116, 13, '#f3d6b0', 'center', MONO);
       }
-      text('That was a surprisingly aggressive cup of coffee.', CX, y0 + 160, 14, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
+      text(g.milestone ? 'Something new is steeping. The next brew awaits…' : 'That was a surprisingly aggressive cup of coffee.',
+        CX, y0 + 160, 14, g.milestone ? '#ffe9a0' : '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
     } else {
       text(s.reason === 'time' ? 'IT CLOCKS OFF AND LEAVES' : 'THE MACHINE ESCAPES', CX, y0 + 20, 12, '#d8bfa0', 'center', MONO);
       text('“You’ll be hearing from my manager.”', CX, y0 + 62, 22, '#f5dfb6', 'center', 'Georgia,serif', 'italic ');
       text(`It still had ${g.health} of ${G.health} pressure left.`, CX, y0 + 104, 13, '#d8bfa0', 'center', MONO);
-      text('Your cups, your spoon, and the next fortune are safe.', CX, y0 + 134, 14, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
+      text(g.milestone ? `It will be back after ${G.retryAfter} more cups. Your cups are safe.`
+        : 'Your cups, your spoon, and the next fortune are safe.', CX, y0 + 134, 14, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
     }
     ctx.globalAlpha = a * clamp((t - G.outroMin) / 0.4, 0, 1) * (0.65 + 0.35 * Math.sin(time * 2.5));
     text('ENTER — BACK TO THE TEA', CX, y0 + h - 22, 10, '#e8c9a0', 'center', MONO);

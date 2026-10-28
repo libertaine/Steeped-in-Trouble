@@ -29,14 +29,17 @@ describe('milk', () => {
     expect(game.state.clouds).toHaveLength(0);
   });
 
-  it('slows leaves in the cloud and its neighbouring lanes to 31% speed', () => {
+  it('slows leaves in the cloud and its neighbouring lanes to 31% speed, and the rest only for the brief pulse', () => {
     const game = playingGame();
     game.pourMilk(); // over lane 0
     const inside = placeEnemy(game.state, { lane: 1, radius: 100, speed: 40 });
     const outside = placeEnemy(game.state, { lane: 3, radius: 100, speed: 40 });
     step(game, 1);
     expect(inside.radius - 100).toBeCloseTo(40 * CONFIG.milk.slowFactor, 3);
-    expect(outside.radius - 100).toBeCloseTo(40, 3);
+    expect(outside.radius - 100).toBeCloseTo(40 * CONFIG.milk.pulse.slowFactor, 3);
+    step(game, 1); // the pulse is over; the cloud is not
+    expect(inside.radius - 100).toBeCloseTo(40 * CONFIG.milk.slowFactor * 2, 3);
+    expect(outside.radius - 100).toBeCloseTo(40 * (CONFIG.milk.pulse.slowFactor * 1.5 + 0.5), 3);
   });
 
   it('cannot be poured outside a round', () => {

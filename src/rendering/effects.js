@@ -12,6 +12,7 @@ import { FIBS, FORTUNES } from '../gameplay/fortunes.js';
 import { UPGRADES } from '../gameplay/upgrades.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { fury, grindInProgress } from '../gameplay/grind.js';
+import { TEAS } from '../gameplay/teas.js';
 import { createTea } from './tea.js';
 
 const GOLD = '#ffd45e';
@@ -38,6 +39,8 @@ const GOLDEN_WORDS = {
 const STRAINER_REMARKS = ['Not through this mesh.', 'Strained!', 'The strainer earns its keep.', 'Caught, with a tiny clink.'];
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV'];
+
+const CHAPTER_CARD = 3.6; // seconds a new chapter's card stays up
 
 // Hot Chocolate Havoc.
 const COCOA = '#f3c99a';
@@ -73,6 +76,22 @@ const ABSURD_TEAS = [
   { color: '#45d468', text: 'Matcha? Nobody ordered matcha.' },
   { color: '#9b5cf0', text: 'Ultraviolet Assam. Very rare. Very wrong.' },
 ];
+
+// Strange Brews.
+const DART_GREEN = '#d9f59a';
+const WANDER_LAVENDER = '#d7c2f6';
+const SPICE = '#ffb85c';
+const HERBAL_WORDS = [
+  'Notes of hay. And regret.',
+  'A chamomile flower surfaces, says nothing, and leaves.',
+  'This tea is forty per cent garden.',
+  'The cup feels very relaxed about all this.',
+  'Somewhere, a bee is concerned.',
+  'Hints of meadow. Possibly an actual meadow.',
+  'The leaves are taking a moment for themselves.',
+  'Is that… a daisy?',
+];
+const CURRENT_WORDS = ['A spice current! Watch the arrows.', 'Here comes the cinnamon.', 'The cardamom is restless.'];
 
 const EMPTY_PROPHECIES = [
   ['The leaves foresee great wealth.', '…any moment now.'],
@@ -117,6 +136,8 @@ export function createEffects({ random = Math.random } = {}) {
     popups: [], // floating points: { text, x, y, color, time, life }
     ghosts: [], // perfect marshmallows lifting out of the cup: { x, y, size, spin, time, life }
     shake: 0, // seconds of cup shake left
+    teaCard: null, // { tea, debut, delay, time, life }: the round's tea being announced (after `delay` seconds)
+    chapterCard: null, // { chapter, time, life }: a new chapter being announced
   };
   const queue = [];
   let prankTimer = null; // seconds until The Leaves Lie misbehaves
@@ -129,6 +150,8 @@ export function createEffects({ random = Math.random } = {}) {
   let grindMet = false; // has the machine explained itself this pot?
   let warned = false; // has the first pressure warning been explained this pot?
   let podTimer = null; // seconds until the furious machine spits out a defective pod
+  let herbalTimer = null; // seconds until Herbal Tea's next harmless surprise
+  const explained = new Set(); // Strange Brews behaviours already explained this pot
 
   /** Show a message under the cup; `then` queues it behind the current one. */
   function say(text, { color = '#f1dfbd', life = 3.4, then = false } = {}) {
@@ -181,6 +204,13 @@ export function createEffects({ random = Math.random } = {}) {
     if (fx.popups.length > 16) fx.popups.shift();
   }
 
+  /** Explain a new behaviour the first time it turns up in a pot. */
+  function explainOnce(id, text, color) {
+    if (explained.has(id)) return;
+    explained.add(id);
+    say(text, { color, life: 3 });
+  }
+
   /** Clear everything that belongs to one stretch of play. */
   function clearScene() {
     fx.particles = [];
@@ -193,6 +223,8 @@ export function createEffects({ random = Math.random } = {}) {
     fx.shake = 0;
     fx.pods = [];
     fx.flyingBeans = [];
+    fx.teaCard = null;
+    fx.chapterCard = null;
   }
 
   /** Coffee-coloured steam, billowing up from a point. */
@@ -230,16 +262,62 @@ export function createEffects({ random = Math.random } = {}) {
       burnedOnce = false;
       grindMet = false;
       warned = false;
+      explained.clear();
       fx.discovery = null;
     },
-    roundStart({ fortune }) {
+    roundStart({ fortune, tea = 'house', round = 1, debut = false, chapter = 1, opens = false }) {
       clearScene();
       golden = null;
       prismatic = null;
       bigSpoon = null;
       prankTimer = fortune === 'lie' ? rnd(3, 10) : null;
+      herbalTimer = tea === 'herbal' ? rnd(4, 8) : null;
+      // A new chapter is announced first, with a shower of gold, and the tea card waits for it.
+      if (opens) {
+        fx.chapterCard = { chapter, time: CHAPTER_CARD, life: CHAPTER_CARD };
+        burst(60, () => rnd(170, 255), () => -Math.PI / 2 + rnd(-0.7, 0.7),
+          (i) => [GOLD, '#fff8e2', '#f2c13e', '#ffd6a0'][i % 4], () => rnd(0.7, 1.6), 1.6);
+      }
+      // Every cup after the first announces its tea, briefly, and more briefly as the pot goes on;
+      // a tea that has just come on tap takes a little longer.
+      const life = debut ? 3.4 : round > 8 ? 2.2 : 2.8;
+      fx.teaCard = round > 1 ? { tea, debut, delay: opens ? CHAPTER_CARD : 0, time: life, life } : null;
       if (fortune) say(`“${FORTUNES[fortune].quote}”`, { color: FORTUNES[fortune].color });
       else hush();
+    },
+    milkPulse() {
+      // A ring of cream rushing in from all round the rim.
+      for (let i = 0; i < 28; i++) {
+        const a = (i / 28) * TAU + rnd(-0.05, 0.05);
+        const p = toCanvasPoint(RIM - rnd(2, 10), a);
+        const speed = rnd(70, 120);
+        const life = rnd(0.35, 0.6);
+        fx.particles.push({
+          x: p.x, y: p.y, vx: -Math.cos(a) * speed, vy: -Math.sin(a) * speed, time: life, life, color: '#f4efe4', size: rnd(1.2, 2.4),
+        });
+      }
+      explainOnce('pulse', 'The milk ripples through the whole cup: every leaf slows for a moment.', '#f4efe4');
+    },
+    dartWarn({ radius, angle }) {
+      burst(6, () => radius + rnd(-6, 6), () => angle + rnd(-0.05, 0.05), DART_GREEN, () => rnd(0.2, 0.45), 0.6);
+      explainOnce('dart', 'That leaf is crouching. Darting leaves sprint after a flicker.', DART_GREEN);
+    },
+    dart({ radius, angle }) {
+      burst(10, () => radius - rnd(0, 16), () => angle + rnd(-0.03, 0.03), (i) => (i % 2 ? DART_GREEN : '#f4fff0'),
+        () => rnd(0.2, 0.5), 0.8, [1, 2.4]);
+    },
+    wanderWarn() {
+      explainOnce('wander', 'A lavender curl: that leaf is about to change lanes.', WANDER_LAVENDER);
+    },
+    wander({ radius, angle }) {
+      burst(8, () => radius + rnd(-6, 6), () => angle + rnd(-0.06, 0.06), WANDER_LAVENDER, () => rnd(0.4, 0.9), 0.5);
+    },
+    currentWarn() {
+      if (explained.has('current')) {
+        if (random() < 0.35) say(pick(CURRENT_WORDS), { color: SPICE, life: 2 });
+      } else {
+        explainOnce('current', 'A spice current is coming! Every leaf will slide one lane the way the arrows point.', SPICE);
+      }
     },
     steam({ lane, twin, golden: gilded }) {
       pulseLanes([lane], gilded ? 'golden' : 'steam');
@@ -307,6 +385,7 @@ export function createEffects({ random = Math.random } = {}) {
     },
     reading({ fortune }) {
       prankTimer = null;
+      herbalTimer = null;
       golden = null;
       prismatic = null;
       bigSpoon = null;
@@ -325,6 +404,7 @@ export function createEffects({ random = Math.random } = {}) {
     },
     gameover() {
       prankTimer = null;
+      herbalTimer = null;
       golden = null;
       prismatic = null;
       bigSpoon = null;
@@ -655,6 +735,22 @@ export function createEffects({ random = Math.random } = {}) {
         burst(1, () => prismatic.radius + rnd(-12, 12), () => prismatic.angle + rnd(-0.05, 0.05),
           () => pick(PRISM), () => rnd(0.3, 0.6), 0.6);
       }
+      if (playing) {
+        // Leaves gliding sideways leave a brief trail: lavender for a wanderer, spice for a current.
+        for (const e of state.enemies) {
+          if (!e.glide || random() > dt * 40) continue;
+          const color = state.current?.stage === 'flowing' ? SPICE : WANDER_LAVENDER;
+          burst(1, () => e.radius + rnd(-4, 4), () => e.angle + rnd(-0.03, 0.03), color, () => rnd(0.35, 0.7), 0.25, [1, 2.2]);
+        }
+      }
+      if (playing && herbalTimer !== null) {
+        herbalTimer -= dt;
+        if (herbalTimer <= 0) {
+          herbalTimer = rnd(7, 13);
+          tea.handle({ type: 'herbal', kind: random() < 0.55 ? 'blossom' : 'petals' });
+          if (random() < 0.6) say(pick(HERBAL_WORDS), { color: TEAS.herbal.color, life: 3 });
+        }
+      }
 
       if (fighting) {
         // The machine leaks steam, more the angrier it gets, and later spits out defective pods.
@@ -698,6 +794,15 @@ export function createEffects({ random = Math.random } = {}) {
         if (fx.discovery) {
           fx.discovery.time -= dt;
           if (fx.discovery.time <= 0) fx.discovery = null;
+        }
+        if (fx.chapterCard) {
+          fx.chapterCard.time -= dt;
+          if (fx.chapterCard.time <= 0) fx.chapterCard = null;
+        }
+        if (fx.teaCard?.delay > 0) fx.teaCard.delay = Math.max(0, fx.teaCard.delay - dt);
+        else if (fx.teaCard) {
+          fx.teaCard.time -= dt;
+          if (fx.teaCard.time <= 0) fx.teaCard = null;
         }
         if (fx.whisper) {
           fx.whisper.time -= dt;

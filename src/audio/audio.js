@@ -30,6 +30,11 @@ const SOUNDS = {
   beanSplat: [300, 0.06, 'triangle', 0.006],
   valveOpen: [1760, 0.22, 'sine', 0.01, 0, 1.25], // a little whistle
   pressureBuild: [110, 0.8, 'sawtooth', 0.012, 0, 1.6], // a groan as it swells
+  // Strange Brews: every warning has a sound as well as a sight.
+  dartWarn: [1100, 0.12, 'triangle', 0.008, 0, 1.4], // a rising chirp
+  dart: [700, 0.1, 'sawtooth', 0.005, 0, 1.8], // zip
+  wanderWarn: [880, 0.16, 'sine', 0.008, 0, 0.85],
+  wander: [660, 0.2, 'sine', 0.008, 0, 1.25], // a soft swoosh sideways
 };
 
 // Little tunes: lists of notes.
@@ -45,6 +50,11 @@ const TUNES = {
   goldenGone: [[600, 0.25, 'sine', 0.02], [450, 0.35, 'sine', 0.02, 0.15]],
   // A pour, then the backwash rolling in.
   milk: [[260, 0.24, 'sine', 0.027], [170, 0.5, 'triangle', 0.022, 0.06]],
+  // The recovery pulse: a soft, low hush as the whole cup slows.
+  milkPulse: [[392, 0.9, 'sine', 0.008, 0.12, 0.7], [523, 0.8, 'sine', 0.005, 0.18, 0.7]],
+  // A new chapter: a warm, unhurried rising chord.
+  chapter: [[523, 0.3, 'triangle', 0.022], [659, 0.3, 'triangle', 0.022, 0.18], [784, 0.3, 'triangle', 0.022, 0.36],
+    [1047, 0.9, 'sine', 0.03, 0.54], [1319, 0.9, 'sine', 0.016, 0.6]],
   // A bright metallic clink.
   strain: [[2637, 0.05, 'square', 0.01], [3136, 0.22, 'triangle', 0.026, 0.03], [2093, 0.3, 'sine', 0.018, 0.07]],
   upgrade: [[659, 0.1, 'triangle', 0.024], [988, 0.1, 'triangle', 0.024, 0.08], [1319, 0.35, 'sine', 0.03, 0.16]],
@@ -86,6 +96,9 @@ const TUNES = {
   // Wah, wah, wah, wahhh.
   grindEscape: [[392, 0.3, 'sawtooth', 0.016], [370, 0.3, 'sawtooth', 0.016, 0.32], [349, 0.3, 'sawtooth', 0.016, 0.64],
     [330, 0.9, 'sawtooth', 0.016, 0.96, 0.92]],
+  // Chai: a spicy shimmer as the current gathers, then the whoosh as it sweeps.
+  currentWarn: [[392, 0.5, 'triangle', 0.014, 0, 1.3], [494, 0.5, 'triangle', 0.01, 0.12, 1.3], [587, 0.6, 'sine', 0.01, 0.24, 1.3]],
+  currentFlow: [[180, 0.7, 'sawtooth', 0.014, 0, 1.6], [360, 0.5, 'sine', 0.01, 0.05, 1.4]],
   // Steam Nova: a rising whoosh, then a bright chord rippling up.
   nova: [[196, 0.45, 'sawtooth', 0.02], [523, 0.12, 'square', 0.014, 0.05], [659, 0.12, 'square', 0.014, 0.1],
     [784, 0.12, 'square', 0.014, 0.15], [1047, 0.12, 'square', 0.014, 0.2], [1319, 0.6, 'sine', 0.034, 0.25],
@@ -191,6 +204,7 @@ export function createAudio() {
       else if (event.type === 'scoop') {
         if (event.how === 'rim') beep([event.points ? 360 : 240, 0.1, 'sine', 0.02]); // plop
       }
+      else if (event.type === 'roundStart' && event.opens) TUNES.chapter.forEach(beep);
       else if (SOUNDS[event.type]) beep(SOUNDS[event.type]);
       else tuneFor(event)?.forEach(beep);
     },

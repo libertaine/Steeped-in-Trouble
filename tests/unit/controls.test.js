@@ -36,3 +36,56 @@ describe('keyboard controls', () => {
     expect(game.state.sugarLeft).toBe(2);
   });
 });
+
+describe('arrow keys for milk and sugar', () => {
+  function wired() {
+    const game = playingGame();
+    game.state.sugarLeft = 4;
+    const { win, doc } = fakePage();
+    createControls({
+      doc,
+      commands: {
+        fire: game.fireSteam, milk: game.pourMilk, sugar: game.sugarBurst, confirm: game.confirm,
+        togglePause: game.togglePause, restart: game.restart, pause: game.pause, choose: game.chooseUpgrade,
+      },
+    });
+    return { game, win };
+  }
+
+  it('pours milk with the up arrow and fires sugar with the down arrow', () => {
+    const { game, win } = wired();
+    press(win, 'ArrowUp');
+    expect(game.state.milkLeft).toBe(1);
+    press(win, 'ArrowDown');
+    expect(game.state.sugarLeft).toBe(3);
+  });
+
+  it('keeps the page from scrolling on either arrow', () => {
+    const { win } = wired();
+    for (const code of ['ArrowUp', 'ArrowDown']) {
+      const event = Object.assign(new Event('keydown', { cancelable: true }), { code });
+      win.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+    }
+  });
+
+  it('leaves browser shortcuts alone', () => {
+    const { game, win } = wired();
+    for (const modifier of ['ctrlKey', 'altKey', 'metaKey']) {
+      for (const code of ['ArrowUp', 'ArrowDown']) {
+        const event = Object.assign(new Event('keydown', { cancelable: true }), { code, [modifier]: true });
+        win.dispatchEvent(event);
+        expect(event.defaultPrevented).toBe(false);
+      }
+    }
+    expect(game.state.milkLeft).toBe(2);
+    expect(game.state.sugarLeft).toBe(4);
+  });
+
+  it('acts once per press, not on key repeat', () => {
+    const { game, win } = wired();
+    press(win, 'ArrowUp');
+    win.dispatchEvent(Object.assign(new Event('keydown'), { code: 'ArrowUp', repeat: true }));
+    expect(game.state.milkLeft).toBe(1);
+  });
+});

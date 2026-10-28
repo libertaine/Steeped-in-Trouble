@@ -49,18 +49,17 @@ describe('phases', () => {
 });
 
 describe('round progression', () => {
-  it('requires 16 kills in round 1 and four more each round', () => {
+  it('requires 16 kills in round 1 and two more each round, up to 32', () => {
     const game = playingGame();
-    expect(game.state.target).toBe(16);
-    completeRound(game);
-    expect(game.state.phase).toBe('reading');
-    brewNext(game);
-    expect(game.state.round).toBe(2);
-    expect(game.state.target).toBe(20);
-    completeRound(game);
-    brewNext(game);
-    expect(game.state.round).toBe(3);
-    expect(game.state.target).toBe(24);
+    const targets = [game.state.target];
+    for (let round = 2; round <= 12; round++) {
+      completeRound(game);
+      expect(game.state.phase).toBe('reading');
+      brewNext(game);
+      expect(game.state.round).toBe(round);
+      targets.push(game.state.target);
+    }
+    expect(targets).toEqual([16, 18, 20, 22, 24, 26, 28, 30, 32, 32, 32, 32]);
   });
 
   it('clears the field and starts the reading when the target is reached', () => {
@@ -92,24 +91,23 @@ describe('round progression', () => {
     expect(game.state.angle).toBeCloseTo(CONFIG.player.startAngle);
   });
 
-  it('makes leaves faster in later rounds, capped at +55', () => {
+  it('does not make leaves faster as the rounds go by (the chapter sets their speed)', () => {
     const r1 = playingGame({ seed: 9, spawning: true });
     step(r1, 1);
-    const fast = playingGame({ seed: 9, spawning: true });
-    fast.state.round = 20;
-    step(fast, 1);
-    const bonus = fast.state.enemies[0].speed - r1.state.enemies[0].speed;
-    expect(bonus).toBeCloseTo(CONFIG.enemies.maxRoundSpeedBonus - CONFIG.enemies.speedPerRound, 5);
+    const later = playingGame({ seed: 9, spawning: true });
+    later.state.round = 20;
+    step(later, 1);
+    expect(later.state.enemies[0].speed).toBe(r1.state.enemies[0].speed);
   });
 
-  it('spawns faster in later rounds within the configured bounds', () => {
-    const delays = (round) => {
-      const rng = createRandom(5);
-      return nextSpawnDelay(round, rng);
-    };
-    expect(delays(1)).toBeCloseTo(1.095 * createRandom(5).range(0.72, 1.36), 10);
-    expect(delays(20)).toBeCloseTo(0.57 * createRandom(5).range(0.72, 1.36), 10);
-    expect(delays(1)).toBeGreaterThan(delays(10));
+  it('does not bring leaves more often as the rounds go by, but still varies the gaps', () => {
+    const interval = CONFIG.chapters[0].spawnInterval;
+    expect(nextSpawnDelay(interval, createRandom(5))).toBeCloseTo(interval * createRandom(5).range(0.72, 1.36), 10);
+    const rng = createRandom(8);
+    const gaps = Array.from({ length: 200 }, () => nextSpawnDelay(interval, rng));
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(interval * CONFIG.spawning.jitterMin);
+    expect(Math.max(...gaps)).toBeLessThanOrEqual(interval * CONFIG.spawning.jitterMax);
+    expect(Math.max(...gaps) - Math.min(...gaps)).toBeGreaterThan(interval * 0.4);
   });
 
   it('never has more than 18 leaves in the cup', () => {

@@ -16,8 +16,11 @@ src/
 ├── gameplay/            rules, as pure functions over state
 │   ├── arena.js         lanes, angles, polar → canvas mapping
 │   ├── player.js        spoon movement
-│   ├── enemies.js       tea-leaf spawning and movement
-│   ├── weapons.js       steam, sugar, milk (and its backwash), hit testing, scoring
+│   ├── enemies.js       tea-leaf spawning and movement, darting and wandering, sideways glides
+│   ├── progress.js      the chapters: which one a pot is in, which teas are on tap, each tea's age
+│   ├── teas.js          Strange Brews: tea varieties, their draw, modifier composition, Chai's currents
+│   ├── strength.js      Strange Brews' learning curve: which stage a tea's age is in, per-stage tuning
+│   ├── weapons.js       steam, sugar, milk (its backwash and recovery pulse), hit testing, scoring
 │   ├── golden.js        the golden sugar cube and its rewards
 │   ├── prismatic.js     the rare prismatic sugar cube and its Steam Nova
 │   ├── secrets.js       hidden feats judged when a round is read, and their rewards
@@ -105,13 +108,45 @@ run during it. Rewards go through `state.score` and `state.extraSugar`.
 
 The Daily Grind, the coffee boss, works the same way. `grindDue()` is decided
 at the reading after `havocDue()` and is never true alongside it, and a due
-boss goes to the `grind` phase: `state.grind.stage` `intro` (Enter skips it)
+boss goes to the `grind` phase (the scheduling, and what a victory opens, are
+under [Chapters and the milestone](#chapters-and-the-milestone)): `state.grind.stage` `intro` (Enter skips it)
 → `fight` (P pauses) → `outro` (Enter, after a moment), then the next cup.
 The fight reuses the real `fireSteam()`, `sugarBurst()`, and `pourMilk()`
 (so upgrades and the Golden Spoon apply) with neutral fortune modifiers and
 fresh milk and sugar. Its three scalds are its own; losing never touches the
 cups, and only a victory changes them (a Perfect Brew restores one, up to
 four). The Golden Spoon a victory awards starts with the next cup.
+
+## Chapters and the milestone
+
+Leaf speed and spawning no longer grow with the round. `gameplay/progress.js`
+keeps a pot's progress as plain data, `state.progress = { chapter, starts }`
+(`starts[i]` is the first normal round of chapter *i* + 1), and the tuning
+of each chapter in `CONFIG.chapters`: its `enemySpeed` multiplier (applied
+once, to each new leaf's speed in `spawnEnemy()`, outside the × 1.35 cap on
+tea and fortune), its `spawnInterval` (read by `updateSpawning()`), and its
+`teas`, each with the number of rounds after the chapter's start before it
+comes on tap. Nothing else checks the chapter number: `currentChapter()`,
+`teasOnTap()`, `debutTea()`, and `teaAge()` answer every question.
+
+Chapter 1's milestone is The Daily Grind. `state.grindAfter` holds the round
+it must follow (`CONFIG.grind.milestoneAfter`, 5, at a new match) until it is
+beaten; `milestoneDue()` reads it. At a reading `readLeaves()` asks
+`havocDue()` first and, if the hot chocolate wants a reading the milestone
+needs, puts it off (`state.havocAfter = round + 1`) instead of dropping it;
+then `grindDue()` is true for the milestone, or after the first victory an
+occasional rematch that still gives way to the hot chocolate. `startGrind()`
+marks the encounter `milestone` if it was the scheduled one, and
+`leaveGrind()`, the only way out of the fight, settles it: a victory calls
+`advanceChapter(progress, round + 1)` and clears `grindAfter`; an escape sets
+`grindAfter = round + CONFIG.grind.retryAfter`. Rematches after the first
+victory aren't milestones, so they can't advance anything. The fight itself
+never reads the chapter.
+
+`roundStart` carries `chapter`, `opens` (this cup begins a chapter after the
+first), and `debut` (the tea has just come on tap), for the chapter card,
+the *new on the shelf* tea card, and the chord. A new match resets
+`state.progress` with everything else.
 
 ## Coordinate system
 
@@ -134,15 +169,82 @@ four). The Golden Spoon a victory awards starts with the next cup.
 (spawn lanes, speeds, timers, residue scatter, Spiral drift direction) comes
 from it. Hot Chocolate Havoc and The Daily Grind each draw from their own
 generator derived from the same seed (`treats` and `brew` in
-`createGame()`), so neither changes the sequence the normal rounds see. Effects use `Math.random`, so changing particles can never change
-gameplay. The URL parameter `?seed=` sets the seed in the browser, and the
-`?debug` parameter exposes `window.__TEACUP__.game` for tests and tinkering.
+`createGame()`), so neither changes the sequence the normal rounds see. The
+tea varieties draw from a fourth (`steep`), which advances by exactly two
+numbers per round start, so the teas come in the same order however the
+cups are played. Effects use `Math.random`, so changing particles can never
+change gameplay. The URL parameter `?seed=` sets the seed in the browser,
+`?tea=<id>` brews only one variety (`createGame({ tea })`; unknown ids are
+ignored), and the `?debug` parameter exposes `window.__TEACUP__.game` for
+tests and tinkering.
+
+## Tea varieties
+
+`gameplay/teas.js` holds Strange Brews. Each normal round has one tea, kept
+in `state.tea`; it is the round's environment, and the fortune is a separate
+layer on top. `startRound()` in `core/game.js`:
+
+1. calls `chooseTea(state, steep)`. Round 1 is always `house`; a tea that
+   comes on tap this round (`debutTea()`) is served at once; otherwise it
+   draws from `teasOnTap()`, never repeating `state.tea`, weighted by rounds
+   since each was last served (`state.teaServed`), with any variety missing
+   for more than `CONFIG.teas.maxAbsence` rounds served next. It always
+   draws exactly one number. Then `state.teaAge` is set from `teaAge()` (a
+   pinned tea's age is the round number);
+2. sets `state.modifiers = roundModifiers(state.fortune, state.tea, state.teaAge)`,
+   which folds the tea's modifiers at its age (`teaModifiers()`: its
+   fixed `modifiers` plus whatever its `strength(age)` gives) into the
+   fortune's by the rules in `COMBINE`
+   (multiply, add, max, or) and caps leaf speed. As with fortunes, gameplay
+   reads only `state.modifiers` and never checks tea ids, and the next round
+   start recomputes everything;
+3. for Chai (`modifiers.spiceCurrents`), puts a current clock in
+   `state.current` (`createCurrent(dir, age)`), which `updateCurrent()`
+   runs each frame: `calm` → `warning` → `flowing` → `calm`, emitting
+   `currentWarn`, `currentFlow`, and `currentEnd`. The clock carries its
+   own warning and calm lengths for the round, and keeps any overshoot
+   from one stage into the next, so it keeps time at any frame rate.
+
+How strongly a variety brews grows with its age (`gameplay/strength.js`):
+the normal rounds since it came on tap, counting the first. `teaStage(age)`
+finds the stage from `CONFIG.teas.stages`, and `byStage(values, age)` picks
+the value from a per-stage list in `CONFIG` (`CONFIG.darting.chance`,
+`CONFIG.currents.warnTime`, and so on). Only the age counts, not how often
+the tea was served, so a tea arriving late still starts gentle, and a pinned
+tea and an ordinary pot brew a tea of the same age alike.
+
+`roundStart` carries the tea for the presentation. At a reading,
+`teaFortuneNudges(state.tea)` adds a tea's extra fortune weights to the round
+record (`record.nudges`), which is how Herbal Tea makes The Leaves Lie
+likelier. `startGrind()` resets the modifiers to `modifiersFor(null)` and
+`clearField()` drops the current, so neither bonus encounter ever sees the
+tea. A new match resets `state.tea` and `state.teaServed`.
+
+### Leaf kinds and glides
+
+`spawnEnemy()` gives every leaf a `kind`. With the tea's `dartChance` or
+`wanderChance` it may be a `darter` (with `dart: { stage, at, time, warn,
+distance }`) or a `wanderer` (with `wander: { stage, at, dir, time, warn }`),
+taking its warning time and dash distance from the tea's age that round;
+otherwise it is a
+plain `leaf`, and no random number is drawn for it. `advanceEnemy()` runs each
+behaviour as a little stage machine (`waiting` → `warning` → …), emitting
+`dartWarn`/`dart` and `wanderWarn`/`wander`, and the renderer's `drawEnemy()`
+draws the telegraph from the same stage, so a warning is shown exactly when
+the rules give one. A dash adds `distance` on top of the leaf's ordinary
+movement, eased over `CONFIG.darting.dashTime`, so speed modifiers don't
+stretch it; stage changes partway through a frame are split exactly.
+
+A glide (`enemy.glide = { shift, length, time, done }`, started by `glide()`)
+moves a leaf sideways smoothly. It adds its movement to the angle each frame
+instead of setting it, so a wanderer's step, a spice current, and The
+Spiral's drift all compose; a new glide folds in what is left of an old one.
 
 ## Input
 
 `controls.js` keeps `held = { left, right, fire }` and calls command
-callbacks for one-shot keys. It prevents page scrolling only for the arrow
-keys and Space, and it ignores key presses that use Ctrl, Alt, or Meta. Held
+callbacks for one-shot keys (milk on Q, ↑, or M; sugar on E, ↓, or S). It
+prevents page scrolling only for the arrow keys and Space, and it ignores key presses that use Ctrl, Alt, or Meta. Held
 state is released on window blur, page hide, pointer up, pointer cancel, and
 lost pointer capture, and (through the game's events) on pause and on a new
 match.
@@ -211,6 +313,21 @@ When an upgrade is due, `readLeaves()` puts `drawOffer()`'s choice in
 until `chooseUpgrade(index)` applies one and brews the next cup. The HUD
 shows the offer as DOM buttons (`#upgradeOffer`).
 
+## Milk: cloud, backwash, and recovery pulse
+
+`pourMilk()` (`weapons.js`) lays a cloud over the spoon's lane and sets the
+`backwash` of the leaves in its wedge. In a normal round the game's
+`pourMilk` command then calls `milkPulse()`, which sets every leaf's
+`backwash` to at least `CONFIG.milk.pulse.backwash` and `state.pulse` to the
+pulse's duration (a second pour restarts it). `updateClouds()` runs both
+down. `advanceEnemy()` scales movement by `milkSlow()`, the smaller of the
+cloud's and the pulse's factors, and backwash only ever takes the larger
+distance, so the two never stack. The pulse touches no stats; milk kills,
+near misses, and the Perfect Storm stay with the cloud. Against The Daily
+Grind the command calls `milkTheMachine()` instead, and `clearField()` zeroes
+`state.pulse` between phases, so neither the boss nor the hot chocolate ever
+sees a pulse. `milkPulse` is its own event for the presentation.
+
 ## Escaping leaves
 
 A leaf reaching the rim goes through `escape()` in `core/game.js`. During the
@@ -233,10 +350,35 @@ cup and start a new grace period.
    read `state.modifiers.<name>` where the rule lives.
 4. Put any tuning numbers in `CONFIG.fortunes` and add tests.
 
+### Adding a tea variety
+
+1. Add an entry to `TEAS` in `gameplay/teas.js` (`name`, `quip`, `title`,
+   `info`, `tag`, `color`, `modifiers`, and optionally `fortuneNudges`, and
+   `strength(age)` for modifiers that grow with the stage), and add its id
+   to a chapter's `teas` in `CONFIG.chapters`, with the round it arrives.
+2. If it needs a new effect, add a neutral default to `BASE_MODIFIERS`, a
+   rule to `COMBINE`, and read `state.modifiers.<name>` where the rule lives.
+3. Give it a liquid in `TEA_LIQUIDS` (`rendering/tea.js`), a pill colour in
+   `styles/main.css`, and a touch in `TEA_MUSIC` (`audio/music.js`).
+4. Put tuning numbers in `CONFIG.teas` (or a per-stage list read with
+   `byStage()`) and add tests.
+
+### Adding a chapter
+
+1. Add an entry to `CONFIG.chapters` (`name`, `enemySpeed`, `spawnInterval`,
+   and the `teas` it brings, each with the rounds after its start before it
+   arrives).
+2. Give the chapter before it a milestone that calls `advanceChapter()` when
+   it is beaten, scheduled the way `grindAfter` schedules The Daily Grind
+   (and kept clear of Hot Chocolate Havoc the same way).
+3. Add tests: the chapter's speed and arrivals, its teas' arrival order, and
+   that losing its milestone keeps the pot where it was.
+
 ### Adding an enemy type
 
 1. Give spawned enemies a `kind` in `spawnEnemy()` (`gameplay/enemies.js`),
-   and decide when each kind spawns.
+   and decide when each kind spawns. `darter` and `wanderer` are examples:
+   their behaviour is plain data on the leaf, advanced in `advanceEnemy()`.
 2. Branch on `kind` in `advanceEnemy()` for movement, and in the renderer's
    `drawEnemy()` for appearance.
 3. If it scores or dies differently, extend `killEnemy()` in `core/game.js`

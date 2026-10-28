@@ -56,3 +56,18 @@ test('is playable with touch controls on a phone-sized screen', async ({ page, p
   await expect(page.locator('#spoonKit')).not.toHaveText('An ordinary silver spoon.');
   expect(problems).toEqual([]);
 });
+
+test('shows the tea on a phone without crowding the screen', async ({ page, problems }) => {
+  await openGame(page, '&tea=earlGrey');
+  await page.locator('#mainBtn').tap();
+  await expect(page.locator('#hudTea')).toHaveText('☕ Earl Grey · wandering leaves');
+  await expect(page.locator('#hudTea')).toBeVisible();
+  const layout = await page.evaluate(() => {
+    const pill = document.getElementById('hudTea').getBoundingClientRect();
+    const stage = document.querySelector('.playfield').getBoundingClientRect();
+    return { overflow: document.documentElement.scrollWidth - window.innerWidth, inside: pill.right <= stage.right + 1 };
+  });
+  expect(layout.overflow).toBeLessThanOrEqual(0);
+  expect(layout.inside).toBe(true);
+  expect(problems).toEqual([]);
+});

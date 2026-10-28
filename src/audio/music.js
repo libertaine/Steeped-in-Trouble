@@ -53,6 +53,19 @@ const MELODY = [62, 65, 67, 69, 72, 74, 77];
 const MELODY_STEPS = [0, 3, 6, 10, 12];
 const ARP = [0, 1, 2, 3, 2, 1, 3, 1]; // indices into the chord tones plus the octave
 
+// Strange Brews: each tea's touch on the band during play. `tempo` is added
+// to the target BPM; the rest is read by arrange().
+export const TEA_MUSIC = Object.freeze({
+  house: { tempo: 0 },
+  green: { tempo: 6 }, // brisk: light hats from the start, the melody up an octave
+  earlGrey: { tempo: -4 }, // refined: a ninth in the pad, a raised sixth in the melody
+  chai: { tempo: 4 }, // warm and rhythmic: a hand-drum pattern in threes and twos
+  black: { tempo: 6 }, // insistent: steady quarter-note bass and kick
+  herbal: { tempo: -10 }, // quiet and playful: no drums until it matters, more melody
+});
+const DORIAN_MELODY = [62, 65, 67, 69, 71, 74, 77]; // Earl Grey: B natural instead of C
+const CHAI_DRUM = { 0: ['kick', 0.7], 3: ['hat', 0.8], 6: ['kick', 0.5], 8: ['hat', 0.5], 10: ['kick', 0.6], 13: ['hat', 0.7] };
+
 // How loud each voice is, before the note's own gain.
 const MIX = {
   pad: 0.011,
@@ -117,13 +130,15 @@ export function musicMood(state, tension = 0) {
     }
     case PHASE.PLAYING: {
       const stormy = state.fortune === 'tempest';
+      const tea = Object.hasOwn(TEA_MUSIC, state.tea ?? '') ? state.tea : 'house';
       const base = Math.min(120, 92 + 3 * (state.round - 1));
       return {
         section: 'play',
-        tempo: base + 12 * tension + (stormy ? 8 : 0),
+        tempo: base + 12 * tension + (stormy ? 8 : 0) + TEA_MUSIC[tea].tempo,
         tension,
         golden: state.goldenSpoon > 0,
         stormy,
+        tea,
       };
     }
     default: // paused or game over: the band rests
@@ -212,26 +227,39 @@ export function arrange(step, mood, random = Math.random) {
   const chord = chordAt(step, mood.chocolate);
   const { tension, golden, stormy } = mood;
   const calm = mood.section !== 'play';
+  const tea = calm ? 'house' : mood.tea ?? 'house';
 
-  // The pad holds the chord through each bar, thinning as things heat up.
-  if (beat === 0) for (const tone of chord.tones) add('pad', tone - 12, STEPS_PER_BAR, calm ? 0.8 : 1 - 0.4 * tension);
+  // The pad holds the chord through each bar, thinning as things heat up (Earl Grey adds a ninth).
+  if (beat === 0) {
+    const padGain = calm ? 0.8 : (1 - 0.4 * tension) * (tea === 'green' ? 0.75 : 1);
+    for (const tone of chord.tones) add('pad', tone - 12, STEPS_PER_BAR, padGain);
+    if (tea === 'earlGrey') add('pad', chord.tones[0] + 2, STEPS_PER_BAR, padGain * 0.6);
+  }
 
   // A wandering music-box melody: the cup's own voice. It steps aside under pressure.
-  if (MELODY_STEPS.includes(beat) && (calm || tension < 0.5) && random() < (calm ? 0.6 : 0.45)) {
-    const pool = beat % 6 === 0 ? chord.tones : MELODY; // chord tones on the strong steps
-    add('bell', pool[Math.floor(random() * pool.length) % pool.length] + 12, 6, calm ? 0.9 : 0.8 * (1 - tension));
+  const chatty = tea === 'herbal' ? 0.65 : calm ? 0.6 : 0.45;
+  if (MELODY_STEPS.includes(beat) && (calm || tension < 0.5) && random() < chatty) {
+    const scale = tea === 'earlGrey' ? DORIAN_MELODY : MELODY;
+    const pool = beat % 6 === 0 ? chord.tones : scale; // chord tones on the strong steps
+    const lift = tea === 'green' ? 24 : 12;
+    add('bell', pool[Math.floor(random() * pool.length) % pool.length] + lift, 6, calm ? 0.9 : 0.8 * (1 - tension));
   }
   if (calm) return notes;
 
-  // Bass: half notes when calm, quarters with octave hops, then driving eighths.
-  const bassSteps = tension > 0.6 ? 2 : tension > 0.25 ? 4 : 8;
+  // Bass: half notes when calm, quarters with octave hops, then driving eighths (Black Tea never drops below quarters).
+  const bassSteps = tension > 0.6 ? 2 : tension > 0.25 || tea === 'black' ? 4 : 8;
   if (beat % bassSteps === 0) add('bass', chord.root + (beat % 8 === 4 || beat % 4 === 2 ? 12 : 0), 2, 0.8 + 0.2 * tension);
 
-  // Drums.
-  if (beat % 8 === 0 || (tension > 0.45 && beat % 4 === 0)) add('kick', 0, 1, 1);
+  // Drums: chai plays its hand-drum pattern, herbal waits until things get serious.
+  if (tea === 'chai' && beat in CHAI_DRUM) {
+    const [drum, gain] = CHAI_DRUM[beat];
+    add(drum, 0, 1, gain);
+  } else if (tea !== 'herbal' || tension > 0.45) {
+    if (beat % 8 === 0 || ((tension > 0.45 || tea === 'black') && beat % 4 === 0)) add('kick', 0, 1, 1);
+  }
   if (tension > 0.35 && beat % 8 === 4) add('snare', 0, 1, 0.5 + 0.5 * tension);
-  const hatEvery = tension > 0.65 ? 1 : tension > 0.12 ? 2 : 0;
-  if (hatEvery && beat % hatEvery === 0) add('hat', 0, 1, beat % 4 === 2 ? 1 : 0.55);
+  const hatEvery = tension > 0.65 ? 1 : tension > 0.12 || tea === 'green' ? 2 : 0;
+  if (hatEvery && beat % hatEvery === 0) add('hat', 0, 1, (beat % 4 === 2 ? 1 : 0.55) * (tea === 'green' && tension <= 0.12 ? 0.6 : 1));
 
   // The arpeggio arrives with rising tension, or straight away in stormy tea.
   const arpEvery = tension > 0.55 ? 1 : 2;
