@@ -37,6 +37,12 @@ const SOUNDS = {
   wander: [660, 0.2, 'sine', 0.008, 0, 1.25], // a soft swoosh sideways
   // The Tea Run.
   runJump: [420, 0.16, 'triangle', 0.016, 0, 1.8], // boing
+  runAerialJump: [640, 0.18, 'triangle', 0.014, 0, 2.1],
+  runAerialFail: [230, 0.12, 'sine', 0.009, 0, 0.65],
+  runBird: [1100, 0.3, 'sine', 0.012, 0, 1.6],
+  runZap: [95, 0.2, 'sawtooth', 0.014, 0, 3],
+  runOrbit: [520, 0.75, 'sine', 0.014, 0, 2.5],
+  runReentry: [180, 0.5, 'triangle', 0.012, 0, 0.35],
   runSlide: [300, 0.22, 'sawtooth', 0.006, 0, 0.5], // a scrape along the paving
   runLand: [140, 0.05, 'sine', 0.012],
   runHit: [160, 0.25, 'square', 0.02, 0, 0.4], // bonk

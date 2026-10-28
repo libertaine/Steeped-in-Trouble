@@ -38,10 +38,10 @@ function playPot(game, round, { win = false } = {}) {
 }
 
 describe('when the tea runs out', () => {
-  it('first happens straight after round 9’s reading, once Chapter 2 is under way, and once a pot', () => {
+  it('repeats at the scheduled readings after Chapter 2 unlocks', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const game = playingGame({ seed });
-      expect(playPot(game, 16, { win: true }), `seed ${seed}`).toEqual([S.firstAfter]);
+      expect(playPot(game, 46, { win: true }), `seed ${seed}`).toEqual([9, 16, 23, 30, 37, 44]);
     }
   });
 
@@ -83,6 +83,54 @@ describe('when the tea runs out', () => {
     const state = { round: 9, shortageAfter: 9 };
     scheduleNextShortage(state);
     expect(state.shortageAfter).toBe(S.repeatEvery ? 9 + S.repeatEvery : null);
+  });
+
+  it('coalesces delayed targets into one visit and schedules the next future target', () => {
+    for (const [round, next] of [[10, 16], [16, 23], [24, 30], [37, 44], [80, 86]]) {
+      const state = { round, shortageAfter: 9, progress: { chapter: 2 }, grindAfter: null };
+      expect(shortageDue(state)).toBe(true);
+      scheduleNextShortage(state);
+      expect(state.shortageAfter).toBe(next);
+      expect(shortageDue(state)).toBe(false);
+      state.round++;
+      expect(shortageDue(state)).toBe(state.round >= next);
+    }
+  });
+
+  it.each(['buy', 'skip', 'success', 'failed'])('keeps the next visit after %s and rejects duplicate answers', (choice) => {
+    const game = atShortage(6);
+    if (choice === 'buy' || choice === 'skip') game.chooseErrand(choice);
+    else {
+      game.chooseErrand('run'); game.primaryAction();
+      if (choice === 'success') game.state.run.distance = game.state.run.finish;
+      else game.state.run.left = 0; // expire through the normal clock below
+      if (choice === 'failed') game.state.run.clock = CONFIG.teaRun.timeLimit;
+      step(game, 3);
+      game.state.run.time = 3;
+      game.primaryAction();
+    }
+    expect(game.state.shortageAfter).toBe(16);
+    expect(game.chooseErrand('skip')).toBe(false);
+    expect(game.state.round).toBe(10);
+    expect(playPot(game, 17, { win: true })).toEqual([16]);
+  });
+
+  it('keeps a delayed shortage pending through a boss and consumes it only after the next reading', () => {
+    const game = playingGame({ seed: 6 });
+    playTo(game, 9, { win: true });
+    game.state.grindAfter = 9;
+    finishRound(game);
+    game.state.offer = null; game.primaryAction();
+    expect(game.state.phase).toBe('grind');
+    expect(game.state.shortageAfter).toBe(9);
+    finishBonus(game, { win: true });
+    expect(game.state.phase).toBe('playing');
+    finishRound(game); game.state.offer = null; game.primaryAction();
+    expect(game.state.phase).toBe('shortage');
+    expect(game.state.round).toBe(10);
+    expect(game.state.shortageAfter).toBe(16);
+    answerShortage(game, 'skip'); finishBonus(game, { win: true });
+    expect(game.state.round).toBe(11);
   });
 
   it('keeps the reading’s fortune, the spoon, the chapter, and the cups while the player decides', () => {

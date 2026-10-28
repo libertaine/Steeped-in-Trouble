@@ -403,7 +403,7 @@ export const CONFIG = deepFreeze({
   shortage: {
     firstAfter: 9, // the first shortage follows this round's reading…
     minChapter: 2, // …once the pot has reached this chapter (otherwise the first reading after it has)
-    repeatEvery: null, // later shortages: this many rounds after the last (null: one per pot)
+    repeatEvery: 7, // targets 9, 16, 23…; delayed visits skip missed targets
     teaPrice: 20, // Tea Cash to buy tea instead of running for it
     restockSugar: 1, // buying or fetching tea: extra sugar bursts for the next normal cup
     chooseAt: 1.2, // seconds of announcement before the choice can be made
@@ -426,6 +426,13 @@ export const CONFIG = deepFreeze({
     spoon: { halfWidth: 12, height: 66, slideHeight: 26 },
     jumpTime: 0.6, // seconds from takeoff to landing
     jumpHeight: 125, // at the top of the arc
+    aerialChance: 0.7, // independent roll per fresh airborne press; failure locks until landing
+    aerial: {
+      // One hidden opportunity per errand, drawn from the runner's own stream.
+      orbit: { altitude: 850, chance: 0.01, duration: 5.4 },
+      power: { altitude: 380, chance: 0.08, duration: 3.2 },
+      bird: { altitude: 210, chance: 0.14, duration: 3.6 },
+    },
     slideTime: 0.6,
     recoverTime: 0.08, // a moment on its feet after landing or standing up
     bufferTime: 0.18, // a press during another action waits this long for the spoon to be ready

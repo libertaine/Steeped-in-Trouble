@@ -36,7 +36,9 @@ export function shortageDue(state) {
 
 /** When the next shortage may come, once this one has started. */
 export function scheduleNextShortage(state) {
-  state.shortageAfter = S.repeatEvery ? state.round + S.repeatEvery : null;
+  state.shortageAfter = S.repeatEvery
+    ? S.firstAfter + (Math.floor((state.round - S.firstAfter) / S.repeatEvery) + 1) * S.repeatEvery
+    : null;
 }
 
 export const canBuyTea = (state) => state.teaCash >= S.teaPrice;

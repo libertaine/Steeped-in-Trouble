@@ -115,6 +115,7 @@ export function createControls({
     if (target?.closest?.('input, select, textarea, [contenteditable="true"]')) return;
     const code = e.code;
     if (target?.closest?.('button:not(#mainBtn), a') && (code === 'Space' || code === 'Enter')) {
+      if (e.repeat && target.closest('[data-run]')) e.preventDefault();
       const hold = target.closest('[data-hold]')?.dataset.hold;
       if (hold) {
         e.preventDefault();

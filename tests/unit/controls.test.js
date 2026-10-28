@@ -276,6 +276,31 @@ describe('arrow keys for milk and sugar', () => {
 });
 
 describe('input boundaries', () => {
+  it('does not turn a held Jump key or its repeats into airborne attempts', () => {
+    const game = atShortage(2); game.chooseErrand('run'); game.primaryAction();
+    const { win, controls } = easyTouch({ game });
+    press(win, 'ArrowUp');
+    game.update(0.15);
+    const before = { ...game.state.run.spoon };
+    for (let i = 0; i < 20; i++) {
+      win.dispatchEvent(Object.assign(new Event('keydown'), { code: 'ArrowUp', repeat: true }));
+      controls.update();
+    }
+    expect(game.state.run.spoon).toEqual(before);
+    win.dispatchEvent(Object.assign(new Event('keyup'), { code: 'ArrowUp' }));
+    press(win, 'ArrowUp');
+    expect(game.state.run.spoon.chain).toBe(2);
+  });
+
+  it('suppresses native Enter auto-repeat on a focused runner button', () => {
+    const { win } = easyTouch();
+    const target = { closest: (selector) => selector.startsWith('input') || selector === '[data-hold]' ? null : target };
+    const event = Object.assign(new Event('keydown', { cancelable: true }), { code: 'Enter', repeat: true });
+    Object.defineProperty(event, 'target', { value: target });
+    win.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
   it('releases a keyboard steering pad even if focus moves before keyup', () => {
     const { controls, win } = easyTouch();
     const target = { dataset: { hold: 'left' }, closest: () => target };

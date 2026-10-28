@@ -5,7 +5,7 @@
 // own clock, so the same run always looks the same.
 
 import { CONFIG } from '../config.js';
-import { obstacleX, spoonHeight } from '../gameplay/teaRun.js';
+import { AERIAL_DISCOVERIES, obstacleX, spoonHeight } from '../gameplay/teaRun.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY } = CONFIG.arena;
 const R = CONFIG.teaRun;
@@ -47,6 +47,8 @@ const NEIGHBOURS = ['cat', 'gnome', 'waver', 'none', 'binoculars', 'none', 'cat'
  * @param {{ text: Function, circle: Function, highQuality: () => boolean, compact: () => boolean }} tools the renderer's own helpers
  */
 export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
+  const motion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
+  const reduced = () => !!motion?.matches;
   function roundRect(x, y, w, h, r) {
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
@@ -72,7 +74,7 @@ export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
     sky.addColorStop(0.65, '#4d7a70');
     sky.addColorStop(1, '#b9c99a');
     ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, GROUND);
+    ctx.fillRect(0, 0, W, H);
     // A low, friendly sun.
     circle(760, 170, 46, '#f6dc9a', 0, true, 0.85);
     circle(760, 170, 70, '#f6dc9a', 0, true, 0.12 + 0.03 * Math.sin(time * 1.5));
@@ -420,6 +422,7 @@ export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
 
   function drawObstacles(run, time) {
     for (const ob of run.obstacles) {
+      if (ob.bypassed) continue;
       const x = screenX(run, obstacleX(ob, run.clock));
       if (x > W + 120 || x < -200) continue;
       if (ob.kind === 'sugarCube') drawSugarCube(ob, run, x);
@@ -464,20 +467,20 @@ export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
 
   // ── The spoon ──────────────────────────────────────────────────────────
 
-  function drawSpoon(run, time) {
+  function drawSpoon(run, time, { x = SPOON_X, feet = GROUND - spoonHeight(run.spoon), rotation = null, scorched = false, shadow = true } = {}) {
     const { spoon } = run;
-    const h = spoonHeight(spoon);
+    const h = GROUND - feet;
     const stride = run.distance / 26;
-    const blink = spoon.safe > 0 && spoon.tumble <= 0 ? 0.45 + 0.55 * Math.abs(Math.sin(time * 16)) : 1;
+    const blink = !reduced() && spoon.safe > 0 && spoon.tumble <= 0 ? 0.45 + 0.55 * Math.abs(Math.sin(time * 16)) : 1;
     ctx.save();
     ctx.globalAlpha = blink;
-    ctx.translate(SPOON_X, GROUND - h);
+    ctx.translate(x, feet);
     // Shadow on the paving, shrinking as it rises.
     ctx.save();
-    ctx.globalAlpha = 0.25 * blink;
+    ctx.globalAlpha = shadow ? 0.25 * blink : 0;
     ctx.fillStyle = '#000';
     ctx.beginPath();
-    ctx.ellipse(0, h + 3, 16 * (1 - h / 300), 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, h + 3, Math.max(2, 16 * (1 - h / 300)), 4, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -496,7 +499,8 @@ export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
       legs = 0.15 * Math.sin(time * 5); // on its marks
     }
     if (spoon.tumble > 0) lean += (1 - spoon.tumble / R.tumbleTime) * Math.PI * 2;
-    ctx.rotate(lean);
+    ctx.rotate(rotation ?? lean);
+    if (scorched) ctx.filter = 'brightness(0.12)';
 
     // Legs: thin silver, with red trainers.
     ctx.strokeStyle = '#c8d2d6';
@@ -549,13 +553,16 @@ export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
     ctx.strokeStyle = '#7d9096';
     ctx.lineWidth = 1.2;
     ctx.stroke();
+    ctx.filter = 'none';
     const dizzy = spoon.tumble > 0 || (run.stage === 'outro' && run.result === 'failed');
     if (dizzy) {
       text('×', 2, -56, 9, '#24302c', 'center', MONO, 'bold ');
       text('×', 8, -56, 9, '#24302c', 'center', MONO, 'bold ');
     } else {
-      circle(3, -56, 1.8, '#24302c', 0, true);
-      circle(8, -56, 1.8, '#24302c', 0, true);
+      const eye = scorched ? '#ffffff' : '#24302c';
+      const eyeSize = scorched && time % 1.4 < 0.15 ? 0.6 : 1.8;
+      circle(3, -56, eyeSize, eye, 0, true);
+      circle(8, -56, eyeSize, eye, 0, true);
       ctx.strokeStyle = '#24302c';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
@@ -564,6 +571,12 @@ export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
       ctx.stroke();
     }
     ctx.restore();
+    if ((scorched || spoon.smoke > 0) && !reduced()) {
+      for (let i = 0; i < 4; i++) {
+        const u = (time * 0.65 + i / 4) % 1;
+        circle(x - 16 - u * 20, feet - 65 - u * 50, 3 + u * 9, '#b6b8b1', 0, true, 0.35 * (1 - u));
+      }
+    }
     if (dizzy) {
       // Stars, naturally.
       for (let i = 0; i < 3; i++) {
@@ -580,6 +593,112 @@ export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
   }
 
   // ── Heads-up and cards ─────────────────────────────────────────────────
+
+  function discoveryCard(kind, returning = false) {
+    const copy = AERIAL_DISCOVERIES[kind];
+    panel(70, 116, W - 140, compact() ? 130 : 98, '#f6dc9a', '#10271ef2');
+    const size = compact() ? 29 : 26;
+    if (kind === 'orbit' && !returning) {
+      text('YOU HAVE LEFT THE', W / 2, 148, size, '#f6dc9a', 'center', MONO, 'bold ');
+      text('DESIGNATED SHOPPING AREA.', W / 2, 184, size, '#f6dc9a', 'center', MONO, 'bold ');
+    } else {
+      text(copy.title, W / 2, 148, size, '#f6dc9a', 'center', SERIF, 'bold ');
+      if (compact() && kind !== 'bird') {
+        const lines = kind === 'power' ? ['Conductivity was not covered', 'in the instructions.']
+          : ['Please remain within walking', 'distance of the store.'];
+        lines.forEach((line, i) => text(line, W / 2, 190 + 32 * i, 27, '#e8dcc0'));
+      } else text(copy.detail, W / 2, 190, compact() ? 27 : 18, '#e8dcc0');
+    }
+  }
+
+  function bird(x, y, t) {
+    ctx.save();
+    ctx.translate(x, y);
+    const flap = reduced() ? 12 : Math.sin(t * 8) * 22;
+    ctx.strokeStyle = '#e2d6b8';
+    ctx.lineWidth = 13;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-72, -16 - flap); ctx.quadraticCurveTo(-38, -44, 0, 0);
+    ctx.quadraticCurveTo(40, -42, 74, -16 - flap); ctx.stroke();
+    ctx.fillStyle = '#e2d6b8';
+    ctx.beginPath(); ctx.ellipse(0, 0, 37, 19, 0, 0, Math.PI * 2); ctx.fill();
+    circle(28, -13, 19, '#f1e6cd', 0, true);
+    circle(35, -18, 3, '#20352e', 0, true);
+    ctx.fillStyle = '#e9af46';
+    ctx.beginPath(); ctx.moveTo(44, -14); ctx.lineTo(65, -7); ctx.lineTo(44, -3); ctx.fill();
+    ctx.strokeStyle = '#e9af46'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-5, 14); ctx.lineTo(-6, 37); ctx.lineTo(4, 37); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPower(run, feet) {
+    const t = run.encounter.time;
+    const y = GROUND - run.encounter.height - 54;
+    if (t < 1.5) {
+      ctx.strokeStyle = '#1b282a'; ctx.lineWidth = 4;
+      for (const d of [0, -18]) {
+        ctx.beginPath(); ctx.moveTo(-100, y + d - 20); ctx.quadraticCurveTo(W / 2, y + d + 26, W + 100, y + d - 20); ctx.stroke();
+      }
+      ctx.fillStyle = '#775c43'; ctx.fillRect(600, y - 90, 17, 500);
+      ctx.fillRect(557, y - 50, 104, 10);
+    }
+    if (t < 0.8) {
+      text('ZAP!', SPOON_X + 94, feet - 72, 38, '#ffe9a8', 'center', MONO, 'bold ');
+      ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(SPOON_X - 35, feet - 88); ctx.lineTo(SPOON_X - 52, feet - 60);
+      ctx.lineTo(SPOON_X - 32, feet - 64); ctx.lineTo(SPOON_X - 44, feet - 34); ctx.stroke();
+    }
+  }
+
+  function drawOrbit(run) {
+    const e = run.encounter;
+    const t = e.time;
+    const arrival = clamp(t / 1.1, 0, 1);
+    const reentry = clamp((t - 3.5) / 1.9, 0, 1);
+    const space = reduced() ? 1 : Math.min(arrival, 1 - reentry);
+    // Clouds fade into a dark sky, then Earth grows during the return.
+    ctx.fillStyle = `rgba(11,20,43,${space})`; ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < 65; i++) circle(hash(i + 101) * W, hash(i + 305) * 530, 1 + hash(i) * 1.2, '#e8e4d4', 0, true, space);
+    const earthY = reduced() ? 1050 : 1300 - 250 * arrival - 230 * reentry;
+    circle(W / 2, earthY, 560, '#69bcc3', 0, true);
+    circle(W / 2, earthY, 550, '#377baf', 0, true);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(W / 2, earthY, 550, 0, Math.PI * 2); ctx.clip();
+    ctx.fillStyle = '#84a67d';
+    ctx.beginPath(); ctx.moveTo(140, earthY - 490); ctx.lineTo(310, earthY - 530);
+    ctx.lineTo(440, earthY - 450); ctx.lineTo(370, earthY - 360); ctx.lineTo(300, earthY - 320);
+    ctx.lineTo(225, earthY - 390); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(700, earthY - 350, 120, 70, 0.7, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#edf4e499'; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.ellipse(450, earthY - 450, 220, 30, -0.2, 0, Math.PI); ctx.stroke();
+    ctx.restore();
+    // One satellite, still apparently doing its job.
+    const sx = reduced() ? 730 : 830 - t * 28;
+    ctx.save(); ctx.translate(sx, 300); ctx.rotate(-0.2);
+    ctx.fillStyle = '#bbc7cf'; ctx.fillRect(-18, -12, 36, 24);
+    ctx.fillStyle = '#5276aa'; ctx.strokeStyle = '#b6cce2'; ctx.lineWidth = 2;
+    for (const dx of [-75, 30]) { ctx.fillRect(dx, -20, 45, 40); ctx.strokeRect(dx, -20, 45, 40); }
+    ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(8, -34); ctx.stroke(); ctx.restore();
+    // A distant teapot. No explanation is forthcoming.
+    ctx.save(); ctx.translate(290, 275); ctx.rotate(reduced() ? 0.2 : t * 0.08);
+    ctx.fillStyle = '#d7b4b6'; ctx.beginPath(); ctx.ellipse(0, 0, 22, 16, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(-13, -20, 26, 6); circle(0, -23, 4, '#d7b4b6', 0, true);
+    ctx.strokeStyle = '#d7b4b6'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(-24, 0, 10, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(17, 0); ctx.lineTo(35, -17); ctx.stroke(); ctx.restore();
+    const feet = reduced() ? 425 : 510 - 110 * arrival + 220 * reentry ** 2;
+    if (reentry > 0) {
+      ctx.fillStyle = '#ec8748';
+      ctx.beginPath(); ctx.moveTo(W / 2 - 26, feet + 5); ctx.lineTo(W / 2, feet - 130);
+      ctx.lineTo(W / 2 + 26, feet + 5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffe39a';
+      ctx.beginPath(); ctx.moveTo(W / 2 - 12, feet + 5); ctx.lineTo(W / 2, feet - 80);
+      ctx.lineTo(W / 2 + 12, feet + 5); ctx.closePath(); ctx.fill();
+      text('NEXT STOP: THE SIDEWALK', W / 2, 690, compact() ? 28 : 20, '#ffe9a8', 'center', MONO);
+    }
+    drawSpoon(run, run.age, { x: W / 2, feet, rotation: reduced() ? 0.25 : t * 0.75, shadow: false });
+  }
 
   /**
    * The way to the shop, big and wordless along the road (the pills above the
@@ -774,21 +893,67 @@ export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
   return {
     /** Draw the whole errand scene. */
     drawRun(run, state, time, paused) {
+      time = run.age; // all runner animation freezes while paused, including scenery
+      const e = run.encounter;
+      let height = spoonHeight(run.spoon);
+      let camera = run.camera;
+      let carry = 0;
+      if (e && e.kind !== 'orbit') {
+        const duration = R.aerial[e.kind].duration;
+        const drop = clamp((e.time - duration + 1) / 1, 0, 1);
+        height = e.height * (1 - drop * drop);
+        const follow = clamp(e.time / 0.4, 0, 1);
+        camera = e.camera + (Math.max(0, height - 115) - e.camera) * follow;
+        carry = e.kind === 'bird' ? 110 * Math.sin(clamp((e.time - 1) / 2.6, 0, 1) * Math.PI) : 0;
+      }
+      if (e?.kind === 'orbit') camera = e.camera * (1 - clamp((e.time - 4.4) / 0.6, 0, 1));
       drawSky(time);
+      ctx.save();
+      ctx.translate(0, camera * 0.25);
       drawClouds(run.distance);
       drawFarRow(run.distance);
+      ctx.restore();
       ctx.save();
       ctx.translate(SPOON_X, GROUND);
       ctx.scale(ZOOM, ZOOM);
       ctx.translate(-SPOON_X, -GROUND);
+      ctx.translate(0, camera);
       drawStreet(run.distance, time);
       drawPaving(run.distance);
       drawTeaShop(run, time);
       drawPickups(run, time);
       drawObstacles(run, time);
-      if (!(run.stage === 'outro' && run.result === 'success')) drawSpoon(run, time);
+      if (!(run.stage === 'outro' && run.result === 'success') && e?.kind !== 'orbit') {
+        drawSpoon(run, time, { x: SPOON_X + carry, feet: GROUND - height, scorched: e?.kind === 'power' });
+      }
+      if (e?.kind === 'bird') {
+        const approach = clamp(e.time / 0.9, 0, 1);
+        const bx = SPOON_X + carry + (1 - approach) * 700;
+        bird(bx, GROUND - height - 105, time);
+        if (e.time > 0.55 && e.time < 1.4) text('?', bx + 70, GROUND - height - 145, 34, '#ffe9a8');
+      }
+      if (e?.kind === 'power') drawPower(run, GROUND - height);
+      const feedback = run.feedback;
+      if (!e && feedback && time - feedback.at < 0.28) {
+        const u = (time - feedback.at) / 0.28;
+        circle(SPOON_X, GROUND - height - 12, reduced() ? 22 : 14 + u * 30,
+          feedback.success ? '#ffe9a8' : '#bac1b5', 2, false, 1 - u);
+      }
       ctx.restore();
+      if (e?.kind === 'orbit') {
+        ctx.save();
+        ctx.globalAlpha = reduced() ? 1 : Math.min(1, e.time / 0.6, (R.aerial.orbit.duration - e.time) / 0.4);
+        drawOrbit(run);
+        ctx.restore();
+      }
+      if (e?.kind === 'power' && e.time < 0.35 && !reduced()) {
+        // One soft tint, never a strobe; bolt and silhouette also explain the zap.
+        ctx.fillStyle = `rgba(255,233,168,${0.13 * Math.sin(Math.PI * e.time / 0.35)})`;
+        ctx.fillRect(0, 0, W, H);
+      }
       drawProgress(run, time);
+      if (e) discoveryCard(e.kind);
+      else if (run.notice) discoveryCard(run.notice.kind, true);
       if (run.stage === 'intro') drawIntro(run);
       if (run.stage === 'outro') drawOutro(run, time);
       if (paused) drawPaused();

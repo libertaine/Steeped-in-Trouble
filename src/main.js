@@ -156,6 +156,7 @@ function boot() {
 
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
   const RESETS = new Set(['paused', 'resumed', 'matchStart', 'roundStart', 'reading', 'shortage',
+    'runBird', 'runZap', 'runOrbit', 'runReturn',
     'runStart', 'runGo', 'runFinish', 'runFail', 'runEnd', 'chocolateStart', 'havocStart', 'havocEnd',
     'grindStart', 'grindFight', 'grindDefeat', 'grindEscape', 'gameover']);
 
@@ -200,6 +201,16 @@ function boot() {
   // ?debug exposes the running game for automated browser tests and tinkering.
   if (params.has('debug')) {
     window.__TEACUP__ = { game, effects, version: __APP_VERSION__, config: CONFIG, settings: () => ({ ...settings }) };
+    // Vite removes this helper from production. No player-facing secret menu.
+    if (import.meta.env.DEV) window.__TEACUP__.previewAerial = (kind) => {
+      const run = game.state.run;
+      if (game.state.phase !== 'teaRun' || run?.stage !== 'run' || !CONFIG.teaRun.aerial[kind]) return false;
+      run.opportunity = kind;
+      run.encountered = null;
+      run.encounter = null;
+      Object.assign(run.spoon, { action: 'jump', time: 0, launchHeight: CONFIG.teaRun.aerial[kind].altitude, queued: null });
+      return true;
+    };
   }
   return instance;
 }
