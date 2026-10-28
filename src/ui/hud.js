@@ -1,7 +1,9 @@
-// DOM heads-up display: status pills, the side panels, and the spoon upgrade
-// offer shown during some readings.
+// DOM heads-up display: status pills, the side panels, the spoon upgrade
+// offer shown during some readings, and the Tea Shortage's three answers.
 //
-// update() runs every frame but only writes text that actually changed.
+// update() runs every frame but only writes text that actually changed. It
+// also marks the page with what is going on (body[data-mode]: 'cup',
+// 'shortage', or 'run'), so the stylesheet can show the right touch controls.
 
 import { CONFIG } from '../config.js';
 import { OFFER_AT } from '../core/game.js';
@@ -9,6 +11,8 @@ import { PHASE } from '../core/state.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
 import { grindInProgress } from '../gameplay/grind.js';
+import { canBuyTea } from '../gameplay/shortage.js';
+import { runInProgress } from '../gameplay/teaRun.js';
 import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
@@ -21,6 +25,8 @@ const COPY = {
     [PHASE.READING]: 'READING THE LEAVES',
     [PHASE.CHOCOLATE]: 'HOT CHOCOLATE HAVOC',
     [PHASE.GRIND]: 'THE DAILY GRIND',
+    [PHASE.SHORTAGE]: 'THE TEA SHORTAGE',
+    [PHASE.TEA_RUN]: 'THE TEA RUN',
     [PHASE.GAME_OVER]: 'THE CUP RUNNETH OVER',
   },
   title: {
@@ -30,6 +36,8 @@ const COPY = {
     [PHASE.READING]: () => 'The leaves have spoken',
     [PHASE.CHOCOLATE]: () => HAVOC.title.play,
     [PHASE.GRIND]: () => GRIND.title.fight,
+    [PHASE.SHORTAGE]: () => 'The tea tin is empty!',
+    [PHASE.TEA_RUN]: () => RUN.title.run,
     [PHASE.GAME_OVER]: () => 'The last drop',
   },
   button: {
@@ -39,6 +47,8 @@ const COPY = {
     [PHASE.READING]: 'Brew the next cup →',
     [PHASE.CHOCOLATE]: 'Pause / resume (P)',
     [PHASE.GRIND]: 'Pause / resume (P)',
+    [PHASE.SHORTAGE]: 'Buy, run, or skip (1 / 2 / 3)',
+    [PHASE.TEA_RUN]: 'Pause / resume (P)',
     [PHASE.GAME_OVER]: 'Start a fresh pot →',
   },
   tip: {
@@ -47,6 +57,8 @@ const COPY = {
     [PHASE.PAUSED]: 'The kettle is on hold.',
     [PHASE.CHOCOLATE]: '',
     [PHASE.GRIND]: '',
+    [PHASE.SHORTAGE]: `Buy a tin with Tea Cash, run to the shop for one, or carry on without. A restock means ${CONFIG.shortage.restockSugar} extra sugar burst next cup; skipping costs nothing. Your cups, spoon, and next fortune wait for you either way.`,
+    [PHASE.TEA_RUN]: '',
     [PHASE.READING]: 'The pattern was made by the leaves you defeated, though the leaves have opinions of their own. The omen applies to the next cup.',
     [PHASE.GAME_OVER]: 'Three spills end the pot. Brew again to rewrite the future.',
   },
@@ -85,6 +97,24 @@ const GRIND = {
   },
 };
 
+// The Tea Run, stage by stage.
+const RUN = {
+  status: {
+    intro: () => 'ON YOUR MARKS',
+    run: (r) => `THE TEA RUN · ${Math.ceil(r.left)}s`,
+    finish: () => 'NEARLY THERE',
+    outro: (r) => (r.result === 'success' ? 'MISSION ACCOMPLISHED' : 'PEAR-SHAPED'),
+  },
+  title: { intro: 'Run to the store!', run: 'Errand: The Tea Run', finish: 'The tea shop!', outro: 'Back to the tea' },
+  button: { intro: 'Start running →', run: 'Pause / resume (P)', finish: 'Entering the tea shop…', outro: 'Back to the tea →' },
+  tip: {
+    intro: 'The spoon runs by itself. Jump (Space or ↑) over sugar cubes and puddles; slide (↓) under the coffee cups. On a touch screen, tap JUMP and SLIDE.',
+    run: 'Jump the sugar and the puddles, slide under the coffee. Three stumbles and the errand is off, but it can’t cost you a cup.',
+    finish: 'In through the door…',
+    outro: 'Your cups, your spoon, and the next fortune are exactly as you left them.',
+  },
+};
+
 const pad = (n, width) => String(n).padStart(width, '0');
 const pips = (level, max) => '●'.repeat(level) + '○'.repeat(max - level);
 
@@ -92,6 +122,7 @@ const pips = (level, max) => '●'.repeat(level) + '○'.repeat(max - level);
 function statusText(state) {
   if (state.phase === PHASE.CHOCOLATE) return HAVOC.status[state.chocolate.stage](state.chocolate);
   if (state.phase === PHASE.GRIND) return GRIND.status[state.grind.stage](state.grind);
+  if (state.phase === PHASE.TEA_RUN) return RUN.status[state.run.stage](state.run);
   if (state.phase === PHASE.PLAYING) {
     if (state.goldenSpoon > 0) return `✦ GOLDEN SPOON ${Math.ceil(state.goldenSpoon)}s`;
     if (state.graceTime > 0) return 'THE CUP RECOVERS';
@@ -135,14 +166,15 @@ function omenStatus(state) {
 
 /** The small in-play indicator of the fortune shaping this round. */
 function omenText(state, fortune) {
-  if (!fortune || havocInProgress(state) || grindInProgress(state) || (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED)) return '';
+  if (!fortune || havocInProgress(state) || grindInProgress(state) || runInProgress(state)) return '';
+  if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
   return `✦ ${fortune.name} · ${fortune.tag} · ${omenStatus(state)}`;
 }
 
 /** The small in-play indicator of the tea brewed for this round. */
 function teaText(state) {
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
-  if (havocInProgress(state) || grindInProgress(state)) return '';
+  if (havocInProgress(state) || grindInProgress(state) || runInProgress(state)) return '';
   const tea = TEAS[state.tea];
   return `☕ ${tea.name} · ${tea.tag}`;
 }
@@ -158,12 +190,42 @@ function teaName(state) {
 const stillLying = (state) => state.phase === PHASE.READING && state.nextFortune === 'lie'
   && state.readingTime < CONFIG.fortunes.lieRetractAt;
 
+/** The Auto Steam pill, shown while it can fire: in a round or the boss fight. */
+function autoText(state) {
+  if (!state.autoSteam) return '';
+  const from = state.phase === PHASE.PAUSED ? state.pausedFrom : state.phase;
+  return from === PHASE.PLAYING || from === PHASE.GRIND ? 'AUTO STEAM' : '';
+}
+
+/** What the page is showing, for the touch controls: the cup, the shortage's choice, or the errand. */
+export function pageMode(state) {
+  if (state.phase === PHASE.SHORTAGE) return 'shortage';
+  return runInProgress(state) ? 'run' : 'cup';
+}
+
+/**
+ * The Tea Shortage's buttons, or null while they are not on show. Buying is
+ * offered (and disabled) even when the Tea Cash doesn't run to it, so the
+ * price is always clear.
+ */
+export function errandView(state) {
+  if (state.phase !== PHASE.SHORTAGE || state.shortage.time < CONFIG.shortage.chooseAt) return null;
+  const price = CONFIG.shortage.teaPrice;
+  const affordable = canBuyTea(state);
+  return {
+    buy: { enabled: affordable, info: affordable ? `${price} Tea Cash of your ${state.teaCash}` : `Needs ${price} Tea Cash (you have ${state.teaCash})` },
+    run: { enabled: true, info: 'A quick dash to the shop' },
+    skip: { enabled: true, info: 'Carry on without' },
+  };
+}
+
 /** All HUD text for a state, keyed by element id. Pure, for easy testing. */
 export function hudText(state) {
   const havoc = havocInProgress(state);
   const grind = grindInProgress(state);
-  // Between rounds (a reading, the bonus, or the boss) the panel looks ahead to the next cup.
-  const between = state.phase === PHASE.READING || !!havoc || !!grind;
+  const run = runInProgress(state);
+  // Between rounds (a reading, the bonus, the boss, or an errand) the panel looks ahead to the next cup.
+  const between = state.phase === PHASE.READING || state.phase === PHASE.SHORTAGE || !!havoc || !!grind || !!run;
   const shown = between ? state.nextFortune : state.fortune;
   const fortune = shown ? FORTUNES[shown] : null;
   const offering = state.phase === PHASE.READING && !!state.offer;
@@ -199,8 +261,27 @@ export function hudText(state) {
         ? `“${fortune.quote}” ${fortune.info}`
         : 'Finish a round to read the leaves. How you play nudges what they foretell.',
     hudOmen: omenText(state, fortune),
+    hudAuto: autoText(state),
     killLabel: 'Leaves cleared',
+    teaCash: String(state.teaCash),
   };
+  if (state.phase === PHASE.SHORTAGE) values.roundNum = `${pad(state.round, 2)}½`;
+  if (run) {
+    // On the sidewalk the pills count what matters there: the pickups, and the stumbles left.
+    const left = Math.max(0, CONFIG.teaRun.hits - run.hits);
+    Object.assign(values, {
+      roundTitle: RUN.title[run.stage],
+      roundNum: `${pad(state.round, 2)}½`,
+      teaName: 'None, yet',
+      killLabel: 'Coins · tea packets',
+      killCount: `${run.coins} · ${run.packets}`,
+      hudScore: `COINS ${run.coins} · TEA ${run.packets}`,
+      hudLives: `STUMBLES ${'♥ '.repeat(left)}${'♡ '.repeat(run.hits)}`.trim(),
+      hudStrainer: '',
+      gameTip: RUN.tip[run.stage],
+    });
+    values.mainBtn = state.phase === PHASE.PAUSED ? 'Resume errand →' : RUN.button[run.stage];
+  }
   if (havoc) {
     const { tally, stage } = havoc;
     Object.assign(values, {
@@ -251,9 +332,31 @@ export function createHud(doc = document) {
     });
   }
 
+  const errand = doc.getElementById('errandOffer');
+  const errandButtons = errand ? [...errand.querySelectorAll('[data-errand]')] : [];
+  let shownErrand = null;
+
+  /** Show, fill, or hide the Tea Shortage's choice. */
+  function updateErrand(state) {
+    const view = errandView(state);
+    const key = view ? JSON.stringify(view) : null;
+    if (!errand || key === shownErrand) return;
+    shownErrand = key;
+    errand.hidden = !view;
+    for (const button of errandButtons) {
+      const choice = view?.[button.dataset.errand];
+      if (!choice) continue;
+      button.disabled = !choice.enabled;
+      button.querySelector('small').textContent = choice.info;
+    }
+  }
+
   return {
     update(state) {
       updateOffer(state);
+      updateErrand(state);
+      const mode = pageMode(state);
+      if (doc.body && doc.body.dataset.mode !== mode) doc.body.dataset.mode = mode;
       const values = hudText(state);
       // The omen pill takes its fortune's tone (good, trouble, odd) for colour.
       const omen = (elements.hudOmen ??= doc.getElementById('hudOmen'));

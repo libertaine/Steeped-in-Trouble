@@ -723,6 +723,53 @@ deliberate for 0.9.0, which is about meeting the game's content, and it
 leaves the late-game plateau (issue #13) for the chapters and bosses still
 to come.
 
+## 0.10.0 candidate — The Tea Run (Milestone 1)
+
+Pending human playtesting; 0.9.0 remains the published baseline.
+
+### Tea Cash and the shortage
+
+Tea Cash is separate from score and resets with a new pot: +5 per normal
+round completed, +15 for a milestone victory (not a rematch), and +5 for a
+successful Tea Run. The first shortage follows round 9's reading, once
+Chapter 2 is open. If the milestone is still outstanding it waits; it never
+preempts a milestone. It happens once per pot.
+
+After the reading and any upgrade selection, choose Buy / Run / Skip with
+1 / 2 / 3 or the buttons. Buy costs 20 Tea Cash and grants one extra sugar
+burst in the next normal cup. Run can earn the same restock; Skip simply
+continues, with no penalty. A shortage never discards the reading's fortune,
+upgrades, cups, or pending Hot Chocolate Havoc / Daily Grind encounter.
+Restock waits through any such encounter until the next normal cup.
+
+### The Tea Run
+
+The spoon runs automatically along a seeded sidewalk at 330 logical units/s,
+with a 34-second course, 3-second skippable intro, and 1.4-second arrival.
+The shop closes after 45 running seconds. Jump (Space/↑ or JUMP) over rolling
+sugar cubes and tea puddles; slide (↓ or SLIDE) under suspended coffee cups.
+Jump and slide last 0.6 seconds, followed by 0.08 seconds of recovery;
+the latest press can buffer for 0.18 seconds, without cutting an action short.
+The opening shows one of each obstacle. Gaps narrow but retain recovery time.
+
+A stumble slows the spoon for 0.45 seconds, knocks that obstacle out, and
+gives 1.3 seconds of safety. Three stumbles or the time limit ends the errand.
+No outcome costs cups. Success grants one next-cup sugar burst and 5 Tea Cash;
+failure grants neither. Collected coins pay 5 points and tea packets 10,
+kept on either outcome and settled once. Pickups supplement ordinary scoring.
+The next fortune and the ordinary random sequences stay unchanged.
+
+### Touch and Auto Steam
+
+Phones default to Easy Touch: two steering pads, Auto Steam, double-tap the
+cup for milk, and hold 450 ms for sugar. Taps may be up to 300 ms apart;
+drags and steering-pad taps do not count. Classic Touch keeps dedicated
+buttons and can use manual or automatic steam. Preferences persist.
+Auto Steam targets only the spoon's current lane, using ordinary cooldowns
+and statistics; it never steers or chooses milk/sugar. Hot chocolate remains
+manual (hold the cup for flames in Easy Touch). Runner pads replace cup
+input for the errand, and unfinished gestures never carry between phases.
+
 ## Future ideas (not implemented)
 
 These are possibilities for later milestones, recorded so they aren't lost.

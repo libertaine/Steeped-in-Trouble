@@ -105,7 +105,15 @@ export function musicMood(state, tension = 0) {
     case PHASE.READY:
       return { section: 'ready', tempo: 76, tension: 0, golden: false, stormy: false };
     case PHASE.READING:
+    case PHASE.SHORTAGE:
       return { section: 'reading', tempo: 66, tension: 0, golden: false, stormy: false };
+    case PHASE.TEA_RUN: {
+      // The errand borrows the hot chocolate's bounce, hurrying a little as the shop's closing time nears.
+      const r = state.run;
+      if (r.stage !== 'run') return { section: 'reading', tempo: 72, tension: 0, golden: false, stormy: false, chocolate: true };
+      const hurry = r.left < 8 ? 1 - r.left / 8 : 0;
+      return { section: 'havoc', tempo: 124 + 12 * hurry, tension: hurry, golden: false, stormy: false, chocolate: true };
+    }
     case PHASE.CHOCOLATE: {
       // Playful, with a quicker beat as the toasting time runs out.
       const c = state.chocolate;

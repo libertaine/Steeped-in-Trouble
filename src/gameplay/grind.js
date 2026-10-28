@@ -406,11 +406,16 @@ function finish({ state, emit }, result, reason = null) {
   state.shots = [];
   state.volleys = {};
   const summary = {
-    result, reason, perfect: false, cup: false, bonus: 0, scalds: g.scalds,
+    result, reason, perfect: false, cup: false, bonus: 0, cash: 0, scalds: g.scalds,
     valveHits: g.tally.valveHits, beans: g.tally.beans, time: g.clock,
   };
   if (result === 'victory') {
     summary.bonus = G.points;
+    // Beating a milestone boss pays Tea Cash too (gameplay/shortage.js).
+    if (g.milestone) {
+      summary.cash = CONFIG.teaCash.milestone;
+      state.teaCash += summary.cash;
+    }
     state.goldenSpoon = Math.max(state.goldenSpoon, G.goldenSpoon);
     if (g.scalds === 0) {
       summary.perfect = true;

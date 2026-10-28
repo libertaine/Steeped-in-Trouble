@@ -1,8 +1,11 @@
 // Entry point: wires the simulation to rendering, input, audio, and the HUD.
 
+import { CONFIG } from './config.js';
 import { createGame } from './core/game.js';
 import { createLoop } from './core/timing.js';
+import { ERRANDS } from './gameplay/shortage.js';
 import { createControls } from './input/controls.js';
+import { initialSettings, isTouchDevice, normalize, saveSettings } from './input/settings.js';
 import { createAudio } from './audio/audio.js';
 import { attachCanvasScaling } from './rendering/canvas.js';
 import { createEffects } from './rendering/effects.js';
@@ -44,6 +47,58 @@ function boot() {
   const hud = createHud(document);
   const audio = createAudio();
 
+  // Control settings: Easy or Classic Touch, and Auto Steam (see input/settings.js).
+  let storage = null;
+  try {
+    storage = window.localStorage;
+  } catch {
+    // Storage may be unavailable; the defaults will do.
+  }
+  let settings = initialSettings({ params, storage, touchDevice: isTouchDevice(window) });
+  const touchButton = document.getElementById('touchBtn');
+  const autoButton = document.getElementById('autoSteamBtn');
+  function applySettings(next, { save = false } = {}) {
+    settings = normalize(next);
+    document.body.dataset.touch = settings.touch;
+    game.setAutoSteam(settings.autoSteam);
+    if (touchButton) touchButton.textContent = `Touch: ${settings.touch}`;
+    if (autoButton) {
+      autoButton.textContent = `Auto Steam: ${settings.autoSteam ? 'on' : 'off'}${settings.touch === 'easy' ? ' (Easy Touch)' : ''}`;
+      autoButton.disabled = settings.touch === 'easy';
+    }
+    if (save) saveSettings(storage, settings);
+  }
+  applySettings(settings);
+  touchButton?.addEventListener('click', () => {
+    const touch = settings.touch === 'easy' ? 'classic' : 'easy';
+    // Leaving Easy Touch keeps Auto Steam on until it is turned off, so nothing changes mid-cup but the buttons.
+    applySettings({ touch, autoSteam: settings.autoSteam }, { save: true });
+  });
+  autoButton?.addEventListener('click', () => {
+    applySettings({ ...settings, autoSteam: !settings.autoSteam }, { save: true });
+  });
+
+  // A ring under the finger for Easy Touch gestures.
+  const ring = document.getElementById('touchRing');
+  const stage = ring?.parentElement;
+  ring?.style.setProperty('--press', `${CONFIG.touch.longPress}ms`);
+  function showRing(kind, point) {
+    if (!ring || !stage) return;
+    if (kind === 'release') {
+      if (ring.classList.contains('charging')) ring.hidden = true;
+      return;
+    }
+    if (point) {
+      const box = stage.getBoundingClientRect();
+      ring.style.left = `${point.x - box.left}px`;
+      ring.style.top = `${point.y - box.top}px`;
+    }
+    ring.className = 'touch-ring';
+    ring.hidden = false;
+    void ring.offsetWidth; // restart the animation
+    ring.classList.add(kind === 'press' ? 'charging' : kind);
+  }
+
   const controls = createControls({
     doc: document,
     commands: {
@@ -54,8 +109,15 @@ function boot() {
       togglePause: game.togglePause,
       restart: game.restart,
       pause: game.pause,
-      choose: game.chooseUpgrade,
+      // 1 and 2 pick an upgrade; during the Tea Shortage, 1 / 2 / 3 answer it.
+      choose: (index) => game.chooseUpgrade(index) || game.chooseErrand(ERRANDS[index]),
+      errand: game.chooseErrand,
+      jump: game.jump,
+      slide: game.slide,
     },
+    gestureMode: game.touchGestures,
+    scheme: () => settings.touch,
+    onGesture: showRing,
   });
 
   const soundButton = document.getElementById('soundBtn');
@@ -84,14 +146,25 @@ function boot() {
 
   const detachScaling = attachCanvasScaling(canvas);
 
-  const loop = createLoop((dt) => {
-    effects.update(dt, game.state);
-    game.update(dt, controls.held);
+  // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
+  const RESETS = new Set(['paused', 'matchStart', 'shortage', 'runStart', 'runEnd']);
+
+  function handleEvents() {
     for (const event of game.drainEvents()) {
-      if (event.type === 'paused' || event.type === 'matchStart') controls.reset();
+      if (RESETS.has(event.type)) controls.reset();
       effects.handle(event);
       audio.handle(event);
     }
+  }
+
+  const loop = createLoop((dt) => {
+    effects.update(dt, game.state);
+    controls.update();
+    // Input can leave the runner between frames. Clear its holds before the
+    // next cup advances, so the Space used to go home cannot also fire steam.
+    handleEvents();
+    game.update(dt, controls.held);
+    handleEvents();
     audio.update(game.state, dt);
     renderer.draw(game.state, effects.fx, dt);
     hud.update(game.state);
@@ -113,7 +186,7 @@ function boot() {
 
   // ?debug exposes the running game for automated browser tests and tinkering.
   if (params.has('debug')) {
-    window.__TEACUP__ = { game, effects, version: __APP_VERSION__ };
+    window.__TEACUP__ = { game, effects, version: __APP_VERSION__, config: CONFIG, settings: () => ({ ...settings }) };
   }
   return instance;
 }

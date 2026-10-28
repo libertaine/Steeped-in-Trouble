@@ -19,7 +19,19 @@
 <main>
   <section class="playfield" aria-label="Game area">
     <div class="stage">
-      <canvas id="game" width="920" height="790" role="img" aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
+      <canvas id="game" width="920" height="790" role="img" data-gestures aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
+      <div class="touch-ring" id="touchRing" aria-hidden="true" hidden></div>
+      <div class="upgrade-offer errand-offer" id="errandOffer" role="group" aria-labelledby="errandTitle" hidden>
+        <div class="offer-head">
+          <strong id="errandTitle">The tea tin is empty!</strong>
+          <em>What will you do?</em>
+        </div>
+        <div class="offer-cards errand-cards">
+          <button class="errand-card" data-errand="buy"><kbd>1</kbd><span><strong>Buy tea</strong><small></small></span></button>
+          <button class="errand-card" data-errand="run"><kbd>2</kbd><span><strong>Run to the store</strong><small></small></span></button>
+          <button class="errand-card" data-errand="skip"><kbd>3</kbd><span><strong>Skip</strong><small></small></span></button>
+        </div>
+      </div>
       <div class="upgrade-offer" id="upgradeOffer" role="group" aria-labelledby="offerTitle" hidden>
         <div class="offer-head">
           <strong id="offerTitle">A Spoonful of Trouble</strong>
@@ -41,14 +53,24 @@
         <span class="hudlabel pill" id="hudScore">SCORE 0000</span>
         <span class="hudlabel pill" id="hudLives">CUPS ♥ ♥ ♥</span>
         <span class="hudlabel pill strainer" id="hudStrainer">STRAINER 1/1</span>
+        <span class="hudlabel pill auto" id="hudAuto"></span>
       </div>
     </div>
-    <div class="controls-mobile">
+    <div class="controls-mobile controls-classic">
       <button data-hold="left" aria-label="Rotate counterclockwise">◀ TURN</button>
       <button data-hold="fire" aria-label="Shoot steam">STEAM ↑</button>
       <button data-hold="right" aria-label="Rotate clockwise">TURN ▶</button>
       <button id="milkBtn" aria-label="Pour milk">MILK</button>
       <button id="sugarBtn" aria-label="Fire sugar burst">SUGAR</button>
+    </div>
+    <div class="controls-mobile controls-easy">
+      <button class="steer" data-hold="left" aria-label="Rotate counterclockwise">◀</button>
+      <p class="easy-hint">Double-tap the cup: <b>milk</b><br />Hold the cup: <b>sugar</b></p>
+      <button class="steer" data-hold="right" aria-label="Rotate clockwise">▶</button>
+    </div>
+    <div class="controls-mobile controls-run">
+      <button class="run-pad" data-run="jump" aria-label="Jump">JUMP ▲</button>
+      <button class="run-pad" data-run="slide" aria-label="Slide">SLIDE ▼</button>
     </div>
   </section>
   <aside>
@@ -61,6 +83,7 @@
       <div class="statrow"><span>Milk pours</span><strong id="milkCount">2</strong></div>
       <div class="statrow"><span>Sugar bursts</span><strong id="sugarCount">2</strong></div>
       <div class="statrow"><span>Strainer catches</span><strong id="strainerCount">1 / 1</strong></div>
+      <div class="statrow"><span>Tea Cash</span><strong id="teaCash">0</strong></div>
       <div class="spoon-kit"><span>The spoon</span><span id="spoonKit">An ordinary silver spoon.</span></div>
       <button id="mainBtn" class="action">Brew the first cup →</button>
       <p class="note" id="gameTip">Defend the rim. Where the leaves settle determines the fortune of your next cup.</p>
@@ -82,9 +105,15 @@
       <div class="keyrow"><span>Sugar: triple shot</span><span><kbd>E</kbd> / <kbd>↓</kbd> / <kbd>S</kbd></span></div>
       <div class="keyrow"><span>Pause / next cup</span><span><kbd>P</kbd> / <kbd>Enter</kbd></span></div>
       <div class="keyrow"><span>Pick a spoon upgrade</span><span><kbd>1</kbd> / <kbd>2</kbd></span></div>
-      <p class="note">Hold STEAM to fire continuously. Milk washes the leaves in its wedge back into the cup and slows them; sugar shoots three strong crystalline darts. The tea strainer catches the first leaf to escape each cup. Touch controls work too.</p>
-      <button id="soundBtn" class="toggle" aria-label="Toggle sound">Sound: off</button>
-      <button id="graphicsBtn" class="toggle" aria-label="Toggle graphics quality">Graphics: high</button>
+      <div class="keyrow"><span>Tea Run: jump / slide</span><span><kbd>Space</kbd> / <kbd>↑</kbd> · <kbd>↓</kbd></span></div>
+      <p class="note">Hold STEAM to fire continuously, or turn on Auto Steam to fire at whatever lines up with the spoon. Milk washes the leaves in its wedge back into the cup and slows them; sugar shoots three strong crystalline darts. The tea strainer catches the first leaf to escape each cup.</p>
+      <p class="note">On a touch screen, <b>Easy Touch</b> gives you two big steering pads and Auto Steam: double-tap the cup to pour milk, and hold a finger on it to fire sugar. <b>Classic Touch</b> keeps a button for everything, and works with Auto Steam too.</p>
+      <div class="settings">
+        <button id="touchBtn" class="toggle" aria-label="Choose the touch controls">Touch: classic</button>
+        <button id="autoSteamBtn" class="toggle" aria-label="Toggle Auto Steam">Auto Steam: off</button>
+        <button id="soundBtn" class="toggle" aria-label="Toggle sound">Sound: off</button>
+        <button id="graphicsBtn" class="toggle" aria-label="Toggle graphics quality">Graphics: high</button>
+      </div>
     </section>
   </aside>
 </main>

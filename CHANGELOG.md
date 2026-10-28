@@ -5,6 +5,25 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+### 0.10.0 — The Tea Run (Milestone 1, pending playtesting)
+
+- **The Tea Shortage:** after round 9, once Chapter 2 is open, buy a tin
+  with Tea Cash, run to the shop, or skip. The first milestone takes priority;
+  upgrade choices, pending bonus encounters, and the next fortune are kept.
+- **The Tea Run:** a seeded, automatically running sidewalk errand. Jump
+  sugar cubes and puddles, slide under coffee cups, and reach the shop for
+  the same one-sugar restock as buying, plus 5 Tea Cash. Three stumbles end
+  the errand without costing a cup. Coins pay 5 points and tea packets 10,
+  kept even on failure; failure and skipping grant no restock or cash.
+- **Easy Touch and Auto Steam:** two steering pads, double-tap milk, and
+  long-press sugar, with remembered preferences. Classic Touch remains
+  available. Runner controls replace cup gestures during the errand.
+- Returning from the runner clears held input before the next cup advances,
+  preventing the Space used to go home from also firing a steam shot.
+- Runner statistics use the DOM HUD, with a separate road progress bar.
+  A 1.25× street zoom leaves collision coordinates and UI unchanged; phone
+  instruction/result cards and HUD layout support both graphics modes.
+
 ## [0.9.0] - 2026-10-28 — Strange Brews
 
 The tea has developed a personality. Several, actually.

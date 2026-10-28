@@ -221,7 +221,8 @@ canvas {
   margin-top: 9px;
 }
 
-.upgrade-card {
+.upgrade-card,
+.errand-card {
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -232,19 +233,23 @@ canvas {
 }
 
 .upgrade-card:hover,
-.upgrade-card:focus-visible {
+.upgrade-card:focus-visible,
+.errand-card:not(:disabled):hover,
+.errand-card:focus-visible {
   background: #2b5241;
   border-color: #f0d494;
   outline: none;
 }
 
-.upgrade-card strong {
+.upgrade-card strong,
+.errand-card strong {
   display: block;
   font: small-caps 700 16px/1.25 Georgia,serif;
   color: #f0d7a1;
 }
 
-.upgrade-card small {
+.upgrade-card small,
+.errand-card small {
   display: block;
   margin-top: 2px;
   font-size: 12px;
@@ -280,6 +285,142 @@ canvas {
   padding: 9px 5px;
   font-weight: 650;
   touch-action: none;
+}
+
+/*
+ * Touch layouts. main.js sets body[data-touch] (easy or classic) and the HUD
+ * sets body[data-mode] (cup, shortage, or run), so only one row shows: the
+ * classic buttons, the Easy Touch steering pads, or the Tea Run's JUMP and SLIDE.
+ */
+.controls-easy,
+.controls-run {
+  display: none;
+}
+
+body[data-touch="easy"] .controls-classic {
+  display: none;
+}
+
+body[data-touch="easy"] .controls-easy {
+  display: flex;
+}
+
+body[data-mode="run"] .controls-classic,
+body[data-mode="run"] .controls-easy {
+  display: none;
+}
+
+body[data-mode="run"] .controls-run {
+  display: flex;
+}
+
+.controls-easy {
+  align-items: stretch;
+  gap: 12px;
+}
+
+.controls-mobile .steer {
+  min-height: 74px;
+  font-size: 30px;
+}
+
+.easy-hint {
+  flex: 1.1;
+  align-self: center;
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #b9c8b8;
+}
+
+.controls-mobile .run-pad {
+  min-height: 78px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.run-pad[data-run="jump"] {
+  background: #2f5f49;
+}
+
+/* Easy Touch gestures belong to the game, not the browser: no scrolling, zoom, selection, or callouts. */
+body[data-touch="easy"] canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Feedback under the finger: a ring that tightens as a long press charges, and a pop when a gesture lands. */
+.touch-ring {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border: 3px solid #fff1c4;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.touch-ring[hidden] {
+  display: none;
+}
+
+.touch-ring.charging {
+  animation: ring-charge var(--press, 450ms) linear forwards;
+}
+
+.touch-ring.milk,
+.touch-ring.sugar {
+  animation: ring-pop .45s ease-out forwards;
+}
+
+.touch-ring.milk {
+  border-color: #ffffff;
+  background: #ffffff22;
+}
+
+.touch-ring.sugar {
+  border-color: #ffe08a;
+  background: #ffe08a22;
+}
+
+@keyframes ring-charge {
+  from { transform: scale(1.5); opacity: .15; }
+  to { transform: scale(.7); opacity: .9; }
+}
+
+@keyframes ring-pop {
+  from { transform: scale(.6); opacity: 1; }
+  to { transform: scale(2.2); opacity: 0; }
+}
+
+.auto {
+  border-color: #b4e9cf99;
+  color: #d8f5e6;
+}
+
+.auto:empty,
+.strainer:empty {
+  display: none;
+}
+
+.errand-cards {
+  grid-template-columns: repeat(3,minmax(0,1fr));
+}
+
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.settings .toggle {
+  margin-left: 0;
 }
 
 button {
@@ -506,6 +647,14 @@ kbd {
   .hudlabel {
     font-size: 9px;
   }
+  body[data-mode="run"] .hud-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  body[data-mode="run"] .pills {
+    justify-content: space-between;
+  }
   .controls-mobile {
     gap: 5px;
     padding: 8px;
@@ -522,17 +671,27 @@ kbd {
   .offer-head em {
     display: none;
   }
-  .upgrade-card {
+  .upgrade-card,
+  .errand-card {
     padding: 6px 7px;
     gap: 6px;
   }
-  .upgrade-card kbd {
+  .upgrade-card kbd,
+  .errand-card kbd {
     display: none;
   }
-  .upgrade-card strong {
+  .upgrade-card strong,
+  .errand-card strong {
     font-size: 13px;
   }
-  .upgrade-card small {
+  .upgrade-card small,
+  .errand-card small {
     font-size: 11px;
+  }
+  .errand-cards {
+    gap: 5px;
+  }
+  .errand-cards small {
+    font-size: 10px;
   }
 }

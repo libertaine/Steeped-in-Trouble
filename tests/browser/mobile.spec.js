@@ -1,7 +1,7 @@
 import { expect, gameState, openGame, test } from './fixtures.js';
 
-test('is playable with touch controls on a phone-sized screen', async ({ page, problems }) => {
-  await openGame(page);
+test('is playable with Classic Touch controls on a phone-sized screen', async ({ page, problems }) => {
+  await openGame(page, '&touch=classic');
 
   const layout = await page.evaluate(() => ({
     overflow: document.documentElement.scrollWidth - window.innerWidth,
@@ -9,13 +9,14 @@ test('is playable with touch controls on a phone-sized screen', async ({ page, p
   }));
   expect(layout.overflow).toBeLessThanOrEqual(0);
   expect(layout.canvasWidth).toBeGreaterThan(250);
-  await expect(page.locator('.controls-mobile')).toBeVisible();
+  await expect(page.locator('.controls-classic')).toBeVisible();
+  await expect(page.locator('.controls-easy')).toBeHidden();
 
   await page.locator('#mainBtn').tap();
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
 
   // Hold TURN ▶ with a pointer, then release it.
-  const turn = page.locator('[data-hold="right"]');
+  const turn = page.locator('.controls-classic [data-hold="right"]');
   const start = (await gameState(page)).angle;
   await turn.dispatchEvent('pointerdown', { pointerId: 7, pointerType: 'touch', isPrimary: true });
   await page.waitForTimeout(300);

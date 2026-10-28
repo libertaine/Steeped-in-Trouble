@@ -11,6 +11,8 @@ export const PHASE = Object.freeze({
   READING: 'reading',
   CHOCOLATE: 'chocolate', // Hot Chocolate Havoc, between a reading and the next cup
   GRIND: 'grind', // The Daily Grind, the coffee boss, likewise between rounds
+  SHORTAGE: 'shortage', // The Tea Shortage: buy, run, or skip, after a reading
+  TEA_RUN: 'teaRun', // The Tea Run, the side-scrolling errand to the shop
   GAME_OVER: 'gameover',
 });
 
@@ -90,6 +92,16 @@ export function createInitialState() {
     lastGrind: 0, // the round after which the latest encounter came
     grindDue: false, // decided at each reading: the coffee boss before the next cup?
     grind: null, // the encounter in progress; see createGrind()
+
+    // The Tea Shortage and the Tea Run (gameplay/shortage.js, gameplay/teaRun.js).
+    teaCash: 0, // pocket money for this pot; never part of the score
+    shortageAfter: CONFIG.shortage.firstAfter, // the round the next shortage may follow, or null
+    shortageDue: false, // decided at each reading: a shortage before the next cup?
+    shortage: null, // the announcement in progress: { time }
+    run: null, // the errand in progress; see createRun()
+
+    // A setting rather than play, so it is kept from pot to pot: fire at whatever lines up with the spoon.
+    autoSteam: false,
 
     shots: [], // { angle, radius, speed, sugar, veer, golden, volley?, nova?, cream? }
     // { kind, angle, radius, home, speed, wiggle, shifted, size, alpha, backwash, glide, dart?, wander? }
