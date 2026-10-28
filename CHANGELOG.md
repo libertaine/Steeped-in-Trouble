@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-28 — The Flying Spoon
+
 ### Added
 
 - **0.11.0 Milestone 2 — The Flying Spoon:** optional Tea Shortages return
@@ -14,7 +16,7 @@ All notable changes to this project are documented here. The project uses
   synthesized sounds, reduced-motion support and discoveries remembered for
   the current pot. Spoiler details and practical playtest steps are in
   `docs/FLYING_SPOON_TESTING.md` and the design document.
-- **0.11.0 development — The Pocket Teacup:** independent, remembered Compact
+- **The Pocket Teacup:** independent, remembered Compact
   / Full View. Touch capabilities choose the initial view, including wide
   tablets and mixed-input devices; a visible switch always overrides it.
 - Compact HUD outside the canvas, viewport-fitted portrait and landscape
@@ -34,8 +36,8 @@ All notable changes to this project are documented here. The project uses
 - Menu keyboard input cannot leak into gameplay, and dismissing a backgrounded
   or previously paused menu does not resume the simulation.
 
-Auto Steam and teacup combat rules are unchanged. Real-device human
-qualification remains pending; 0.11.0 is unreleased.
+Auto Steam and teacup combat rules are unchanged. Released following
+project-owner playtesting.
 
 ## [0.10.0] - 2026-10-28 — The Tea Run
 
@@ -280,7 +282,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.10.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.11.0...main
+[0.11.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.7.0...v0.8.0

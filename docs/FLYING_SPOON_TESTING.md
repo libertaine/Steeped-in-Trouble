@@ -1,6 +1,6 @@
 # Flying Spoon testing — spoilers
 
-This is a developer/playtester guide for unreleased 0.11.0 Milestone 2.
+This is a developer/playtester guide for 0.11.0 Milestone 2.
 The normal README and control instructions intentionally omit the surprises.
 Milestone 1 history remains in [MOBILE_TESTING.md](MOBILE_TESTING.md).
 
@@ -116,7 +116,9 @@ See the [inspected screenshot gallery](images/flying-spoon/README.md).
 Milestone 1's historical 466-unit / 87-browser qualification is retained in
 `MOBILE_TESTING.md`; those counts are superseded, not added to this suite.
 
-Browser emulation does not qualify
-real Samsung/phone/tablet hardware, system gestures, safe areas, browser
-toolbars, or Chrome Desktop Site behavior. Human device playtesting remains
-required before release. Keep PR #22 draft; no merge, tag or publication.
+Browser emulation does not qualify real Samsung/phone/tablet hardware,
+system gestures, safe areas, browser toolbars, or Chrome Desktop Site behavior.
+The original handoff kept PR #22 in draft for human playtesting. On
+2026-10-28, the project owner reported successful testing and authorized
+merging and releasing 0.11.0. Individual hardware configurations were not
+recorded; the automated evidence above remains browser emulation.

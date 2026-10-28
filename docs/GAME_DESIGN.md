@@ -772,7 +772,7 @@ and statistics; it never steers or chooses milk/sugar. Hot chocolate remains
 manual (hold the cup for flames in Easy Touch). Runner pads replace cup
 input for the errand, and unfinished gestures never carry between phases.
 
-### Compact View and the Tea Break (0.11.0 development)
+### Compact View and the Tea Break (0.11.0)
 
 Presentation, controls, and firing are separate choices: Compact / Full,
 Easy / Classic Touch, and Auto / Manual Steam. Easy Touch still requires

@@ -58,5 +58,7 @@ Windows, Node 24.22.1:
 
 That was the Milestone 1 handoff. Milestone 2 extends the runner; its
 [spoiler testing guide](FLYING_SPOON_TESTING.md) records the additional
-mechanics, rarity experiment and qualification. Real-device testing remains
-pending for the combined 0.11.0 candidate.
+mechanics, rarity experiment and qualification. On 2026-10-28, the project
+owner approved the combined 0.11.0 release after playtesting. Individual
+hardware configurations were not recorded; the automated evidence above
+remains browser emulation.
