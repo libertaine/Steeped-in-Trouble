@@ -8,7 +8,7 @@ import {
 } from '../../src/gameplay/progress.js';
 import { byStage } from '../../src/gameplay/strength.js';
 import { TEAS } from '../../src/gameplay/teas.js';
-import { completeRound, finishBonus, placeEnemy, playTo, playingGame, step } from './helpers.js';
+import { answerShortage, completeRound, finishBonus, placeEnemy, playTo, playingGame, step } from './helpers.js';
 
 const G = CONFIG.grind;
 const D = CONFIG.darting;
@@ -31,12 +31,16 @@ function finishRound(game) {
   completeRound(game);
 }
 
-/** Finish the round and leave its reading for the next cup, recording what was due there. */
+/**
+ * Finish the round and leave its reading for the next cup, recording what was
+ * due there. A Tea Shortage is skipped (and noted) on the way to any bonus round.
+ */
 function nextCup(game, { win = false } = {}) {
   finishRound(game);
   const due = { round: game.state.round, havoc: game.state.havocDue, grind: game.state.grindDue };
   game.state.offer = null;
   game.primaryAction();
+  due.shortage = answerShortage(game);
   due.phase = game.state.phase;
   due.milestone = game.state.grind?.milestone ?? false;
   finishBonus(game, { win });

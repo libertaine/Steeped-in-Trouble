@@ -390,4 +390,76 @@ export const CONFIG = deepFreeze({
     perfectSugar: 1, // extra sugar bursts next cup
     thriftyMinVolleys: 8, // More Leaves Than Steam: steam shots needed
   },
+
+  // Tea Cash: pocket money for the pot, kept apart from the score (gameplay/shortage.js).
+  // Provisional tuning; it resets with every new pot.
+  teaCash: {
+    round: 5, // each normal round completed
+    milestone: 15, // beating a chapter's milestone boss
+    runBonus: 5, // reaching the shop in the Tea Run
+  },
+
+  // The Tea Shortage: an emergency between rounds (gameplay/shortage.js).
+  shortage: {
+    firstAfter: 9, // the first shortage follows this round's reading…
+    minChapter: 2, // …once the pot has reached this chapter (otherwise the first reading after it has)
+    repeatEvery: null, // later shortages: this many rounds after the last (null: one per pot)
+    teaPrice: 20, // Tea Cash to buy tea instead of running for it
+    restockSugar: 1, // buying or fetching tea: extra sugar bursts for the next normal cup
+    chooseAt: 1.2, // seconds of announcement before the choice can be made
+  },
+
+  // The Tea Run: the side-scrolling errand (gameplay/teaRun.js). Distances are
+  // logical canvas units along the sidewalk; heights are above the paving.
+  teaRun: {
+    introTime: 3, // the announcement (Enter, or JUMP, skips it)
+    outroMin: 1.6, // the result can't be dismissed by accident before this
+    finishTime: 1.4, // the spoon trotting into the shop
+    speed: 330, // units per second, steady for the whole run
+    courseTime: 34, // seconds of running from the gate to the shop door
+    timeLimit: 45, // the shop shuts after this many seconds of running
+    hits: 3, // stumbles that end the errand (never a cup)
+    tumbleTime: 0.45, // seconds of tumbling after a stumble, at…
+    tumblePace: 0.45, // …this share of the usual speed
+    safeTime: 1.3, // seconds after a stumble before another can land
+
+    spoon: { halfWidth: 12, height: 66, slideHeight: 26 },
+    jumpTime: 0.6, // seconds from takeoff to landing
+    jumpHeight: 125, // at the top of the arc
+    slideTime: 0.6,
+    recoverTime: 0.08, // a moment on its feet after landing or standing up
+    bufferTime: 0.18, // a press during another action waits this long for the spoon to be ready
+
+    // The course: obstacles meet the spoon at planned times, never closer than minGap.
+    firstAt: 2.6, // seconds into the run
+    gapStart: 2.3, // seconds between obstacles at the start…
+    gapEnd: 1.55, // …easing to this by the shop
+    gapJitter: 0.45, // plus up to this much
+    minGap: 1.4,
+    clearRun: 2, // seconds of clear sidewalk before the shop door
+
+    // Hitboxes are the drawn shapes, inset a little so a near miss looks like one.
+    obstacles: {
+      sugarCube: { width: 38, height: 38, inset: 5, roll: 45, action: 'jump' }, // rolls towards the spoon
+      puddle: { width: 90, height: 8, inset: 14, action: 'jump' },
+      coffeeCup: { width: 76, clearance: 40, inset: 8, action: 'slide' }, // hangs this far above the paving
+    },
+    // Things to pick up on the way: a few points each, kept however the run ends.
+    coinGap: 1.6, // a row of coins may sit in a gap at least this long…
+    coinChance: 0.45, // …this often
+    packetChance: 0.35, // a tea packet over a jump (or under a cup) this often
+    packetHeight: 130, // over a jump; under a cup it sits on the paving
+    pickupRadius: 15,
+    coinPoints: 5,
+    packetPoints: 10, // a packet stays a small bonus beside an ordinary round
+  },
+
+  // Easy Touch (input/gestures.js): forgiving gestures on the cup for milk and sugar.
+  touch: {
+    doubleTap: 300, // ms from a tap to the next touch for milk
+    tapSlop: 48, // CSS px the second tap may land from the first
+    tapMax: 300, // ms: a touch held longer is not a tap
+    longPress: 450, // ms held still for sugar
+    moveSlop: 32, // CSS px a finger may wander before it is a drag, not a press
+  },
 });

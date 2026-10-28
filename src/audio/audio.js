@@ -35,6 +35,11 @@ const SOUNDS = {
   dart: [700, 0.1, 'sawtooth', 0.005, 0, 1.8], // zip
   wanderWarn: [880, 0.16, 'sine', 0.008, 0, 0.85],
   wander: [660, 0.2, 'sine', 0.008, 0, 1.25], // a soft swoosh sideways
+  // The Tea Run.
+  runJump: [420, 0.16, 'triangle', 0.016, 0, 1.8], // boing
+  runSlide: [300, 0.22, 'sawtooth', 0.006, 0, 0.5], // a scrape along the paving
+  runLand: [140, 0.05, 'sine', 0.012],
+  runHit: [160, 0.25, 'square', 0.02, 0, 0.4], // bonk
 };
 
 // Little tunes: lists of notes.
@@ -103,6 +108,15 @@ const TUNES = {
   nova: [[196, 0.45, 'sawtooth', 0.02], [523, 0.12, 'square', 0.014, 0.05], [659, 0.12, 'square', 0.014, 0.1],
     [784, 0.12, 'square', 0.014, 0.15], [1047, 0.12, 'square', 0.014, 0.2], [1319, 0.6, 'sine', 0.034, 0.25],
     [1568, 0.6, 'sine', 0.02, 0.25]],
+  // The Tea Shortage: a melodramatic sting.
+  shortage: [[392, 0.2, 'sawtooth', 0.02], [370, 0.2, 'sawtooth', 0.02, 0.22], [311, 0.7, 'sawtooth', 0.024, 0.44, 0.9]],
+  teaBought: [[1319, 0.08, 'square', 0.012], [1760, 0.3, 'sine', 0.026, 0.08]], // ka-ching
+  shortageSkipped: [[523, 0.2, 'sine', 0.016], [440, 0.3, 'sine', 0.016, 0.15]],
+  // The Tea Run: a starting whistle, a coin's ding, and the endings.
+  runGo: [[1568, 0.12, 'square', 0.012], [2093, 0.3, 'square', 0.012, 0.12, 0.98]],
+  runFinish: [[659, 0.12, 'triangle', 0.024], [784, 0.12, 'triangle', 0.024, 0.11], [988, 0.12, 'triangle', 0.024, 0.22],
+    [1319, 0.5, 'sine', 0.032, 0.33]],
+  runFail: [[392, 0.3, 'triangle', 0.018], [349, 0.3, 'triangle', 0.018, 0.3], [262, 0.7, 'triangle', 0.018, 0.6, 0.9]],
 };
 
 /** The tune for a simulation event, if it has one. */
@@ -205,6 +219,8 @@ export function createAudio() {
         if (event.how === 'rim') beep([event.points ? 360 : 240, 0.1, 'sine', 0.02]); // plop
       }
       else if (event.type === 'roundStart' && event.opens) TUNES.chapter.forEach(beep);
+      // Coins ding; a tea packet rustles a little lower.
+      else if (event.type === 'runPickup') beep(event.kind === 'coin' ? [1760, 0.09, 'sine', 0.014, 0, 1.2] : [880, 0.14, 'triangle', 0.016, 0, 1.3]);
       else if (SOUNDS[event.type]) beep(SOUNDS[event.type]);
       else tuneFor(event)?.forEach(beep);
     },

@@ -15,7 +15,10 @@
 // pressureWarn, pressureBurst, sputter, clank, grindHit, grindRage, scald,
 // grindDefeat, grindEscape; and in Strange Brews: dartWarn, dart, wanderWarn,
 // wander, currentWarn, currentFlow, currentEnd (roundStart also names the tea,
-// whether it has just come on tap, and the chapter, and whether this cup opens it).
+// whether it has just come on tap, and the chapter, and whether this cup opens it);
+// and for The Tea Shortage: shortage, teaBought, shortageSkipped, and in the
+// Tea Run: runStart, runGo, runJump, runSlide, runLand, runHit, runPickup,
+// runFinish, runFail, runEnd.
 
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
@@ -33,6 +36,9 @@ import {
   createHavoc, finishHavoc, fireFlame, firstHavocRound, havocDue, spawnMarshmallow, updateHavoc,
 } from '../gameplay/chocolate.js';
 import { createGrind, grindDue, milestoneDue, milkTheMachine, updateGrind } from '../gameplay/grind.js';
+import { autoSteamWanted, autoSteamWantedInGrind } from '../gameplay/autoSteam.js';
+import { ERRANDS, buyTea, earnTeaCash, scheduleNextShortage, shortageDue } from '../gameplay/shortage.js';
+import { createRun, press, startRunning, updateRun } from '../gameplay/teaRun.js';
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import {
@@ -68,11 +74,16 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
   const grindSim = { state, rng: brew, emit };
   // And the tea varieties, so the cups are steeped in the same order however they are played.
   const steep = createRandom(toSeed(rng.seed ?? 0) ^ 0x7ea7ea);
+  // And the Tea Run, so the errand never changes the teas, fortunes, or leaves that follow it.
+  const errand = createRandom(toSeed(rng.seed ?? 0) ^ 0x5b007e);
+  const runSim = { state, rng: errand, emit };
   const pinnedTea = typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
   const grinding = (stage) => state.phase === PHASE.GRIND && (!stage || state.grind.stage === stage);
+  const running = (stage) => state.phase === PHASE.TEA_RUN && (!stage || state.run.stage === stage);
   const offerOpen = () => state.phase === PHASE.READING && !!state.offer && state.readingTime >= OFFER_AT;
+  const errandOpen = () => state.phase === PHASE.SHORTAGE && state.shortage.time >= CONFIG.shortage.chooseAt;
 
   function clearField() {
     state.shots = [];
@@ -150,6 +161,11 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.grindDue = false;
     state.lastGrind = 0;
     state.grindAfter = CONFIG.grind.milestoneAfter;
+    state.teaCash = 0;
+    state.shortageAfter = CONFIG.shortage.firstAfter;
+    state.shortageDue = false;
+    state.shortage = null;
+    state.run = null;
     emit('matchStart');
     startRound();
   }
@@ -172,6 +188,8 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
       state.havocAfter = state.round + 1;
     }
     state.grindDue = grindDue(state, brew); // never alongside the hot chocolate
+    state.shortageDue = shortageDue(state); // never alongside a milestone boss
+    earnTeaCash(state, CONFIG.teaCash.round);
     emit('reading', { fortune: state.nextFortune, offer: state.offer });
     state.secrets = findSecrets(state.roundStats);
     for (const id of state.secrets) {
@@ -186,11 +204,55 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     startRound();
   }
 
-  /** Leave a reading: on to the next cup, or first a detour into hot chocolate or the coffee boss. */
+  /**
+   * Leave a reading: on to the next cup, or first a detour. An empty tea tin
+   * comes first, and the game returns here once it is dealt with, so a hot
+   * chocolate or coffee boss decided at the same reading still follows.
+   */
   function continueFromReading() {
-    if (state.havocDue) startHavoc();
+    if (state.shortageDue) startShortage();
+    else if (state.havocDue) startHavoc();
     else if (state.grindDue) startGrind();
     else brewNextCup();
+  }
+
+  /**
+   * The Tea Shortage: the reading's fortune, the spoon, the chapter, and any
+   * bonus round still to come all wait while the player decides.
+   */
+  function startShortage() {
+    state.phase = PHASE.SHORTAGE;
+    clearField();
+    state.shortageDue = false;
+    state.shortage = { time: 0 };
+    scheduleNextShortage(state);
+    emit('shortage', { round: state.round, cash: state.teaCash, price: CONFIG.shortage.teaPrice });
+  }
+
+  function leaveShortage() {
+    state.shortage = null;
+    continueFromReading();
+  }
+
+  /** The Tea Run. Like the bonus rounds it leaves the cups, the spoon, and the next fortune alone. */
+  function startRun() {
+    state.phase = PHASE.TEA_RUN;
+    state.shortage = null;
+    clearField();
+    state.run = createRun(errand);
+    emit('runStart', { obstacles: state.run.obstacles.length });
+  }
+
+  function beginRunning() {
+    startRunning(state.run);
+    emit('runGo', {});
+  }
+
+  function leaveRun() {
+    const { result } = state.run;
+    state.run = null;
+    emit('runEnd', { result });
+    continueFromReading();
   }
 
   /**
@@ -314,7 +376,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     // As in the hot chocolate, the Golden Spoon's time stands still.
     moveSpoon(state, input, dt);
     state.shotCooldown -= dt;
-    if (input.fire) fireSteam(grindSim);
+    if (input.fire || (state.autoSteam && autoSteamWantedInGrind(state))) fireSteam(grindSim);
     updateClouds(state, dt);
     updateShots(state, dt);
     updateGrind(grindSim, dt);
@@ -444,6 +506,14 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
       updateGrindPhase(dt, input);
       return;
     }
+    if (state.phase === PHASE.SHORTAGE) {
+      state.shortage.time += dt;
+      return;
+    }
+    if (state.phase === PHASE.TEA_RUN) {
+      updateRun(runSim, dt);
+      return;
+    }
     if (!playing()) return;
     state.graceTime = Math.max(0, state.graceTime - dt);
     if (state.goldenSpoon > 0) {
@@ -454,7 +524,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.wake = tornadoWake(state);
     if (state.wake) discover(sim, 'silverTornado');
     state.shotCooldown -= dt;
-    if (input.fire) fireSteam(sim);
+    if (input.fire || (state.autoSteam && autoSteamWanted(state))) fireSteam(sim);
     updateSugarRegen(sim, dt);
     updateSpawning(sim, dt);
     updateCurrent(sim, dt);
@@ -466,7 +536,8 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
   }
 
   function pause() {
-    if (!playing() && !chocolate('intro') && !chocolate('play') && !grinding('intro') && !grinding('fight')) return;
+    if (!playing() && !chocolate('intro') && !chocolate('play') && !grinding('intro') && !grinding('fight')
+      && !running('intro') && !running('run')) return;
     state.pausedFrom = state.phase;
     state.phase = PHASE.PAUSED;
     emit('paused');
@@ -498,6 +569,11 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
         else if (grinding('fight')) pause();
         else if (state.grind.time >= CONFIG.grind.outroMin) leaveGrind();
         break;
+      case PHASE.TEA_RUN:
+        if (running('intro')) beginRunning(); // skip the announcement
+        else if (running('run')) pause();
+        else if (running('outro') && state.run.time >= CONFIG.teaRun.outroMin) leaveRun();
+        break;
       case PHASE.PLAYING:
         pause();
         break;
@@ -518,13 +594,62 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
      * upgrade card can take it as a click.
      */
     confirm() {
-      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND].includes(state.phase)) return false;
-      if (state.offer || chocolate('play') || grinding('fight')) return false;
+      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.TEA_RUN].includes(state.phase)) return false;
+      if (state.offer || chocolate('play') || grinding('fight') || running('run') || running('finish')) return false;
       primaryAction();
       return true;
     },
     /** Is an upgrade offer on show and ready to be taken? */
     offerOpen,
+    /** Is the Tea Shortage's choice on show and ready to be made? */
+    errandOpen,
+    /**
+     * Answer the Tea Shortage: 'buy' (if the Tea Cash runs to it), 'run', or
+     * 'skip'. Returns true if the choice was taken.
+     */
+    chooseErrand(choice) {
+      if (!errandOpen() || !ERRANDS.includes(choice)) return false;
+      if (choice === 'run') {
+        startRun();
+        return true;
+      }
+      if (choice === 'buy') {
+        if (!buyTea(state)) return false;
+        emit('teaBought', { cash: state.teaCash, sugar: CONFIG.shortage.restockSugar });
+      } else {
+        emit('shortageSkipped', {});
+      }
+      leaveShortage();
+      return true;
+    },
+    /**
+     * In the Tea Run: jump (Space / ↑, or JUMP). Before the run it starts it,
+     * and after it, once the result has been seen, it heads home.
+     */
+    jump() {
+      if (running('intro') || running('outro')) {
+        const before = state.run;
+        primaryAction();
+        return state.run !== before || running('run');
+      }
+      return running('run') && press(runSim, 'jump');
+    },
+    /** In the Tea Run: slide (↓, or SLIDE). */
+    slide: () => running('run') && press(runSim, 'slide'),
+    /** Turn Auto Steam on or off; it lasts from pot to pot. */
+    setAutoSteam(on) {
+      state.autoSteam = !!on;
+    },
+    /**
+     * Which touch gestures the cup answers right now (Easy Touch): 'cup' for
+     * milk and sugar in a round or the boss fight, 'flame' to hold for flames
+     * in the hot chocolate, or null.
+     */
+    touchGestures() {
+      if (playing() || grinding('fight')) return 'cup';
+      if (chocolate('play')) return 'flame';
+      return null;
+    },
     /**
      * Take offered upgrade number `index` (0-based) and brew the next cup.
      * Returns true if an upgrade was taken.
@@ -541,7 +666,8 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     },
     /** P: pause or resume during a round. Returns true if handled. */
     togglePause() {
-      if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED && !chocolate('play') && !grinding('fight')) return false;
+      if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED && !chocolate('play') && !grinding('fight')
+        && !running('run')) return false;
       primaryAction();
       return true;
     },

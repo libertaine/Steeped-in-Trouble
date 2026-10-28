@@ -13,13 +13,15 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **0.9.0 — Strange Brews** is out: the tea has developed a
-personality. Several, actually. The game is experimental and still changing,
-but there's plenty in the cup already:
+Version **0.10.0 — The Tea Run** is the current release: the spoon is going
+shopping. The game is experimental and still changing, but there's plenty
+in the cup already:
 
 - Arcade defence around a living teacup whose tea swirls, ripples, and
   reacts to every shot.
-- New in 0.9.0: five tea varieties, each changing how its round plays, from
+- New in 0.10.0: an optional Tea Run to the shop, Tea Cash, Easy Touch,
+  and Auto Steam for a more relaxed pot. Classic Touch remains available.
+- Five tea varieties, each changing how its round plays, from
   leaves that dart or change lanes to spice currents that sweep the cup.
   They arrive as you progress, in chapters: a steady first chapter to learn
   the cup, then a milestone to clear before the next brew is poured.
@@ -30,6 +32,9 @@ but there's plenty in the cup already:
 - Occasional bonus rounds and a very angry espresso machine.
 - Procedurally drawn vector graphics and an adaptive soundtrack that follows
   the cup, and the tea.
+
+The initial PC playtest is complete. Phone and tablet usability testing is
+next and will guide further mobile improvements.
 
 See the [changelog](CHANGELOG.md) for what changed in each version.
 
@@ -69,9 +74,26 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 | Start, next cup, new pot | <kbd>Enter</kbd> | main button |
 | Pick a spoon upgrade | <kbd>1</kbd> / <kbd>2</kbd> | tap a card |
 | Restart after game over | <kbd>R</kbd> | main button |
+| Tea Shortage: Buy / Run / Skip | <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> | tap a choice |
+| Tea Run: jump / slide | <kbd>Space</kbd> or <kbd>↑</kbd> / <kbd>↓</kbd> | **JUMP** / **SLIDE** |
+
+Phones start with **Easy Touch**: hold the two
+steering pads, double-tap the cup for milk, and hold the cup for sugar.
+Auto Steam fires only at targets lined up with your spoon. Select **Classic
+Touch** for the buttons in the table; it also works with Auto Steam.
+
+After round 9, once the first milestone is beaten, the tea tin may run out.
+Buy tea for 20 Tea Cash, fetch it in a roughly 34-second run, or skip for
+free. Buying and a successful run each add one sugar burst to the next
+normal cup; a successful run also earns 5 Tea Cash. Neither a failed run
+nor skipping costs a cup. Your spoon and next fortune wait for you.
 
 ## Options
 
+- **Touch** chooses Easy or Classic Touch; **Auto Steam** can be enabled
+  with Classic Touch or a keyboard, and is always enabled with Easy Touch.
+  Both choices are remembered. URL overrides for one visit are
+  `?touch=easy|classic` and `?autosteam=on|off` (Easy Touch keeps Auto Steam on).
 - **Sound** is off by default. Turn it on for synthesized sound effects and
   the adaptive soundtrack.
 - **Graphics** switches between high quality (full-resolution tea with

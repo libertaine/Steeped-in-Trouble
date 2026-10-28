@@ -26,6 +26,9 @@ src/
 │   ├── secrets.js       hidden feats judged when a round is read, and their rewards
 │   ├── combos.js        unexpected brews: combinations that unlock new behaviour
 │   ├── chocolate.js     Hot Chocolate Havoc: the bonus round's schedule, marshmallows, flames, scoring
+│   ├── shortage.js      Tea Cash, shortage scheduling, and restock
+│   ├── teaRun.js        seeded runner course, actions, collisions, and settlement
+│   ├── autoSteam.js     pure decisions about firing at aligned targets
 │   ├── grind.js         The Daily Grind: the coffee boss's schedule, valve, attacks, scalds, rewards
 │   ├── upgrades.js      spoon upgrades: definitions, offers, stacking limits
 │   └── fortunes.js      leaf reading, fortune selection, modifiers, glyphs
@@ -34,7 +37,7 @@ src/
 │   ├── renderer.js      draws state onto the canvas
 │   ├── effects.js       cosmetic particles and the spill flash
 │   └── grind.js         draws the espresso machine and its attacks
-├── input/controls.js    keyboard and pointer input
+├── input/               controls.js wires input; gestures.js recognises touches; settings.js persists preferences
 ├── audio/
 │   ├── audio.js         optional synthesized sound effects; owns the AudioContext
 │   └── music.js         the adaptive procedural soundtrack
@@ -70,9 +73,11 @@ AudioContext and the Sound toggle.
 frame:
 
 1. `effects.update(dt)` ages particles.
-2. `game.update(dt, controls.held)` advances the simulation.
-3. Queued events are drained and passed to `effects`, `audio`, and (for
-   `paused` / `matchStart`) `controls.reset()`.
+2. `controls.update()` notices gestures, then input-generated events are
+   drained before simulation so phase changes reset held input immediately.
+3. `game.update(dt, controls.held)` advances the simulation, then its events
+   are passed to `effects`, `audio`, and (for phase/input boundaries)
+   `controls.reset()`.
 4. `audio.update(state, dt)` keeps the soundtrack scheduled.
 5. `renderer.draw(state, fx, dt)` paints the frame, and `hud.update(state)`
    updates changed DOM text.
@@ -116,6 +121,30 @@ The fight reuses the real `fireSteam()`, `sugarBurst()`, and `pourMilk()`
 fresh milk and sugar. Its three scalds are its own; losing never touches the
 cups, and only a victory changes them (a Perfect Brew restores one, up to
 four). The Golden Spoon a victory awards starts with the next cup.
+
+## The Tea Shortage and Tea Run
+
+A reading also decides `shortageDue`: round 9 or later, in Chapter 2, and
+never alongside a milestone. After any upgrade choice,
+`continueFromReading()` enters `shortage` before a pending bonus or rematch.
+The Buy / Run / Skip choice opens after 1.2 seconds. Enter never chooses.
+Starting a shortage consumes its schedule (one per pot); a new match resets it.
+
+Buy deducts Tea Cash and adds next-cup sugar; Skip changes neither.
+Run enters `teaRun`: `intro → run → finish → outro` on success, or
+`intro → run → outro` on failure. Only intro and active running can pause.
+`gameplay/teaRun.js` owns the course, plain runner state, jump/slide buffer,
+collisions, and one-time settlement. It uses its own seeded generator,
+independent of leaves, teas, fortunes, and bonus encounters. Both exits call
+`continueFromReading()` again, preserving pending encounters and fortunes.
+Restock uses `extraSugar`, consumed only by `startRound()`.
+
+`rendering/teaRun.js` paints a separate street scene. A 1.25× transform about
+the spoon's feet scales only the street, obstacles, pickups, and spoon.
+The progress bar and cards draw after restoring that transform; DOM pills
+show time, pickups, and stumbles. Compact cards depend on displayed canvas
+width, never on simulation coordinates. `ui/hud.js` sets `body[data-mode]`
+for the runner controls and phone HUD layout, including while paused.
 
 ## Chapters and the milestone
 
@@ -248,6 +277,17 @@ prevents page scrolling only for the arrow keys and Space, and it ignores key pr
 state is released on window blur, page hide, pointer up, pointer cancel, and
 lost pointer capture, and (through the game's events) on pause and on a new
 match.
+
+Easy Touch recognises double-tap milk and long-press sugar on the canvas
+alone. In Hot Chocolate Havoc it instead holds flames; in the runner,
+Space/↑ and ↓ plus dedicated pads call jump and slide. `controls.update()`
+runs before simulation to notice held gestures and changed phases.
+Pause, match start, shortage, run start, and run end reset held input and
+gestures. Changing gesture mode also forgets unfinished touches.
+`input/settings.js` reads/writes guarded local storage; Easy Touch always
+normalises to Auto Steam on. The game preserves that setting between pots.
+`gameplay/autoSteam.js` only decides whether to call ordinary `fireSteam()`;
+it never steers or spends milk/sugar, and never toasts automatically.
 
 ## Fortune system
 

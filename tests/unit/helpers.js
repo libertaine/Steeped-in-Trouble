@@ -85,14 +85,23 @@ export function finishBonus(game, { win = false } = {}) {
   game.primaryAction();
 }
 
+/** Answer a Tea Shortage, if one is on, as soon as its choice can be made: 'skip' by default. */
+export function answerShortage(game, choice = 'skip') {
+  if (game.state.phase !== 'shortage') return false;
+  game.state.shortage.time = Math.max(game.state.shortage.time, 5);
+  return game.chooseErrand(choice);
+}
+
 /**
  * Continue from a reading to the next cup, declining any upgrade offer (so
- * tests of other features play with a plain spoon), and passing through any
- * bonus round on the way (beating The Daily Grind only with `win`).
+ * tests of other features play with a plain spoon), skipping any Tea
+ * Shortage, and passing through any bonus round on the way (beating The
+ * Daily Grind only with `win`).
  */
 export function brewNext(game, { win = false } = {}) {
   game.state.offer = null;
   game.primaryAction();
+  answerShortage(game);
   finishBonus(game, { win });
 }
 
@@ -108,6 +117,23 @@ export function playTo(game, round, { win = false } = {}) {
     completeRound(game);
     brewNext(game, { win });
   }
+}
+
+/**
+ * A pot at its first Tea Shortage, with the choice ready to be made: the
+ * reading after round 9, in Chapter 2 (the machine was beaten after round 5).
+ */
+export function atShortage(seed = 1) {
+  const game = playingGame({ seed });
+  playTo(game, 9, { win: true });
+  game.state.current = null;
+  game.state.modifiers = { ...game.state.modifiers, laneDrift: false };
+  completeRound(game);
+  game.state.offer = null;
+  game.primaryAction();
+  game.state.shortage.time = 5;
+  game.drainEvents();
+  return game;
 }
 
 /** Finish the current round: the next kill reaches the target. */

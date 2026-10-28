@@ -13,8 +13,10 @@ import { spoonLane } from '../gameplay/player.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { grindInProgress } from '../gameplay/grind.js';
 import { TEAS, currentStageLength } from '../gameplay/teas.js';
+import { runInProgress } from '../gameplay/teaRun.js';
 import { createGrindPainter } from './grind.js';
 import { createTeaPainter } from './tea.js';
+import { createRunPainter } from './teaRun.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
 const { revealAt, lieRetractAt } = CONFIG.fortunes;
@@ -122,6 +124,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
   let gradients = null;
   const tea = createTeaPainter(ctx);
   const espresso = createGrindPainter(ctx, { circle, text, laneBeam, highQuality: () => renderer.quality === 'high' });
+  const errand = createRunPainter(ctx, { circle, text, compact: () => canvas.clientWidth < 560, highQuality: () => renderer.quality === 'high' });
   const aim = { lane: null, prev: null, fade: 1 }; // the highlighted lane, and the one fading out
 
   function createGradients() {
@@ -1517,6 +1520,13 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       gradients ??= createGradients();
       ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
       ctx.clearRect(0, 0, W, H);
+      // The Tea Run leaves the cup behind altogether.
+      const run = runInProgress(state);
+      if (run) {
+        trackAim(state, dt);
+        errand.drawRun(run, state, time, state.phase === PHASE.PAUSED);
+        return;
+      }
       if (fx.shake > 0) {
         const k = fx.shake * 7;
         ctx.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
@@ -1562,6 +1572,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       if (havoc || grind) drawPopups(fx.popups ?? []);
       if (state.phase === PHASE.GRIND) espresso.drawOverlay(grind, time);
       drawOverlay(state, fx);
+      if (state.phase === PHASE.SHORTAGE) errand.drawShortage(state.shortage, state, time);
       if (state.phase === PHASE.CHOCOLATE) drawHavocOverlay(havoc);
       if (live) drawWhisper(fx.whisper);
       if (inPlay) drawDiscovery(fx.discovery);
