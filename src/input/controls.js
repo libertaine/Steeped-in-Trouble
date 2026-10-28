@@ -57,9 +57,11 @@ const SLIDE_KEYS = new Set(['ArrowDown']);
 export function createControls({
   doc = document, commands, gestureMode = () => null, scheme = () => 'classic', onGesture = () => {},
   now = () => performance.now(), gestures = createGestures(),
+  enabled = () => true,
 }) {
   const win = doc.defaultView;
   const held = { left: false, right: false, fire: false };
+  const keyboardPads = new Map();
   const cleanups = [];
   let mode = null; // the gesture mode last seen
   let flamePointer = null; // the finger holding the flame in the hot chocolate
@@ -78,6 +80,7 @@ export function createControls({
   }
 
   function reset() {
+    keyboardPads.clear();
     held.left = false;
     held.right = false;
     held.fire = false;
@@ -107,7 +110,21 @@ export function createControls({
 
   listen(win, 'keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return; // leave browser shortcuts alone
+    if (!enabled()) return;
+    const target = e.target;
+    if (target?.closest?.('input, select, textarea, [contenteditable="true"]')) return;
     const code = e.code;
+    if (target?.closest?.('button:not(#mainBtn), a') && (code === 'Space' || code === 'Enter')) {
+      if (e.repeat && target.closest('[data-run]')) e.preventDefault();
+      const hold = target.closest('[data-hold]')?.dataset.hold;
+      if (hold) {
+        e.preventDefault();
+        held[hold] = true;
+        keyboardPads.set(code, hold);
+        if (hold === 'fire' && !e.repeat) commands.fire();
+      }
+      return; // Native activation belongs to the focused UI, never to a gameplay shortcut.
+    }
     if (CAPTURED_KEYS.has(code)) e.preventDefault();
     const hold = KEY_BINDINGS[code];
     if (hold) {
@@ -129,6 +146,9 @@ export function createControls({
   });
 
   listen(win, 'keyup', (e) => {
+    const padHold = keyboardPads.get(e.code);
+    if (padHold) held[padHold] = false;
+    keyboardPads.delete(e.code);
     const hold = KEY_BINDINGS[e.code];
     if (hold) held[hold] = false;
   });
@@ -151,6 +171,7 @@ export function createControls({
   for (const button of doc.querySelectorAll('[data-hold]')) {
     const hold = button.dataset.hold;
     listen(button, 'pointerdown', (e) => {
+      if (!enabled()) return;
       e.preventDefault();
       held[hold] = true;
       if (hold === 'fire') commands.fire();
@@ -169,26 +190,32 @@ export function createControls({
   for (const button of doc.querySelectorAll('[data-run]')) {
     const action = button.dataset.run;
     listen(button, 'pointerdown', (e) => {
+      if (!enabled()) return;
       e.preventDefault();
+      capture(button, e);
       commands[action]?.();
+    });
+    listen(button, 'click', (e) => {
+      if (enabled() && e.detail === 0) commands[action]?.(); // keyboard / assistive activation
     });
   }
 
   const milkButton = doc.querySelector('#milkBtn');
   const sugarButton = doc.querySelector('#sugarBtn');
-  if (milkButton) listen(milkButton, 'click', () => commands.milk());
-  if (sugarButton) listen(sugarButton, 'click', () => commands.sugar());
+  if (milkButton) listen(milkButton, 'click', () => { if (enabled()) commands.milk(); });
+  if (sugarButton) listen(sugarButton, 'click', () => { if (enabled()) commands.sugar(); });
   for (const card of doc.querySelectorAll('[data-choice]')) {
-    listen(card, 'click', () => commands.choose(Number(card.dataset.choice)));
+    listen(card, 'click', () => { if (enabled()) commands.choose(Number(card.dataset.choice)); });
   }
   for (const button of doc.querySelectorAll('[data-errand]')) {
-    listen(button, 'click', () => commands.errand?.(button.dataset.errand));
+    listen(button, 'click', () => { if (enabled()) commands.errand?.(button.dataset.errand); });
   }
 
   // Easy Touch: gestures on the cup.
   const area = doc.querySelector('[data-gestures]');
   if (area) {
     listen(area, 'pointerdown', (e) => {
+      if (!enabled()) return;
       const gesture = currentMode();
       if (!gesture) return;
       e.preventDefault(); // no text selection, callouts, or zoom
@@ -225,17 +252,22 @@ export function createControls({
     listen(area, 'pointerup', (e) => lift(e, false));
     listen(area, 'pointercancel', (e) => lift(e, true));
     listen(area, 'lostpointercapture', (e) => lift(e, true));
-    // A long press must not open the browser's menu for the canvas.
-    listen(area, 'contextmenu', (e) => {
-      if (scheme() === 'easy') e.preventDefault();
-    });
   }
+
+  // Scope browser callout protection to the play surface and its controls, in both schemes.
+  for (const surface of doc.querySelectorAll('.playfield')) {
+    listen(surface, 'contextmenu', (e) => e.preventDefault());
+    listen(surface, 'selectstart', (e) => e.preventDefault());
+  }
+  // Also covers the isolated canvas used by embedders and the unit input harness.
+  if (area) listen(area, 'contextmenu', (e) => e.preventDefault());
 
   return {
     held,
     reset,
     /** Call every frame: notices a long press, and forgets gestures when the game moves on. */
     update() {
+      if (!enabled()) { reset(); return; }
       if (currentMode() !== 'cup') return;
       const hit = gestures.tick(now());
       if (hit) act(hit);

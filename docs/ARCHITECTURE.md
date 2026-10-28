@@ -128,7 +128,9 @@ A reading also decides `shortageDue`: round 9 or later, in Chapter 2, and
 never alongside a milestone. After any upgrade choice,
 `continueFromReading()` enters `shortage` before a pending bonus or rematch.
 The Buy / Run / Skip choice opens after 1.2 seconds. Enter never chooses.
-Starting a shortage consumes its schedule (one per pot); a new match resets it.
+Starting a shortage consumes its schedule; `scheduleNextShortage` advances
+`shortageAfter` to the next future target in 9 + 7n. Delays coalesce into one
+visit, never a queue. A new match resets the target to 9.
 
 Buy deducts Tea Cash and adds next-cup sugar; Skip changes neither.
 Run enters `teaRun`: `intro → run → finish → outro` on success, or
@@ -145,6 +147,37 @@ The progress bar and cards draw after restoring that transform; DOM pills
 show time, pickups, and stumbles. Compact cards depend on displayed canvas
 width, never on simulation coordinates. `ui/hud.js` sets `body[data-mode]`
 for the runner controls and phone HUD layout, including while paused.
+
+The Flying Spoon keeps all movement inside the existing runner. `updateRun`
+accumulates display deltas into 1/120-second ticks. A jump's analytic parabola
+uses `launchHeight`, the original impulse and gravity. Each fresh airborne
+Jump press draws from `runSim.rng` (the errand stream); failure sets `locked`
+until landing, consumes the press, and cannot become a queued ground jump.
+Slide/recovery buffering retains its original scope. The hitbox reads the
+same `spoonHeight` as the painter; passed obstacles cannot hit from behind.
+
+After course planning, one errand-stream draw chooses a hidden opportunity:
+orbit 1%, power 8%, bird 14%, otherwise none. `opportunity` only becomes an
+`encounter` after its configured altitude is reached. `encountered` prevents
+another event in that attempt. `state.aerialDiscoveries` records only found
+ids, emits `runDiscovery` on first discovery in a pot, and resets on restart.
+There are no persistent achievements or score bonuses.
+
+`encounter` is a substate of active running, so existing pause, Tea Break,
+visibility and input isolation continue to work. Only its presentation time
+advances during a detour: course clock, distance, timer, obstacles, pickups
+and stumble protection freeze. Returning retains the same course location;
+hazards overlapping or entering the reaction window are marked `bypassed`,
+without hit/pickup/reward settlement. The normal shop finish is still needed.
+
+The painter follows altitude above the ordinary jump envelope, without
+changing collision coordinates. `run.age` drives all runner animation and
+freezes with simulation. Bird, wire, smoke, Earth, satellite, teapot and
+reentry use canvas paths. Reduced motion suppresses the zap tint and smoke,
+wing flaps and space rotation. Short event sounds reuse the global sound
+toggle. A `?debug` Vite-development-only `previewAerial` helper is removed
+from production; automated production tests use the existing mutable state
+hook and explicit simulation steps, documented in `FLYING_SPOON_TESTING.md`.
 
 ## Chapters and the milestone
 
@@ -444,8 +477,26 @@ cup and start a new grace period.
 
 ## Testing
 
+- `ui/presentation.js` owns presentation preference, moves the existing
+  primary action and choice cards between Compact and Full, and hosts the
+  existing panels in one native Tea Break dialog. It never chooses a reward
+  or a phase transition. Opening calls the existing `pause()` and clears
+  input; the frame loop skips simulation updates while the dialog is open.
+  Close resumes only a pause owned by that dialog; blur/hidden revokes it.
+- `input/settings.js` keeps the view preference in a separate storage key
+  from control settings. Primary/any coarse pointer and `maxTouchPoints`
+  detect touch without user-agent strings. CSS combines width, available
+  dynamic height, orientation, safe areas, and size-container measurements.
+  The canvas keeps its logical 920 × 790 coordinates, DPR cap, and both
+  graphics qualities. A uniform 1.16× camera enlarges the active cup without
+  changing simulation coordinates or hitboxes; text overlays and the runner
+  keep their existing transforms. Compact HUD/choices occupy separate rows.
 - `tests/unit/` (Vitest, Node) tests gameplay through `createGame()` with
   fixed seeds and fixed time steps.
 - `tests/browser/` (Playwright) holds smoke tests against the production
   build served under `/Steeped-in-Trouble/`, in Chromium, Firefox, and a
-  mobile viewport. These tests assert on state and HUD text, not pixels.
+  mobile viewport. These assert state, HUD text, layout geometry, and input
+  isolation. `mobile-compact.spec.js` captures screenshots for composition
+  inspection; see [mobile browser testing](MOBILE_TESTING.md) for coverage
+  and hardware limits. `PLAYWRIGHT_PORT` selects a separate local preview
+  port when another server is already running.

@@ -96,6 +96,7 @@ export function createInitialState() {
     // The Tea Shortage and the Tea Run (gameplay/shortage.js, gameplay/teaRun.js).
     teaCash: 0, // pocket money for this pot; never part of the score
     shortageAfter: CONFIG.shortage.firstAfter, // the round the next shortage may follow, or null
+    aerialDiscoveries: [], // encountered this pot; never an undiscovered checklist
     shortageDue: false, // decided at each reading: a shortage before the next cup?
     shortage: null, // the announcement in progress: { time }
     run: null, // the errand in progress; see createRun()

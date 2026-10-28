@@ -139,19 +139,20 @@ describe('jumping', () => {
     expect(run.spoon.recover).toBeGreaterThan(0);
   });
 
-  it('remembers a jump pressed just before landing, and takes it as soon as the spoon is ready', () => {
+  it('consumes a failed aerial press near landing instead of buffering a takeoff', () => {
     const { sim, run, advance } = lane();
+    sim.rng = { next: () => 0.7 };
     press(sim, 'jump');
     advance(R.jumpTime - 0.1);
     press(sim, 'jump');
-    expect(run.spoon.queued).toBe('jump');
+    expect(run.spoon.queued).toBe(null);
     advance(0.1 + R.recoverTime + 2 * DT);
-    expect(run.spoon.action).toBe('jump');
-    expect(run.spoon.time).toBeLessThan(0.05);
+    expect(run.spoon.action).toBe('run');
   });
 
   it('forgets a press made too early to matter', () => {
     const { sim, run, advance } = lane();
+    sim.rng = { next: () => 1 };
     press(sim, 'jump');
     advance(0.1);
     press(sim, 'jump'); // half a second before landing: longer than the buffer
@@ -295,7 +296,8 @@ describe('a whole errand', () => {
     run.pickups = ['coin', 'packet'].map((kind) => ({ kind, x: run.finish, height: 20, takenAt: null }));
     if (result === 'failed') {
       run.hits = R.hits - 1;
-      run.obstacles = [{ kind: 'puddle', x0: run.finish, roll: 0, hitAt: null }];
+      // Its inset hitbox overlaps before the finish, including at 120 Hz.
+      run.obstacles = [{ kind: 'puddle', x0: run.finish - 5, roll: 0, hitAt: null }];
     }
     updateRun(sim, DT);
     expect(run.result).toBe(result);

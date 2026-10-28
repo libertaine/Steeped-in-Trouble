@@ -13,13 +13,15 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **0.10.0 — The Tea Run** is the current release: the spoon is going
-shopping. The game is experimental and still changing, but there's plenty
-in the cup already:
+Version **0.11.0 — The Flying Spoon** is the current release: a pocket-sized
+teacup and more trips to the shop. The game is experimental and still
+changing, but there's plenty in the cup already:
 
 - Arcade defence around a living teacup whose tea swirls, ripples, and
   reacts to every shot.
-- New in 0.10.0: an optional Tea Run to the shop, Tea Cash, Easy Touch,
+- New in 0.11.0: Compact / Full View, the Tea Break, and recurring optional
+  Tea Shortages after rounds 9, 16, 23, and every seven rounds thereafter.
+- An optional Tea Run to the shop, Tea Cash, Easy Touch,
   and Auto Steam for a more relaxed pot. Classic Touch remains available.
 - Five tea varieties, each changing how its round plays, from
   leaves that dart or change lanes to spice currents that sweep the cup.
@@ -32,9 +34,6 @@ in the cup already:
 - Occasional bonus rounds and a very angry espresso machine.
 - Procedurally drawn vector graphics and an adaptive soundtrack that follows
   the cup, and the tea.
-
-The initial PC playtest is complete. Phone and tablet usability testing is
-next and will guide further mobile improvements.
 
 See the [changelog](CHANGELOG.md) for what changed in each version.
 
@@ -90,6 +89,15 @@ nor skipping costs a cup. Your spoon and next fortune wait for you.
 
 ## Options
 
+- **View** chooses Compact or Full independently of controls and firing.
+  Touch-capable devices default to Compact, with the HUD above the cup,
+  reachable thumb controls, and a **Pause / Menu** button. **The Tea Break**
+  holds pot details, tea and fortune explanations, settings, and controls.
+  Required upgrade and Buy / Run / Skip choices stay beside the game; the
+  leaf reading reveals before details become available. Full keeps the
+  desktop sidebar. The choice is remembered; `?view=compact|full` overrides
+  it for one visit. You can select Compact even in Chrome's Desktop Site
+  mode; the game cannot override that browser setting.
 - **Touch** chooses Easy or Classic Touch; **Auto Steam** can be enabled
   with Classic Touch or a keyboard, and is always enabled with Easy Touch.
   Both choices are remembered. URL overrides for one visit are

@@ -116,9 +116,10 @@ const OVERLAY_TEXT = {
 
 /**
  * @param {HTMLCanvasElement} canvas
- * @param {{ quality?: 'high' | 'low' }} [options] graphics quality; can be changed later via renderer.quality
+ * @param {{ quality?: 'high' | 'low', compact?: () => boolean }} [options]
+ *   graphics quality can be changed later via renderer.quality; compact only changes the camera
  */
-export function createRenderer(canvas, { quality = 'high' } = {}) {
+export function createRenderer(canvas, { quality = 'high', compact = () => false } = {}) {
   const ctx = canvas.getContext('2d');
   let time = 0; // animation clock, independent of the simulation
   let gradients = null;
@@ -1527,6 +1528,17 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
         errand.drawRun(run, state, time, state.phase === PHASE.PAUSED);
         return;
       }
+      // A uniform presentation camera gives the cup more room on touch screens.
+      // Simulation coordinates, hitboxes, and the runner remain unchanged. UI is
+      // drawn after restoring this transform so warnings and text stay in bounds.
+      ctx.save();
+      const active = [PHASE.PLAYING, PHASE.CHOCOLATE, PHASE.GRIND].includes(
+        state.phase === PHASE.PAUSED ? state.pausedFrom : state.phase);
+      if (compact() && active) {
+        ctx.translate(CX, CY);
+        ctx.scale(1.16, 1.16);
+        ctx.translate(-CX, -CY);
+      }
       if (fx.shake > 0) {
         const k = fx.shake * 7;
         ctx.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
@@ -1570,6 +1582,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       drawGlints(fx.glints ?? []);
       drawParticles(fx.particles);
       if (havoc || grind) drawPopups(fx.popups ?? []);
+      ctx.restore();
       if (state.phase === PHASE.GRIND) espresso.drawOverlay(grind, time);
       drawOverlay(state, fx);
       if (state.phase === PHASE.SHORTAGE) errand.drawShortage(state.shortage, state, time);

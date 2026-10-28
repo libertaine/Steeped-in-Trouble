@@ -11,6 +11,7 @@ import { attachCanvasScaling } from './rendering/canvas.js';
 import { createEffects } from './rendering/effects.js';
 import { createRenderer } from './rendering/renderer.js';
 import { createHud } from './ui/hud.js';
+import { createPresentation } from './ui/presentation.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -43,7 +44,8 @@ function boot() {
   // ?tea=<id> brews only one variety (see gameplay/teas.js); unknown ids are ignored.
   const game = createGame({ seed: seedFromUrl(params), tea: params.get('tea') ?? undefined });
   const effects = createEffects();
-  const renderer = createRenderer(canvas, { quality: initialQuality(params) });
+  const renderer = createRenderer(canvas, { quality: initialQuality(params),
+    compact: () => document.body.dataset.view === 'compact' });
   const hud = createHud(document);
   const audio = createAudio();
 
@@ -67,6 +69,9 @@ function boot() {
       autoButton.disabled = settings.touch === 'easy';
     }
     if (save) saveSettings(storage, settings);
+    document.getElementById('activeControls').textContent = settings.touch === 'easy'
+      ? 'Easy Touch: hold ◀ / ▶ to steer; double-tap the cup for milk; hold the cup for sugar. In hot chocolate, hold the cup for flames. On the Tea Run use Jump / Slide. Keyboard controls work too.'
+      : 'Classic Touch: hold Turn to steer and Steam to fire; tap Milk or Sugar. On the Tea Run use Jump / Slide. Keyboard controls work too.';
   }
   applySettings(settings);
   touchButton?.addEventListener('click', () => {
@@ -99,6 +104,7 @@ function boot() {
     ring.classList.add(kind === 'press' ? 'charging' : kind);
   }
 
+  let presentation;
   const controls = createControls({
     doc: document,
     commands: {
@@ -118,7 +124,9 @@ function boot() {
     gestureMode: game.touchGestures,
     scheme: () => settings.touch,
     onGesture: showRing,
+    enabled: () => !presentation?.blocked,
   });
+  presentation = createPresentation({ doc: document, game, params, storage, resetInput: controls.reset });
 
   const soundButton = document.getElementById('soundBtn');
   document.getElementById('mainBtn').addEventListener('click', () => game.primaryAction());
@@ -147,7 +155,10 @@ function boot() {
   const detachScaling = attachCanvasScaling(canvas);
 
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
-  const RESETS = new Set(['paused', 'matchStart', 'shortage', 'runStart', 'runEnd']);
+  const RESETS = new Set(['paused', 'resumed', 'matchStart', 'roundStart', 'reading', 'shortage',
+    'runBird', 'runZap', 'runOrbit', 'runReturn',
+    'runStart', 'runGo', 'runFinish', 'runFail', 'runEnd', 'chocolateStart', 'havocStart', 'havocEnd',
+    'grindStart', 'grindFight', 'grindDefeat', 'grindEscape', 'gameover']);
 
   function handleEvents() {
     for (const event of game.drainEvents()) {
@@ -163,14 +174,16 @@ function boot() {
     // Input can leave the runner between frames. Clear its holds before the
     // next cup advances, so the Space used to go home cannot also fire steam.
     handleEvents();
-    game.update(dt, controls.held);
+    if (!presentation.blocked) game.update(dt, controls.held);
     handleEvents();
     audio.update(game.state, dt);
     renderer.draw(game.state, effects.fx, dt);
     hud.update(game.state);
+    presentation.update();
   });
 
   hud.update(game.state);
+  presentation.update();
   loop.start();
 
   const instance = {
@@ -178,6 +191,7 @@ function boot() {
     stop() {
       loop.stop();
       controls.dispose();
+      presentation.dispose();
       detachScaling();
       delete window[INSTANCE_KEY];
     },
@@ -187,6 +201,16 @@ function boot() {
   // ?debug exposes the running game for automated browser tests and tinkering.
   if (params.has('debug')) {
     window.__TEACUP__ = { game, effects, version: __APP_VERSION__, config: CONFIG, settings: () => ({ ...settings }) };
+    // Vite removes this helper from production. No player-facing secret menu.
+    if (import.meta.env.DEV) window.__TEACUP__.previewAerial = (kind) => {
+      const run = game.state.run;
+      if (game.state.phase !== 'teaRun' || run?.stage !== 'run' || !CONFIG.teaRun.aerial[kind]) return false;
+      run.opportunity = kind;
+      run.encountered = null;
+      run.encounter = null;
+      Object.assign(run.spoon, { action: 'jump', time: 0, launchHeight: CONFIG.teaRun.aerial[kind].altitude, queued: null });
+      return true;
+    };
   }
   return instance;
 }

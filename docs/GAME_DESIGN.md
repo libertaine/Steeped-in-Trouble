@@ -734,7 +734,8 @@ Tea Cash is separate from score and resets with a new pot: +5 per normal
 round completed, +15 for a milestone victory (not a rematch), and +5 for a
 successful Tea Run. The first shortage follows round 9's reading, once
 Chapter 2 is open. If the milestone is still outstanding it waits; it never
-preempts a milestone. It happens once per pot.
+preempts a milestone. In 0.10.0 it happened once per pot; the 0.11.0
+recurring schedule is described below.
 
 After the reading and any upgrade selection, choose Buy / Run / Skip with
 1 / 2 / 3 or the buttons. Buy costs 20 Tea Cash and grants one extra sugar
@@ -770,6 +771,96 @@ Auto Steam targets only the spoon's current lane, using ordinary cooldowns
 and statistics; it never steers or chooses milk/sugar. Hot chocolate remains
 manual (hold the cup for flames in Easy Touch). Runner pads replace cup
 input for the errand, and unfinished gestures never carry between phases.
+
+### Compact View and the Tea Break (0.11.0)
+
+Presentation, controls, and firing are separate choices: Compact / Full,
+Easy / Classic Touch, and Auto / Manual Steam. Easy Touch still requires
+Auto Steam because it has no steam button; its relaxed difficulty is intentional.
+No combat tuning changes accompany the mobile presentation.
+
+Touch-capable devices default to Compact, including large and desktop-site
+tablets. A saved choice wins; a visible switch and a visit-only `view` URL
+override let mouse or hybrid devices use either view. Full retains the sidebar.
+Compact uses available viewport height as well as width: a small HUD sits
+above an undistorted canvas, thumb controls and actions below it. Short
+landscape screens use a right-hand control rail. Safe areas and dynamic
+viewport units protect the bottom actions without forcing rotation or fullscreen.
+
+The Tea Break is optional at Ready, after the fortune reveal (including while
+an upgrade awaits selection), or when explicitly pausing. It reuses pot, tea,
+fortune, settings, and controls panels. Opening it freezes simulation time and resets input;
+dismissing resumes only a game it paused itself, unless backgrounded meanwhile.
+An existing pause remains paused. Escape and the visible close button dismiss it.
+The leaf-reading animation remains unobscured before reveal. Upgrade offers
+and Tea Shortage choices remain directly reachable outside the canvas in
+Compact View, with their existing ordering and consequences.
+
+Context menus and text selection are suppressed only on the gameplay surface.
+Normal document text and links retain browser behavior. Chrome's Desktop Site
+configuration and system edge gestures remain browser/system controlled;
+emulation is not native Samsung qualification.
+
+## The Flying Spoon (0.11.0 Milestone 2 — spoilers)
+
+Tea Shortages target completed rounds **9, 16, 23, 30, 37, 44…**. Chapter 2
+and milestone priority still apply. A blocked target waits until the next
+eligible reading/upgrade transition. Starting it schedules the next future
+9 + 7n target, so missed visits never accumulate. Buy / Run / Skip remains
+optional and preserves the pending bonus, fortune and ordinary cup.
+
+The first jump retains its 0.6-second parabola and 125-unit apex. Each new
+airborne Jump press independently succeeds with probability **0.7**. It
+starts a new upward impulse at the current height, with the original gravity
+and launch speed; it never snaps to the ground. Cumulative chances to reach
+jumps 2–6 are 70%, 49%, 34.3%, 24.01%, 16.807%. Failure locks airborne Jump
+until landing and is consumed, never buffered. A held key/touch does not
+repeat attempts. Ground recovery/slide buffering remains; Slide cannot
+interrupt flight. Ordinary obstacles never require this hidden mechanic.
+
+At creation, the errand's seeded stream reserves at most one opportunity.
+The reservation does nothing unless the spoon actually crosses its altitude:
+
+| Surprise | Altitude above sidewalk | Opportunity per run | Duration |
+| --- | ---: | ---: | ---: |
+| Bird | 210 | 14% | 3.6 s |
+| Power lines | 380 | 8% | 3.2 s |
+| Orbit | 850 | 1% | 5.4 s |
+| No encounter | — | 77% | — |
+
+These are mutually exclusive opportunities, not independent rolls every
+frame or probabilities conditional on a jump count. A reserved orbital
+opportunity cannot be replaced by a bird on the way up. Failing to reach
+its altitude means no encounter. Normal jumping alone cannot reach any.
+
+The bird approaches, looks confused, carries the spoon briefly, then drops
+it. The wire produces a single restrained tint and a blackened, blinking,
+smoking spoon. Orbit passes from the neighborhood/clouds to a curved Earth,
+satellite and unexplained teapot, then cartoon reentry. Each returns to the
+same course position. Obstacles in the immediate reaction window are
+bypassed; pickups are left alone. No stumble, cup, score or cash is lost,
+no free finish is granted, and no secret bonus is awarded. Course distance,
+shop clock and stumble protection freeze during encounters. Pause, Tea Break
+and backgrounding freeze the whole sequence. Existing sound-off behavior
+and reduced-motion preferences apply.
+
+Found events produce a discreet message and `runDiscovery` event and are
+remembered in `aerialDiscoveries` for this pot only. Restart clears them.
+Undiscovered events are never listed. Ordinary instructions and README keep
+the secret controls, probabilities and triggers hidden.
+
+The deterministic experiment in `tests/support/aerialSampling.js` uses
+runner-stream seeds 1–20,000, real full courses, and Jump taps every 150 ms
+through success/failure. It keeps all collisions, stumble limits and shop
+timing enabled, with no special-event forcing. It measured **2,789 birds,
+1,543 power-line events and 93 orbits** (15,575 runs without encounters).
+Orbit rate: **0.465%, about 1 in 215 runs**. Of 207 reserved orbital
+opportunities, 93 reached the altitude before the errand ended. This is a
+balance sample for that input policy, not a guarantee for human players;
+slower taps, sliding and different timing change the rate.
+
+See [qualification and human playtest guide](FLYING_SPOON_TESTING.md).
+No new minigame, boss, permanent upgrade or achievement system is included.
 
 ## Future ideas (not implemented)
 

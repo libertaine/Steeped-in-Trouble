@@ -274,3 +274,84 @@ describe('arrow keys for milk and sugar', () => {
     expect(game.state.milkLeft).toBe(1);
   });
 });
+
+describe('input boundaries', () => {
+  it('does not turn a held Jump key or its repeats into airborne attempts', () => {
+    const game = atShortage(2); game.chooseErrand('run'); game.primaryAction();
+    const { win, controls } = easyTouch({ game });
+    press(win, 'ArrowUp');
+    game.update(0.15);
+    const before = { ...game.state.run.spoon };
+    for (let i = 0; i < 20; i++) {
+      win.dispatchEvent(Object.assign(new Event('keydown'), { code: 'ArrowUp', repeat: true }));
+      controls.update();
+    }
+    expect(game.state.run.spoon).toEqual(before);
+    win.dispatchEvent(Object.assign(new Event('keyup'), { code: 'ArrowUp' }));
+    press(win, 'ArrowUp');
+    expect(game.state.run.spoon.chain).toBe(2);
+  });
+
+  it('suppresses native Enter auto-repeat on a focused runner button', () => {
+    const { win } = easyTouch();
+    const target = { closest: (selector) => selector.startsWith('input') || selector === '[data-hold]' ? null : target };
+    const event = Object.assign(new Event('keydown', { cancelable: true }), { code: 'Enter', repeat: true });
+    Object.defineProperty(event, 'target', { value: target });
+    win.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('releases a keyboard steering pad even if focus moves before keyup', () => {
+    const { controls, win } = easyTouch();
+    const target = { dataset: { hold: 'left' }, closest: () => target };
+    // The editable-element check is false; this target is a steering button.
+    target.closest = (selector) => selector.startsWith('input') ? null : target;
+    const event = Object.assign(new Event('keydown', { cancelable: true }), { code: 'Space' });
+    Object.defineProperty(event, 'target', { value: target });
+    win.dispatchEvent(event);
+    expect(controls.held.left).toBe(true);
+    win.dispatchEvent(Object.assign(new Event('keyup'), { code: 'Space' }));
+    expect(controls.held.left).toBe(false);
+  });
+
+  it('releases a hold on pointer cancellation and resets all holds on pause', () => {
+    const { controls, pads, win, game } = easyTouch();
+    pointer(pads[1], 'pointerdown');
+    expect(controls.held.right).toBe(true);
+    pointer(pads[1], 'pointercancel');
+    expect(controls.held.right).toBe(false);
+    pointer(pads[0], 'pointerdown');
+    win.dispatchEvent(new Event('blur'));
+    expect(game.state.phase).toBe('paused');
+    expect(controls.held).toEqual({ left: false, right: false, fire: false });
+  });
+
+  it('ignores gameplay keys, pointers, and pending gestures when a menu blocks input', () => {
+    const page = touchPage();
+    const game = playingGame();
+    let enabled = true;
+    const controls = createControls({ doc: page.doc, enabled: () => enabled,
+      commands: { fire: game.fireSteam, milk: game.pourMilk, sugar: game.sugarBurst,
+        confirm: game.confirm, togglePause: game.togglePause, restart: game.restart, pause: game.pause },
+      scheme: () => 'easy', gestureMode: game.touchGestures });
+    pointer(page.pads[0], 'pointerdown');
+    enabled = false;
+    controls.update();
+    press(page.win, 'KeyM');
+    press(page.win, 'KeyS');
+    press(page.win, 'Space');
+    pointer(page.pads[1], 'pointerdown');
+    expect(controls.held).toEqual({ left: false, right: false, fire: false });
+    expect([game.state.milkLeft, game.state.sugarLeft, game.state.shots.length]).toEqual([2, 2, 0]);
+  });
+
+  it('keeps native activation on focused interface buttons out of gameplay shortcuts', () => {
+    const { win, game } = easyTouch();
+    const target = { closest: (selector) => selector === 'button:not(#mainBtn), a' ? {} : null };
+    const event = Object.assign(new Event('keydown', { cancelable: true }), { code: 'Space' });
+    Object.defineProperty(event, 'target', { value: target });
+    win.dispatchEvent(event);
+    expect(game.state.shots).toHaveLength(0);
+    expect(event.defaultPrevented).toBe(false);
+  });
+});

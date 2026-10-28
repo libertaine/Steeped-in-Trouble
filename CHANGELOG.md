@@ -5,6 +5,40 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-28 — The Flying Spoon
+
+### Added
+
+- **0.11.0 Milestone 2 — The Flying Spoon:** optional Tea Shortages return
+  after rounds 9, 16, 23, 30, 37 and every seven rounds thereafter. Delayed
+  visits retain their opportunity and skip missed targets without a backlog.
+- Unexpected detours in the existing Tea Run, with vector animation,
+  synthesized sounds, reduced-motion support and discoveries remembered for
+  the current pot. Spoiler details and practical playtest steps are in
+  `docs/FLYING_SPOON_TESTING.md` and the design document.
+- **The Pocket Teacup:** independent, remembered Compact
+  / Full View. Touch capabilities choose the initial view, including wide
+  tablets and mixed-input devices; a visible switch always overrides it.
+- Compact HUD outside the canvas, viewport-fitted portrait and landscape
+  layouts, safe-area spacing, reachable actions, and large steering/runner
+  controls. Upgrade and Tea Shortage cards sit outside the playfield.
+- **The Tea Break:** pause safely to read pot statistics, tea mechanics,
+  fortunes, and controls or change settings. Required choices and the
+  existing side-mission sequence retain their own flow.
+- Focused capability, persistence, responsive, menu, and input regression
+  checks, plus browser screenshots for human device testing.
+
+### Fixed
+
+- Scoped long-press callout and selection protection across the game surface
+  in Easy and Classic Touch; pointer cancellation and phase changes release
+  holds. Keyboard and assistive activation work on steering and runner pads.
+- Menu keyboard input cannot leak into gameplay, and dismissing a backgrounded
+  or previously paused menu does not resume the simulation.
+
+Auto Steam and teacup combat rules are unchanged. Released following
+project-owner playtesting.
+
 ## [0.10.0] - 2026-10-28 — The Tea Run
 
 ### Added
@@ -248,7 +282,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.10.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.11.0...main
+[0.11.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.7.0...v0.8.0

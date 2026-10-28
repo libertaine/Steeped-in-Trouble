@@ -8,8 +8,9 @@
 // round, or the next fortune.
 //
 // Everything is plain data on state.run, advanced in time-based steps: the
-// jump is a fixed parabola over CONFIG.teaRun.jumpTime, so it plays the same
-// at any frame rate. The course is planned in full at the start from the
+// first jump is a fixed parabola over CONFIG.teaRun.jumpTime. Aerial impulses
+// start at the current altitude; 120 Hz ticks keep collision decisions stable.
+// The course is planned in full at the start from the
 // run's own random generator (`rng`, separate from the cup's), so a seed and
 // the same presses always give the same errand.
 //
@@ -26,6 +27,18 @@ import { earnTeaCash, restock } from './shortage.js';
 
 const R = CONFIG.teaRun;
 const KINDS = Object.keys(R.obstacles);
+const GRAVITY = 8 * R.jumpHeight / R.jumpTime ** 2;
+const IMPULSE = 4 * R.jumpHeight / R.jumpTime;
+
+/** One opportunity for the whole run. Lower encounters never steal an orbital ticket. */
+function aerialOpportunity(rng) {
+  let roll = rng.next();
+  for (const [kind, spec] of Object.entries(R.aerial)) {
+    if (roll < spec.chance) return kind;
+    roll -= spec.chance;
+  }
+  return null;
+}
 
 const lerp = (a, b, u) => a + (b - a) * u;
 
@@ -108,6 +121,8 @@ export function createRun(rng) {
   return {
     stage: 'intro',
     time: 0, // seconds in the current stage
+    age: 0, // presentation clock, frozen by pause/backgrounding along with simulation
+    accumulator: 0,
     clock: 0, // seconds of running
     left: R.timeLimit, // seconds until the shop shuts
     distance: 0,
@@ -120,6 +135,10 @@ export function createRun(rng) {
       queuedFor: 0, // seconds it will wait
       tumble: 0, // seconds of tumbling left
       safe: 0, // seconds before another stumble can land
+      launchHeight: 0,
+      chain: 0,
+      locked: false,
+      smoke: 0,
     },
     obstacles,
     pickups,
@@ -128,6 +147,11 @@ export function createRun(rng) {
     packets: 0,
     result: null, // 'success' or 'failed', once it is over
     summary: null,
+    opportunity: aerialOpportunity(rng),
+    encounter: null,
+    encountered: null,
+    notice: null,
+    camera: 0,
   };
 }
 
@@ -139,11 +163,10 @@ export function runInProgress(state) {
 
 // ── The spoon ────────────────────────────────────────────────────────────
 
-/** Height of the spoon's feet above the paving: a fixed parabola while it jumps. */
+/** Height above the paving, using the same gravity/impulse as the ordinary jump. */
 export function spoonHeight(spoon) {
   if (spoon.action !== 'jump') return 0;
-  const u = Math.min(1, spoon.time / R.jumpTime);
-  return R.jumpHeight * 4 * u * (1 - u);
+  return Math.max(0, (spoon.launchHeight ?? 0) + IMPULSE * spoon.time - GRAVITY * spoon.time ** 2 / 2);
 }
 
 /** The spoon's hitbox: { left, right, bottom, top }. Sliding, it is much lower. */
@@ -160,20 +183,40 @@ function begin(spoon, action, emit) {
   spoon.action = action;
   spoon.time = 0;
   spoon.queued = null;
+  if (action === 'jump') {
+    spoon.launchHeight = 0;
+    spoon.chain = 1;
+    spoon.locked = false;
+  }
   emit(action === 'jump' ? 'runJump' : 'runSlide', {});
 }
 
 /**
- * Jump or slide. One action at a time: a press while the spoon is busy (in
- * the air, sliding, recovering, or tumbling) is remembered for
- * CONFIG.teaRun.bufferTime and happens as soon as it is ready, the latest
- * press replacing any earlier one. Nothing ever cuts a jump short, so a slide
- * pressed in the air waits for the landing. Returns true if it was taken.
+ * Fresh airborne Jump presses try an independent impulse; failure locks the
+ * chain until landing and is never buffered. Other busy presses retain the
+ * short ground-action buffer. An airborne Slide waits for landing.
  */
 export function press(sim, action) {
   const run = sim.state.run;
-  if (run?.stage !== 'run') return false;
+  if (run?.stage !== 'run' || run.encounter || !['jump', 'slide'].includes(action)) return false;
   const { spoon } = run;
+  if (spoon.action === 'jump' && action === 'jump') {
+    // A failed aerial press is consumed here, never buffered into another takeoff.
+    spoon.queued = null;
+    if (spoon.locked) return false;
+    if (sim.rng.next() >= R.aerialChance) {
+      spoon.locked = true;
+      run.feedback = { success: false, at: run.age };
+      sim.emit('runAerialFail', {});
+      return false;
+    }
+    spoon.launchHeight = spoonHeight(spoon);
+    spoon.time = 0;
+    spoon.chain++;
+    run.feedback = { success: true, at: run.age };
+    sim.emit('runAerialJump', { chain: spoon.chain });
+    return true;
+  }
   if (ready(spoon)) begin(spoon, action, sim.emit);
   else {
     spoon.queued = action;
@@ -185,14 +228,18 @@ export function press(sim, action) {
 function updateSpoon(spoon, dt, emit) {
   spoon.safe = Math.max(0, spoon.safe - dt);
   spoon.tumble = Math.max(0, spoon.tumble - dt);
+  spoon.smoke = Math.max(0, spoon.smoke - dt);
   if (spoon.action !== 'run') {
     spoon.time += dt;
-    const length = spoon.action === 'jump' ? R.jumpTime : R.slideTime;
-    if (spoon.time >= length) {
+    const landed = spoon.action === 'jump' && spoon.time >= R.jumpTime - 1e-9 && spoonHeight(spoon) <= 1e-7;
+    if (landed || (spoon.action === 'slide' && spoon.time >= R.slideTime - 1e-9)) {
       if (spoon.action === 'jump') emit('runLand', {});
       spoon.action = 'run';
       spoon.time = 0;
       spoon.recover = R.recoverTime;
+      spoon.chain = 0;
+      spoon.locked = false;
+      spoon.launchHeight = 0;
     }
   } else {
     spoon.recover = Math.max(0, spoon.recover - dt);
@@ -232,7 +279,7 @@ function collide(sim) {
   if (run.spoon.safe > 0) return; // still seeing stars: nothing lands
   const box = spoonBox(run);
   for (const ob of run.obstacles) {
-    if (ob.hitAt !== null) continue;
+    if (ob.hitAt !== null || ob.bypassed) continue;
     if (overlaps(box, obstacleBox(ob, run.clock))) {
       stumble(sim, ob);
       return;
@@ -286,9 +333,75 @@ export function startRunning(run) {
   run.time = 0;
 }
 
-/** Advance the errand by dt seconds. */
+export const AERIAL_DISCOVERIES = Object.freeze({
+  bird: { title: 'A LITTLE BIRD TOLD ME...', detail: 'Apparently, spoons cannot fly.' },
+  power: { title: 'A SHOCKING DEVELOPMENT', detail: 'Conductivity was not covered in the instructions.' },
+  orbit: { title: 'ONE GIANT LEAP FOR SPOONKIND.', detail: 'Please remain within walking distance of the store.' },
+});
+
+function encounterDue({ state, emit }) {
+  const run = state.run;
+  const kind = run.opportunity;
+  if (!kind || run.encountered || spoonHeight(run.spoon) < R.aerial[kind].altitude) return false;
+  run.encountered = kind;
+  run.encounter = { kind, time: 0, height: spoonHeight(run.spoon), camera: run.camera, reentry: false };
+  run.spoon.queued = null;
+  state.aerialDiscoveries ??= [];
+  if (!state.aerialDiscoveries.includes(kind)) {
+    state.aerialDiscoveries.push(kind);
+    emit('runDiscovery', { id: kind });
+  }
+  emit(kind === 'bird' ? 'runBird' : kind === 'power' ? 'runZap' : 'runOrbit', {});
+  return true;
+}
+
+function returnSafely({ state, emit }) {
+  const run = state.run;
+  const kind = run.encounter.kind;
+  // Keep distance, course, clocks and pickups. Only bypass hazards within the
+  // reaction window, including a rolling cube that could enter that window.
+  for (const ob of run.obstacles) {
+    const box = obstacleBox(ob, run.clock);
+    if (box.right >= run.distance - R.spoon.halfWidth
+      && box.left <= run.distance + R.spoon.halfWidth + (R.speed + ob.roll) * R.safeTime) ob.bypassed = true;
+  }
+  Object.assign(run.spoon, { action: 'run', time: 0, recover: R.recoverTime,
+    queued: null, queuedFor: 0, launchHeight: 0, chain: 0, locked: false,
+    smoke: kind === 'power' ? 3 : 0 });
+  run.encounter = null;
+  run.camera = 0;
+  run.notice = { kind, left: 2.8 };
+  emit('runReturn', { kind });
+}
+
+/** Fixed runner ticks keep collision/threshold decisions independent of display rate. */
 export function updateRun(sim, dt) {
   const run = sim.state.run;
+  run.accumulator += dt;
+  const tick = 1 / 120;
+  while (run.accumulator >= tick - 1e-10) {
+    run.accumulator = Math.max(0, run.accumulator - tick);
+    updateStep(sim, tick);
+  }
+}
+
+function updateStep(sim, dt) {
+  const run = sim.state.run;
+  run.age += dt;
+  if (run.encounter) {
+    const e = run.encounter;
+    e.time += dt;
+    if (e.kind === 'orbit' && e.time >= 3.5 && !e.reentry) {
+      e.reentry = true;
+      sim.emit('runReentry', {});
+    }
+    if (e.time >= R.aerial[e.kind].duration - 1e-9) returnSafely(sim);
+    return;
+  }
+  if (run.notice) {
+    run.notice.left -= dt;
+    if (run.notice.left <= 0) run.notice = null;
+  }
   run.time += dt;
   if (run.stage === 'intro') {
     if (run.time >= R.introTime) {
@@ -313,6 +426,12 @@ export function updateRun(sim, dt) {
   run.left = Math.max(0, R.timeLimit - run.clock);
   run.distance += R.speed * (spoon.tumble > 0 ? R.tumblePace : 1) * dt;
   updateSpoon(spoon, dt, sim.emit);
+  const targetCamera = Math.max(0, spoonHeight(spoon) - 190);
+  run.camera += (targetCamera - run.camera) * (1 - Math.exp(-dt * 10));
+  // Keep the spoon below the top edge even on a very long chain.
+  run.camera = Math.max(run.camera, spoonHeight(spoon) - 330);
+  run.camera = Math.min(run.camera, Math.max(0, spoonHeight(spoon) - 115));
+  if (encounterDue(sim)) return;
   collide(sim);
   collect(sim);
   if (run.hits >= R.hits) finish(sim, 'failed', 'hits');

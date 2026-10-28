@@ -264,6 +264,14 @@ export function hudText(state) {
     hudAuto: autoText(state),
     killLabel: 'Leaves cleared',
     teaCash: String(state.teaCash),
+    chapterNum: String(state.progress.chapter),
+    potScore: `Score: ${state.score}`,
+    teaDetail: `${tea.name}: ${tea.info}`,
+    compactRound: `Cup ${state.round}`,
+    compactMilk: `Milk ${state.milkLeft}`,
+    compactSugar: `Sugar ${state.sugarLeft}`,
+    compactProgress: `${state.kills}/${state.target}`,
+    easyHint: havoc ? 'Hold cup: flames' : 'Double-tap: milk\nHold: sugar',
   };
   if (state.phase === PHASE.SHORTAGE) values.roundNum = `${pad(state.round, 2)}½`;
   if (run) {
@@ -279,6 +287,7 @@ export function hudText(state) {
       hudLives: `STUMBLES ${'♥ '.repeat(left)}${'♡ '.repeat(run.hits)}`.trim(),
       hudStrainer: '',
       gameTip: RUN.tip[run.stage],
+      compactProgress: `${Math.round(100 * Math.min(1, run.distance / run.finish))}%`,
     });
     values.mainBtn = state.phase === PHASE.PAUSED ? 'Resume errand →' : RUN.button[run.stage];
   }
@@ -290,6 +299,7 @@ export function hudText(state) {
       killLabel: 'Marshmallows toasted',
       killCount: `${tally.perfect} perfect · ${tally.toasted} toasted`,
       gameTip: HAVOC.tip[stage],
+      compactProgress: `${tally.perfect} perfect · ${tally.toasted} toasted`,
     });
     if (state.phase === PHASE.CHOCOLATE) values.mainBtn = HAVOC.button[stage];
   }
@@ -302,9 +312,12 @@ export function hudText(state) {
       killCount: `${grind.health} / ${CONFIG.grind.health}`,
       hudStrainer: `SCALDS ${'● '.repeat(grind.scalds)}${'○ '.repeat(Math.max(0, left))}`.trim(),
       gameTip: grind.stage === 'outro' && grind.milestone ? GRIND.milestone[grind.result] : GRIND.tip[grind.stage],
+      compactProgress: `Boss ${grind.health}/${CONFIG.grind.health}`,
     });
     if (state.phase === PHASE.GRIND) values.mainBtn = GRIND.button[grind.stage];
   }
+  values.compactFortune = state.phase === PHASE.READING && state.readingTime >= CONFIG.fortunes.revealAt
+    ? `Next cup: ${values.fortuneName}` : '';
   return values;
 }
 

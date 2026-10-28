@@ -1,6 +1,6 @@
 {
   "name": "steeped-in-trouble",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "An original, experimental, tea-themed vector arcade game built with HTML5 Canvas.",
   "private": true,
   "type": "module",

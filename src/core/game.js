@@ -163,6 +163,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.grindAfter = CONFIG.grind.milestoneAfter;
     state.teaCash = 0;
     state.shortageAfter = CONFIG.shortage.firstAfter;
+    state.aerialDiscoveries = [];
     state.shortageDue = false;
     state.shortage = null;
     state.run = null;
