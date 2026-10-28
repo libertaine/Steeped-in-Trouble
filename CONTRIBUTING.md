@@ -4,7 +4,7 @@ This is a small, experimental arcade game. The process is meant to stay light.
 
 ## Workflow
 
-1. Branch from `main` for gameplay changes (`git switch -c feature/new-leaf`).
+1. Branch from `main` for gameplay changes (`git switch -c feat/new-leaf`).
 2. Make the change and test locally: `npm run check`, plus
    `npm run test:browser` for anything touching the page, input, or rendering.
 3. Open a pull request for meaningful changes. CI runs lint, unit tests, and
@@ -30,4 +30,5 @@ The repository owner may push small or experimental changes straight to
 Public builds use semantic versioning: `0.1.0` is the preserved prototype,
 and experiments continue as `0.2.0`, `0.3.0`, and so on. To release, bump
 `version` in `package.json` (the in-game badge reads it), add a
-`CHANGELOG.md` entry, and tag the commit `vX.Y.Z`.
+`CHANGELOG.md` entry, tag the commit `vX.Y.Z`, and create a GitHub release
+from the tag.

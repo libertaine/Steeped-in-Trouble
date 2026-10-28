@@ -1,23 +1,38 @@
 # Steeped in Trouble
 
 An original, experimental, tea-themed vector arcade game. Defend the rim of a
-stormy teacup with a silver spoon, fire steam at rising tea leaves, and use
-milk and sugar wisely. The leaves you defeat settle in the cup, and their
+stormy teacup with a silver spoon: fire steam at rising tea leaves, and spend
+your milk and sugar wisely. The leaves you defeat settle in the cup, and their
 pattern is read as a fortune that changes the next round.
 
 **[▶ Play it in your browser](https://libertaine.github.io/Steeped-in-Trouble/)**
 
-![Steeped in Trouble gameplay: a silver spoon on the rim of a circular teacup fires steam at tea leaves while a milk cloud slows them](docs/images/screenshot.png)
+![Steeped in Trouble in round 3: the silver spoon on the rim of a teacup fires a sugar burst and steam at tea leaves while a milk cloud covers one side. The side panel shows the spoon's upgrades and this cup's omen, The Veil.](docs/images/screenshot.png)
 
 ## Status
 
-Version **0.5.0 — Something's Brewing**: a rare prismatic sugar cube that
-sets off a Steam Nova down every lane, and unexpected brews: combinations of
-upgrades and fortunes that do something new. The leaves have also started
-noticing how you play. See the [changelog](CHANGELOG.md) for earlier
-versions. Expect frequent experimental changes in later versions.
+Version **0.6.0 — The Kettle Sings** gives the cup a voice. With sound on, a
+small procedural band plays along. It picks up the pace in later rounds and
+in stormy tea, builds as leaves close in on the rim, and settles once you
+clear them. See the [changelog](CHANGELOG.md) for earlier versions. The game
+is experimental, so expect it to keep changing.
 
 The game was called *Storm in a Teacup* up to version 0.1.0.
+
+## How to play
+
+- Tea leaves drift out from the centre of the cup. Each one that reaches the
+  rim spills, costing one of your three cups. Lose them all and the pot runs
+  dry.
+- The spoon circles the rim and fires down the nearest lane. Steam is
+  unlimited. Each round you also get a couple of milk pours, which push leaves
+  back and slow them, and a couple of sugar bursts, which fire down three
+  lanes at once.
+- Clear enough leaves to finish the round. The leaves you defeated are then
+  read, and their fortune changes the next round. Every other round you also
+  choose an upgrade for your spoon, which lasts for the whole pot.
+- Keep an eye out for sugar cubes, and try unusual combinations. Some of
+  them brew something unexpected.
 
 ## Controls
 
@@ -32,14 +47,14 @@ The game was called *Storm in a Teacup* up to version 0.1.0.
 | Pick a spoon upgrade | <kbd>1</kbd> / <kbd>2</kbd> | tap a card |
 | Restart after game over | <kbd>R</kbd> | main button |
 
-Sound is off by default. Use the **Sound** toggle to enable sound effects and
-an adaptive soundtrack that follows the tension in the cup.
+## Options
 
-Add `?seed=<number>` to the URL to replay the same sequence of tea leaves.
-
-The **Graphics** toggle switches the tea between high quality (full-resolution
-liquid with glowing currents) and low quality for older machines. You can also
-add `?graphics=low` or `?graphics=high` to the URL.
+- **Sound** is off by default. Turn it on for synthesized sound effects and
+  the adaptive soundtrack.
+- **Graphics** switches between high quality (full-resolution tea with
+  glowing currents) and low quality for older machines. You can also add
+  `?graphics=low` or `?graphics=high` to the URL.
+- Add `?seed=<number>` to the URL to replay the same sequence of tea leaves.
 
 ## Running locally
 
@@ -88,12 +103,12 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-
 
 ## Project documentation
 
-- [Architecture](docs/ARCHITECTURE.md): how the code fits together and how to
+- [Architecture](docs/ARCHITECTURE.md): how the code fits together, and how to
   add enemies, weapons, and fortunes
-- [Game design](docs/GAME_DESIGN.md): creative direction, current mechanics,
-  and future ideas
-- [Development](DEVELOPMENT.md): how we work on the game
-- [Contributing](CONTRIBUTING.md): development workflow
+- [Game design](docs/GAME_DESIGN.md): creative direction, the full rules
+  (secrets included, so beware of spoilers), and future ideas
+- [Development](DEVELOPMENT.md): the principles for working on the game
+- [Contributing](CONTRIBUTING.md): branching, checks, and releases
 - [Reference prototype](docs/reference/README.md): the preserved original and
   its differences from 0.1.0
 - [Changelog](CHANGELOG.md)
