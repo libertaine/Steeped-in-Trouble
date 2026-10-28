@@ -10,6 +10,7 @@ import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { FIBS, FORTUNES } from '../gameplay/fortunes.js';
 import { UPGRADES } from '../gameplay/upgrades.js';
+import { havocInProgress } from '../gameplay/chocolate.js';
 import { createTea } from './tea.js';
 
 const GOLD = '#ffd45e';
@@ -35,6 +36,15 @@ const GOLDEN_WORDS = {
 const STRAINER_REMARKS = ['Not through this mesh.', 'Strained!', 'The strainer earns its keep.', 'Caught, with a tiny clink.'];
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV'];
+
+// Hot Chocolate Havoc.
+const COCOA = '#f3c99a';
+const MARSHMALLOW = ['#fffaf2', '#f6ead8'];
+const BURN_REMARKS = ['Ah. Charcoal.', 'That one has gone to a better place. It is on fire.', 'Crispy.', 'The smoke alarm is a leaf. It is fine.'];
+const RAW_REMARKS = ['Raw. A bold choice.', 'That one escaped untoasted.', 'Plop.'];
+const PERFECT_REMARKS = ['Perfectly toasted!', 'Golden. Flawless. Gone.', 'The cup applauds.', 'Caramel perfection.'];
+const CATASTROPHE_WORDS = ['Nobody could have foreseen this.', 'The leaves foresaw this. They said nothing.',
+  'It had a face. Briefly.', 'Structural marshmallow failure.'];
 
 const UPGRADE_WORDS = {
   polished: 'The spoon gleams.',
@@ -88,6 +98,11 @@ export function createEffects({ random = Math.random } = {}) {
     spoonScale: 1, // The Leaves Lie can make the spoon briefly enormous
     upgradeGlow: 0, // seconds of the ring that marks a new upgrade
     discovery: null, // { id, time, life }: an unexpected brew being announced
+    aimPulses: [], // lanes that just fired, flashing briefly: { lanes, tone, time, life }
+    banner: null, // { title, words, time, life }: a big moment in the hot chocolate
+    popups: [], // floating points: { text, x, y, color, time, life }
+    ghosts: [], // perfect marshmallows lifting out of the cup: { x, y, size, spin, time, life }
+    shake: 0, // seconds of cup shake left
   };
   const queue = [];
   let prankTimer = null; // seconds until The Leaves Lie misbehaves
@@ -95,6 +110,8 @@ export function createEffects({ random = Math.random } = {}) {
   let prismatic = null; // the same for the prismatic cube
   let bigSpoon = null; // { time, life } while the spoon is comically large
   let strained = false; // has the strainer been explained this pot?
+  let burnedOnce = false; // has the first burn been explained this pot?
+  let perfects = 0; // perfect marshmallows this bonus round
 
   /** Show a message under the cup; `then` queues it behind the current one. */
   function say(text, { color = '#f1dfbd', life = 3.4, then = false } = {}) {
@@ -135,6 +152,30 @@ export function createEffects({ random = Math.random } = {}) {
     words.forEach((text, i) => say(text, { color: FORTUNES.lie.color, then: i > 0 }));
   }
 
+  /** Flash the lanes a shot just went down (the renderer draws it over the aim highlight). */
+  function pulseLanes(lanes, tone, life = 0.22) {
+    fx.aimPulses.push({ lanes, tone, time: life, life });
+    if (fx.aimPulses.length > 12) fx.aimPulses.shift();
+  }
+
+  function popup(text, radius, angle, color, life = 1) {
+    const p = toCanvasPoint(radius, angle);
+    fx.popups.push({ text, x: p.x, y: p.y - 10, color, time: life, life });
+    if (fx.popups.length > 16) fx.popups.shift();
+  }
+
+  /** Clear everything that belongs to one stretch of play. */
+  function clearScene() {
+    fx.particles = [];
+    fx.flash = 0;
+    fx.glints = [];
+    fx.aimPulses = [];
+    fx.banner = null;
+    fx.popups = [];
+    fx.ghosts = [];
+    fx.shake = 0;
+  }
+
   /** Spoon sparkles: silver, or gold. */
   function spoonBurst(count, angle, colors, speed = 1.4) {
     burst(count, () => SPOON_RADIUS + rnd(-10, 6), () => angle + rnd(-0.08, 0.08),
@@ -144,12 +185,11 @@ export function createEffects({ random = Math.random } = {}) {
   const handlers = {
     matchStart() {
       strained = false;
+      burnedOnce = false;
       fx.discovery = null;
     },
     roundStart({ fortune }) {
-      fx.particles = [];
-      fx.flash = 0;
-      fx.glints = [];
+      clearScene();
       golden = null;
       prismatic = null;
       bigSpoon = null;
@@ -157,7 +197,8 @@ export function createEffects({ random = Math.random } = {}) {
       if (fortune) say(`“${FORTUNES[fortune].quote}”`, { color: FORTUNES[fortune].color });
       else hush();
     },
-    steam({ twin }) {
+    steam({ lane, twin, golden: gilded }) {
+      pulseLanes([lane], gilded ? 'golden' : 'steam');
       if (!twin) return;
       // A puff of sparkle from the spoon for each pair of darts.
       const angle = fx.spoonAngle;
@@ -200,7 +241,11 @@ export function createEffects({ random = Math.random } = {}) {
       burst(10, () => radius + rnd(-5, 5), () => angle + rnd(-0.04, 0.04), '#a99bc0', () => rnd(0.3, 0.6));
       say('The prism fades. Blink and you miss it.', { color: '#a99bc0', life: 2.6 });
     },
+    sugar({ lanes }) {
+      pulseLanes(lanes, 'sugar', 0.4);
+    },
     nova({ count, golden: gilded }) {
+      pulseLanes(Array.from({ length: CONFIG.arena.lanes }, (_, lane) => lane), 'nova', 0.6);
       // A ring of colour bursting out from the middle of the cup.
       for (let i = 0; i < 90; i++) {
         const a = rnd(0, TAU);
@@ -319,6 +364,89 @@ export function createEffects({ random = Math.random } = {}) {
     drift({ radius, angle }) {
       burst(1, () => radius, () => angle, '#e5d9b0', 0.4);
     },
+
+    // Hot Chocolate Havoc.
+    chocolateStart() {
+      clearScene();
+      hush();
+      perfects = 0;
+    },
+    havocStart() {
+      say('This is not tea.', { color: COCOA, life: 2.4 });
+      say('Toast, don’t torch: tap, don’t hold.', { color: COCOA, then: true });
+    },
+    flame({ lane, golden: gilded }) {
+      pulseLanes([lane], gilded ? 'golden' : 'flame', 0.18);
+      const angle = -Math.PI / 2 + lane * LANE_STEP;
+      burst(2, () => RIM - rnd(10, 18), () => angle + rnd(-0.05, 0.05), (i) => (i % 2 ? '#ffb347' : '#ff7a2a'),
+        () => rnd(0.15, 0.35), 0.6, [1, 2]);
+    },
+    toast({ radius, angle, stage }) {
+      burst(stage === 'toasted' ? 8 : 5, () => radius + rnd(-6, 6), () => angle + rnd(-0.05, 0.05),
+        (i) => (i % 2 ? '#ffcf7a' : '#ff9a3c'), () => rnd(0.2, 0.5), 0.9, [1, 2.4]);
+    },
+    burn({ radius, angle }) {
+      burst(16, () => radius + rnd(-6, 6), () => angle + rnd(-0.06, 0.06), (i) => (i % 3 ? '#6e625b' : '#ff6a2a'),
+        () => rnd(0.5, 1.2), 0.8, [2, 4]);
+      if (!burnedOnce) {
+        burnedOnce = true;
+        say('Too hot! Let them cool between flames.', { color: '#ff9a6a' });
+      } else if (random() < 0.25) {
+        say(pick(BURN_REMARKS), { color: '#ff9a6a', life: 2.4 });
+      }
+    },
+    perfect({ radius, angle, points, size }) {
+      perfects++;
+      const p = toCanvasPoint(radius, angle);
+      fx.ghosts.push({ x: p.x, y: p.y, size, spin: angle, time: 0.9, life: 0.9 });
+      burst(22, () => radius + rnd(-8, 8), () => angle + rnd(-0.06, 0.06), (i) => (i % 3 ? GOLD : '#fff8e2'),
+        () => rnd(0.4, 1), 1.6);
+      popup(`+${points}`, radius, angle, GOLD, 1.1);
+      if (perfects === 1) say('Perfect! They pop out by themselves.', { color: GOLD, life: 2.6 });
+      else if (perfects % 5 === 0) say(pick(PERFECT_REMARKS), { color: GOLD, life: 2.2 });
+    },
+    scoop({ radius, angle, stage, points, how }) {
+      if (how !== 'rim') return;
+      // Scooped at the rim, with a little splash of chocolate.
+      burst(12, () => RIM - rnd(0, 8), () => angle + rnd(-0.1, 0.1), (i) => (i % 3 ? '#7a3f1f' : '#c58a5a'),
+        () => rnd(0.3, 0.7), 1.6, [1.5, 3.4]);
+      if (points > 0) popup(`+${points}`, radius, angle, stage === 'burned' ? '#b8a89c' : COCOA, 0.9);
+      else if (random() < 0.3) say(pick(RAW_REMARKS), { color: COCOA, life: 2.2 });
+    },
+    crumble({ radius, angle }) {
+      burst(14, () => radius + rnd(-6, 6), () => angle + rnd(-0.06, 0.06), (i) => (i % 2 ? '#3a2a22' : '#7a6e66'),
+        () => rnd(0.4, 0.9), 1.2, [1.5, 3]);
+    },
+    giantAppear({ radius, angle }) {
+      burst(24, () => radius + rnd(-10, 10), () => angle + rnd(-0.1, 0.1), (i) => MARSHMALLOW[i % 2], () => rnd(0.4, 1), 1.4);
+      say('That marshmallow is… larger than usual.', { color: '#f6ead8' });
+    },
+    giantGrow({ radius, angle, left }) {
+      burst(6, () => radius + rnd(-14, 14), () => angle + rnd(-0.1, 0.1), (i) => MARSHMALLOW[i % 2], () => rnd(0.3, 0.6), 1);
+      if (left === 3) say('It is getting… bigger?', { color: '#f6ead8', life: 2 });
+    },
+    catastrophe({ radius, angle }) {
+      fx.banner = { title: 'MARSHMALLOW CATASTROPHE!', words: pick(CATASTROPHE_WORDS), time: 3.4, life: 3.4 };
+      fx.shake = 0.45;
+      // A shower of tiny white particles.
+      const centre = toCanvasPoint(radius, angle);
+      for (let i = 0; i < 110; i++) {
+        const a = rnd(0, TAU);
+        const speed = rnd(60, 300);
+        const life = rnd(0.6, 1.6);
+        fx.particles.push({
+          x: centre.x, y: centre.y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed - 40,
+          time: life, life, color: MARSHMALLOW[i % 2], size: rnd(1.2, 3.6),
+        });
+      }
+    },
+    giantGone() {
+      say('The giant marshmallow wanders off, unbothered.', { color: '#f6ead8' });
+    },
+    havocEnd() {
+      hush();
+      fx.banner = null;
+    },
   };
 
   return {
@@ -339,9 +467,11 @@ export function createEffects({ random = Math.random } = {}) {
       fx.glitch = Math.max(0, fx.glitch - dt);
       fx.upgradeGlow = Math.max(0, fx.upgradeGlow - dt * 1.2);
       if (state) fx.spoonAngle = state.angle;
-      for (let i = fx.glints.length - 1; i >= 0; i--) {
-        fx.glints[i].time -= dt;
-        if (fx.glints[i].time <= 0) fx.glints.splice(i, 1);
+      for (const list of [fx.glints, fx.aimPulses]) {
+        for (let i = list.length - 1; i >= 0; i--) {
+          list[i].time -= dt;
+          if (list[i].time <= 0) list.splice(i, 1);
+        }
       }
 
       const playing = state?.phase === PHASE.PLAYING;
@@ -354,7 +484,8 @@ export function createEffects({ random = Math.random } = {}) {
       } else if (!bigSpoon) {
         fx.spoonScale = 1;
       }
-      if (playing && state.goldenSpoon > 0 && random() < dt * 18) {
+      const toasting = havocInProgress(state)?.stage === 'play' && state.phase !== PHASE.PAUSED;
+      if ((playing || toasting) && state.goldenSpoon > 0 && random() < dt * 18) {
         spoonBurst(1, state.angle, [GOLD, '#fff8e2'], 0.6);
       }
       if (playing && prankTimer !== null) {
@@ -373,6 +504,19 @@ export function createEffects({ random = Math.random } = {}) {
       }
 
       if (state?.phase !== PHASE.PAUSED) {
+        fx.shake = Math.max(0, fx.shake - dt);
+        if (fx.banner) {
+          fx.banner.time -= dt;
+          if (fx.banner.time <= 0) fx.banner = null;
+        }
+        for (const list of [fx.popups, fx.ghosts]) {
+          for (let i = list.length - 1; i >= 0; i--) {
+            list[i].time -= dt;
+            if (list[i].time <= 0) list.splice(i, 1);
+          }
+        }
+        for (const p of fx.popups) p.y -= dt * 34;
+        for (const g of fx.ghosts) g.y -= dt * 46;
         if (fx.discovery) {
           fx.discovery.time -= dt;
           if (fx.discovery.time <= 0) fx.discovery = null;

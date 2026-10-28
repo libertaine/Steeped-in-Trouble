@@ -135,3 +135,43 @@ test('completes a round, reads the leaves, picks a spoon upgrade, and brews the 
   await expect(page.locator('#hudOmen')).toHaveText(/^✦ /);
   expect(problems).toEqual([]);
 });
+
+test('a Hot Chocolate Havoc bonus round plays through and returns to the tea', async ({ page, problems }) => {
+  await openGame(page, '&seed=7');
+  await page.keyboard.press('Enter');
+  // Finish round 1 at once, and make a bonus round due.
+  await page.evaluate(() => {
+    const { game } = window.__TEACUP__;
+    const s = game.state;
+    s.kills = s.target - 1;
+    s.enemies.push({ angle: -Math.PI / 2, radius: 200, speed: 0, wiggle: 0, shifted: false, size: 10, alpha: 1 });
+    s.angle = -Math.PI / 2;
+    s.shotCooldown = 0;
+    game.fireSteam();
+  });
+  await page.waitForFunction(() => window.__TEACUP__.game.state.phase === 'reading');
+  await page.evaluate(() => { window.__TEACUP__.game.state.havocDue = true; });
+  await expect(page.locator('#upgradeOffer')).toBeVisible({ timeout: 10_000 });
+  const picked = await page.locator('.upgrade-card').nth(0).getAttribute('data-upgrade');
+  await page.keyboard.press('1');
+  await expect(page.locator('#hudStatus')).toHaveText('THE CHOCOLATE PROPHECY');
+  await expect(page.locator('#roundNum')).toHaveText('01½');
+
+  await page.keyboard.press('Enter'); // skip the intro
+  await expect(page.locator('#hudStatus')).toHaveText(/^HOT CHOCOLATE HAVOC · \d+s$/);
+  await expect(page.locator('#killLabel')).toHaveText('Marshmallows toasted');
+  await page.keyboard.press('Space');
+  await expect.poll(() => page.evaluate(() => window.__TEACUP__.game.state.chocolate.flames.length)).toBeGreaterThan(0);
+
+  await page.evaluate(() => { window.__TEACUP__.game.state.chocolate.left = 0.1; });
+  await expect(page.locator('#hudStatus')).toHaveText('BACK TO TEA');
+  await expect(page.locator('#mainBtn')).toHaveText('Back to the tea →');
+  await page.waitForTimeout(800);
+  await page.locator('#mainBtn').click();
+
+  await expect(page.locator('#hudStatus')).toHaveText(/DEFEND THE RIM|GOLDEN SPOON/);
+  await expect(page.locator('#roundNum')).toHaveText('02');
+  await expect(page.locator('#hudLives')).toHaveText(/CUPS ♥ ♥ ♥/);
+  expect(await page.evaluate((id) => window.__TEACUP__.game.state.spoon[id], picked)).toBe(1);
+  expect(problems).toEqual([]);
+});

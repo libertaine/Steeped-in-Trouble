@@ -6,6 +6,7 @@
 import { CONFIG } from '../config.js';
 import { OFFER_AT } from '../core/game.js';
 import { PHASE } from '../core/state.js';
+import { havocInProgress } from '../gameplay/chocolate.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
@@ -16,6 +17,7 @@ const COPY = {
     [PHASE.PLAYING]: 'DEFEND THE RIM',
     [PHASE.PAUSED]: 'PAUSED',
     [PHASE.READING]: 'READING THE LEAVES',
+    [PHASE.CHOCOLATE]: 'HOT CHOCOLATE HAVOC',
     [PHASE.GAME_OVER]: 'THE CUP RUNNETH OVER',
   },
   title: {
@@ -23,6 +25,7 @@ const COPY = {
     [PHASE.PLAYING]: (s) => `Cup ${s.round}: the storm stirs`,
     [PHASE.PAUSED]: () => 'A moment to steep',
     [PHASE.READING]: () => 'The leaves have spoken',
+    [PHASE.CHOCOLATE]: () => HAVOC.title.play,
     [PHASE.GAME_OVER]: () => 'The last drop',
   },
   button: {
@@ -30,14 +33,28 @@ const COPY = {
     [PHASE.PLAYING]: 'Pause / resume (P)',
     [PHASE.PAUSED]: 'Resume cup →',
     [PHASE.READING]: 'Brew the next cup →',
+    [PHASE.CHOCOLATE]: 'Pause / resume (P)',
     [PHASE.GAME_OVER]: 'Start a fresh pot →',
   },
   tip: {
     [PHASE.READY]: 'Defend the rim. Your defeated leaves are the seeds of the next fortune.',
     [PHASE.PLAYING]: 'Keep tea leaves from escaping the rim. Every defeated leaf joins your final reading.',
     [PHASE.PAUSED]: 'The kettle is on hold.',
+    [PHASE.CHOCOLATE]: '',
     [PHASE.READING]: 'The pattern was made by the leaves you defeated, though the leaves have opinions of their own. The omen applies to the next cup.',
     [PHASE.GAME_OVER]: 'Three spills end the pot. Brew again to rewrite the future.',
+  },
+};
+
+// Hot Chocolate Havoc, stage by stage.
+const HAVOC = {
+  status: { intro: () => 'THE CHOCOLATE PROPHECY', play: (c) => `HOT CHOCOLATE HAVOC · ${Math.ceil(c.left)}s`, outro: () => 'BACK TO TEA' },
+  title: { intro: 'Something is brewing…', play: 'Bonus: Hot Chocolate Havoc', outro: 'A sweeter interlude' },
+  button: { intro: 'Skip to the marshmallows →', play: 'Pause / resume (P)', outro: 'Back to the tea →' },
+  tip: {
+    intro: 'This is not tea.',
+    play: 'Toast, don’t torch: give each marshmallow a few well-spaced flames. Heat one too fast and it catches fire. Perfect ones pop out by themselves; the rest are scooped up at the rim. Nothing here costs a cup.',
+    outro: 'Your spoon, your cups, and the next fortune are exactly as you left them.',
   },
 };
 
@@ -46,6 +63,7 @@ const pips = (level, max) => '●'.repeat(level) + '○'.repeat(max - level);
 
 /** The status pill: the phase, or during play the Golden Spoon or a recovering cup. */
 function statusText(state) {
+  if (state.phase === PHASE.CHOCOLATE) return HAVOC.status[state.chocolate.stage](state.chocolate);
   if (state.phase === PHASE.PLAYING) {
     if (state.goldenSpoon > 0) return `✦ GOLDEN SPOON ${Math.ceil(state.goldenSpoon)}s`;
     if (state.graceTime > 0) return 'THE CUP RECOVERS';
@@ -89,7 +107,7 @@ function omenStatus(state) {
 
 /** The small in-play indicator of the fortune shaping this round. */
 function omenText(state, fortune) {
-  if (!fortune || (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED)) return '';
+  if (!fortune || havocInProgress(state) || (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED)) return '';
   return `✦ ${fortune.name} · ${fortune.tag} · ${omenStatus(state)}`;
 }
 
@@ -99,11 +117,14 @@ const stillLying = (state) => state.phase === PHASE.READING && state.nextFortune
 
 /** All HUD text for a state, keyed by element id. Pure, for easy testing. */
 export function hudText(state) {
-  const shown = state.phase === PHASE.READING ? state.nextFortune : state.fortune;
+  const havoc = havocInProgress(state);
+  // Between rounds (a reading or the bonus) the panel looks ahead to the next cup.
+  const between = state.phase === PHASE.READING || !!havoc;
+  const shown = between ? state.nextFortune : state.fortune;
   const fortune = shown ? FORTUNES[shown] : null;
   const offering = state.phase === PHASE.READING && !!state.offer;
   const strainer = `${state.strainerLeft}/${strainerCapacity(state.spoon)}`;
-  return {
+  const values = {
     hudStatus: statusText(state),
     hudScore: `SCORE ${pad(state.score, 4)}`,
     hudLives: `CUPS ${'♥ '.repeat(Math.max(0, state.lives))}${'♡ '.repeat(Math.max(0, CONFIG.lives - state.lives))}`,
@@ -119,7 +140,7 @@ export function hudText(state) {
     gameTip: offering
       ? 'The cupboard offers assistance. Pick one spoon upgrade; it stays with you until the pot runs dry.'
       : COPY.tip[state.phase],
-    fortuneLabel: state.phase === PHASE.READING
+    fortuneLabel: between
       ? 'Fortune for the next cup'
       : fortune ? 'This cup’s omen' : 'Next cup’s omen',
     fortuneName: stillLying(state) ? 'Something Wonderful' : fortune ? fortune.name : 'Not yet written',
@@ -129,7 +150,20 @@ export function hudText(state) {
         ? `“${fortune.quote}” ${fortune.info}`
         : 'Finish a round to read the leaves. How you play nudges what they foretell.',
     hudOmen: omenText(state, fortune),
+    killLabel: 'Leaves cleared',
   };
+  if (havoc) {
+    const { tally, stage } = havoc;
+    Object.assign(values, {
+      roundTitle: HAVOC.title[stage],
+      roundNum: `${pad(state.round, 2)}½`, // between cups, and not a cup of its own
+      killLabel: 'Marshmallows toasted',
+      killCount: `${tally.perfect} perfect · ${tally.toasted} toasted`,
+      gameTip: HAVOC.tip[stage],
+    });
+    if (state.phase === PHASE.CHOCOLATE) values.mainBtn = HAVOC.button[stage];
+  }
+  return values;
 }
 
 export function createHud(doc = document) {

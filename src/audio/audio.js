@@ -8,7 +8,7 @@
 import { FORTUNES } from '../gameplay/fortunes.js';
 import { createMusic } from './music.js';
 
-// [frequency Hz, duration s, waveform, gain, delay s]
+// [frequency Hz, duration s, waveform, gain, delay s, pitch bend (end / start, default 0.6)]
 const SOUNDS = {
   roundStart: [510, 0.13, 'triangle', 0.026],
   reading: [820, 0.29, 'sine', 0.04],
@@ -19,6 +19,10 @@ const SOUNDS = {
   toggle: [550, 0.1, 'sine', 0.026],
   sugarRegen: [1320, 0.08, 'sine', 0.012],
   recoil: [310, 0.2, 'sine', 0.026],
+  // Hot Chocolate Havoc.
+  flame: [240, 0.07, 'sawtooth', 0.006],
+  crumble: [150, 0.16, 'triangle', 0.022],
+  bump: [250, 0.12, 'sine', 0.014, 0, 1.5], // boing
 };
 
 // Little tunes: lists of notes.
@@ -49,6 +53,17 @@ const TUNES = {
   secret: [[1047, 0.4, 'sine', 0.026, 0.5], [1319, 0.4, 'sine', 0.024, 0.75], [1175, 0.4, 'sine', 0.024, 1],
     [1568, 0.8, 'sine', 0.03, 1.25]],
   prismaticGone: [[1568, 0.2, 'sine', 0.016], [1175, 0.3, 'sine', 0.014, 0.1]],
+  // Hot Chocolate Havoc: a mysterious prophecy, then a bright little fanfare.
+  chocolateStart: [[392, 0.35, 'sine', 0.026], [466, 0.35, 'sine', 0.026, 0.28], [587, 0.7, 'sine', 0.03, 0.56]],
+  havocStart: [[523, 0.1, 'square', 0.013], [659, 0.1, 'square', 0.013, 0.09], [784, 0.1, 'square', 0.013, 0.18],
+    [1047, 0.45, 'triangle', 0.03, 0.27]],
+  burn: [[170, 0.3, 'sawtooth', 0.018], [1400, 0.18, 'square', 0.005, 0.02, 0.4]], // a sizzle
+  perfect: [[1319, 0.08, 'sine', 0.02], [1760, 0.28, 'sine', 0.026, 0.06]],
+  giantAppear: [[196, 0.3, 'triangle', 0.026], [247, 0.35, 'triangle', 0.022, 0.2, 0.9]],
+  // POP: a thump, then a bright ring.
+  catastrophe: [[95, 0.25, 'sine', 0.08, 0, 0.4], [1568, 0.08, 'square', 0.012, 0.03], [2093, 0.35, 'sine', 0.022, 0.06]],
+  giantGone: [[392, 0.3, 'sine', 0.02], [294, 0.45, 'sine', 0.02, 0.2]],
+  havocEnd: [[784, 0.15, 'triangle', 0.024], [659, 0.15, 'triangle', 0.024, 0.12], [523, 0.45, 'sine', 0.03, 0.24]],
   // Steam Nova: a rising whoosh, then a bright chord rippling up.
   nova: [[196, 0.45, 'sawtooth', 0.02], [523, 0.12, 'square', 0.014, 0.05], [659, 0.12, 'square', 0.014, 0.1],
     [784, 0.12, 'square', 0.014, 0.15], [1047, 0.12, 'square', 0.014, 0.2], [1319, 0.6, 'sine', 0.034, 0.25],
@@ -95,7 +110,7 @@ export function createAudio() {
     }
   }
 
-  function beep([hz, duration, shape, gain, delay = 0]) {
+  function beep([hz, duration, shape, gain, delay = 0, bend = 0.6]) {
     if (!audioContext()) return;
     try {
       const now = context.currentTime + delay;
@@ -103,7 +118,7 @@ export function createAudio() {
       const amp = context.createGain();
       osc.type = shape;
       osc.frequency.setValueAtTime(hz, now);
-      osc.frequency.exponentialRampToValueAtTime(Math.max(hz * 0.6, 30), now + duration);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(hz * bend, 30), now + duration);
       amp.gain.setValueAtTime(gain, now);
       amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       osc.connect(amp);
@@ -142,6 +157,12 @@ export function createAudio() {
       music.handle(event);
       if (event.type === 'kill') beep(KILL_SOUND[event.by] ?? (event.sugar ? KILL_SOUND.sugar : KILL_SOUND.steam));
       else if (event.type === 'steam' && event.golden) beep(GOLDEN_STEAM);
+      // A marshmallow squeaks as it toasts, higher each time.
+      else if (event.type === 'toast') beep([1100 + 160 * event.cook, 0.07, 'sine', 0.012, 0, 1.5]);
+      else if (event.type === 'giantGrow') beep([280 + 45 * (event.hits ?? 0), 0.12, 'sine', 0.018, 0, 1.25]);
+      else if (event.type === 'scoop') {
+        if (event.how === 'rim') beep([event.points ? 360 : 240, 0.1, 'sine', 0.02]); // plop
+      }
       else if (SOUNDS[event.type]) beep(SOUNDS[event.type]);
       else tuneFor(event)?.forEach(beep);
     },

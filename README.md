@@ -11,11 +11,11 @@ pattern is read as a fortune that changes the next round.
 
 ## Status
 
-Version **0.6.0 — The Kettle Sings** gives the cup a voice. With sound on, a
-small procedural band plays along. It picks up the pace in later rounds and
-in stormy tea, builds as leaves close in on the rim, and settles once you
-clear them. See the [changelog](CHANGELOG.md) for earlier versions. The game
-is experimental, so expect it to keep changing.
+Version **0.7.0 — Hot Chocolate Havoc** adds the game's first bonus round.
+Every so often, between cups, the leaves foresee something sweeter, and the
+tea is no longer quite tea. Aiming is easier too: the lane the spoon will
+fire down now glows. See the [changelog](CHANGELOG.md) for earlier versions.
+The game is experimental, so expect it to keep changing.
 
 The game was called *Storm in a Teacup* up to version 0.1.0.
 
@@ -24,8 +24,8 @@ The game was called *Storm in a Teacup* up to version 0.1.0.
 - Tea leaves drift out from the centre of the cup. Each one that reaches the
   rim spills, costing one of your three cups. Lose them all and the pot runs
   dry.
-- The spoon circles the rim and fires down the nearest lane. Steam is
-  unlimited. Each round you also get a couple of milk pours, which push leaves
+- The spoon circles the rim and fires down the nearest lane, which glows
+  so you can see where the shot will go. Steam is unlimited. Each round you also get a couple of milk pours, which push leaves
   back and slow them, and a couple of sugar bursts, which fire down three
   lanes at once.
 - Clear enough leaves to finish the round. The leaves you defeated are then
@@ -33,6 +33,8 @@ The game was called *Storm in a Teacup* up to version 0.1.0.
   choose an upgrade for your spoon, which lasts for the whole pot.
 - Keep an eye out for sugar cubes, and try unusual combinations. Some of
   them brew something unexpected.
+- Now and then, between cups, a bonus round turns the tea into hot
+  chocolate. Nothing in it can spill. Be gentle with the fire button.
 
 ## Controls
 

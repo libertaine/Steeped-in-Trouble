@@ -5,6 +5,22 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-27 — Hot Chocolate Havoc
+
+### Added
+
+- **Hot Chocolate Havoc:** an occasional bonus round between cups. The tea
+  turns to hot chocolate, marshmallows float up, and the spoon fires little
+  flames. Toast them well for bonus points; burn them and the cup will
+  notice. It costs no cups and keeps your spoon, upgrades, and next fortune.
+  The first one always comes by round 6. There may be a surprise or two.
+
+### Changed
+
+- **Aiming:** the lane the spoon will fire down now glows, with a marker at
+  the firing point and a flash when a shot goes (three lanes for sugar, all
+  sixteen for a Steam Nova). The spoon still turns smoothly.
+
 ## [0.6.0] - 2026-10-27 — The Kettle Sings
 
 ### Added

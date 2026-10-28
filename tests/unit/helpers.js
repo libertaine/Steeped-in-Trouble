@@ -34,13 +34,27 @@ export function killOne(game, lane = 0) {
   step(game, 0.25);
 }
 
+/** Hurry through a Hot Chocolate Havoc bonus round, if one is under way, to the next cup. */
+export function finishBonus(game) {
+  if (game.state.phase !== 'chocolate') return;
+  if (game.state.chocolate.stage === 'intro') game.primaryAction();
+  if (game.state.chocolate.stage === 'play') {
+    game.state.chocolate.left = 0;
+    game.update(1 / 60);
+  }
+  game.state.chocolate.time = Math.max(game.state.chocolate.time, 5);
+  game.primaryAction();
+}
+
 /**
  * Continue from a reading to the next cup, declining any upgrade offer (so
- * tests of other features play with a plain spoon).
+ * tests of other features play with a plain spoon), and passing through any
+ * bonus round on the way.
  */
 export function brewNext(game) {
   game.state.offer = null;
   game.primaryAction();
+  finishBonus(game);
 }
 
 /** Finish the current round: the next kill reaches the target. */

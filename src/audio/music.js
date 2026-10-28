@@ -27,6 +27,17 @@ export const CHORDS = Object.freeze([
   { root: 36, tones: [60, 64, 67] }, // C
 ]);
 
+// Hot Chocolate Havoc: I – vi – IV – V in F major, a chord a bar, bouncier.
+const CHOCO_CHORDS = Object.freeze([
+  { root: 41, tones: [65, 69, 72] }, // F
+  { root: 38, tones: [62, 65, 69] }, // D minor
+  { root: 46, tones: [62, 65, 70] }, // B♭
+  { root: 36, tones: [64, 67, 72] }, // C
+]);
+const CHOCO_MELODY = [65, 67, 69, 72, 74, 77, 79]; // F major pentatonic
+const CHOCO_MELODY_STEPS = [0, 2, 4, 7, 8, 10, 12, 14];
+const CHOCO_BASS = { 0: 0, 3: 12, 6: 7, 8: 0, 11: 12, 14: 7 }; // step → interval above the root
+
 // The music-box melody wanders over D minor pentatonic on these sixteenths,
 // landing on chord tones on the strong ones.
 const MELODY = [62, 65, 67, 69, 72, 74, 77];
@@ -73,6 +84,15 @@ export function musicMood(state, tension = 0) {
       return { section: 'ready', tempo: 76, tension: 0, golden: false, stormy: false };
     case PHASE.READING:
       return { section: 'reading', tempo: 66, tension: 0, golden: false, stormy: false };
+    case PHASE.CHOCOLATE: {
+      // Playful, with a quicker beat as the toasting time runs out.
+      const c = state.chocolate;
+      if (c.stage !== 'play') return { section: 'reading', tempo: 72, tension: 0, golden: false, stormy: false, chocolate: true };
+      const hurry = c.left < 6 ? 1 - c.left / 6 : 0;
+      return {
+        section: 'havoc', tempo: 112 + 14 * hurry, tension: hurry, golden: state.goldenSpoon > 0, stormy: false, chocolate: true,
+      };
+    }
     case PHASE.PLAYING: {
       const stormy = state.fortune === 'tempest';
       const base = Math.min(120, 92 + 3 * (state.round - 1));
@@ -89,9 +109,31 @@ export function musicMood(state, tension = 0) {
   }
 }
 
-/** The chord for a given step of the song. */
-export function chordAt(step) {
+/** The chord for a given step of the song (in hot chocolate, a sweeter progression). */
+export function chordAt(step, chocolate = false) {
+  if (chocolate) return CHOCO_CHORDS[Math.floor(step / STEPS_PER_BAR) % CHOCO_CHORDS.length];
   return CHORDS[Math.floor(step / (STEPS_PER_BAR * BARS_PER_CHORD)) % CHORDS.length];
+}
+
+/** Hot Chocolate Havoc: a bouncy bass, light percussion, and a busier melody. */
+function arrangeHavoc(step, mood, random, add) {
+  const beat = step % STEPS_PER_BAR;
+  const chord = chordAt(step, true);
+  const { tension: hurry, golden } = mood;
+  if (beat === 0) for (const tone of chord.tones) add('pad', tone - 12, STEPS_PER_BAR, 0.55);
+  if (beat in CHOCO_BASS) add('bass', chord.root + CHOCO_BASS[beat], 1, 0.9);
+  if (beat === 0 || beat === 8) add('kick', 0, 1, 0.55);
+  if (beat === 4 || beat === 12) add('snare', 0, 1, 0.35);
+  if (beat % 4 === 2 || (hurry > 0.5 && beat % 2 === 1)) add('hat', 0, 1, 0.7);
+  if (CHOCO_MELODY_STEPS.includes(beat) && random() < 0.55) {
+    const pool = beat % 8 === 0 ? chord.tones : CHOCO_MELODY;
+    add('bell', pool[Math.floor(random() * pool.length) % pool.length] + 12, 2, 0.8);
+  }
+  if ((hurry > 0 || golden) && beat % 2 === 0) {
+    const tones = [...chord.tones, chord.tones[0] + 12];
+    add('arp', tones[ARP[(beat >> 1) % ARP.length]] + 12, 1, 0.35 + 0.4 * hurry);
+  }
+  if (golden && beat % 2 === 1) add('bell', chord.tones[(beat >> 1) % 3] + 24, 2, 0.4);
 }
 
 /**
@@ -102,8 +144,12 @@ export function arrange(step, mood, random = Math.random) {
   const notes = [];
   if (mood.section === 'silent') return notes;
   const add = (voice, midi, len, gain) => notes.push({ voice, midi, len, gain });
+  if (mood.section === 'havoc') {
+    arrangeHavoc(step, mood, random, add);
+    return notes;
+  }
   const beat = step % STEPS_PER_BAR;
-  const chord = chordAt(step);
+  const chord = chordAt(step, mood.chocolate);
   const { tension, golden, stormy } = mood;
   const calm = mood.section !== 'play';
 
@@ -287,7 +333,8 @@ export function createMusic({ random = Math.random } = {}) {
       // The band swells a little with the tension, on top of the layers it adds.
       const level = VOLUME * (mood.section === 'silent' ? 0 : mood.section === 'play' ? 0.7 + 0.3 * tension : 0.8);
       bus.gain.setTargetAtTime(level, now, mood.section === 'silent' ? 0.25 : 0.6);
-      tone.frequency.setTargetAtTime(mood.section === 'play' ? 1400 + 5600 * tension : 1100, now, 0.3);
+      const brightness = mood.section === 'play' ? 1400 + 5600 * tension : mood.section === 'havoc' ? 3000 + 2000 * tension : 1100;
+      tone.frequency.setTargetAtTime(brightness, now, 0.3);
       if (mood.section === 'silent') {
         nextTime = 0;
         pending = [];
@@ -312,8 +359,18 @@ export function createMusic({ random = Math.random } = {}) {
 
     /** React to simulation events. */
     handle(event) {
-      if (event.type === 'matchStart' || event.type === 'roundStart') {
+      if (event.type === 'matchStart' || event.type === 'roundStart' || event.type === 'chocolateStart') {
         step = 0; // start each cup on the downbeat
+      } else if (event.type === 'havocStart') {
+        // A little announcement: up the F major chord, a note a sixteenth.
+        step = 0;
+        pending = [65, 69, 72, 77, 81, 84].map((midi) => [{ voice: 'bell', midi, len: 3, gain: 1.1 }]);
+      } else if (event.type === 'catastrophe') {
+        // A flourish: tumbling down from on high, landing with a thump.
+        pending = [96, 93, 89, 86, 84, 81, 77, 72].map((midi, i) => [
+          { voice: 'bell', midi, len: 3, gain: 1 },
+          ...(i === 7 ? [{ voice: 'kick', midi: 0, len: 1, gain: 1 }] : []),
+        ]);
       } else if (event.type === 'escape') {
         tension = 1;
       } else if (event.type === 'nova') {
