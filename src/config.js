@@ -479,6 +479,11 @@ export const CONFIG = deepFreeze({
     // Speech starts `notice` route seconds before the spoon draws level.
     pedestrian: { x: 2910, notice: 1.95, speech: 3 },
   },
+  // Karma: the rim's rebound. Each leaf bounces once, then vanishes on its next contact.
+  karma: {
+    recoil: 150, // first contact washes the leaf this far back (like the recovering cup)
+    weight: 0.5, // draw weight: about 3–4% of ordinary readings
+  },
 
   // Easy Touch (input/gestures.js): forgiving gestures on the cup for milk and sugar.
   touch: {

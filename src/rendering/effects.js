@@ -68,6 +68,10 @@ const UPGRADE_WORDS = {
   strainer: 'The cup gets a little silver trim.',
 };
 
+// Karma: the rim answers back.
+const KARMA = '#ffa6d9';
+const KARMA_REMARKS = ['INSTANT KARMA!', 'INSTANT KARMA!', 'Return to sender.', 'What goes around…'];
+
 const ESCAPE_REMARKS = ['The leaves saw that.', 'That one had somewhere to be.', 'Spilled, but with dignity.'];
 
 const ABSURD_TEAS = [
@@ -126,6 +130,7 @@ export function createEffects({ random = Math.random } = {}) {
     glitch: 0, // seconds of fortune-text glitch remaining
     spoonAngle: CONFIG.player.startAngle,
     glints: [], // strainer catches: { angle, time, life }
+    rebounds: [], // Karma at the rim: { kind: 'bounce' | 'puff', angle, radius, time, life }
     spoonScale: 1, // The Leaves Lie can make the spoon briefly enormous
     upgradeGlow: 0, // seconds of the ring that marks a new upgrade
     discovery: null, // { id, time, life }: an unexpected brew being announced
@@ -216,6 +221,7 @@ export function createEffects({ random = Math.random } = {}) {
     fx.particles = [];
     fx.flash = 0;
     fx.glints = [];
+    fx.rebounds = [];
     fx.aimPulses = [];
     fx.banner = null;
     fx.popups = [];
@@ -424,6 +430,22 @@ export function createEffects({ random = Math.random } = {}) {
       } else if (left === 0 && random() < 0.4) {
         say(pick(STRAINER_REMARKS), { color: '#e4eef0', life: 2.4 });
       }
+    },
+    karmaBounce({ angle, radius }) {
+      // The rim brightens where it was struck, and a few sparkling drops fly back into the tea.
+      const calm = tea.liquid.reduced;
+      fx.rebounds.push({ kind: 'bounce', angle, radius, time: 0.55, life: 0.55 });
+      burst(calm ? 5 : 12, () => RIM - rnd(4, 16), () => angle + rnd(-0.07, 0.07), (i) => (i % 2 ? KARMA : '#fff4fb'),
+        () => rnd(0.3, 0.6), calm ? 0.5 : 1.3, [1, 2.4]);
+      if (!explained.has('karma')) explainOnce('karma', 'INSTANT KARMA! The rim sends each leaf back once. If it returns: poof.', KARMA);
+      else if (!fx.whisper && !queue.length && random() < 0.25) say(pick(KARMA_REMARKS), { color: KARMA, life: 1.6 });
+    },
+    karmaPuff({ angle, radius }) {
+      // A soft round puff of pale steam, nothing like a kill's green crumbs.
+      const calm = tea.liquid.reduced;
+      fx.rebounds.push({ kind: 'puff', angle, radius, time: 0.5, life: 0.5 });
+      burst(calm ? 6 : 16, () => radius - rnd(0, 10), () => angle + rnd(-0.05, 0.05), (i) => (i % 3 ? '#f7f1f5' : KARMA),
+        () => rnd(0.45, 0.9), calm ? 0.3 : 0.7, [2.5, 6]);
     },
     recoil({ angle }) {
       // The recovering cup sloshes the leaf back in.
@@ -698,7 +720,7 @@ export function createEffects({ random = Math.random } = {}) {
       fx.glitch = Math.max(0, fx.glitch - dt);
       fx.upgradeGlow = Math.max(0, fx.upgradeGlow - dt * 1.2);
       if (state) fx.spoonAngle = state.angle;
-      for (const list of [fx.glints, fx.aimPulses]) {
+      for (const list of [fx.glints, fx.rebounds, fx.aimPulses]) {
         for (let i = list.length - 1; i >= 0; i--) {
           list[i].time -= dt;
           if (list[i].time <= 0) list.splice(i, 1);

@@ -45,6 +45,8 @@ const AIM = {
 };
 const AIM_FADE = 0.12; // seconds for the highlight to cross-fade to a new lane
 
+const KARMA = '#ffa6d9'; // Karma's rim and the leaves it has warned
+
 // Strange Brews: leaf behaviours and Chai's currents. Each also has its own shape or arrow, never colour alone.
 const DART = '#d9f59a';
 const WANDER = '#d7c2f6';
@@ -647,6 +649,36 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
   }
 
   /** While the cup recovers from a spill, its rim pulses softly. */
+  /** Karma: a bright arc where the rim threw a leaf back, or a little ring where one vanished. */
+  function drawRebounds(rebounds) {
+    for (const r of rebounds) {
+      const fade = r.time / r.life;
+      const u = 1 - fade;
+      if (r.kind === 'puff') {
+        const p = polar(r.radius, r.angle);
+        circle(p.x, p.y, 6 + 18 * u, '#f7f1f5', 2 * fade + 0.5, false, 0.7 * fade);
+        continue;
+      }
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = KARMA;
+      ctx.shadowColor = KARMA;
+      ctx.shadowBlur = 12;
+      ctx.globalAlpha = fade;
+      ctx.lineWidth = 6 * fade + 1;
+      ctx.beginPath();
+      ctx.arc(CX, CY, OUTER + 3, r.angle - 0.08 - 0.1 * u, r.angle + 0.08 + 0.1 * u);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /** Under Karma the whole rim carries a faint rose line, so the cup looks guarded. */
+  function drawKarmaRim(state) {
+    if (!state.modifiers.karma) return;
+    circle(CX, CY, OUTER + 2, KARMA, 1.4, false, 0.35 + 0.1 * Math.sin(time * 2));
+  }
+
   function drawRecovery(state) {
     if (state.graceTime <= 0) return;
     const left = state.graceTime / CONFIG.grace.duration;
@@ -1099,6 +1131,17 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       leafShape(p.x, p.y, scale, rotation, '#dcb877', e.alpha);
       circle(p.x, p.y, scale + 4, '#ead199', 0.65, false, e.alpha * 0.3);
     }
+    if (e.karma) {
+      // Warned once by Karma: a rose ring, broken like a return arrow. Next time it reaches the rim, poof.
+      ctx.save();
+      ctx.globalAlpha = e.alpha * 0.85;
+      ctx.strokeStyle = KARMA;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, scale + 6, e.angle + 0.6, e.angle + 0.6 + TAU * 0.8);
+      ctx.stroke();
+      ctx.restore();
+    }
     if (e.backwash > 3) {
       // Washed back: a creamy streak on the rim side of the leaf.
       const tail = polar(e.radius + scale + Math.min(40, e.backwash * 0.45), e.angle);
@@ -1428,7 +1471,8 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     ctx.save();
     ctx.globalAlpha = a;
     const confessed = lying && t >= lieRetractAt;
-    const heading = confessed ? 'THE LEAVES… RECONSIDER' : 'THE LEAVES FORETELL';
+    const heading = confessed ? 'THE LEAVES… RECONSIDER'
+      : f.subtitle ? `THE LEAVES FORETELL · ${f.subtitle.toUpperCase()}` : 'THE LEAVES FORETELL';
     text(heading, CX, y0 + 17, 11, '#bcdbbc', 'center', MONO);
     const name = lying && !confessed ? fx.fib.claim : FORTUNES[state.nextFortune].name;
     const quote = lying ? (confessed ? fx.fib.retraction : 'The leaves have never been more certain.') : f.quote;
@@ -1560,6 +1604,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       const inPlay = !havoc && !grind && (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED);
       const live = inPlay || !!havoc || !!grind;
       if (inPlay) drawStrainer(state);
+      if (inPlay) drawKarmaRim(state);
       const reduced = !!fx.tea?.reduced;
       drawAimBeams(state, fx);
       drawClouds(state.clouds);
@@ -1588,6 +1633,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       if (inPlay) drawRecovery(state);
       drawPlayer(state, fx);
       drawGlints(fx.glints ?? []);
+      if (inPlay) drawRebounds(fx.rebounds ?? []);
       drawParticles(fx.particles);
       if (havoc || grind) drawPopups(fx.popups ?? []);
       ctx.restore();

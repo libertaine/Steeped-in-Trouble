@@ -33,6 +33,7 @@ export const BASE_MODIFIERS = Object.freeze({
   enemySpeedMultiplier: 1, // leaf speed
   goldenCube: false, // a golden sugar cube appears once this round
   stormyMilk: false, // milk is caught in the currents (The Perfect Storm)
+  karma: false, // the rim bounces each escaping leaf back once, then makes it vanish (Karma)
 
   // Set by the round's tea variety (gameplay/teas.js); no fortune changes these.
   spawnIntervalMultiplier: 1, // seconds between new leaves
@@ -68,6 +69,22 @@ const CUBE_OUTLINE = [
 ];
 
 const BOLT_OUTLINE = [[40, -130], [-50, 5], [10, 5], [-40, 130], [60, -20], [0, -20], [40, -130]];
+
+// A circular return arrow: most of a ring, clockwise, then its arrowhead.
+const KARMA_OUTLINE = (() => {
+  const r = 105;
+  const from = -0.35 * Math.PI;
+  const to = 1.45 * Math.PI;
+  const ring = Array.from({ length: 25 }, (_, i) => {
+    const a = from + ((to - from) * i) / 24;
+    return [r * Math.cos(a), r * Math.sin(a)];
+  });
+  const [tx, ty] = ring.at(-1);
+  const dir = [-Math.sin(to), Math.cos(to)]; // the way the ring travels at its end
+  const out = [Math.cos(to), Math.sin(to)];
+  const barb = (side) => [tx - 42 * dir[0] + side * 30 * out[0], ty - 42 * dir[1] + side * 30 * out[1]];
+  return [...ring, barb(1), [tx, ty], barb(-1)];
+})();
 
 export const FORTUNES = Object.freeze({
   crown: {
@@ -222,6 +239,21 @@ export const FORTUNES = Object.freeze({
       const f = (t - 0.66) / 0.2;
       return { x: 45 * (1 - f), y: -13 + 63 * f };
     },
+  },
+  karma: {
+    id: 'karma',
+    name: 'Karma',
+    subtitle: 'What Goes Around…',
+    quote: 'The leaves have been warned. They chose not to listen.',
+    info: 'For one cup, escaping leaves cannot cost you a cup: the rim bounces each one back once, '
+      + 'and if it returns it vanishes in a puff of steam. The strainer is never needed.',
+    tag: 'rim rebounds',
+    tone: 'good',
+    rare: true,
+    color: '#ffa6d9',
+    modifiers: { karma: true },
+    weight: () => CONFIG.karma.weight, // uncommon, whatever the round; never a pattern reading
+    glyph: (t) => alongPath(KARMA_OUTLINE, t),
   },
 });
 

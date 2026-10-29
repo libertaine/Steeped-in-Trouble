@@ -51,6 +51,7 @@ describe('optional Arcade Interludes', () => {
     expect(g.state.phase).toBe('shortage'); expect(g.state.arcadeDue).toBeNull();
     step(g, 2); g.chooseErrand('skip'); expect(g.state.round).toBe(17);
     g.state.spawnTimer = Infinity; g.state.current = null;
+    g.state.modifiers = { ...g.state.modifiers, laneDrift: false };
     completeRound(g); g.state.offer = null; g.primaryAction();
     expect(g.state.phase).toBe('arcadeOffer');
     expect(g.state.shortageAfter).toBe(23);

@@ -30,6 +30,8 @@ export function createRoundStats() {
     volleys: 0, // steam shots fired (a Double Trouble pair is one shot)
     wastedVolleys: 0, // shots whose every dart missed
     steamKills: 0, // leaves destroyed by fired steam (not sugar, not a Steam Nova)
+    karmaBounces: 0, // Karma: leaves the rim bounced back (never near misses)
+    karmaPuffs: 0, // Karma: bounced leaves that vanished on their next rim contact (never kills)
   };
 }
 
@@ -44,7 +46,7 @@ export function createInitialState() {
     round: 1,
     score: 0,
     lives: CONFIG.lives,
-    kills: 0,
+    kills: 0, // leaves cleared this round towards its target: kills, plus any Karma removes
     target: CONFIG.rounds.baseTarget,
     milkLeft: CONFIG.milk.perRound,
     sugarLeft: CONFIG.sugar.perRound,

@@ -53,6 +53,8 @@ describe('round progression', () => {
     const game = playingGame();
     const targets = [game.state.target];
     for (let round = 2; round <= 12; round++) {
+      // The Spiral could carry the finishing leaf out of the shot's way.
+      game.state.modifiers = { ...game.state.modifiers, laneDrift: false };
       completeRound(game);
       expect(game.state.phase).toBe('reading');
       brewNext(game);

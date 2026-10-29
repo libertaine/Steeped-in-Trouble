@@ -18,7 +18,7 @@
 // whether it has just come on tap, and the chapter, and whether this cup opens it);
 // and for The Tea Shortage: shortage, teaBought, shortageSkipped, and in the
 // Tea Run: runStart, runGo, runJump, runSlide, runLand, runHit, runPickup,
-// runFinish, runFail, runEnd.
+// runFinish, runFail, runEnd; and under Karma: karmaBounce, karmaPuff.
 
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
@@ -461,6 +461,35 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     return false;
   }
 
+  /**
+   * Karma: the rim answers instead of the strainer or the cups. The first
+   * contact washes the leaf back (it stays in play, and can still be shot);
+   * once that recoil has settled, its next contact makes it vanish. That
+   * clears it towards the round's target, but it is not a kill: no points,
+   * no residue for the reading, no kill or shot statistics.
+   * @returns {boolean} true if the leaf stays in the cup
+   */
+  function karmaRim(enemy) {
+    const stats = state.roundStats;
+    if (!enemy.karma) {
+      enemy.karma = 'bounced';
+      washBack(enemy, CONFIG.karma.recoil);
+      stats.karmaBounces++;
+      emit('karmaBounce', { angle: enemy.angle, radius: enemy.radius, count: stats.karmaBounces });
+      return true;
+    }
+    if (enemy.backwash > 0) return true; // still recoiling from the first contact
+    stats.karmaPuffs++;
+    emit('karmaPuff', { angle: enemy.angle, radius: enemy.radius, size: enemy.size });
+    return false;
+  }
+
+  /** One more leaf off the round's list, by a kill or by Karma. Starts the reading at the target. */
+  function clearLeaf() {
+    state.kills++;
+    if (state.kills >= state.target) readLeaves();
+  }
+
   function killEnemy(enemy, shot, inMilk) {
     const R = CONFIG.residue;
     emit('kill', { radius: enemy.radius, angle: enemy.angle, sugar: shot.sugar, by: shot.by });
@@ -475,8 +504,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     if (inMilk) state.roundStats.milkKills++;
     if (shot.volley) state.roundStats.steamKills++;
     state.score += killScore(shot, state.modifiers);
-    state.kills++;
-    if (state.kills >= state.target) readLeaves();
+    clearLeaf();
   }
 
   /** Unexpected brews that destroy leaves without a dart of their own. */
@@ -496,6 +524,13 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
         continue;
       }
       if (hasEscaped(enemy)) {
+        if (state.modifiers.karma) {
+          if (karmaRim(enemy)) continue;
+          enemies.splice(i, 1);
+          clearLeaf();
+          if (!playing()) return;
+          continue;
+        }
         if (escape(enemy)) continue;
         enemies.splice(i, 1);
         if (!playing()) return;

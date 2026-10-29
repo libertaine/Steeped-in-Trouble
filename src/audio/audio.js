@@ -15,6 +15,9 @@ const SOUNDS = {
   paperDelivery: [1320, 0.22, 'sine', 0.02, 0, 1.4],
   paperWindow: [2400, 0.18, 'square', 0.012, 0, 0.15],
   paperDog: [170, 0.18, 'sawtooth', 0.022, 0, 0.65],
+  // Karma: a light rubbery boing off the rim, then a soft cartoon puff.
+  karmaBounce: [520, 0.16, 'sine', 0.014, 0, 1.7],
+  karmaPuff: [1400, 0.16, 'triangle', 0.008, 0, 0.3],
   roundStart: [510, 0.13, 'triangle', 0.026],
   reading: [820, 0.29, 'sine', 0.04],
   gameover: [180, 0.32, 'sawtooth', 0.035],
@@ -56,6 +59,9 @@ const SOUNDS = {
 // Little tunes: lists of notes.
 const TUNES = {
   pourFinish: [[659, 0.12, 'triangle', 0.024], [880, 0.12, 'triangle', 0.024, 0.12], [1319, 0.4, 'sine', 0.026, 0.24]],
+  // Karma revealed: out and back again.
+  karma: [[523, 0.14, 'sine', 0.026], [784, 0.14, 'sine', 0.026, 0.12], [1047, 0.16, 'sine', 0.028, 0.24],
+    [784, 0.14, 'sine', 0.022, 0.38], [523, 0.4, 'sine', 0.026, 0.5]],
   good: [[660, 0.18, 'sine', 0.03], [880, 0.3, 'sine', 0.03, 0.12]],
   trouble: [[233, 0.35, 'triangle', 0.035], [220, 0.5, 'sawtooth', 0.016, 0.18]],
   rare: [[784, 0.16, 'sine', 0.03], [988, 0.16, 'sine', 0.03, 0.1], [1319, 0.4, 'sine', 0.032, 0.2]],
@@ -136,6 +142,7 @@ function tuneFor(event) {
   if (event.type === 'reveal') {
     const f = FORTUNES[event.fortune];
     if (event.fortune === 'lie') return TUNES.good; // it is, for now, very convincing
+    if (event.fortune === 'karma') return TUNES.karma;
     return f.rare ? TUNES.rare : f.tone === 'trouble' ? TUNES.trouble : TUNES.good;
   }
   if (event.type === 'goldenCatch') return event.reward === 'jackpot' ? TUNES.jackpot : TUNES.goldenCatch;
