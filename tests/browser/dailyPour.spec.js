@@ -127,7 +127,7 @@ for (const [view, viewport] of [['full', { width: 1440, height: 1080 }], ['compa
     await openGame(page, `&seed=42&view=${view}`); await toPaperOffer(page);
     await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
     const start = await remarkStart(page);
-    await advancePaperRoute(page, start - 0.25);
+    await advancePaperRoute(page, start - 0.5);
     expect(await bubbleShown(page)).toBe(false);
     await advancePaperRoute(page, start + 0.5);
     expect(await bubbleShown(page)).toBe(true);
@@ -149,13 +149,15 @@ for (const [view, viewport] of [['full', { width: 1440, height: 1080 }], ['compa
       document.dispatchEvent(new Event('visibilitychange'));
     });
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+    const clock = () => page.evaluate(() => window.__TEACUP__.game.state.dailyPour.clock);
+    const hidden = await clock();
     await page.waitForTimeout(3200);
     await page.evaluate(() => {
       Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
       document.dispatchEvent(new Event('visibilitychange'));
     });
+    expect(await clock()).toBe(hidden);
     await page.keyboard.press('KeyP');
-    expect(await page.evaluate(() => window.__TEACUP__.game.state.dailyPour.clock)).toBeLessThan(start + 1);
     expect(await bubbleShown(page)).toBe(true);
     await advancePaperRoute(page, start + 3.05);
     expect(await bubbleShown(page)).toBe(false);
