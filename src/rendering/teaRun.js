@@ -371,13 +371,12 @@ export function createRunPainter(ctx, { text, circle, highQuality, compact }) {
   }
 
   function drawCoffeeCup(ob, run, x, time) {
-    const { width: w, clearance } = O.coffeeCup;
+    const { width: w, clearance, height } = O.coffeeCup;
     const since = ob.hitAt === null ? null : run.clock - ob.hitAt;
     // It sways a little on its rope; a bonk sets it swinging.
     const swing = 0.03 * Math.sin(time * 2 + ob.id) + (since !== null ? 0.35 * Math.exp(-since * 2.5) * Math.sin(since * 14) : 0);
     const hook = { x: x + w / 2, y: 0 };
     const bottom = GROUND - clearance;
-    const height = 78;
     ctx.save();
     // Its shadow on the paving says where it hangs.
     ctx.fillStyle = '#00000033';

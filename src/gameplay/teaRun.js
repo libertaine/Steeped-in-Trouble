@@ -49,7 +49,7 @@ export function obstacleBox(ob, clock) {
   const O = R.obstacles[ob.kind];
   const left = ob.x0 - ob.roll * clock;
   if (ob.kind === 'coffeeCup') {
-    return { left: left + O.inset, right: left + O.width - O.inset, bottom: O.clearance, top: Infinity };
+    return { left: left + O.inset, right: left + O.width - O.inset, bottom: O.clearance, top: O.clearance + O.height };
   }
   return { left: left + O.inset, right: left + O.width - O.inset, bottom: 0, top: O.height - (ob.kind === 'puddle' ? 2 : O.inset) };
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CONFIG } from '../../src/config.js';
 import { createRandom } from '../../src/core/random.js';
-import { createRun, press, spoonBox, spoonHeight, updateRun } from '../../src/gameplay/teaRun.js';
+import { createRun, obstacleBox, press, spoonBox, spoonHeight, updateRun } from '../../src/gameplay/teaRun.js';
 import { atShortage, completeRound, finishBonus, step } from './helpers.js';
 
 const R = CONFIG.teaRun;
@@ -16,6 +16,44 @@ function flight(seed = 1) {
 }
 
 describe('the spoon discovers flight', () => {
+  it('bounds the coffee body to its drawn height; the rope is never solid', () => {
+    const cup = CONFIG.teaRun.obstacles.coffeeCup;
+    const box = obstacleBox({ kind: 'coffeeCup', x0: 100, roll: 0 }, 0);
+    expect(box.bottom).toBe(cup.clearance);
+    expect(box.top).toBe(cup.clearance + cup.height);
+    expect(Number.isFinite(box.top)).toBe(true);
+  });
+
+  it.each([1, 2, 3])('lets a chain of %i jumps meet the finite coffee body honestly', (jumps) => {
+    const { sim, run, advance } = flight();
+    const cup = R.obstacles.coffeeCup;
+    run.obstacles = [{ id: 0, kind: 'coffeeCup', x0: R.speed + R.spoon.halfWidth - cup.inset, roll: 0, hitAt: null }];
+    sim.rng.next = () => 0; // successful aerial attempts, without changing their production probability
+    advance(0.55); press(sim, 'jump');
+    for (let i = 1; i < jumps; i++) { advance(0.2); expect(press(sim, 'jump')).toBe(true); }
+    if (jumps > 1) {
+      advance(1 - run.clock);
+      expect(spoonBox(run).bottom).toBeGreaterThan(obstacleBox(run.obstacles[0], run.clock).top);
+    }
+    advance(1.5);
+    expect(run.hits).toBe(jumps === 1 ? 1 : 0);
+  });
+
+  it('keeps sliding reliable and a failed aerial impulse locked through a coffee collision', () => {
+    for (const slide of [true, false]) {
+      const { sim, run, advance } = flight();
+      const cup = R.obstacles.coffeeCup;
+      run.obstacles = [{ id: 0, kind: 'coffeeCup', x0: R.speed + R.spoon.halfWidth - cup.inset, roll: 0, hitAt: null }];
+      if (slide) { advance(0.85); press(sim, 'slide'); }
+      else {
+        advance(0.55); press(sim, 'jump'); advance(0.2);
+        sim.rng.next = () => 0.7;
+        expect(press(sim, 'jump')).toBe(false);
+        expect(run.spoon.locked).toBe(true); expect(run.spoon.queued).toBeNull();
+      }
+      advance(1.5); expect(run.hits).toBe(slide ? 0 : 1);
+    }
+  });
   it('never rolls for a first jump and preserves its original apex and duration', () => {
     const { sim, run, advance } = flight();
     sim.rng.next = vi.fn(() => 1);

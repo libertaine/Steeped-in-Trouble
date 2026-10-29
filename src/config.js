@@ -449,7 +449,7 @@ export const CONFIG = deepFreeze({
     obstacles: {
       sugarCube: { width: 38, height: 38, inset: 5, roll: 45, action: 'jump' }, // rolls towards the spoon
       puddle: { width: 90, height: 8, inset: 14, action: 'jump' },
-      coffeeCup: { width: 76, clearance: 40, inset: 8, action: 'slide' }, // hangs this far above the paving
+      coffeeCup: { width: 76, height: 78, clearance: 40, inset: 8, action: 'slide' }, // rope is decorative
     },
     // Things to pick up on the way: a few points each, kept however the run ends.
     coinGap: 1.6, // a row of coins may sit in a gap at least this long…
