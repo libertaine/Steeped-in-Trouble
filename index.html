@@ -27,11 +27,11 @@
       <div class="upgrade-offer" id="arcadeOffer" role="group" aria-labelledby="arcadeTitle" hidden>
         <div class="offer-head">
           <strong id="arcadeTitle">EXTRA! EXTRA!</strong>
-          <em>The Daily Pour needs a delivery spoon.</em>
+          <em id="arcadePitch">The Daily Pour needs a delivery spoon.</em>
         </div>
         <div class="offer-cards">
-          <button class="errand-card" data-interlude="accept"><kbd>1</kbd><span><strong>DELIVER PAPERS</strong><small>A short, optional paper route</small></span></button>
-          <button class="errand-card" data-interlude="skip"><kbd>2</kbd><span><strong>NO THANKS</strong><small>Costs nothing. Carry on brewing.</small></span></button>
+          <button class="errand-card" data-interlude="accept"><kbd>1</kbd><span><strong id="arcadeAccept">DELIVER PAPERS</strong><small id="arcadeAcceptInfo">A short, optional paper route</small></span></button>
+          <button class="errand-card" data-interlude="skip"><kbd>2</kbd><span><strong id="arcadeSkip">NO THANKS</strong><small id="arcadeSkipInfo">Costs nothing. Carry on brewing.</small></span></button>
         </div>
       </div>
       <div class="upgrade-offer errand-offer" id="errandOffer" role="group" aria-labelledby="errandTitle" hidden>
@@ -93,6 +93,11 @@
       <button class="paper-pad" data-paper="aimPaper" id="aimPaperBtn" aria-label="Toggle delivery aim">AIM: MAILBOX</button>
       <button class="paper-pad" data-paper="throwPaper" aria-label="Throw newspaper">THROW ▷</button>
     </div>
+    <div class="controls-mobile controls-breakout">
+      <button class="steer" data-hold="left" aria-label="Move the spoon left">◀</button>
+      <button class="launch-pad" data-biscuit="launchCube" aria-label="Launch the sugar cube">LAUNCH ▲</button>
+      <button class="steer" data-hold="right" aria-label="Move the spoon right">▶</button>
+    </div>
     <div id="actionDock" class="action-dock">
       <button id="menuBtn" aria-haspopup="dialog">Pause / Menu</button>
     </div>
@@ -134,6 +139,7 @@
       <div class="keyrow"><span>Pause / next cup</span><span><kbd>P</kbd> / <kbd>Enter</kbd></span></div>
       <div class="keyrow"><span>Pick a spoon upgrade</span><span><kbd>1</kbd> / <kbd>2</kbd></span></div>
       <div class="keyrow"><span>Tea Run: jump / slide</span><span><kbd>Space</kbd> / <kbd>↑</kbd> · <kbd>↓</kbd></span></div>
+      <div class="keyrow"><span>Biscuit Breakout: move / launch</span><span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> · <kbd>Space</kbd></span></div>
       <p class="note">Hold STEAM to fire continuously, or turn on Auto Steam to fire at whatever lines up with the spoon. Milk washes the leaves in its wedge back into the cup and slows them; sugar shoots three strong crystalline darts. The tea strainer catches the first leaf to escape each cup.</p>
       <p class="note">On a touch screen, <b>Easy Touch</b> gives you two big steering pads and Auto Steam: double-tap the cup to pour milk, and hold a finger on it to fire sugar. <b>Classic Touch</b> keeps a button for everything, and works with Auto Steam too.</p>
       <div class="settings">

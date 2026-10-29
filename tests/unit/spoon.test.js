@@ -70,6 +70,7 @@ describe('the tea strainer', () => {
   it('holds one more catch per Strainer Attachment, up to three', () => {
     const game = upgradedGame({ strainer: 2 });
     completeRound(game);
+    game.state.nextFortune = null; // a plain cup: under Karma the rim, not the strainer, would answer
     brewNext(game);
     expect(game.state.strainerLeft).toBe(3);
     for (const lane of [1, 5, 9]) {
@@ -537,6 +538,7 @@ describe('Tempestuous Tea and near misses', () => {
 describe('a fresh pot', () => {
   it('resets upgrades, the Golden Spoon, the strainer, the grace period, and any offer', () => {
     const game = readingWithOffer();
+    game.state.nextFortune = null; // a plain cup that can actually spill
     game.chooseUpgrade(0);
     Object.assign(game.state.spoon, { polished: 2, strainer: 2 });
     game.state.goldenSpoon = 4;

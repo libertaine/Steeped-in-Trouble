@@ -13,14 +13,17 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.12.0 — The Daily Pour](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.12.0)**
-is the current release. The spoon has a paper route. Nobody knows why.
+Version **[0.13.0 — Biscuit Breakout & Karma](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.13.0)**
+is the current release. The biscuits have formed a wall. Negotiations have failed.
 The game is experimental and still changing, but there's plenty in the cup
 already:
 
 - Arcade defence around a living teacup whose tea swirls, ripples, and
   reacts to every shot.
-- New in 0.12.0: **The Daily Pour**, an optional newspaper-delivery side
+- New in 0.13.0: **Biscuit Breakout**, an optional arcade game with a
+  silver-spoon paddle, a sugar-cube ball, and a talking biscuit among the
+  wall, and **Karma**, a rare protective fortune for your next cup.
+- **The Daily Pour**, an optional newspaper-delivery side
   mission. A silver spoon rides a bicycle through the neighborhood; aim
   for mailboxes or porches and throw newspapers for modest rewards, or
   skip it at no cost. The Tea Run's suspended coffee cups can now be
@@ -82,6 +85,8 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 | Tea Run: jump / slide | <kbd>Space</kbd> or <kbd>↑</kbd> / <kbd>↓</kbd> | **JUMP** / **SLIDE** |
 | The Daily Pour: Deliver / No thanks | <kbd>1</kbd> / <kbd>2</kbd> | tap a choice |
 | The Daily Pour: aim porch / mailbox, throw | <kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>Space</kbd> | **AIM** / **THROW** |
+| Biscuit Breakout: Break / Leave them alone | <kbd>1</kbd> / <kbd>2</kbd> | tap a choice |
+| Biscuit Breakout: move the spoon, launch the cube | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>, <kbd>Space</kbd> | hold **◀** / **▶**, **LAUNCH** |
 
 Phones start with **Easy Touch**: hold the two
 steering pads, double-tap the cup for milk, and hold the cup for sugar.
@@ -98,6 +103,17 @@ Later in Chapter 2, the neighborhood may need a delivery spoon. The Daily
 Pour is a 30-second paper route: line the marked mailbox or porch up with
 your landing ring and throw. Each delivery earns 25 points, five or more
 earn 5 Tea Cash, and a perfect route adds a bonus. Skipping is free.
+
+After round 19, the biscuits may revolt. Biscuit Breakout lasts up to 45
+seconds with three sugar cubes: keep the cube bouncing off the spoon (its
+edges send it off at an angle) and break the wall. Each biscuit earns 10
+points, breaking 70% earns 5 Tea Cash, and a clear adds 50 points. Losing
+cubes never costs a cup, and skipping is free.
+
+Now and then the leaves foretell **Karma**. For that one cup, a leaf that
+reaches the rim bounces back instead of spilling; if it comes back again it
+vanishes in a puff of steam. It still counts towards finishing the cup, but
+earns no points.
 
 ## Options
 

@@ -464,6 +464,7 @@ export const CONFIG = deepFreeze({
   // Optional arcade offers count normal rounds only. Missed dates collapse into one opportunity.
   arcade: {
     dailyPour: { firstAfter: 12, repeatEvery: 14, minChapter: 2 },
+    biscuitBreakout: { firstAfter: 19, repeatEvery: 14, minChapter: 2 },
   },
   dailyPour: {
     introTime: 3, outroMin: 1.5, duration: 30,
@@ -478,6 +479,26 @@ export const CONFIG = deepFreeze({
     // One bystander between houses 5 and 6: scenery, not a target or obstacle.
     // Speech starts `notice` route seconds before the spoon draws level.
     pedestrian: { x: 2910, notice: 1.95, speech: 3 },
+  },
+  // Biscuit Breakout (gameplay/biscuitBreakout.js). Logical canvas units; the
+  // cube is a square hitbox, its spin is drawing only.
+  biscuitBreakout: {
+    introTime: 3, outroMin: 1.5, duration: 45, cubes: 3,
+    arena: { left: 100, right: 820, top: 150, bottom: 770 }, // below `bottom` a cube is lost
+    paddle: { y: 712, halfWidth: 64, halfHeight: 10, speed: 640 },
+    cube: {
+      half: 11, speed: 400, speedPerBiscuit: 7, maxSpeed: 560,
+      launchAngle: 0.32, // radians from straight up
+      maxAngle: 1.05, // the spoon's edge sends it at most this far from vertical, never flat
+    },
+    biscuits: { rows: 4, cols: 6, width: 100, height: 38, gap: 12, top: 210 },
+    biscuitPoints: 10, clearBonus: 50, successShare: 0.7, successCash: 5,
+    remark: 2.6, // seconds the talking biscuit's complaint stays up
+  },
+  // Karma: the rim's rebound. Each leaf bounces once, then vanishes on its next contact.
+  karma: {
+    recoil: 150, // first contact washes the leaf this far back (like the recovering cup)
+    weight: 0.5, // draw weight: about 3–4% of ordinary readings
   },
 
   // Easy Touch (input/gestures.js): forgiving gestures on the cup for milk and sugar.

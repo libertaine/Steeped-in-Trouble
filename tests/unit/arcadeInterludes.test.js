@@ -51,6 +51,7 @@ describe('optional Arcade Interludes', () => {
     expect(g.state.phase).toBe('shortage'); expect(g.state.arcadeDue).toBeNull();
     step(g, 2); g.chooseErrand('skip'); expect(g.state.round).toBe(17);
     g.state.spawnTimer = Infinity; g.state.current = null;
+    g.state.modifiers = { ...g.state.modifiers, laneDrift: false };
     completeRound(g); g.state.offer = null; g.primaryAction();
     expect(g.state.phase).toBe('arcadeOffer');
     expect(g.state.shortageAfter).toBe(23);
@@ -63,6 +64,7 @@ describe('optional Arcade Interludes', () => {
     expect(g.state).toMatchObject({ score, teaCash, lives, spoon, progress, fortune: nextFortune, round: 13 });
     expect(g.state.target).toBeGreaterThanOrEqual(target);
     expect(g.state.dailyPour).toBeNull(); expect(g.chooseInterlude(true)).toBe(false);
+    g.state.arcade.after.biscuitBreakout = 1000; // only the paper route's own schedule here
     g.state.round = 25; expect(eligibleInterlude(g.state)).toBeNull();
     g.state.round = 26; expect(eligibleInterlude(g.state)).toBe('dailyPour');
     consumeInterlude(g.state, 'dailyPour'); expect(eligibleInterlude(g.state)).toBeNull();
