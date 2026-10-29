@@ -145,3 +145,25 @@ backgrounding, held Space leaving the result, Karma's reveal, bounce and
 vanishing with an empty strainer, and touch pads (tap, hold, cancel) on
 four phone and tablet viewports. Screenshots are written to
 [`docs/images/biscuit-breakout`](images/biscuit-breakout/README.md).
+
+## Qualification — 2026-10-29 (release candidate for playtesting)
+
+Windows, Node 24.22.1:
+
+- Fresh clone of the branch: `npm ci` clean (0 vulnerabilities);
+  `npm run check`: lint, **603 unit tests in 32 files**, production build;
+  `npm run test:browser`: fresh production build and server, **141 passed**
+  (Chromium, Firefox, mobile Chromium), no failures or retries.
+- The first PR CI run passed, but three new browser tests needed a retry.
+  The cause was a real bug: starting the mission (Enter, LAUNCH, or the
+  introduction ending) cleared held input, so a ◀ / ▶ held through the start
+  stopped steering until pressed again — on touch, until the finger was
+  lifted. Holds now carry over into play (Space cannot leak: it belongs to
+  the cube). The mobile test now holds ▶ before LAUNCH starts the mission;
+  without the fix it fails on all four viewports every time. With it, the
+  new browser tests passed 102/102 at 8 workers × 6 repeats, and the full
+  `npm run check` (603) and browser suite (141) were rerun clean.
+- Screenshots inspected at Desktop Full and Compact, phone portrait and
+  landscape, tablet portrait and landscape; see the image README.
+
+Automated browser emulation does not establish physical device behavior.

@@ -168,7 +168,8 @@ function boot() {
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
   const RESETS = new Set(['paused', 'resumed', 'matchStart', 'roundStart', 'reading', 'shortage',
     'arcadeOffer', 'arcadeSkipped', 'pourStart', 'pourGo', 'pourFinish', 'pourEnd',
-    'breakoutStart', 'breakoutGo', 'breakoutFinish', 'breakoutEnd',
+    // Not breakoutGo: a direction held through the introduction keeps steering the spoon.
+    'breakoutStart', 'breakoutFinish', 'breakoutEnd',
     'runBird', 'runZap', 'runOrbit', 'runReturn',
     'runStart', 'runGo', 'runFinish', 'runFail', 'runEnd', 'chocolateStart', 'havocStart', 'havocEnd',
     'grindStart', 'grindFight', 'grindDefeat', 'grindEscape', 'gameover']);

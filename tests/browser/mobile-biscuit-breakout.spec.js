@@ -17,15 +17,15 @@ for (const [name, viewport] of [
     await accept.tap();
     await expectBreakoutControls(page);
     await page.screenshot({ path: `docs/images/biscuit-breakout/${name}-intro.png`, fullPage: true, scale: 'css' });
-    // LAUNCH starts the mission from its introduction, then launches the waiting cube.
+    // ▶ held during the introduction keeps steering once LAUNCH starts the mission,
+    // and the spoon moves for as long as the finger stays down.
     const launch = page.locator('[data-biscuit="launchCube"]');
-    await launch.tap();
-    await expect.poll(() => page.evaluate(() => window.__TEACUP__.game.state.biscuitBreakout.stage)).toBe('play');
-    // Holding ▶ moves the spoon for as long as the finger stays down.
     const right = page.locator('.controls-breakout [data-hold="right"]');
     const x0 = await page.evaluate(() => window.__TEACUP__.game.state.biscuitBreakout.paddle.x);
     await right.dispatchEvent('pointerdown', { pointerId: 7 });
-    await page.waitForFunction((x) => window.__TEACUP__.game.state.biscuitBreakout.paddle.x > x + 40, x0);
+    await launch.tap();
+    await expect.poll(() => page.evaluate(() => window.__TEACUP__.game.state.biscuitBreakout.stage)).toBe('play');
+    await page.waitForFunction((x) => window.__TEACUP__.game.state.biscuitBreakout.paddle.x > x + 40, x0, { timeout: 5000 });
     await right.dispatchEvent('pointerup', { pointerId: 7 });
     const x1 = await page.evaluate(() => window.__TEACUP__.game.state.biscuitBreakout.paddle.x);
     await page.waitForTimeout(150);

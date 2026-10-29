@@ -43,7 +43,7 @@ test('desktop wall: real keys move and launch, biscuits crumble, the biscuit tal
   // Real held keys move the spoon through the actual listeners and frame loop.
   const x0 = (await wall(page)).paddle.x;
   await page.keyboard.down('ArrowRight');
-  await page.waitForFunction((x) => window.__TEACUP__.game.state.biscuitBreakout.paddle.x > x + 60, x0);
+  await page.waitForFunction((x) => window.__TEACUP__.game.state.biscuitBreakout.paddle.x > x + 60, x0, { timeout: 5000 });
   await page.keyboard.up('ArrowRight');
   await page.keyboard.press('Space');
   expect((await wall(page)).launches).toBe(1);
