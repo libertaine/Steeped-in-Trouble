@@ -5,6 +5,50 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+### 0.13.0 — Biscuit Breakout (in development)
+
+The biscuits have formed a wall. Negotiations have failed.
+
+#### Added
+
+- **Biscuit Breakout:** a second optional Arcade Interlude, offered after
+  round 19 in Chapter 2 and then every 14 normal rounds (THE BISCUITS ARE
+  REVOLTING!). BREAK THE BISCUITS starts it; LEAVE THEM ALONE costs nothing.
+- A 45-second brick-breaker: move the silver-spoon paddle (← / → or A / D;
+  hold ◀ / ▶ on touch) and launch a sugar cube (Space, or LAUNCH) into a
+  4 × 6 wall of biscuits. Three cubes. Where the cube meets the spoon sets
+  its angle; it never goes flat. Fixed 120 Hz steps, an independently seeded
+  wall, and axis-by-axis collision with push-out: no tunneling or sticking.
+- Scoring: 10 points per biscuit (always kept), 5 Tea Cash for breaking at
+  least 70% (17 of 24), and 50 bonus points for a clear. Results: NOTHING
+  LEFT BUT CRUMBS!, A CRUMBLING SUCCESS., or THE BISCUITS HAVE WON THIS ROUND.
+- One biscuit per wall has a face. Breaking it earns no extra points but
+  prompts: "THAT'S A CRUMBY WAY TO TREAT SOMEONE!"
+- **Karma**, a rare fortune (about 3–4% of readings): *What Goes Around…*
+  For one normal cup, a leaf reaching the rim bounces back once (INSTANT
+  KARMA!); if it returns, it vanishes in a puff of steam. No cup is lost and
+  the strainer is untouched. A vanished leaf counts towards finishing the
+  cup but is not a kill: no points, no residue, no shot or secret credit.
+  Karma has its own colour, return-arrow glyph, `rim rebounds` HUD tag,
+  sounds, and fortune-panel explanation.
+- Arcade Interludes now support several adventures. When more than one is
+  due, the one waiting longest is offered first; at most one per reading.
+  The offer card is shared and reworded per adventure.
+- Development-only helpers: `?debug&arcade=biscuitBreakout&seed=42` and
+  `?debug&fortune=karma` (see `docs/BISCUIT_BREAKOUT_TESTING.md`).
+
+#### Changed
+
+- A Space still held when a Daily Pour or Biscuit Breakout ends is ignored
+  in the next cup until it is released and pressed again.
+- Adding Karma to the weighted draw changes which fortune a given seed
+  produces. Seeded tests that depended on the old sequence now set their
+  preconditions explicitly.
+
+The Daily Pour, Tea Shortage schedule, boss and bonus priorities, Auto Steam
+and teacup combat outside Karma are unchanged. Awaiting project-owner
+playtesting.
+
 ## [0.12.0] - 2026-10-29 — The Daily Pour
 
 The spoon has a paper route. Nobody knows why.

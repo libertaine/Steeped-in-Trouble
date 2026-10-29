@@ -68,7 +68,7 @@ So fighting in one area tends to bring abundance, spreading out invites
 crosswinds, relying on milk brings cover, and a tidy round sharpens your aim.
 
 The pattern is only a strong favourite. The actual fortune is a weighted draw
-among all nine, nudged by how the round went:
+among all ten, nudged by how the round went:
 
 | Fortune | More likely after… | Effect next round |
 | --- | --- | --- |
@@ -77,6 +77,7 @@ among all nine, nudged by how the round went:
 | **Tempestuous Tea** | Spills | Wilder tea; leaves rise 18% faster |
 | **Golden Opportunity** | A clean round | A golden sugar cube appears for 5 s near the spoon; steam it for points, sugar, rarely an extra cup (up to four), or a jackpot |
 | **The Leaves Lie** | (rare, slightly less so after a clean round) | No rule changes. The reading claims something grand, then confesses; during the round the cup plays one harmless prank |
+| **Karma** (0.13.0) | (rare, whatever the round) | Escaping leaves cannot cost a cup: each bounces off the rim once, then vanishes on its next contact |
 
 Frequent milk use also nudges towards The Veil. Every fortune lasts exactly
 one round and is cleared by a new match.
@@ -954,3 +955,113 @@ deliberately basic; values remain tunable in `CONFIG.dailyPour`. Additional
 delivery mechanics, more pedestrians and dialogue, further minigames,
 Arcade Collection, Chapter 3, online scoring and permanent progression
 remain deferred.
+
+## Biscuit Breakout and Karma (0.13.0, in development)
+
+*"The biscuits have formed a wall. Negotiations have failed."*
+
+### Scheduling
+
+Biscuit Breakout is the second Arcade Interlude. It is first eligible after
+round 19 in Chapter 2 and then 14 normal rounds after each offer
+(`CONFIG.arcade.biscuitBreakout`). The Daily Pour keeps its own dates (12,
+26, 40…), so the two normally alternate seven rounds apart. Fortune
+readings and upgrade choices finish first; Tea Shortages, milestone bosses,
+rematches and Hot Chocolate Havoc take priority, and postpone without a
+backlog. If both adventures are due at one reading, the one that has waited
+longest (the earlier due round; ties in registry order) is offered and the
+other waits for a later reading. At most one adventure is offered per
+reading.
+
+The offer reuses the Daily Pour's card: THE BISCUITS ARE REVOLTING! —
+"Their demands are unclear. Their formation is not." BREAK THE BISCUITS
+starts it; LEAVE THEM ALONE carries on for free. Both consume the
+opportunity. Skipping changes nothing: cups, score, Tea Cash, upgrades,
+chapter, tea and the waiting fortune.
+
+### The minigame
+
+A tea tray holds a 4 × 6 wall of biscuits: digestives, bourbons and
+shortbread in slightly different shades (cosmetic only; every biscuit is the
+same size and takes one hit). The silver spoon is a paddle along the bottom;
+a sugar cube rests on it. ← / → (or A / D, or holding ◀ / ▶ on touch) move
+the spoon. Space (or LAUNCH) launches the cube, leaning the way the spoon is
+moving (or alternately right and left from a standstill). Before play,
+Space, LAUNCH or Enter starts the mission; on the result, Space does
+nothing and Enter returns to the tea.
+
+The cube bounces off the side and top rails, the spoon and biscuits. A
+biscuit it touches crumbles. Where the cube lands on the spoon sets its
+angle: dead centre goes straight up, the edges send it up to 60° from
+vertical. Every rebound keeps it at most 60° from vertical, so a rally can
+never go flat. It starts at 400 units per second and gains 7 per biscuit,
+up to 560. If it falls past the spoon, it is lost and a fresh one waits on
+the spoon; three cubes in all.
+
+The mission ends when every biscuit is broken (at once), the third cube is
+lost, or 45 seconds pass. The clock runs while a cube waits to launch.
+
+### Rewards
+
+| Event | Reward |
+| --- | --- |
+| Each biscuit broken | 10 points, kept however it ends |
+| At least 70% broken (17 of 24) | +5 Tea Cash |
+| Every biscuit broken | +50 points: NOTHING LEFT BUT CRUMBS! (a shower of golden crumbs) |
+| Some broken, at least 70% | A CRUMBLING SUCCESS. Some biscuits survived. Their victory will be brief. |
+| Fewer | THE BISCUITS HAVE WON THIS ROUND. An inquiry has been launched. |
+| Losing a cube, skipping | Nothing. No cup is ever at stake. |
+
+Rewards settle once, when the result appears.
+
+### The talking biscuit
+
+One biscuit per wall, chosen from the wall's own generator, has a face. Its
+eyes follow the cube. It has no extra health, points or effect on the cube.
+When broken it crumbles like any other, and for 2.6 seconds a speech bubble
+over the tray reads: "THAT'S A CRUMBY WAY TO TREAT SOMEONE!" The bubble
+sits above the tray, so it never covers the cube or the spoon. The other
+biscuits do not react.
+
+### Karma
+
+**KARMA** — *What Goes Around…* — *"The leaves have been warned. They chose
+not to listen."*
+
+A rare fortune in the weighted draw (weight 0.5, about 3–4% of readings
+whatever the round; never a pattern reading or the fallback). For the next
+normal cup, escaping leaves cannot cost a cup:
+
+- **First rim contact:** the rim flashes rose where the leaf struck, a few
+  sparkling drops fly back, and the leaf is washed 150 units back into the
+  cup. It stays in play with a rose return-arrow ring, and can still be
+  steamed, sugared or caught in milk for full, ordinary credit. The first
+  bounce in a pot explains itself: INSTANT KARMA! The rim sends each leaf
+  back once. If it returns: poof. Later bounces say INSTANT KARMA! only now
+  and then.
+- **Second rim contact** (once the first recoil has settled): the leaf
+  vanishes in a pale puff of steam, unlike a kill's green crumbs.
+
+Karma replaces the strainer and the grace period at the rim, so the
+strainer is never used, and no cup is lost even with an empty strainer,
+one cup left, several leaves arriving at once, or an idle player. A leaf
+bounces only once, and cannot be bounced or removed again while recoiling.
+
+A vanished leaf counts towards the cup's target ("Leaves cleared"), so a cup
+can always finish, even one played without firing a shot. It is not a kill:
+no points, no residue for the reading, no steam, sugar or milk kill, no
+shot-accuracy credit, and no progress towards secrets. It is not a spill,
+strainer catch or near miss either, so it does not nudge Tempestuous Tea.
+Bounces and vanishings are counted separately (`karmaBounces`,
+`karmaPuffs`). Karma lasts exactly one normal cup and never affects The
+Daily Grind, Hot Chocolate Havoc or the arcade adventures. The HUD omen
+reads `Karma · rim rebounds`; the reading card says THE LEAVES FORETELL ·
+WHAT GOES AROUND…, and a rose line circles the rim during the cup. Sounds:
+a short out-and-back chime at the reveal, a soft boing on a bounce and a
+little puff on a vanishing; sound off and reduced motion are respected.
+
+### Not included
+
+No new boss, Chapter 3, other arcade adventures, Arcade Collection,
+permanent upgrades, larger economy, online scores, mobile redesign or
+physics library. More biscuit characters and secrets may come later.

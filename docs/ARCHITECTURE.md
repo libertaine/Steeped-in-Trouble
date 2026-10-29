@@ -30,6 +30,7 @@ src/
 │   ├── teaRun.js        seeded runner course, actions, collisions, and settlement
 │   ├── arcadeInterludes.js small optional-mission registry, eligibility, scheduling, one-time rewards
 │   ├── dailyPour.js     independent paper route, fixed-step flights, delivery testing and settlement
+│   ├── biscuitBreakout.js seeded biscuit wall, fixed-step paddle and cube physics, results and settlement
 │   ├── autoSteam.js     pure decisions about firing at aligned targets
 │   ├── grind.js         The Daily Grind: the coffee boss's schedule, valve, attacks, scalds, rewards
 │   ├── upgrades.js      spoon upgrades: definitions, offers, stacking limits
@@ -38,7 +39,9 @@ src/
 │   ├── canvas.js        device-pixel-ratio-aware canvas sizing
 │   ├── renderer.js      draws state onto the canvas
 │   ├── effects.js       cosmetic particles and the spill flash
-│   └── grind.js         draws the espresso machine and its attacks
+│   ├── grind.js         draws the espresso machine and its attacks
+│   ├── dailyPour.js     draws the paper route
+│   └── biscuitBreakout.js draws the tray, biscuits, spoon paddle, cube and the talking biscuit
 ├── input/               controls.js wires input; gestures.js recognises touches; settings.js persists preferences
 ├── audio/
 │   ├── audio.js         optional synthesized sound effects; owns the AudioContext
@@ -415,6 +418,20 @@ short grace period after a spill it is washed back into the cup
 catches it while `state.strainerLeft` lasts, and only then does it cost a
 cup and start a new grace period.
 
+Under Karma (`state.modifiers.karma`) `updateEnemies()` sends the leaf to
+`karmaRim()` instead, before the grace period or strainer are consulted.
+The first contact marks the leaf `karma: 'bounced'`, calls `washBack()` with
+`CONFIG.karma.recoil`, and counts `roundStats.karmaBounces`. While its
+`backwash` is still playing out, further contacts are ignored. The next
+contact removes the leaf and calls `clearLeaf()`, which is the only thing a
+kill and a Karma removal share: `state.kills` (the cup's cleared-leaf
+progress, shown as "Leaves cleared") and the check that starts the reading.
+`killEnemy()` alone adds score, residue, `kill` events, and the steam and
+milk kill counts that secrets and fortunes read. Karma emits `karmaBounce`
+and `karmaPuff` instead of `escape`, `strain` or `recoil`. Like every
+removal in the loop, it returns as soon as the reading starts, so
+simultaneous contacts cannot finish a cup twice.
+
 ## Extending the game
 
 ### Adding a fortune
@@ -506,6 +523,65 @@ cup and start a new grace period.
   inspection; see [mobile browser testing](MOBILE_TESTING.md) for coverage
   and hardware limits. `PLAYWRIGHT_PORT` selects a separate local preview
   port when another server is already running.
+
+## Biscuit Breakout and Karma (0.13.0)
+
+`INTERLUDES` now lists `dailyPour` and `biscuitBreakout`, each with its own
+`CONFIG.arcade` rule; `createArcadeSchedule()` builds one due round per
+entry. `eligibleInterlude()` returns nothing if a shortage, boss or bonus is
+due or an offer was already made at this reading, and otherwise the
+eligible adventure with the earliest due round (ties in registry order), so
+neither can starve the other. `state.interlude.id` tells `chooseInterlude()`
+which mission to create, and the HUD (`ARCADE_OFFERS` in `ui/hud.js`) which
+words to put on the shared offer card.
+
+```text
+reading → [upgrade choice] → arcadeOffer → biscuitBreakout.intro → play → outro
+                                  │                                        │
+                                  └── skip ──→ continueFromReading ←───────┘
+```
+
+`gameplay/biscuitBreakout.js` owns the mission. Its generator is the game
+seed XOR `BREAKOUT_SALT` (`0xb15c0175`), used only by `planWall()` when the
+mission is created (tints, decorations, the talking biscuit), so playing it
+never changes teas, leaves, fortunes, bosses, the Tea Run or paper routes.
+`updateBreakout(sim, dt, input)` runs 120 Hz ticks from a carried
+accumulator, reading only `input.left` / `input.right`; `launchCube()` is a
+one-shot command. The cube is a square hitbox moved one axis at a time:
+after each axis it is reflected off rails, and pushed back out of the
+biscuit it overlaps most, which breaks. At top speed it moves under 5 units
+a tick against a 22-unit cube and 38-unit biscuits, so it cannot tunnel.
+The spoon catches only a falling cube whose bottom crosses its top edge in
+that tick, and sets the rebound angle from the contact offset, capped at
+`cube.maxAngle`; since reflections keep the angle, every rally stays within
+60° of vertical. `finish()` settles through `awardInterlude()`.
+
+The talking biscuit's remark is `biscuitRemark(m)`, derived from the
+mission clock, so it freezes with pauses. `rendering/biscuitBreakout.js`
+draws everything from mission state and the mission clock (crumbs scatter
+by a fixed hash of the biscuit id) and consumes no randomness. The HUD pills
+show time, biscuits and cubes; the canvas keeps a slim time bar and the
+speech bubble above the tray, clear of the cube and spoon.
+
+Input: `game.breakoutControls()` gives Space, ↑ and ↓ to the mission
+(`launchCube`, once per press, never on keyboard repeat) while the turning
+keys keep filling `held.left` / `held.right`. Touch adds a LEFT / LAUNCH /
+RIGHT row (`.controls-breakout`; the pads reuse `data-hold`, LAUNCH is
+`data-biscuit`). On `pourEnd` and `breakoutEnd`, `main.js` calls
+`controls.settle()`: holds are cleared, and a Space still down is ignored
+until released, so it cannot become steam in the next cup. Pause, Tea
+Break, blur and hidden pages freeze the mission like the Daily Pour.
+
+Karma is described under [Escaping leaves](#escaping-leaves); its fortune
+entry has `modifiers: { karma: true }`, a constant `weight()` of
+`CONFIG.karma.weight`, and no `matches()`. Its effects are `karmaBounce` and
+`karmaPuff` handlers in `rendering/effects.js` (fewer particles under
+reduced motion) drawn by `drawRebounds()`, plus a rim line and a ring on
+bounced leaves in `renderer.js`.
+
+Development-only helpers (inside `import.meta.env.DEV`, removed from
+production builds) are documented in
+[the testing guide](BISCUIT_BREAKOUT_TESTING.md).
 
 ## Arcade Interludes and The Daily Pour (0.12.0)
 

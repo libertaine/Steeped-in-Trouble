@@ -20,6 +20,10 @@ already:
 
 - Arcade defence around a living teacup whose tea swirls, ripples, and
   reacts to every shot.
+- In development for 0.13.0: **Biscuit Breakout**, an optional
+  brick-breaker with a spoon paddle, a sugar-cube ball and a wall of
+  biscuits, and **Karma**, a rare fortune that makes the rim bounce
+  escaping leaves back for one cup.
 - New in 0.12.0: **The Daily Pour**, an optional newspaper-delivery side
   mission. A silver spoon rides a bicycle through the neighborhood; aim
   for mailboxes or porches and throw newspapers for modest rewards, or
@@ -82,6 +86,8 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 | Tea Run: jump / slide | <kbd>Space</kbd> or <kbd>↑</kbd> / <kbd>↓</kbd> | **JUMP** / **SLIDE** |
 | The Daily Pour: Deliver / No thanks | <kbd>1</kbd> / <kbd>2</kbd> | tap a choice |
 | The Daily Pour: aim porch / mailbox, throw | <kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>Space</kbd> | **AIM** / **THROW** |
+| Biscuit Breakout: Break / Leave them alone | <kbd>1</kbd> / <kbd>2</kbd> | tap a choice |
+| Biscuit Breakout: move the spoon, launch the cube | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>, <kbd>Space</kbd> | hold **◀** / **▶**, **LAUNCH** |
 
 Phones start with **Easy Touch**: hold the two
 steering pads, double-tap the cup for milk, and hold the cup for sugar.
@@ -98,6 +104,17 @@ Later in Chapter 2, the neighborhood may need a delivery spoon. The Daily
 Pour is a 30-second paper route: line the marked mailbox or porch up with
 your landing ring and throw. Each delivery earns 25 points, five or more
 earn 5 Tea Cash, and a perfect route adds a bonus. Skipping is free.
+
+After round 19, the biscuits may revolt. Biscuit Breakout lasts up to 45
+seconds with three sugar cubes: keep the cube bouncing off the spoon (its
+edges send it off at an angle) and break the wall. Each biscuit earns 10
+points, breaking 70% earns 5 Tea Cash, and a clear adds 50 points. Losing
+cubes never costs a cup, and skipping is free.
+
+Now and then the leaves foretell **Karma**. For that one cup, a leaf that
+reaches the rim bounces back instead of spilling; if it comes back again it
+vanishes in a puff of steam. It still counts towards finishing the cup, but
+earns no points.
 
 ## Options
 
