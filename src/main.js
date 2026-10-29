@@ -16,6 +16,7 @@ import { createEffects } from './rendering/effects.js';
 import { createRenderer } from './rendering/renderer.js';
 import { createHud } from './ui/hud.js';
 import { createPresentation } from './ui/presentation.js';
+import { prepareDayPractice } from './dev/days.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -121,7 +122,9 @@ function boot() {
       pause: game.pause,
       // 1 and 2 pick an upgrade; during the Tea Shortage, 1 / 2 / 3 answer it.
       choose: (index) => game.chooseUpgrade(index) || game.chooseErrand(ERRANDS[index])
-        || (index < 2 && game.chooseInterlude(index === 0)),
+        || (index < 2 && game.chooseInterlude(index === 0))
+        || (index < 2 && game.chooseDay(index === 0 ? 'fresh' : 'keep')),
+      day: game.chooseDay,
       interlude: game.chooseInterlude,
       paperControls: game.paperControls,
       aimPaper: game.aimPaper,
@@ -135,7 +138,7 @@ function boot() {
     gestureMode: game.touchGestures,
     scheme: () => settings.touch,
     onGesture: showRing,
-    enabled: () => !presentation?.blocked,
+    enabled: () => !presentation?.blocked && document.visibilityState !== 'hidden',
   });
   presentation = createPresentation({ doc: document, game, params, storage, resetInput: controls.reset });
 
@@ -167,6 +170,7 @@ function boot() {
 
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
   const RESETS = new Set(['paused', 'resumed', 'matchStart', 'roundStart', 'reading', 'shortage',
+    'dayEnd', 'dayStart',
     'arcadeOffer', 'arcadeSkipped', 'pourStart', 'pourGo', 'pourFinish', 'pourEnd',
     // Not breakoutGo: a direction held through the introduction keeps steering the spoon.
     'breakoutStart', 'breakoutFinish', 'breakoutEnd',
@@ -218,6 +222,12 @@ function boot() {
   if (params.has('debug')) {
     window.__TEACUP__ = { game, effects, version: __APP_VERSION__, config: CONFIG, settings: () => ({ ...settings }) };
     if (import.meta.env.DEV) {
+      window.__TEACUP__.practiceDay = (mode = 'end') => {
+        const result = prepareDayPractice(game, mode);
+        controls.reset();
+        return result;
+      };
+      if (params.has('day')) window.__TEACUP__.practiceDay(params.get('day'));
       let routeSeed = game.seed;
       // Console-only practice, compiled out of production. Call again without
       // an argument to replay the exact course, starting a fresh practice pot.

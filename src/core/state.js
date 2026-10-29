@@ -10,6 +10,7 @@ export const PHASE = Object.freeze({
   PLAYING: 'playing',
   PAUSED: 'paused',
   READING: 'reading',
+  DAY: 'day', // deliberate choice after all activities from the tenth reading
   CHOCOLATE: 'chocolate', // Hot Chocolate Havoc, between a reading and the next cup
   GRIND: 'grind', // The Daily Grind, the coffee boss, likewise between rounds
   SHORTAGE: 'shortage', // The Tea Shortage: buy, run, or skip, after a reading
@@ -45,6 +46,8 @@ export function createInitialState() {
     phase: PHASE.READY,
     pausedFrom: PHASE.PLAYING,
     round: 1,
+    heat: 0, // independent of global round; only a new pot or Fresh Brew resets it
+    dayPending: false, // set by completion, consumed once by chooseDay
     score: 0,
     lives: CONFIG.lives,
     kills: 0, // leaves cleared this round towards its target: kills, plus any Karma removes

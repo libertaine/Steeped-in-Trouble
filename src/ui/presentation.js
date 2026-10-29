@@ -17,7 +17,7 @@ export function createPresentation({ doc = document, game, params, storage, rese
   const dock = doc.getElementById('actionDock');
   const choices = doc.getElementById('phaseChoices');
   const stage = doc.querySelector('.stage');
-  const offers = [doc.getElementById('upgradeOffer'), doc.getElementById('errandOffer'), doc.getElementById('arcadeOffer')].filter(Boolean);
+  const offers = ['upgradeOffer', 'errandOffer', 'arcadeOffer', 'dayOffer'].map((id) => doc.getElementById(id)).filter(Boolean);
   const panels = [...aside.children];
   const sections = panels.map((panel, index) => {
     const details = doc.createElement('details');

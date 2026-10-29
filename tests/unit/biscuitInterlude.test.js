@@ -49,6 +49,7 @@ describe('Biscuit Breakout scheduling', () => {
         offers.push([round, g.state.interlude.id]);
         g.chooseInterlude(false);
       }
+      g.chooseDay('keep');
       expect(g.state.phase).toBe('playing');
       g.state.shortageAfter = 1000;
       nextReadingOnly(g);

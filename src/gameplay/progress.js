@@ -1,7 +1,7 @@
 // The slow burn: a pot is told in chapters (CONFIG.chapters).
 //
-// Within a chapter the leaves' speed and the pace of their arrival hold
-// steady, whatever the round; what changes from cup to cup is the tea, the
+// Within a chapter the baseline speed and arrival pace hold steady. Days
+// add resettable combat Heat separately; what changes from cup to cup is the tea, the
 // fortune, and the spoon. A chapter ends when its milestone boss is beaten
 // (for Chapter 1, The Daily Grind: see game.js), and the next one starts with
 // the following cup, a little quicker and with new teas on the shelf.

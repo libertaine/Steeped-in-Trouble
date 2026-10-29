@@ -9,7 +9,7 @@
 //   - 'wanderer' (Earl Grey): leans one way, then glides into that lane.
 // Each takes its warning time (and a darter its dash distance) from the age
 // of the round's tea; see gameplay/strength.js. A leaf's speed, and how often
-// new ones arrive, come from the chapter (gameplay/progress.js), not the round.
+// new ones arrive, use the chapter baseline plus normal-cup Heat (gameplay/days.js).
 // A glide ({ shift, length, time, done }) moves a leaf sideways smoothly;
 // wanderers and Chai's spice currents both use it, and it adds to (rather
 // than overwrites) any other change of angle, such as The Spiral's drift.
@@ -84,7 +84,8 @@ export function updateSpawning(sim, dt) {
   state.spawnTimer -= dt;
   if (state.spawnTimer <= 0 && state.enemies.length < E.maxActive) {
     const { spawnInterval } = currentChapter(state.progress);
-    state.spawnTimer = nextSpawnDelay(spawnInterval, rng, state.modifiers.spawnIntervalMultiplier);
+    state.spawnTimer = Math.max(CONFIG.days.minSpawnInterval,
+      nextSpawnDelay(spawnInterval, rng, state.modifiers.spawnIntervalMultiplier));
     spawnEnemy(sim);
   }
 }

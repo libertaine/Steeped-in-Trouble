@@ -24,6 +24,18 @@
     <div class="stage">
       <canvas id="game" width="920" height="790" role="img" data-gestures aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
       <div class="touch-ring" id="touchRing" aria-hidden="true" hidden></div>
+      <div class="upgrade-offer day-offer" id="dayOffer" role="group" aria-labelledby="dayTitle" hidden>
+        <div class="offer-head">
+          <strong id="dayTitle">THE KETTLE HAS SURVIVED ANOTHER DAY</strong>
+          <em>“Tomorrow's forecast: a chance of tea.”</em>
+        </div>
+        <p id="dayCompleted"></p>
+        <div class="offer-cards">
+          <button class="errand-card" data-day="fresh"><kbd>1</kbd><span><strong>FRESH BREW</strong><small>New day. Fewer leaves. A little less panic.</small><small>Reset Heat. Keep your chapter, teas, spoon and progress.</small></span></button>
+          <button class="errand-card" data-day="keep"><kbd>2</kbd><span><strong>KEEP THE KETTLE ON</strong><small>The spoon has declined its annual leave.</small><small>Carry Heat forward toward the maximum.</small></span></button>
+        </div>
+        <p id="dayCaption"></p>
+      </div>
       <div class="upgrade-offer" id="arcadeOffer" role="group" aria-labelledby="arcadeTitle" hidden>
         <div class="offer-head">
           <strong id="arcadeTitle">EXTRA! EXTRA!</strong>
@@ -59,6 +71,7 @@
     <div class="hud-top">
       <div class="hud-left">
         <span class="hudlabel pill" id="hudStatus">READY TO BREW</span>
+        <span class="hudlabel pill" id="hudDay">DAY 1 · CUP 1/10 · HEAT 0</span>
         <span class="hudlabel pill omen" id="hudOmen" aria-live="polite"></span>
         <span class="hudlabel pill omen tea" id="hudTea" aria-live="polite"></span>
       </div>

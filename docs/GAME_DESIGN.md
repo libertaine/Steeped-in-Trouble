@@ -2,6 +2,10 @@
 
 ## Creative direction
 
+The silver spoon is the hero: defender of a temperamental cup and reluctant
+star of increasingly unreasonable adventures. The 0.14.0 Days let
+players choose a comfortable continuation or sustained challenge.
+
 **Steeped in Trouble is a circular arcade survival game in which the player's
 actions influence the tea-leaf patterns remaining after each round. Those
 patterns determine future gameplay modifiers.**
@@ -45,7 +49,8 @@ Themes:
   spawns come more often (the interval shrinks from about 1.1 s to a floor
   of 0.57 s, with jitter). At most 18 leaves are in the cup at once.
 - *Since 0.9.0, speed and spawning are set by the chapter instead, and the
-  target grows by two a round up to 32: see [Chapters](#chapters-the-slow-burn).*
+  target grows by two a round up to 32: see [Chapters](#chapters-the-slow-burn).
+  Since 0.14.0, resettable Heat controls this growth; see [Days](#days-and-heat-0140).*
 - Steam kills score 10 and sugar kills score 15.
 
 ### Tea-leaf residue and fortunes
@@ -336,6 +341,9 @@ never perfectly.
 arrows. <kbd>Q</kbd> / <kbd>M</kbd> and <kbd>E</kbd> / <kbd>S</kbd> still work.
 
 ### Chapters: the slow burn
+
+The following describes the published chapter baseline. In 0.14.0, Days
+add a separate layer of optional combat pressure to it.
 
 The first human playtests reached round 8 without meeting the first boss:
 leaves sped up and arrived faster every round, the kill target grew by four,
@@ -1065,3 +1073,68 @@ little puff on a vanishing; sound off and reduced motion are respected.
 No new boss, Chapter 3, other arcade adventures, Arcade Collection,
 permanent upgrades, larger economy, online scores, mobile redesign or
 physics library. More biscuit characters and secrets may come later.
+
+## Days and Heat (0.14.0)
+
+**Days control difficulty. Chapters control content.** A Day is exactly ten
+completed normal teacup rounds. Derive Day as `floor((round - 1) / 10) + 1`
+and cup within the Day as `(round - 1) % 10 + 1`. Global `state.round` keeps
+increasing: Day 2 begins at round 11, Day 3 at round 21. Readings, upgrades,
+pauses, shortages, offers, Tea Run, Daily Pour, Biscuit Breakout, Hot Chocolate
+Havoc and The Daily Grind never count as normal rounds.
+
+After the tenth completion, finish the reading and upgrade, then resolve all
+scheduled encounters in the existing priority order. Immediately before the
+next normal cup, the kettle offers two deliberate choices (1 / 2, mouse or
+touch), with no timer and no default:
+
+- **Fresh Brew:** set the coming cup's Heat to 0. Targets restart at 16, 18,
+  20, 22... and additional speed/spawn pressure disappears.
+- **Keep the Kettle On:** increment and carry Heat forward. Players can change
+  their choice at every boundary, including after reaching the maximum.
+
+Both preserve chapters and their `starts`, unlocked teas, tea-served history,
+tea ages and behavior stages, upgrades, Tea Cash, score, cups, discoveries,
+pending fortune, extra sugar, Golden Spoon time and all encounter schedules.
+A fresh Day in Chapter 2 still has Chapter 2's content and baseline pace.
+Fortunes apply to exactly one normal cup: Karma read after cup 10 protects
+cup 11 under either choice. Side adventures receive no Heat modifiers.
+
+### Tuning and safety limits
+
+All Day tuning lives in `CONFIG.days`, with target tuning in `CONFIG.rounds`.
+Heat `h` starts at 0; the next normal cup increments it by 1 unless Fresh Brew
+resets it. It saturates at 28, derived from the last component to reach its cap.
+Let `e = max(0, h - 9)`:
+
+| Component | Implemented formula | Limit |
+| --- | --- | --- |
+| Leaves required | `min(32, 16 + 2*h)` | 32, reached at Heat 8 |
+| Heat speed factor | `1 + min(0.20, 0.0125*e)` | 1.20, reached at Heat 25 |
+| Heat interval factor | `1 - min(0.15, 0.008*e)` | 0.85, reached at Heat 28 |
+| Overall ordinary speed factor | `min(2, chapterSpeed * cappedTeaFortuneSpeed * heatSpeed)` | 2 times the 41–57 base |
+| Arrival gap | `max(0.45, chapterInterval * teaFortuneInterval * heatInterval * jitter)` | at least 0.45 seconds |
+
+The existing tea/fortune speed cap of 1.35 applies **before** Heat, and the
+chapter multiplier applies once. Milk still slows movement and fixed Green
+Tea dash distances remain fixed; Heat does not scale dashes or warning clocks.
+The existing 18-active-leaf limit and 0.95-second first-arrival delay remain.
+Jitter remains 0.72–1.36 from the normal seeded stream. No new random draws
+are introduced for Days, captions or Heat. No rewards depend on difficulty.
+
+Cups 1–10 have Heat 0–9 and therefore exactly the existing target curve and
+neutral extra speed/spawn factors. Keeping the kettle on for Day 2 begins
+at Heat 10 (32 leaves, speed factor 1.0125, interval factor 0.992). Another
+Keep begins Day 3 at Heat 20 (1.1375, 0.912). Heat reaches all caps during
+Day 3 and remains capped on later days until Fresh Brew.
+
+The combined safety ceiling is for ordinary outward rise; fixed dash distance,
+backwash and milk retain their separate rules. The fastest current Chapter 2
+Green Tea/Tempest combination at maximum Heat is 1.79124 times base ordinary
+speed, below the hard factor 2. The shortest current Black Tea interval with
+minimum jitter is 0.53856 seconds, above the hard 0.45-second floor.
+
+The HUD shows `DAY 2 · CUP 3/10 · HEAT 2` alongside the global cup/round.
+The chosen Day gets a brief Canvas acknowledgement and optional kettle sound.
+Reduced motion removes the banner's pop; Sound off covers all new audio.
+See [Day testing](DAYS_TESTING.md) for replayable practice and measured values.

@@ -6,6 +6,7 @@
 // 'shortage', or 'run'), so the stylesheet can show the right touch controls.
 
 import { CONFIG } from '../config.js';
+import { DAY_CAPTIONS, MAX_HEAT, cupOfDay, dayOf } from '../gameplay/days.js';
 import { OFFER_AT } from '../core/game.js';
 import { PHASE } from '../core/state.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
@@ -25,6 +26,7 @@ const COPY = {
     [PHASE.PLAYING]: 'DEFEND THE RIM',
     [PHASE.PAUSED]: 'PAUSED',
     [PHASE.READING]: 'READING THE LEAVES',
+    [PHASE.DAY]: 'TOMORROW IS YOURS',
     [PHASE.CHOCOLATE]: 'HOT CHOCOLATE HAVOC',
     [PHASE.GRIND]: 'THE DAILY GRIND',
     [PHASE.SHORTAGE]: 'THE TEA SHORTAGE',
@@ -39,6 +41,7 @@ const COPY = {
     [PHASE.PLAYING]: (s) => `Cup ${s.round}: ${TEAS[s.tea].title}`,
     [PHASE.PAUSED]: () => 'A moment to steep',
     [PHASE.READING]: () => 'The leaves have spoken',
+    [PHASE.DAY]: () => 'Another day, another brew',
     [PHASE.CHOCOLATE]: () => HAVOC.title.play,
     [PHASE.GRIND]: () => GRIND.title.fight,
     [PHASE.SHORTAGE]: () => 'The tea tin is empty!',
@@ -53,6 +56,7 @@ const COPY = {
     [PHASE.PLAYING]: 'Pause / resume (P)',
     [PHASE.PAUSED]: 'Resume cup →',
     [PHASE.READING]: 'Brew the next cup →',
+    [PHASE.DAY]: 'Choose tomorrow (1 / 2)',
     [PHASE.CHOCOLATE]: 'Pause / resume (P)',
     [PHASE.GRIND]: 'Pause / resume (P)',
     [PHASE.SHORTAGE]: 'Buy, run, or skip (1 / 2 / 3)',
@@ -64,6 +68,7 @@ const COPY = {
   },
   tip: {
     [PHASE.READY]: 'Defend the rim. Your defeated leaves are the seeds of the next fortune.',
+    [PHASE.DAY]: 'Days control difficulty. Chapters control content. Either choice keeps your progress and next fortune.',
     [PHASE.PLAYING]: 'Keep tea leaves from escaping the rim. Every defeated leaf joins your final reading.',
     [PHASE.PAUSED]: 'The kettle is on hold.',
     [PHASE.CHOCOLATE]: '',
@@ -245,6 +250,7 @@ function autoText(state) {
 
 /** What the page is showing, for the touch controls: the cup, the shortage's choice, or the errand. */
 export function pageMode(state) {
+  if (state.phase === PHASE.DAY) return 'day';
   if (pourInProgress(state)) return 'pour';
   if (breakoutInProgress(state)) return 'breakout';
   if (state.phase === PHASE.ARCADE_OFFER) return 'arcadeOffer';
@@ -276,7 +282,7 @@ export function hudText(state) {
   const pour = pourInProgress(state);
   const breakout = breakoutInProgress(state);
   // Between rounds (a reading, the bonus, the boss, or an errand) the panel looks ahead to the next cup.
-  const between = state.phase === PHASE.READING || state.phase === PHASE.SHORTAGE || state.phase === PHASE.ARCADE_OFFER
+  const between = state.phase === PHASE.DAY || state.phase === PHASE.READING || state.phase === PHASE.SHORTAGE || state.phase === PHASE.ARCADE_OFFER
     || !!havoc || !!grind || !!run || !!pour || !!breakout;
   const shown = between ? state.nextFortune : state.fortune;
   const fortune = shown ? FORTUNES[shown] : null;
@@ -287,6 +293,9 @@ export function hudText(state) {
   const teaTip = state.phase === PHASE.PLAYING && tea.id !== 'house' ? `${fresh}${tea.name}: ${tea.info}` : null;
   const values = {
     hudStatus: statusText(state),
+    hudDay: `DAY ${dayOf(state.round)} · CUP ${cupOfDay(state.round)}/${CONFIG.days.length} · HEAT ${state.heat}${state.heat === MAX_HEAT ? ' MAX' : ''}`,
+    dayCompleted: `Day ${dayOf(state.round)} complete. Choose how tomorrow brews.`,
+    dayCaption: DAY_CAPTIONS[(dayOf(state.round) - 1) % DAY_CAPTIONS.length],
     hudScore: `SCORE ${pad(state.score, 4)}`,
     hudLives: `CUPS ${'♥ '.repeat(Math.max(0, state.lives))}${'♡ '.repeat(Math.max(0, CONFIG.lives - state.lives))}`,
     roundTitle: COPY.title[state.phase](state),
@@ -439,6 +448,7 @@ export function createHud(doc = document) {
 
   const errand = doc.getElementById('errandOffer');
   const arcade = doc.getElementById('arcadeOffer');
+  const day = doc.getElementById('dayOffer');
   const errandButtons = errand ? [...errand.querySelectorAll('[data-errand]')] : [];
   let shownErrand = null;
 
@@ -462,6 +472,7 @@ export function createHud(doc = document) {
       updateOffer(state);
       updateErrand(state);
       if (arcade) arcade.hidden = state.phase !== PHASE.ARCADE_OFFER;
+      if (day) day.hidden = state.phase !== PHASE.DAY;
       const mode = pageMode(state);
       if (doc.body && doc.body.dataset.mode !== mode) doc.body.dataset.mode = mode;
       const values = hudText(state);

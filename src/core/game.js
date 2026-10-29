@@ -21,14 +21,16 @@
 // runFinish, runFail, runEnd; Arcade Interludes: arcadeOffer, arcadeSkipped, and
 // The Daily Pour's pour* and paper* events, and Biscuit Breakout's breakoutStart,
 // breakoutGo, cubeLaunch, cubeWall, cubePaddle, biscuitBreak, biscuitTalk,
-// cubeLost, breakoutFinish, breakoutEnd; and under Karma: karmaBounce, karmaPuff.
+// cubeLost, breakoutFinish, breakoutEnd; under Karma: karmaBounce, karmaPuff;
+// and for Days: dayEnd, dayStart.
 
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
 import { PHASE, createInitialState, createRoundStats } from './state.js';
 import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
-import { advanceChapter, createProgress, opensChapter, teaAge } from '../gameplay/progress.js';
+import { advanceChapter, createProgress, currentChapter, opensChapter, teaAge } from '../gameplay/progress.js';
+import { dayOf, difficultyAt, endsDay, nextHeat, withHeat } from '../gameplay/days.js';
 import { TEAS, chooseTea, createCurrent, roundModifiers, teaFortuneNudges, updateCurrent } from '../gameplay/teas.js';
 import { updateGolden } from '../gameplay/golden.js';
 import { rollPrismatic, updatePrismatic } from '../gameplay/prismatic.js';
@@ -125,14 +127,13 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
   }
 
   function startRound() {
-    const R = CONFIG.rounds;
     state.phase = PHASE.PLAYING;
     clearField();
     state.residue = [];
     state.kills = 0;
-    state.target = Math.min(R.maxTarget, R.baseTarget + (state.round - 1) * R.targetPerRound);
+    state.target = difficultyAt(state.heat).target;
     const lean = steepTea();
-    state.modifiers = roundModifiers(state.fortune, state.tea, state.teaAge);
+    state.modifiers = withHeat(roundModifiers(state.fortune, state.tea, state.teaAge), state.heat, currentChapter(state.progress));
     if (state.modifiers.spiceCurrents) state.current = createCurrent(lean, state.teaAge);
     state.milkLeft = CONFIG.milk.perRound;
     state.sugarLeft = sugarCapacity(state) + state.extraSugar;
@@ -156,6 +157,8 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
 
   function resetMatch() {
     state.round = 1;
+    state.heat = 0;
+    state.dayPending = false;
     state.score = 0;
     state.lives = CONFIG.lives;
     state.fortune = null;
@@ -192,6 +195,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
 
   function readLeaves() {
     state.phase = PHASE.READING;
+    state.dayPending = endsDay(state.round);
     state.readingTime = 0;
     clearField();
     const { milkKills, milkUses, sugarUses, escapes, nearMisses } = state.roundStats;
@@ -219,7 +223,8 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     }
   }
 
-  function brewNextCup() {
+  function brewNextCup(fresh = false) {
+    state.heat = fresh ? 0 : nextHeat(state.heat);
     state.round++;
     state.fortune = state.nextFortune;
     startRound();
@@ -241,7 +246,19 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
       state.phase = PHASE.ARCADE_OFFER;
       emit('arcadeOffer', { id });
     }
+    else if (state.dayPending) {
+      state.phase = PHASE.DAY;
+      emit('dayEnd', { day: dayOf(state.round) });
+    }
     else brewNextCup();
+  }
+
+  function chooseDay(choice) {
+    if (state.phase !== PHASE.DAY || !state.dayPending || !['fresh', 'keep'].includes(choice)) return false;
+    state.dayPending = false; // consume before starting the next cup: repeats cannot apply twice
+    brewNextCup(choice === 'fresh');
+    emit('dayStart', { choice, day: dayOf(state.round), heat: state.heat });
+    return true;
   }
 
   function chooseInterlude(accept) {
@@ -364,7 +381,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
 
   function leaveHavoc() {
     state.chocolate = null;
-    brewNextCup();
+    continueFromReading();
   }
 
   function updateChocolate(dt, input) {
@@ -431,7 +448,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     } else if (milestone) {
       state.grindAfter = state.round + CONFIG.grind.retryAfter;
     }
-    brewNextCup();
+    continueFromReading();
   }
 
   function updateGrindPhase(dt, input) {
@@ -453,6 +470,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
 
   function finishGame() {
     state.phase = PHASE.GAME_OVER;
+    state.dayPending = false;
     state.offer = null;
     clearField();
     emit('gameover', { score: state.score });
@@ -728,6 +746,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     /** Is the Tea Shortage's choice on show and ready to be made? */
     errandOpen,
     chooseInterlude,
+    chooseDay,
     aimPaper: (aim) => pouring('play') && aimPour(state.dailyPour, aim),
     throwPaper: () => pouring('play') && throwPaper(pourSim),
     /** Used by input to give these keys exclusively to this mission, even while paused. */

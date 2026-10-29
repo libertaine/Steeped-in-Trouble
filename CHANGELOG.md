@@ -5,6 +5,32 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-29 — Another Day, Another Brew
+
+### Added
+
+- **0.14.0 — Another Day, Another Brew:** Days of ten completed normal tea
+  rounds. After readings, upgrades and scheduled adventures, choose **FRESH
+  BREW** (reset additional combat Heat) or **KEEP THE KETTLE ON** (carry Heat
+  forward to a bounded maximum). Both preserve chapters, unlocked teas,
+  fortunes, spoon upgrades, score, Tea Cash and scheduled arcade encounters.
+- Day/cup/Heat HUD text, keyboard 1 / 2 and large touch/mouse choices, short
+  Canvas acknowledgements, and optional synthesized kettle sounds.
+- Deterministic sixty-round tests and development-only `?debug&day=...`
+  practice scenarios; see [Day testing](docs/DAYS_TESTING.md).
+
+### Changed
+
+- Normal-cup targets use Heat instead of global round. Cups 1–10 retain
+  their existing curve; continued Heat adds up to 20% speed and 15% shorter
+  spawn intervals, with overall safety limits. Chapters still control content.
+- README introduction puts the overworked silver spoon and its adventures first.
+- Bonus and boss return paths now pass through the shared between-round
+  handler so pending Day choices and encounters are preserved.
+
+Released following project-owner playtesting approval of both Day choices.
+Maximum Heat was challenging but manageable; no further tuning was requested.
+
 ## [0.13.0] - 2026-10-29 — Biscuit Breakout & Karma
 
 The biscuits have formed a wall. Negotiations have failed.
@@ -360,7 +386,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.13.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.14.0...main
+[0.14.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.10.0...v0.11.0

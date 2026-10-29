@@ -1,8 +1,22 @@
 # Steeped in Trouble
 
-An original, experimental, tea-themed vector arcade game. Defend the rim of a
-stormy teacup with a silver spoon, steam the tea leaves that rise towards
-you, and let the leaves you defeat tell your fortune.
+**One small spoon. An unreasonable amount of responsibility.**
+
+Meet the silver spoon: defender of a very temperamental teacup, part-time
+newspaper carrier, occasional biscuit demolition expert, and the only kitchen
+utensil willing to confront an angry espresso machine.
+
+Keep escaping tea leaves in check with steam, milk, and sugar. Read fortunes
+in the leaves you've defeated, upgrade your spoon, and discover what happens
+when the tea starts making its own rules.
+
+Between cups, things get stranger. Run to the tea shop, deliver newspapers
+from a bicycle, or launch a sugar cube at a wall of rebellious biscuits.
+Apparently, all of this is in the spoon's job description.
+
+**Simple arcade action, unexpected little adventures, and a generous helping of nonsense.**
+
+Play in your browser. The spoon will handle the paperwork.
 
 **[▶ Play it in your browser](https://libertaine.github.io/Steeped-in-Trouble/)**
 
@@ -13,21 +27,25 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.13.0 — Biscuit Breakout & Karma](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.13.0)**
-is the current release. The biscuits have formed a wall. Negotiations have failed.
-The game is experimental and still changing, but there's plenty in the cup
-already:
+Version **[0.14.0 — Another Day, Another Brew](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.14.0)**
+is the current release.
+
+**Another Day, Another Brew:** Every ten normal cups, decide whether tomorrow
+starts with a gentler challenge or keeps building the Heat. Your upgrades,
+unlocked teas, fortunes, score, and arcade adventures carry forward either way.
+**Days control difficulty. Chapters control content.**
+See the [Day testing guide](docs/DAYS_TESTING.md) for practice and qualification.
+
+Already in the published game:
 
 - Arcade defence around a living teacup whose tea swirls, ripples, and
   reacts to every shot.
 - New in 0.13.0: **Biscuit Breakout**, an optional arcade game with a
   silver-spoon paddle, a sugar-cube ball, and a talking biscuit among the
   wall, and **Karma**, a rare protective fortune for your next cup.
-- **The Daily Pour**, an optional newspaper-delivery side
-  mission. A silver spoon rides a bicycle through the neighborhood; aim
-  for mailboxes or porches and throw newspapers for modest rewards, or
-  skip it at no cost. The Tea Run's suspended coffee cups can now be
-  cleared with a well-timed aerial jump, as well as by sliding.
+- **The Daily Pour**, an optional bicycle paper route, and **The Tea Run**,
+  a dash to the shop with jumps, slides, and occasional aerial nonsense.
+  Both are free to skip.
 - Compact / Full View, the Tea Break, recurring optional Tea Shortages,
   an optional Tea Run to the shop, Tea Cash, Easy Touch, and Auto Steam for
   a more relaxed pot. Classic Touch remains available.
@@ -191,6 +209,8 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-
   add enemies, weapons, and fortunes
 - [Game design](docs/GAME_DESIGN.md): creative direction, the full rules
   (secrets included, so beware of spoilers), and future ideas
+- [Day testing](docs/DAYS_TESTING.md): 0.14.0 approval, practice shortcuts,
+  deterministic tuning and human testing instructions
 - [Development](DEVELOPMENT.md): the principles for working on the game
 - [Contributing](CONTRIBUTING.md): branching, checks, and releases
 - [Reference prototype](docs/reference/README.md): the preserved original and

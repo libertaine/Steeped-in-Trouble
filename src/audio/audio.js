@@ -237,7 +237,9 @@ export function createAudio() {
     /** Play the sound for a simulation event, if it has one, and let the band react. */
     handle(event) {
       music.handle(event);
-      if (event.type === 'kill') beep(KILL_SOUND[event.by] ?? (event.sugar ? KILL_SOUND.sugar : KILL_SOUND.steam));
+      if (event.type === 'dayStart') beep(event.choice === 'fresh'
+        ? [880, 0.5, 'sine', 0.022, 0, 0.98] : [440, 0.7, 'triangle', 0.022, 0, 2.4]);
+      else if (event.type === 'kill') beep(KILL_SOUND[event.by] ?? (event.sugar ? KILL_SOUND.sugar : KILL_SOUND.steam));
       else if (event.type === 'steam' && event.golden) beep(GOLDEN_STEAM);
       // A marshmallow squeaks as it toasts, higher each time.
       else if (event.type === 'toast') beep([1100 + 160 * event.cook, 0.07, 'sine', 0.012, 0, 1.5]);
