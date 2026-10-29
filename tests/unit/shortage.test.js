@@ -24,6 +24,7 @@ function leaveReading(game, { win = false } = {}) {
   answerShortage(game);
   finishBonus(game, { win });
   game.chooseInterlude(false);
+  game.chooseDay('keep');
   return shortage;
 }
 
@@ -131,6 +132,8 @@ describe('when the tea runs out', () => {
     expect(game.state.round).toBe(10);
     expect(game.state.shortageAfter).toBe(16);
     answerShortage(game, 'skip'); finishBonus(game, { win: true });
+    expect(game.state.phase).toBe('day');
+    game.chooseDay('keep');
     expect(game.state.round).toBe(11);
   });
 

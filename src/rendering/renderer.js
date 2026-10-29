@@ -986,12 +986,12 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
   }
 
   /** A big moment in the hot chocolate, announced at the top of the cup. */
-  function drawBanner(banner) {
+  function drawBanner(banner, reduced = false) {
     if (!banner) return;
     const age = banner.life - banner.time;
     const a = clamp(Math.min(age / 0.2, banner.time / 0.6), 0, 1);
     const y0 = CY - 250;
-    const pop = 1 + 0.3 * Math.max(0, 1 - age / 0.35);
+    const pop = reduced ? 1 : 1 + 0.3 * Math.max(0, 1 - age / 0.35);
     ctx.save();
     ctx.globalAlpha = a * 0.92;
     ctx.fillStyle = '#2a1209';
@@ -1651,7 +1651,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       if (state.phase === PHASE.CHOCOLATE) drawHavocOverlay(havoc);
       if (live) drawWhisper(fx.whisper);
       if (inPlay) drawDiscovery(fx.discovery);
-      if (havoc || grind) drawBanner(fx.banner);
+      if (havoc || grind || inPlay) drawBanner(fx.banner, reduced);
     },
   };
   return renderer;

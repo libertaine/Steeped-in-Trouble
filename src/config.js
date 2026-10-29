@@ -111,8 +111,18 @@ export const CONFIG = deepFreeze({
     maxTarget: 32, // …up to this many
   },
 
+  days: {
+    length: 10,
+    speedPerHeat: 0.0125, // additional pressure begins at Heat 10 (cup 11 if kept)
+    maxSpeedBonus: 0.20,
+    spawnReductionPerHeat: 0.008,
+    maxSpawnReduction: 0.15,
+    maxOverallSpeed: 2, // chapter × capped tea/fortune × Heat, before milk and fixed dashes
+    minSpawnInterval: 0.45, // seconds, including tea/fortune, Heat and jitter
+  },
+
   // The slow burn (gameplay/progress.js): a pot is told in chapters. Within a
-  // chapter the leaves' speed and the pace of their arrival hold steady; a
+  // chapter the baseline speed and arrival pace hold steady; a
   // chapter begins with the cup after its milestone boss is beaten. `teas`
   // lists the varieties the chapter brings, each with the number of normal
   // rounds after the chapter's first before it comes on tap.

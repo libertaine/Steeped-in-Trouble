@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { withHeat } from '../../src/gameplay/days.js';
+import { currentChapter } from '../../src/gameplay/progress.js';
 import { CONFIG } from '../../src/config.js';
 import { createGame } from '../../src/core/game.js';
 import { createRandom } from '../../src/core/random.js';
@@ -246,7 +248,8 @@ describe('combining the tea with the fortune', () => {
       pot.state.modifiers = { ...pot.state.modifiers, laneDrift: false };
       completeRound(pot);
       brewNext(pot, { win: true });
-      expect(pot.state.modifiers).toEqual(roundModifiers(pot.state.fortune, pot.state.tea, pot.state.teaAge));
+      expect(pot.state.modifiers).toEqual(withHeat(roundModifiers(pot.state.fortune, pot.state.tea, pot.state.teaAge),
+        pot.state.heat, currentChapter(pot.state.progress)));
     }
   });
 });
@@ -321,17 +324,17 @@ describe('the learning curve', () => {
         pot.state.modifiers = { ...pot.state.modifiers, laneDrift: false };
         completeRound(pot);
         brewNext(pot, { win: true });
-        const { teaAge: age, tea, fortune, modifiers, round } = pot.state;
+        const { teaAge: age, tea, fortune, modifiers, round, heat } = pot.state;
         if (tea === 'green') expect(round - age).toBe(7);
-        if (tea === 'green' && !found[teaStage(age)]) found[teaStage(age)] = { age, fortune, modifiers: { ...modifiers } };
+        if (tea === 'green' && !found[teaStage(age)]) found[teaStage(age)] = { age, fortune, heat, modifiers: { ...modifiers } };
       }
     }
     expect(Object.keys(found)).toHaveLength(3);
-    for (const { age, fortune, modifiers } of Object.values(found)) {
+    for (const { age, fortune, heat, modifiers } of Object.values(found)) {
       // The practice pot has brewed Green Tea every cup since the first, so its age is its round.
       const pinned = brewedRound('green', age, fortune);
       expect(pinned.state.teaAge).toBe(age);
-      expect(pinned.state.modifiers).toEqual(modifiers);
+      expect(withHeat(pinned.state.modifiers, heat, currentChapter(pinned.state.progress))).toEqual(modifiers);
       const darter = spawned(pinned, 200).find((e) => e.kind === 'darter');
       expect(darter.dart).toMatchObject({ warn: byStage(D.warnTime, age), distance: byStage(D.dashDistance, age) });
     }

@@ -105,6 +105,7 @@ export function musicMood(state, tension = 0) {
     case PHASE.READY:
       return { section: 'ready', tempo: 76, tension: 0, golden: false, stormy: false };
     case PHASE.READING:
+    case PHASE.DAY:
     case PHASE.SHORTAGE:
     case PHASE.ARCADE_OFFER:
       return { section: 'reading', tempo: 66, tension: 0, golden: false, stormy: false };

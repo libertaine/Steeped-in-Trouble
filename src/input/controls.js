@@ -238,6 +238,9 @@ export function createControls({
   for (const button of doc.querySelectorAll('[data-interlude]')) {
     listen(button, 'click', () => { if (enabled()) commands.interlude?.(button.dataset.interlude === 'accept'); });
   }
+  for (const button of doc.querySelectorAll('[data-day]')) {
+    listen(button, 'click', () => { if (enabled() && doc.visibilityState !== 'hidden') commands.day?.(button.dataset.day); });
+  }
 
   // Easy Touch: gestures on the cup.
   const area = doc.querySelector('[data-gestures]');

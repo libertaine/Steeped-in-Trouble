@@ -104,6 +104,7 @@ export function brewNext(game, { win = false } = {}) {
   answerShortage(game);
   finishBonus(game, { win });
   game.chooseInterlude(false); // optional paper routes never trap normal-round helpers
+  game.chooseDay('keep'); // legacy tests continue the original target curve across Days
 }
 
 /**

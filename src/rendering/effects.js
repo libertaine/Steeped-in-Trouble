@@ -291,6 +291,15 @@ export function createEffects({ random = Math.random } = {}) {
       if (fortune) say(`“${FORTUNES[fortune].quote}”`, { color: FORTUNES[fortune].color });
       else hush();
     },
+    dayStart({ choice }) {
+      const fresh = choice === 'fresh';
+      fx.banner = {
+        title: fresh ? 'A FRESH START' : 'THE KETTLE STAYS ON',
+        words: fresh ? 'The leaves have agreed to behave. For now.' : 'The spoon has made a questionable decision.',
+        time: 2.6, life: 2.6,
+      };
+      if (fx.teaCard) fx.teaCard.delay += 2.6;
+    },
     milkPulse() {
       // A ring of cream rushing in from all round the rim.
       for (let i = 0; i < 28; i++) {
