@@ -24,6 +24,16 @@
     <div class="stage">
       <canvas id="game" width="920" height="790" role="img" data-gestures aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
       <div class="touch-ring" id="touchRing" aria-hidden="true" hidden></div>
+      <div class="upgrade-offer" id="arcadeOffer" role="group" aria-labelledby="arcadeTitle" hidden>
+        <div class="offer-head">
+          <strong id="arcadeTitle">EXTRA! EXTRA!</strong>
+          <em>The Daily Pour needs a delivery spoon.</em>
+        </div>
+        <div class="offer-cards">
+          <button class="errand-card" data-interlude="accept"><kbd>1</kbd><span><strong>DELIVER PAPERS</strong><small>A short, optional paper route</small></span></button>
+          <button class="errand-card" data-interlude="skip"><kbd>2</kbd><span><strong>NO THANKS</strong><small>Costs nothing. Carry on brewing.</small></span></button>
+        </div>
+      </div>
       <div class="upgrade-offer errand-offer" id="errandOffer" role="group" aria-labelledby="errandTitle" hidden>
         <div class="offer-head">
           <strong id="errandTitle">The tea tin is empty!</strong>
@@ -78,6 +88,10 @@
     <div class="controls-mobile controls-run">
       <button class="run-pad" data-run="jump" aria-label="Jump">JUMP ▲</button>
       <button class="run-pad" data-run="slide" aria-label="Slide">SLIDE ▼</button>
+    </div>
+    <div class="controls-mobile controls-pour">
+      <button class="paper-pad" data-paper="aimPaper" id="aimPaperBtn" aria-label="Toggle delivery aim">AIM: MAILBOX</button>
+      <button class="paper-pad" data-paper="throwPaper" aria-label="Throw newspaper">THROW ▷</button>
     </div>
     <div id="actionDock" class="action-dock">
       <button id="menuBtn" aria-haspopup="dialog">Pause / Menu</button>

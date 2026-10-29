@@ -17,6 +17,8 @@ import { runInProgress } from '../gameplay/teaRun.js';
 import { createGrindPainter } from './grind.js';
 import { createTeaPainter } from './tea.js';
 import { createRunPainter } from './teaRun.js';
+import { createPourPainter } from './dailyPour.js';
+import { pourInProgress } from '../gameplay/dailyPour.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
 const { revealAt, lieRetractAt } = CONFIG.fortunes;
@@ -121,6 +123,7 @@ const OVERLAY_TEXT = {
  */
 export function createRenderer(canvas, { quality = 'high', compact = () => false } = {}) {
   const ctx = canvas.getContext('2d');
+  const newspaper = createPourPainter(ctx, { compact: () => canvas.clientWidth < 560 });
   let time = 0; // animation clock, independent of the simulation
   let gradients = null;
   const tea = createTeaPainter(ctx);
@@ -1521,6 +1524,11 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       gradients ??= createGradients();
       ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
       ctx.clearRect(0, 0, W, H);
+      const pour = pourInProgress(state);
+      if (pour) {
+        newspaper.draw(pour, state.phase === PHASE.PAUSED);
+        return;
+      }
       // The Tea Run leaves the cup behind altogether.
       const run = runInProgress(state);
       if (run) {

@@ -461,6 +461,22 @@ export const CONFIG = deepFreeze({
     packetPoints: 10, // a packet stays a small bonus beside an ordinary round
   },
 
+  // Optional arcade offers count normal rounds only. Missed dates collapse into one opportunity.
+  arcade: {
+    dailyPour: { firstAfter: 12, repeatEvery: 14, minChapter: 2 },
+  },
+  dailyPour: {
+    introTime: 3, outroMin: 1.5, duration: 30,
+    speed: 165, houses: 9, firstAt: 4, houseInterval: 2.8,
+    cooldown: 0.85, sparePapers: 2, successRatio: 0.6,
+    deliveryPoints: 25, successCash: 5, perfectBonus: 50,
+    riderX: 190, releaseY: 552,
+    targets: {
+      near: { ahead: 145, y: 450, flight: 0.65 },
+      far: { ahead: 200, y: 335, flight: 0.9 },
+    },
+  },
+
   // Easy Touch (input/gestures.js): forgiving gestures on the cup for milk and sugar.
   touch: {
     doubleTap: 300, // ms from a tap to the next touch for milk

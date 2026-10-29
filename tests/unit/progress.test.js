@@ -44,6 +44,7 @@ function nextCup(game, { win = false } = {}) {
   due.phase = game.state.phase;
   due.milestone = game.state.grind?.milestone ?? false;
   finishBonus(game, { win });
+  game.chooseInterlude(false);
   return due;
 }
 

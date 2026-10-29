@@ -13,6 +13,7 @@ import { FORTUNES } from '../gameplay/fortunes.js';
 import { grindInProgress } from '../gameplay/grind.js';
 import { canBuyTea } from '../gameplay/shortage.js';
 import { runInProgress } from '../gameplay/teaRun.js';
+import { pourInProgress } from '../gameplay/dailyPour.js';
 import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
@@ -27,6 +28,8 @@ const COPY = {
     [PHASE.GRIND]: 'THE DAILY GRIND',
     [PHASE.SHORTAGE]: 'THE TEA SHORTAGE',
     [PHASE.TEA_RUN]: 'THE TEA RUN',
+    [PHASE.ARCADE_OFFER]: 'EXTRA! EXTRA!',
+    [PHASE.DAILY_POUR]: 'THE DAILY POUR',
     [PHASE.GAME_OVER]: 'THE CUP RUNNETH OVER',
   },
   title: {
@@ -38,6 +41,8 @@ const COPY = {
     [PHASE.GRIND]: () => GRIND.title.fight,
     [PHASE.SHORTAGE]: () => 'The tea tin is empty!',
     [PHASE.TEA_RUN]: () => RUN.title.run,
+    [PHASE.ARCADE_OFFER]: () => 'A spoon with a second job',
+    [PHASE.DAILY_POUR]: () => 'The Daily Pour',
     [PHASE.GAME_OVER]: () => 'The last drop',
   },
   button: {
@@ -49,6 +54,8 @@ const COPY = {
     [PHASE.GRIND]: 'Pause / resume (P)',
     [PHASE.SHORTAGE]: 'Buy, run, or skip (1 / 2 / 3)',
     [PHASE.TEA_RUN]: 'Pause / resume (P)',
+    [PHASE.ARCADE_OFFER]: 'Deliver or skip (1 / 2)',
+    [PHASE.DAILY_POUR]: 'Pause / resume (P)',
     [PHASE.GAME_OVER]: 'Start a fresh pot →',
   },
   tip: {
@@ -59,6 +66,8 @@ const COPY = {
     [PHASE.GRIND]: '',
     [PHASE.SHORTAGE]: `Buy a tin with Tea Cash, run to the shop for one, or carry on without. A restock means ${CONFIG.shortage.restockSugar} extra sugar burst next cup; skipping costs nothing. Your cups, spoon, and next fortune wait for you either way.`,
     [PHASE.TEA_RUN]: '',
+    [PHASE.ARCADE_OFFER]: 'The Daily Pour needs a delivery spoon. Deliver papers, or carry on brewing. Skipping costs nothing.',
+    [PHASE.DAILY_POUR]: '',
     [PHASE.READING]: 'The pattern was made by the leaves you defeated, though the leaves have opinions of their own. The omen applies to the next cup.',
     [PHASE.GAME_OVER]: 'Three spills end the pot. Brew again to rewrite the future.',
   },
@@ -166,7 +175,7 @@ function omenStatus(state) {
 
 /** The small in-play indicator of the fortune shaping this round. */
 function omenText(state, fortune) {
-  if (!fortune || havocInProgress(state) || grindInProgress(state) || runInProgress(state)) return '';
+  if (!fortune || havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)) return '';
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
   return `✦ ${fortune.name} · ${fortune.tag} · ${omenStatus(state)}`;
 }
@@ -174,7 +183,7 @@ function omenText(state, fortune) {
 /** The small in-play indicator of the tea brewed for this round. */
 function teaText(state) {
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
-  if (havocInProgress(state) || grindInProgress(state) || runInProgress(state)) return '';
+  if (havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)) return '';
   const tea = TEAS[state.tea];
   return `☕ ${tea.name} · ${tea.tag}`;
 }
@@ -199,6 +208,8 @@ function autoText(state) {
 
 /** What the page is showing, for the touch controls: the cup, the shortage's choice, or the errand. */
 export function pageMode(state) {
+  if (pourInProgress(state)) return 'pour';
+  if (state.phase === PHASE.ARCADE_OFFER) return 'arcadeOffer';
   if (state.phase === PHASE.SHORTAGE) return 'shortage';
   return runInProgress(state) ? 'run' : 'cup';
 }
@@ -224,8 +235,9 @@ export function hudText(state) {
   const havoc = havocInProgress(state);
   const grind = grindInProgress(state);
   const run = runInProgress(state);
+  const pour = pourInProgress(state);
   // Between rounds (a reading, the bonus, the boss, or an errand) the panel looks ahead to the next cup.
-  const between = state.phase === PHASE.READING || state.phase === PHASE.SHORTAGE || !!havoc || !!grind || !!run;
+  const between = state.phase === PHASE.READING || state.phase === PHASE.SHORTAGE || state.phase === PHASE.ARCADE_OFFER || !!havoc || !!grind || !!run || !!pour;
   const shown = between ? state.nextFortune : state.fortune;
   const fortune = shown ? FORTUNES[shown] : null;
   const offering = state.phase === PHASE.READING && !!state.offer;
@@ -274,6 +286,21 @@ export function hudText(state) {
     easyHint: havoc ? 'Hold cup: flames' : 'Double-tap: milk\nHold: sugar',
   };
   if (state.phase === PHASE.SHORTAGE) values.roundNum = `${pad(state.round, 2)}½`;
+  if (pour) {
+    Object.assign(values, {
+      roundTitle: pour.stage === 'outro' ? pour.summary.title : 'The Daily Pour',
+      hudStatus: state.phase === PHASE.PAUSED ? 'PAPER ROUTE PAUSED' : `THE DAILY POUR · ${Math.ceil(CONFIG.dailyPour.duration - pour.clock)}s`,
+      hudScore: `DELIVERED ${pour.delivered}/${pour.scheduled}`,
+      hudLives: `PAPERS ${pour.papers}`,
+      hudStrainer: '', teaName: 'News, freshly brewed',
+      killLabel: 'Deliveries', killCount: `${pour.delivered} / ${pour.scheduled}`,
+      compactProgress: `Route ${Math.round(100 * pour.clock / CONFIG.dailyPour.duration)}%`,
+      aimPaperBtn: `AIM: ${pour.aim === 'near' ? 'MAILBOX' : 'PORCH'}`,
+      mainBtn: state.phase === PHASE.PAUSED ? 'Resume paper route →' : pour.stage === 'intro' ? 'Ring bell & ride →'
+        : pour.stage === 'outro' ? 'Back to the tea →' : 'Pause / resume (P)',
+      gameTip: '↑ aims for porches; ↓ for mailboxes. Space throws. Match the marked subscriber target as it crosses your landing ring. On touch, use AIM and THROW. No paper for houses marked NO PAPER.',
+    });
+  }
   if (run) {
     // On the sidewalk the pills count what matters there: the pickups, and the stumbles left.
     const left = Math.max(0, CONFIG.teaRun.hits - run.hits);
@@ -346,6 +373,7 @@ export function createHud(doc = document) {
   }
 
   const errand = doc.getElementById('errandOffer');
+  const arcade = doc.getElementById('arcadeOffer');
   const errandButtons = errand ? [...errand.querySelectorAll('[data-errand]')] : [];
   let shownErrand = null;
 
@@ -368,6 +396,7 @@ export function createHud(doc = document) {
     update(state) {
       updateOffer(state);
       updateErrand(state);
+      if (arcade) arcade.hidden = state.phase !== PHASE.ARCADE_OFFER;
       const mode = pageMode(state);
       if (doc.body && doc.body.dataset.mode !== mode) doc.body.dataset.mode = mode;
       const values = hudText(state);

@@ -23,6 +23,7 @@ function leaveReading(game, { win = false } = {}) {
   const shortage = game.state.phase === 'shortage';
   answerShortage(game);
   finishBonus(game, { win });
+  game.chooseInterlude(false);
   return shortage;
 }
 

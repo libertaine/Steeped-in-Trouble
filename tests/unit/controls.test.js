@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createRandom } from '../../src/core/random.js';
 import { createHavoc } from '../../src/gameplay/chocolate.js';
 import { createControls } from '../../src/input/controls.js';
@@ -16,6 +16,21 @@ function fakePage() {
 const press = (win, code) => win.dispatchEvent(Object.assign(new Event('keydown'), { code }));
 
 describe('keyboard controls', () => {
+  it('gives the paper route exclusive aim/throw keys and ignores throw auto-repeat', () => {
+    const { win, doc } = fakePage();
+    const commands = Object.fromEntries(['fire', 'milk', 'sugar', 'jump', 'slide', 'throwPaper', 'aimPaper', 'pause', 'togglePause'].map((key) => [key, vi.fn()]));
+    commands.paperControls = () => true;
+    const controls = createControls({ doc, commands });
+    press(win, 'ArrowUp'); press(win, 'ArrowDown'); press(win, 'Space');
+    for (let i = 0; i < 5; i++) win.dispatchEvent(Object.assign(new Event('keydown'), { code: 'Space', repeat: true }));
+    expect(commands.aimPaper.mock.calls).toEqual([['far'], ['near']]);
+    expect(commands.throwPaper).toHaveBeenCalledTimes(1);
+    for (const action of ['fire', 'milk', 'sugar', 'jump', 'slide']) expect(commands[action]).not.toHaveBeenCalled();
+    expect(controls.held.fire).toBe(false);
+    win.dispatchEvent(new Event('blur')); expect(commands.pause).toHaveBeenCalledTimes(1);
+    expect(controls.held).toEqual({ left: false, right: false, fire: false });
+    controls.dispose();
+  });
   it('pours milk with Q or M, and fires sugar with E or S', () => {
     const game = playingGame();
     game.state.sugarLeft = 4;

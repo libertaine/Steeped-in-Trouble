@@ -39,6 +39,8 @@ import { createGrind, grindDue, milestoneDue, milkTheMachine, updateGrind } from
 import { autoSteamWanted, autoSteamWantedInGrind } from '../gameplay/autoSteam.js';
 import { ERRANDS, buyTea, earnTeaCash, scheduleNextShortage, shortageDue } from '../gameplay/shortage.js';
 import { createRun, press, startRunning, updateRun } from '../gameplay/teaRun.js';
+import { consumeInterlude, createArcadeSchedule, eligibleInterlude } from '../gameplay/arcadeInterludes.js';
+import { aimPour, createDailyPour, startPour, throwPaper, updateDailyPour } from '../gameplay/dailyPour.js';
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import {
@@ -77,11 +79,14 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
   // And the Tea Run, so the errand never changes the teas, fortunes, or leaves that follow it.
   const errand = createRandom(toSeed(rng.seed ?? 0) ^ 0x5b007e);
   const runSim = { state, rng: errand, emit };
+  const papers = createRandom(toSeed(rng.seed ?? 0) ^ 0xda11b007);
+  const pourSim = { state, rng: papers, emit };
   const pinnedTea = typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
   const grinding = (stage) => state.phase === PHASE.GRIND && (!stage || state.grind.stage === stage);
   const running = (stage) => state.phase === PHASE.TEA_RUN && (!stage || state.run.stage === stage);
+  const pouring = (stage) => state.phase === PHASE.DAILY_POUR && (!stage || state.dailyPour.stage === stage);
   const offerOpen = () => state.phase === PHASE.READING && !!state.offer && state.readingTime >= OFFER_AT;
   const errandOpen = () => state.phase === PHASE.SHORTAGE && state.shortage.time >= CONFIG.shortage.chooseAt;
 
@@ -167,6 +172,10 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.shortageDue = false;
     state.shortage = null;
     state.run = null;
+    state.arcade = createArcadeSchedule();
+    state.arcadeDue = null;
+    state.interlude = null;
+    state.dailyPour = null;
     emit('matchStart');
     startRound();
   }
@@ -190,6 +199,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     }
     state.grindDue = grindDue(state, brew); // never alongside the hot chocolate
     state.shortageDue = shortageDue(state); // never alongside a milestone boss
+    state.arcadeDue = eligibleInterlude(state);
     earnTeaCash(state, CONFIG.teaCash.round);
     emit('reading', { fortune: state.nextFortune, offer: state.offer });
     state.secrets = findSecrets(state.roundStats);
@@ -214,7 +224,38 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     if (state.shortageDue) startShortage();
     else if (state.havocDue) startHavoc();
     else if (state.grindDue) startGrind();
+    else if (state.arcadeDue) {
+      const id = state.arcadeDue;
+      consumeInterlude(state, id);
+      state.interlude = { id };
+      state.phase = PHASE.ARCADE_OFFER;
+      emit('arcadeOffer', { id });
+    }
     else brewNextCup();
+  }
+
+  function chooseInterlude(accept) {
+    if (state.phase !== PHASE.ARCADE_OFFER || typeof accept !== 'boolean') return false;
+    state.interlude = null;
+    if (!accept) {
+      emit('arcadeSkipped');
+      continueFromReading();
+      return true;
+    }
+    state.dailyPour = createDailyPour(papers);
+    state.phase = PHASE.DAILY_POUR;
+    emit('pourStart');
+    return true;
+  }
+
+  function beginPour() {
+    if (startPour(state.dailyPour)) emit('pourGo');
+  }
+
+  function leavePour() {
+    state.dailyPour = null;
+    emit('pourEnd');
+    continueFromReading();
   }
 
   /**
@@ -515,6 +556,10 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
       updateRun(runSim, dt);
       return;
     }
+    if (pouring()) {
+      updateDailyPour(pourSim, dt);
+      return;
+    }
     if (!playing()) return;
     state.graceTime = Math.max(0, state.graceTime - dt);
     if (state.goldenSpoon > 0) {
@@ -538,7 +583,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
 
   function pause() {
     if (!playing() && !chocolate('intro') && !chocolate('play') && !grinding('intro') && !grinding('fight')
-      && !running('intro') && !running('run')) return;
+      && !running('intro') && !running('run') && !pouring()) return;
     state.pausedFrom = state.phase;
     state.phase = PHASE.PAUSED;
     emit('paused');
@@ -575,6 +620,11 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
         else if (running('run')) pause();
         else if (running('outro') && state.run.time >= CONFIG.teaRun.outroMin) leaveRun();
         break;
+      case PHASE.DAILY_POUR:
+        if (pouring('intro')) beginPour();
+        else if (pouring('play')) pause();
+        else if (state.dailyPour.time >= CONFIG.dailyPour.outroMin) leavePour();
+        break;
       case PHASE.PLAYING:
         pause();
         break;
@@ -595,7 +645,8 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
      * upgrade card can take it as a click.
      */
     confirm() {
-      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.TEA_RUN].includes(state.phase)) return false;
+      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.TEA_RUN, PHASE.DAILY_POUR].includes(state.phase)) return false;
+      if (pouring('play')) return false;
       if (state.offer || chocolate('play') || grinding('fight') || running('run') || running('finish')) return false;
       primaryAction();
       return true;
@@ -604,6 +655,11 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     offerOpen,
     /** Is the Tea Shortage's choice on show and ready to be made? */
     errandOpen,
+    chooseInterlude,
+    aimPaper: (aim) => pouring('play') && aimPour(state.dailyPour, aim),
+    throwPaper: () => pouring('play') && throwPaper(pourSim),
+    /** Used by input to give these keys exclusively to this mission, even while paused. */
+    paperControls: () => pouring() || (state.phase === PHASE.PAUSED && state.pausedFrom === PHASE.DAILY_POUR),
     /**
      * Answer the Tea Shortage: 'buy' (if the Tea Cash runs to it), 'run', or
      * 'skip'. Returns true if the choice was taken.
@@ -667,6 +723,10 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     },
     /** P: pause or resume during a round. Returns true if handled. */
     togglePause() {
+      if (pouring()) {
+        pause();
+        return true;
+      }
       if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED && !chocolate('play') && !grinding('fight')
         && !running('run')) return false;
       primaryAction();

@@ -4,6 +4,8 @@ import { CONFIG } from './config.js';
 import { createGame } from './core/game.js';
 import { createLoop } from './core/timing.js';
 import { ERRANDS } from './gameplay/shortage.js';
+import { createDailyPour } from './gameplay/dailyPour.js';
+import { createRandom, toSeed } from './core/random.js';
 import { createControls } from './input/controls.js';
 import { initialSettings, isTouchDevice, normalize, saveSettings } from './input/settings.js';
 import { createAudio } from './audio/audio.js';
@@ -116,7 +118,12 @@ function boot() {
       restart: game.restart,
       pause: game.pause,
       // 1 and 2 pick an upgrade; during the Tea Shortage, 1 / 2 / 3 answer it.
-      choose: (index) => game.chooseUpgrade(index) || game.chooseErrand(ERRANDS[index]),
+      choose: (index) => game.chooseUpgrade(index) || game.chooseErrand(ERRANDS[index])
+        || (index < 2 && game.chooseInterlude(index === 0)),
+      interlude: game.chooseInterlude,
+      paperControls: game.paperControls,
+      aimPaper: game.aimPaper,
+      throwPaper: game.throwPaper,
       errand: game.chooseErrand,
       jump: game.jump,
       slide: game.slide,
@@ -156,6 +163,7 @@ function boot() {
 
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
   const RESETS = new Set(['paused', 'resumed', 'matchStart', 'roundStart', 'reading', 'shortage',
+    'arcadeOffer', 'arcadeSkipped', 'pourStart', 'pourGo', 'pourFinish', 'pourEnd',
     'runBird', 'runZap', 'runOrbit', 'runReturn',
     'runStart', 'runGo', 'runFinish', 'runFail', 'runEnd', 'chocolateStart', 'havocStart', 'havocEnd',
     'grindStart', 'grindFight', 'grindDefeat', 'grindEscape', 'gameover']);
@@ -201,6 +209,22 @@ function boot() {
   // ?debug exposes the running game for automated browser tests and tinkering.
   if (params.has('debug')) {
     window.__TEACUP__ = { game, effects, version: __APP_VERSION__, config: CONFIG, settings: () => ({ ...settings }) };
+    if (import.meta.env.DEV) {
+      let routeSeed = game.seed;
+      // Console-only practice, compiled out of production. Call again without
+      // an argument to replay the exact course, starting a fresh practice pot.
+      window.__TEACUP__.launchDailyPour = (seed = routeSeed) => {
+        routeSeed = seed;
+        game.state.phase = 'gameover';
+        game.restart();
+        Object.assign(game.state, { round: 12, progress: { chapter: 2, starts: [1, 6] },
+          phase: 'arcadeOffer', grindAfter: null, havocDue: false, grindDue: false, shortageDue: false });
+        game.chooseInterlude(true);
+        game.state.dailyPour = createDailyPour(createRandom(toSeed(seed) ^ 0xda11b007));
+        controls.reset();
+      };
+      if (params.get('arcade') === 'dailyPour') window.__TEACUP__.launchDailyPour();
+    }
     // Vite removes this helper from production. No player-facing secret menu.
     if (import.meta.env.DEV) window.__TEACUP__.previewAerial = (kind) => {
       const run = game.state.run;
