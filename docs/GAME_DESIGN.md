@@ -956,7 +956,7 @@ delivery mechanics, more pedestrians and dialogue, further minigames,
 Arcade Collection, Chapter 3, online scoring and permanent progression
 remain deferred.
 
-## Biscuit Breakout and Karma (0.13.0, in development)
+## Biscuit Breakout and Karma (0.13.0)
 
 *"The biscuits have formed a wall. Negotiations have failed."*
 

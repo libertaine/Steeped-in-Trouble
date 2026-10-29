@@ -13,18 +13,17 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.12.0 — The Daily Pour](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.12.0)**
-is the current release. The spoon has a paper route. Nobody knows why.
+Version **[0.13.0 — Biscuit Breakout & Karma](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.13.0)**
+is the current release. The biscuits have formed a wall. Negotiations have failed.
 The game is experimental and still changing, but there's plenty in the cup
 already:
 
 - Arcade defence around a living teacup whose tea swirls, ripples, and
   reacts to every shot.
-- In development for 0.13.0: **Biscuit Breakout**, an optional
-  brick-breaker with a spoon paddle, a sugar-cube ball and a wall of
-  biscuits, and **Karma**, a rare fortune that makes the rim bounce
-  escaping leaves back for one cup.
-- New in 0.12.0: **The Daily Pour**, an optional newspaper-delivery side
+- New in 0.13.0: **Biscuit Breakout**, an optional arcade game with a
+  silver-spoon paddle, a sugar-cube ball, and a talking biscuit among the
+  wall, and **Karma**, a rare protective fortune for your next cup.
+- **The Daily Pour**, an optional newspaper-delivery side
   mission. A silver spoon rides a bicycle through the neighborhood; aim
   for mailboxes or porches and throw newspapers for modest rewards, or
   skip it at no cost. The Tea Run's suspended coffee cups can now be

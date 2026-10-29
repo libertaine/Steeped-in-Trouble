@@ -146,7 +146,7 @@ vanishing with an empty strainer, and touch pads (tap, hold, cancel) on
 four phone and tablet viewports. Screenshots are written to
 [`docs/images/biscuit-breakout`](images/biscuit-breakout/README.md).
 
-## Qualification — 2026-10-29 (release candidate for playtesting)
+## Automated qualification — 2026-10-29
 
 Windows, Node 24.22.1:
 
@@ -167,3 +167,19 @@ Windows, Node 24.22.1:
   landscape, tablet portrait and landscape; see the image README.
 
 Automated browser emulation does not establish physical device behavior.
+
+Final release verification after documentation updates: `npm ci` reported
+0 vulnerabilities; `npm run check` passed lint, 603 unit tests and a
+production build; `npm run test:browser` passed all 141 tests without
+failures or retries on a fresh build and isolated server. Existing reviewed
+screenshots were retained; the rerun's captures were kept locally.
+
+## Project-owner playtesting — 2026-10-29
+
+Approved for 0.13.0 publication. The player broke 23 of 24 biscuits and
+found paddle control and sugar-cube rebounds predictable, enjoyable and
+accessible. No further balancing was requested.
+
+Karma completed an entire normal cup without player intervention: leaves
+bounced and vanished as intended, the cup finished, and no cups were lost.
+Physical-device mobile qualification remains separate from browser emulation.

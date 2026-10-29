@@ -5,11 +5,11 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
-### 0.13.0 — Biscuit Breakout (in development)
+## [0.13.0] - 2026-10-29 — Biscuit Breakout & Karma
 
 The biscuits have formed a wall. Negotiations have failed.
 
-#### Added
+### Added
 
 - **Biscuit Breakout:** a second optional Arcade Interlude, offered after
   round 19 in Chapter 2 and then every 14 normal rounds (THE BISCUITS ARE
@@ -37,7 +37,7 @@ The biscuits have formed a wall. Negotiations have failed.
 - Development-only helpers: `?debug&arcade=biscuitBreakout&seed=42` and
   `?debug&fortune=karma` (see `docs/BISCUIT_BREAKOUT_TESTING.md`).
 
-#### Changed
+### Changed
 
 - A Space still held when a Daily Pour or Biscuit Breakout ends is ignored
   in the next cup until it is released and pressed again.
@@ -46,8 +46,8 @@ The biscuits have formed a wall. Negotiations have failed.
   preconditions explicitly.
 
 The Daily Pour, Tea Shortage schedule, boss and bonus priorities, Auto Steam
-and teacup combat outside Karma are unchanged. Awaiting project-owner
-playtesting.
+and teacup combat outside Karma are unchanged. Released following
+project-owner playtesting of Biscuit Breakout and a complete idle Karma cup.
 
 ## [0.12.0] - 2026-10-29 — The Daily Pour
 
@@ -360,7 +360,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.12.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.13.0...main
+[0.13.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.9.0...v0.10.0
