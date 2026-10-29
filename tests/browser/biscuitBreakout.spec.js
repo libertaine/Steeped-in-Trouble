@@ -22,9 +22,9 @@ test('the biscuit offer can be skipped by mouse or keyboard without losing anyth
   const after = await state(page);
   for (const k of ['lives', 'score', 'teaCash', 'spoon', 'progress', 'shortageAfter']) expect(after[k]).toEqual(before[k]);
   expect(after.fortune).toBe(before.nextFortune); expect(after.biscuitBreakout).toBeNull();
-  expect(after.arcade.after).toEqual({ dailyPour: 26, biscuitBreakout: 33 });
+  expect(after.arcade.after).toEqual({ dailyPour: 26, biscuitBreakout: 33, crossingStreet: 27 });
   // Development helpers are compiled out of production.
-  expect(await page.evaluate(() => ['launchBiscuitBreakout', 'brewWithFortune', 'launchDailyPour']
+  expect(await page.evaluate(() => ['launchBiscuitBreakout', 'brewWithFortune', 'launchDailyPour', 'launchCrossingStreet', 'crossForMe']
     .filter((name) => name in window.__TEACUP__))).toEqual([]);
   expect(problems).toEqual([]);
 });

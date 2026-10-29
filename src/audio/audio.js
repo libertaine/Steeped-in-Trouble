@@ -20,6 +20,9 @@ const SOUNDS = {
   cubePaddle: [1175, 0.08, 'sine', 0.016, 0, 1.1],
   cubeWall: [330, 0.04, 'triangle', 0.006, 0, 0.9],
   cubeLost: [300, 0.35, 'triangle', 0.018, 0, 0.45],
+  // Crossing the Street: a light metallic hop, and a ding for each new lane.
+  crossingHop: [1568, 0.05, 'triangle', 0.008, 0, 1.25],
+  crossingLane: [1319, 0.1, 'sine', 0.01, 0, 1.1],
   // Karma: a light rubbery boing off the rim, then a soft cartoon puff.
   karmaBounce: [520, 0.16, 'sine', 0.014, 0, 1.7],
   karmaPuff: [1400, 0.16, 'triangle', 0.008, 0, 0.3],
@@ -67,6 +70,12 @@ const TUNES = {
   breakoutGo: [[784, 0.1, 'triangle', 0.02], [1047, 0.25, 'triangle', 0.022, 0.1]],
   breakoutFinish: [[523, 0.12, 'triangle', 0.024], [659, 0.12, 'triangle', 0.024, 0.12], [784, 0.12, 'triangle', 0.024, 0.24],
     [1047, 0.45, 'sine', 0.028, 0.36]],
+  crossingGo: [[988, 0.08, 'triangle', 0.018], [1319, 0.18, 'triangle', 0.02, 0.09]],
+  // A comedic clank (a spoon meeting a bumper), then a wobble.
+  crossingHit: [[196, 0.09, 'square', 0.014], [2349, 0.07, 'triangle', 0.012, 0.02, 0.7], [165, 0.3, 'triangle', 0.018, 0.1, 0.55]],
+  crossingMade: [[659, 0.12, 'triangle', 0.022], [784, 0.12, 'triangle', 0.022, 0.12], [1047, 0.12, 'triangle', 0.022, 0.24],
+    [1568, 0.45, 'sine', 0.026, 0.36]],
+  crossingFailed: [[392, 0.16, 'triangle', 0.02], [370, 0.16, 'triangle', 0.02, 0.16], [262, 0.5, 'triangle', 0.02, 0.32]],
   // An indignant little squeak from the biscuit with a face.
   biscuitTalk: [[880, 0.08, 'square', 0.008, 0, 1.4], [1175, 0.14, 'square', 0.008, 0.1, 0.7]],
   // Karma revealed: out and back again.
@@ -252,6 +261,9 @@ export function createAudio() {
       else if (event.type === 'roundStart' && event.opens) TUNES.chapter.forEach(beep);
       // Coins ding; a tea packet rustles a little lower.
       // Biscuits crunch a little higher as the wall comes down.
+      else if (event.type === 'crossingFinish') (event.success ? TUNES.crossingMade : TUNES.crossingFailed).forEach(beep);
+      // A soft whoosh as traffic passes close by, lower for the bigger vehicles.
+      else if (event.type === 'crossingWhoosh') beep([event.kind === 'car' ? 340 : 230, 0.26, 'sawtooth', 0.004, 0, 0.5]);
       else if (event.type === 'biscuitBreak') beep([190 + 9 * (event.broken ?? 0), 0.09, 'sawtooth', 0.012, 0, 0.55]);
       else if (event.type === 'runPickup') beep(event.kind === 'coin' ? [1760, 0.09, 'sine', 0.014, 0, 1.2] : [880, 0.14, 'triangle', 0.016, 0, 1.3]);
       else if (SOUNDS[event.type]) beep(SOUNDS[event.type]);

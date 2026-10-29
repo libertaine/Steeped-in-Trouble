@@ -18,6 +18,7 @@ export const PHASE = Object.freeze({
   ARCADE_OFFER: 'arcadeOffer',
   DAILY_POUR: 'dailyPour',
   BISCUIT_BREAKOUT: 'biscuitBreakout',
+  CROSSING_STREET: 'crossingStreet',
   GAME_OVER: 'gameover',
 });
 
@@ -114,6 +115,7 @@ export function createInitialState() {
     interlude: null, // optional offer: { id }
     dailyPour: null,
     biscuitBreakout: null, // see gameplay/biscuitBreakout.js
+    crossingStreet: null, // see gameplay/crossingStreet.js
 
     // A setting rather than play, so it is kept from pot to pot: fire at whatever lines up with the spoon.
     autoSteam: false,

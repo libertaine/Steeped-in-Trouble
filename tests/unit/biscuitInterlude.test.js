@@ -27,7 +27,7 @@ function offered(round, options) {
 
 describe('Biscuit Breakout scheduling', () => {
   it('first offers after round 19, only in Chapter 2, with the existing paper-route schedule untouched', () => {
-    expect(createArcadeSchedule().after).toEqual({ dailyPour: 12, biscuitBreakout: 19 });
+    expect(createArcadeSchedule().after).toEqual({ dailyPour: 12, biscuitBreakout: 19, crossingStreet: 27 });
     expect(CONFIG.arcade.biscuitBreakout).toEqual({ firstAfter: 19, repeatEvery: 14, minChapter: 2 });
     expect(atReading(18).state.arcadeDue).toBeNull();
     const chapterOne = atReading(19);
@@ -54,13 +54,15 @@ describe('Biscuit Breakout scheduling', () => {
       g.state.shortageAfter = 1000;
       nextReadingOnly(g);
     }
-    expect(offers).toEqual([[12, 'dailyPour'], [19, 'biscuitBreakout'], [26, 'dailyPour'], [33, 'biscuitBreakout'],
-      [40, 'dailyPour'], [47, 'biscuitBreakout']]);
+    // Crossing the Street (0.15.0) slots in between without moving either of them.
+    expect(offers).toEqual([[12, 'dailyPour'], [19, 'biscuitBreakout'], [26, 'dailyPour'], [27, 'crossingStreet'],
+      [33, 'biscuitBreakout'], [40, 'dailyPour'], [41, 'crossingStreet'], [47, 'biscuitBreakout']]);
   });
 
   it('when both are due, offers the one waiting longest, never both after one reading, and never starves either', () => {
     const g = atReading(40);
-    Object.assign(g.state.arcade.after, { dailyPour: 33, biscuitBreakout: 30 });
+    // Just these two here; three-way fairness is tested with Crossing the Street.
+    Object.assign(g.state.arcade.after, { dailyPour: 33, biscuitBreakout: 30, crossingStreet: 1000 });
     expect(eligibleInterlude(g.state)).toBe('biscuitBreakout');
     consumeInterlude(g.state, 'biscuitBreakout');
     expect(eligibleInterlude(g.state)).toBeNull(); // one per reading
@@ -126,7 +128,7 @@ describe('the Biscuit Breakout offer', () => {
     expect(g.state).toMatchObject({ score: before.score, teaCash: before.teaCash, lives: before.lives, spoon: before.spoon,
       progress: before.progress, fortune: before.nextFortune, round: 20, phase: 'playing' });
     expect(g.state.biscuitBreakout).toBeNull();
-    expect(g.state.arcade.after).toEqual({ dailyPour: 26, biscuitBreakout: 33 });
+    expect(g.state.arcade.after).toEqual({ dailyPour: 26, biscuitBreakout: 33, crossingStreet: 27 });
     expect(g.chooseInterlude(true)).toBe(false);
   });
 });
@@ -221,7 +223,7 @@ describe('playing Biscuit Breakout from the offer', () => {
     const h = accepted();
     h.state.phase = 'gameover'; h.restart();
     expect(h.state.biscuitBreakout).toBeNull();
-    expect(h.state.arcade.after).toEqual({ dailyPour: 12, biscuitBreakout: 19 });
+    expect(h.state.arcade.after).toEqual({ dailyPour: 12, biscuitBreakout: 19, crossingStreet: 27 });
   });
 
   it('keeps future teas, leaves, fortunes and the Tea Run identical to skipping', () => {

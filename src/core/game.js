@@ -21,7 +21,9 @@
 // runFinish, runFail, runEnd; Arcade Interludes: arcadeOffer, arcadeSkipped, and
 // The Daily Pour's pour* and paper* events, and Biscuit Breakout's breakoutStart,
 // breakoutGo, cubeLaunch, cubeWall, cubePaddle, biscuitBreak, biscuitTalk,
-// cubeLost, breakoutFinish, breakoutEnd; under Karma: karmaBounce, karmaPuff;
+// cubeLost, breakoutFinish, breakoutEnd; Crossing the Street's crossingStart,
+// crossingGo, crossingHop, crossingLane, crossingHit, crossingRespawn, crossingWhoosh,
+// crossingFinish, crossingEnd; under Karma: karmaBounce, karmaPuff;
 // and for Days: dayEnd, dayStart.
 
 import { CONFIG } from '../config.js';
@@ -49,6 +51,9 @@ import { aimPour, createDailyPour, startPour, throwPaper, updateDailyPour } from
 import {
   BREAKOUT_SALT, createBreakout, launchCube, startBreakout, updateBreakout,
 } from '../gameplay/biscuitBreakout.js';
+import {
+  CROSSING_SALT, createCrossing, pressHop, startCrossing, updateCrossing,
+} from '../gameplay/crossingStreet.js';
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import {
@@ -91,6 +96,8 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
   const pourSim = { state, rng: papers, emit };
   const crumbs = createRandom(toSeed(rng.seed ?? 0) ^ BREAKOUT_SALT);
   const breakoutSim = { state, rng: crumbs, emit };
+  const traffic = createRandom(toSeed(rng.seed ?? 0) ^ CROSSING_SALT);
+  const crossingSim = { state, rng: traffic, emit };
   const pinnedTea = typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
@@ -98,6 +105,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
   const running = (stage) => state.phase === PHASE.TEA_RUN && (!stage || state.run.stage === stage);
   const pouring = (stage) => state.phase === PHASE.DAILY_POUR && (!stage || state.dailyPour.stage === stage);
   const breaking = (stage) => state.phase === PHASE.BISCUIT_BREAKOUT && (!stage || state.biscuitBreakout.stage === stage);
+  const crossing = (stage) => state.phase === PHASE.CROSSING_STREET && (!stage || state.crossingStreet.stage === stage);
   const offerOpen = () => state.phase === PHASE.READING && !!state.offer && state.readingTime >= OFFER_AT;
   const errandOpen = () => state.phase === PHASE.SHORTAGE && state.shortage.time >= CONFIG.shortage.chooseAt;
 
@@ -189,6 +197,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.interlude = null;
     state.dailyPour = null;
     state.biscuitBreakout = null;
+    state.crossingStreet = null;
     emit('matchStart');
     startRound();
   }
@@ -276,6 +285,12 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
       emit('breakoutStart', { biscuits: state.biscuitBreakout.total });
       return true;
     }
+    if (id === 'crossingStreet') {
+      state.crossingStreet = createCrossing(traffic);
+      state.phase = PHASE.CROSSING_STREET;
+      emit('crossingStart', { lanes: state.crossingStreet.lanes.length });
+      return true;
+    }
     state.dailyPour = createDailyPour(papers);
     state.phase = PHASE.DAILY_POUR;
     emit('pourStart');
@@ -289,6 +304,16 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
   function leaveBreakout() {
     state.biscuitBreakout = null;
     emit('breakoutEnd');
+    continueFromReading();
+  }
+
+  function beginCrossing() {
+    if (startCrossing(state.crossingStreet)) emit('crossingGo');
+  }
+
+  function leaveCrossing() {
+    state.crossingStreet = null;
+    emit('crossingEnd');
     continueFromReading();
   }
 
@@ -610,8 +635,10 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
    * Advance the simulation by dt seconds.
    * @param {number} dt
    * @param {{ left: boolean, right: boolean, fire: boolean }} input held controls
+   * @param {{ up: boolean, down: boolean, left: boolean, right: boolean }} [walk]
+   *   held directions, read only by Crossing the Street
    */
-  function update(dt, input = NO_INPUT) {
+  function update(dt, input = NO_INPUT, walk = undefined) {
     if (state.phase === PHASE.READING) {
       const before = state.readingTime;
       state.readingTime += dt;
@@ -644,6 +671,10 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
       updateBreakout(breakoutSim, dt, input);
       return;
     }
+    if (crossing()) {
+      updateCrossing(crossingSim, dt, walk);
+      return;
+    }
     if (!playing()) return;
     state.graceTime = Math.max(0, state.graceTime - dt);
     if (state.goldenSpoon > 0) {
@@ -667,7 +698,9 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
 
   function pause() {
     if (!playing() && !chocolate('intro') && !chocolate('play') && !grinding('intro') && !grinding('fight')
-      && !running('intro') && !running('run') && !pouring() && !breaking()) return;
+      && !running('intro') && !running('run') && !pouring() && !breaking() && !crossing()) return;
+    // A press waiting for the spoon to land is forgotten: resuming never hops by itself.
+    if (crossing()) state.crossingStreet.pressed = null;
     state.pausedFrom = state.phase;
     state.phase = PHASE.PAUSED;
     emit('paused');
@@ -714,6 +747,11 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
         else if (breaking('play')) pause();
         else if (state.biscuitBreakout.time >= CONFIG.biscuitBreakout.outroMin) leaveBreakout();
         break;
+      case PHASE.CROSSING_STREET:
+        if (crossing('intro')) beginCrossing();
+        else if (crossing('play')) pause();
+        else if (state.crossingStreet.time >= CONFIG.crossingStreet.outroMin) leaveCrossing();
+        break;
       case PHASE.PLAYING:
         pause();
         break;
@@ -735,8 +773,8 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
      */
     confirm() {
       if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.TEA_RUN, PHASE.DAILY_POUR,
-        PHASE.BISCUIT_BREAKOUT].includes(state.phase)) return false;
-      if (pouring('play') || breaking('play')) return false;
+        PHASE.BISCUIT_BREAKOUT, PHASE.CROSSING_STREET].includes(state.phase)) return false;
+      if (pouring('play') || breaking('play') || crossing('play')) return false;
       if (state.offer || chocolate('play') || grinding('fight') || running('run') || running('finish')) return false;
       primaryAction();
       return true;
@@ -764,6 +802,10 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     },
     /** Used by input to keep Space for the spoon paddle, even while paused. */
     breakoutControls: () => breaking() || (state.phase === PHASE.PAUSED && state.pausedFrom === PHASE.BISCUIT_BREAKOUT),
+    /** Crossing the Street: a fresh press of a direction hops the spoon one square. Only during play. */
+    hop: (dir) => crossing('play') && pressHop(state.crossingStreet, dir),
+    /** Used by input to give the arrows, WASD and Space to the street alone, even while paused. */
+    crossingControls: () => crossing() || (state.phase === PHASE.PAUSED && state.pausedFrom === PHASE.CROSSING_STREET),
     /**
      * Answer the Tea Shortage: 'buy' (if the Tea Cash runs to it), 'run', or
      * 'skip'. Returns true if the choice was taken.
@@ -827,7 +869,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     },
     /** P: pause or resume during a round. Returns true if handled. */
     togglePause() {
-      if (pouring() || breaking()) {
+      if (pouring() || breaking() || crossing()) {
         pause();
         return true;
       }

@@ -120,6 +120,14 @@ export function musicMood(state, tension = 0) {
       const hurry = left < 10 ? 1 - left / 10 : 0;
       return { section: 'havoc', tempo: 120 + 12 * hurry, tension: hurry, golden: false, stormy: false, chocolate: true };
     }
+    case PHASE.CROSSING_STREET: {
+      // Jaunty and a little hurried, as if late for something; pressing on in the last ten seconds.
+      const m = state.crossingStreet;
+      if (m.stage !== 'play') return { section: 'reading', tempo: 72, tension: 0, golden: false, stormy: false, chocolate: true };
+      const left = CONFIG.crossingStreet.duration - m.clock;
+      const hurry = left < 10 ? 1 - left / 10 : 0;
+      return { section: 'havoc', tempo: 128 + 12 * hurry, tension: 0.15 + 0.85 * hurry, golden: false, stormy: false, chocolate: true };
+    }
     case PHASE.TEA_RUN: {
       // The errand borrows the hot chocolate's bounce, hurrying a little as the shop's closing time nears.
       const r = state.run;

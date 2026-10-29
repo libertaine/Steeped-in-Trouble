@@ -475,6 +475,7 @@ export const CONFIG = deepFreeze({
   arcade: {
     dailyPour: { firstAfter: 12, repeatEvery: 14, minChapter: 2 },
     biscuitBreakout: { firstAfter: 19, repeatEvery: 14, minChapter: 2 },
+    crossingStreet: { firstAfter: 27, repeatEvery: 14, minChapter: 2 },
   },
   dailyPour: {
     introTime: 3, outroMin: 1.5, duration: 30,
@@ -504,6 +505,40 @@ export const CONFIG = deepFreeze({
     biscuits: { rows: 4, cols: 6, width: 100, height: 38, gap: 12, top: 210 },
     biscuitPoints: 10, clearBonus: 50, successShare: 0.7, successCash: 5,
     remark: 2.6, // seconds the talking biscuit's complaint stays up
+  },
+  // Crossing the Street (gameplay/crossingStreet.js). Logical canvas units on a
+  // grid: column c is centred at left + (c + 0.5) * column; row r (0 is the near
+  // sidewalk, counting up) is centred at bottom - (r + 0.5) * row.
+  crossingStreet: {
+    introTime: 3.2, outroMin: 1.5, duration: 40, attempts: 3,
+    columns: 13, column: 64, left: 44, startCol: 6,
+    row: 72, bottom: 710,
+    median: 4, shop: 7, // rows 1–3 and 5–6 carry traffic; 0, 4 and 7 are always safe
+    hop: 0.11, // seconds a hop takes
+    repeat: 0.15, // seconds between hops while a direction is held
+    stumble: 0.9, // seconds dazed after a bump (it cannot be bumped again), before it is back on the curb
+    respawnFreeze: 0.3, // seconds on the curb before the spoon takes orders again
+    spoon: { halfWidth: 12, halfHeight: 20 }, // the hitbox, centred in its row
+    margin: 230, // vehicles wrap this far beyond each edge, fully out of sight
+    minGap: 180, // nose-to-tail, at least this far…
+    minGapTime: 1.15, // …and at least this many seconds of the lane's speed
+    maxPerLane: 4,
+    vehicles: {
+      car: { length: 92, halfHeight: 19 },
+      van: { length: 148, halfHeight: 23 },
+      milk: { length: 196, halfHeight: 26 },
+    },
+    // Each lane has one character: its speed, and the vehicles it carries (the first always appears).
+    lanes: {
+      car: { kinds: ['car'], speed: [190, 235] },
+      van: { kinds: ['van', 'car'], speed: [130, 160] },
+      milk: { kinds: ['milk', 'van'], speed: [100, 125] },
+    },
+    // Every road must admit a cautious crossing (one move every `repeat`) from
+    // each of these traffic times, within `horizon` seconds; otherwise it is redrawn.
+    fair: { every: 2, until: 44, horizon: 12, margin: 6, attempts: 24 },
+    lanePoints: 10, shopBonus: 50, perfectBonus: 40, successCash: 5,
+    exchange: 3.4, // seconds of doorstep conversation in a successful outro
   },
   // Karma: the rim's rebound. Each leaf bounces once, then vanishes on its next contact.
   karma: {

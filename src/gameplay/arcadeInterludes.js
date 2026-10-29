@@ -7,6 +7,7 @@ import { CONFIG } from '../config.js';
 export const INTERLUDES = Object.freeze({
   dailyPour: { title: 'The Daily Pour' },
   biscuitBreakout: { title: 'Biscuit Breakout' },
+  crossingStreet: { title: 'Crossing the Street' },
 });
 
 export function createArcadeSchedule() {
