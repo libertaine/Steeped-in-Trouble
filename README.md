@@ -27,14 +27,14 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.13.0 — Biscuit Breakout & Karma](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.13.0)**
-is the current release. The biscuits have formed a wall. Negotiations have failed.
+Version **[0.14.0 — Another Day, Another Brew](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.14.0)**
+is the current release.
 
-Development is under way on **0.14.0 — Another Day, Another Brew**: ten-cup
-Days with a choice to reset combat Heat or keep building it. **Days control
-difficulty. Chapters control content.** Both choices preserve your progress.
-This feature is upcoming; it is not part of the published 0.13.0 game.
-See the [Day playtesting guide](docs/DAYS_TESTING.md) for the development branch.
+**Another Day, Another Brew:** Every ten normal cups, decide whether tomorrow
+starts with a gentler challenge or keeps building the Heat. Your upgrades,
+unlocked teas, fortunes, score, and arcade adventures carry forward either way.
+**Days control difficulty. Chapters control content.**
+See the [Day testing guide](docs/DAYS_TESTING.md) for practice and qualification.
 
 Already in the published game:
 
@@ -209,7 +209,7 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-
   add enemies, weapons, and fortunes
 - [Game design](docs/GAME_DESIGN.md): creative direction, the full rules
   (secrets included, so beware of spoilers), and future ideas
-- [Day playtesting](docs/DAYS_TESTING.md): upcoming 0.14.0, practice shortcuts,
+- [Day testing](docs/DAYS_TESTING.md): 0.14.0 approval, practice shortcuts,
   deterministic tuning and human testing instructions
 - [Development](DEVELOPMENT.md): the principles for working on the game
 - [Contributing](CONTRIBUTING.md): branching, checks, and releases

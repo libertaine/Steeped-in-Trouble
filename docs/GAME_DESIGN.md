@@ -3,7 +3,7 @@
 ## Creative direction
 
 The silver spoon is the hero: defender of a temperamental cup and reluctant
-star of increasingly unreasonable adventures. The upcoming 0.14.0 Days let
+star of increasingly unreasonable adventures. The 0.14.0 Days let
 players choose a comfortable continuation or sustained challenge.
 
 **Steeped in Trouble is a circular arcade survival game in which the player's
@@ -50,7 +50,7 @@ Themes:
   of 0.57 s, with jitter). At most 18 leaves are in the cup at once.
 - *Since 0.9.0, speed and spawning are set by the chapter instead, and the
   target grows by two a round up to 32: see [Chapters](#chapters-the-slow-burn).
-  The upcoming 0.14.0 uses resettable Heat for this growth; see [Days](#days-and-heat-0140-in-development).*
+  Since 0.14.0, resettable Heat controls this growth; see [Days](#days-and-heat-0140).*
 - Steam kills score 10 and sugar kills score 15.
 
 ### Tea-leaf residue and fortunes
@@ -1074,7 +1074,7 @@ No new boss, Chapter 3, other arcade adventures, Arcade Collection,
 permanent upgrades, larger economy, online scores, mobile redesign or
 physics library. More biscuit characters and secrets may come later.
 
-## Days and Heat (0.14.0, in development)
+## Days and Heat (0.14.0)
 
 **Days control difficulty. Chapters control content.** A Day is exactly ten
 completed normal teacup rounds. Derive Day as `floor((round - 1) / 10) + 1`

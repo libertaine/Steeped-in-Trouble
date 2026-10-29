@@ -1,13 +1,15 @@
-# Another Day, Another Brew — 0.14.0 playtesting
+# Another Day, Another Brew — 0.14.0 testing
 
-0.14.0 is in development. **0.13.0 remains the published release.**
-Human playtesting is the release gate; this branch must not be merged, tagged
-or published as part of this handoff.
+**0.14.0 — Another Day, Another Brew** was approved for release by the project
+owner on 2026-10-29. Fresh Brew and Keep the Kettle On both felt good, the Day
+choices worked as intended, and maximum Heat was challenging but manageable.
+No further difficulty tuning was requested. Physical phone/tablet playtesting
+has not been verified; the screen-size evidence below uses browser emulation.
 
-## Run the development branch
+## Run the development server
 
 ```powershell
-git switch feat/days-difficulty-0.14.0
+git switch main
 npm ci
 npm run dev
 ```
@@ -64,7 +66,8 @@ mode above) prepares another checkpoint; it continues existing RNG streams.
 Report comfort, clarity and pacing, especially whether Fresh feels like a
 useful respite and Keep grows gradually enough. Neither choice should feel
 like forfeiting progress. Real phone/tablet handling and perceived balance
-remain human checks; browser emulation does not establish them.
+require human checks; browser emulation does not establish them. The project
+owner approved comfort and balance; physical-device handling remains unverified.
 
 ## Automated checks
 
@@ -98,7 +101,7 @@ Generated from seed 42 through `simulateDays()` (60 completed normal rounds).
 Overall speed includes the actual chapter, tea and fortune; mean gap is before
 the seeded 0.72–1.36 jitter and the final 0.45-second floor. Heat factors are
 shown separately so content differences remain visible. See
-[Game design](GAME_DESIGN.md#days-and-heat-0140-in-development) for exact formulas.
+[Game design](GAME_DESIGN.md#days-and-heat-0140) for exact formulas.
 
 | Scenario | Global cup | Heat | Target | Heat speed | Heat interval | Tea / fortune | Overall speed | Mean gap (s) |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: |
@@ -134,7 +137,11 @@ keeps the title and both complete button descriptions on screen. Other mobile
 flows retain their existing layout. These are emulated screens, not a claim of
 physical-device testing.
 
-## Qualification for this draft
+## Automated qualification and release approval
+
+Final local release qualification on 2026-10-29 repeated the clean install,
+lint, all 620 unit tests and production build, then passed all 155 browser
+tests without retries. No gameplay or Heat formulas changed after approval.
 
 - `npm ci`: passed with the locked dependency versions.
 - `npm run check`: passed lint, 620 unit tests across 33 files, and production build.
@@ -146,13 +153,16 @@ physical-device testing.
 - The representative screenshots linked above were inspected. Full View and
   short-landscape Day-card clipping found during development were corrected;
   final containment assertions pass.
-- Remote `main` and `v0.13.0` still resolve to
-  `ecee6e8731ccc284d5ca675d5b2d4559921630d8`. No release or tag was changed.
+- Approved implementation head: `ccbfadfb559e34927e2da9d4f717299604cfc608`.
+  [CI qualification](https://github.com/libertaine/Steeped-in-Trouble/actions/runs/40925223222)
+  passed Windows and Ubuntu lint/unit/build checks and the browser suite.
+- Project-owner playtesting approved Fresh Brew, Keep the Kettle On, the Day
+  choices and maximum Heat. Gameplay and difficulty formulas are frozen for release.
 
 Early development runs exposed legacy test drivers waiting forever at the new
 Day choice; those drivers now explicitly choose Keep, and tea comparisons
 account for the independent Heat layer. Existing assertions and tests remain.
 Firefox could not create a page inside the local sandbox; the successful full
 run used normal browser process access. These initial failures are not counted
-as passes. Human comfort, sustained high-Heat survival and physical touch-device
-play remain unverified until playtesting.
+as passes. Project-owner playtesting subsequently approved comfort and maximum
+Heat. Physical touch-device play remains unverified.

@@ -635,7 +635,7 @@ Coffee-cup collision and rendering share `CONFIG.teaRun.obstacles.coffeeCup.heig
 The upper hitbox boundary is `clearance + height` (118 logical units), so
 aerial impulses can clear the cup and its decorative rope is non-solid.
 
-## Day transitions (0.14.0, in development)
+## Day transitions (0.14.0)
 
 `gameplay/days.js` derives Day and cup from the global normal-round number,
 computes bounded Heat, and composes it after the existing tea/fortune modifiers.
@@ -668,7 +668,7 @@ short existing Canvas banner. Captions rotate by derived Day, without RNG.
 
 `withHeat()` composes normal-cup modifiers only; boss and bonus setup remains
 independent. `updateSpawning()` clamps the final jittered normal arrival gap.
-Exact formulas and caps are in [Game design](GAME_DESIGN.md#days-and-heat-0140-in-development).
+Exact formulas and caps are in [Game design](GAME_DESIGN.md#days-and-heat-0140).
 The existing tea/fortune cap remains a separate first step.
 
 The accessible DOM `#dayOffer` uses existing choice-card styles. `ui/hud.js`
