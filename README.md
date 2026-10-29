@@ -37,6 +37,12 @@ changing, but there's plenty in the cup already:
 
 See the [changelog](CHANGELOG.md) for what changed in each version.
 
+Development is now **0.12.0 — The Daily Pour, Milestone 1**: an optional
+30-second newspaper route starring a silver spoon on a bicycle, plus finite
+coffee-cup collision bodies in the Tea Run. This work awaits human
+playtesting; 0.11.0 remains the published release. For direct practice and
+same-course replay, see [Daily Pour testing](docs/DAILY_POUR_TESTING.md).
+
 ## How to play
 
 - Tea leaves drift out from the centre of the cup. Each one that reaches the

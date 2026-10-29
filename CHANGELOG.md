@@ -5,6 +5,27 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+### Added
+
+- **0.12.0 Milestone 1 — The Daily Pour:** optional newspaper delivery after
+  round 12 in Chapter 2, then every 14 normal rounds after an offer. A small
+  Arcade Interlude registry postpones offers behind existing encounters and
+  preserves readings, upgrades, Tea Shortages, bosses, and bonus rounds.
+- A 30-second, independently seeded neighborhood route: aim for mailboxes
+  or porches, throw animated papers, ride a pedaling silver-spoon bicycle,
+  and occasionally inform a dog or an extremely unwilling neighbor.
+- Delivery scoring, modest Tea Cash rewards, perfect-route results, original
+  Canvas art and synthesized sounds, keyboard and touch controls, and a
+  development-only direct launcher with deterministic course replay.
+
+### Fixed
+
+- Suspended Tea Run coffee cups now collide only with their visible body:
+  height 78, clearance 40. The rope is decorative. Sliding still works;
+  successful aerial jumps can clear the body. Aerial success remains 70%.
+
+Human playtesting remains the release gate. No 0.12.0 release is published.
+
 ## [0.11.0] - 2026-10-28 — The Flying Spoon
 
 ### Added
