@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../../src/config.js';
 import { createRandom } from '../../src/core/random.js';
-import { aimPour, createDailyPour, planRoute, startPour, throwPaper, updateDailyPour } from '../../src/gameplay/dailyPour.js';
+import {
+  aimPour, createDailyPour, PEDESTRIAN_LINE, pedestrianRemark, planRoute, startPour, throwPaper, updateDailyPour,
+} from '../../src/gameplay/dailyPour.js';
 
 const P = CONFIG.dailyPour;
 function route(seed = 42) {
@@ -132,5 +134,82 @@ describe('The Daily Pour route', () => {
       return { houses: r.m.houses, summary: r.m.summary, score: r.state.score, cash: r.state.teaCash };
     });
     expect(results[0]).toEqual(results[1]); expect(results[1]).toEqual(results[2]);
+  });
+});
+
+describe('The Daily Pour pedestrian', () => {
+  const N = P.pedestrian;
+  const level = N.x / P.speed; // route clock when the spoon draws level
+
+  it('stands in the same gap of every route, clear of houses, fences and target labels', () => {
+    for (let seed = 0; seed < 200; seed++) {
+      const houses = planRoute(createRandom(seed));
+      expect(houses[4].x).toBeLessThan(N.x); expect(houses[5].x).toBeGreaterThan(N.x);
+      for (const h of houses) expect(Math.abs(h.x - N.x)).toBeGreaterThan(200);
+    }
+    expect(level).toBeLessThan(P.duration - N.speech);
+    expect(PEDESTRIAN_LINE).toBe('Is that a spoon riding a bicycle? I didn’t think they had legs.');
+  });
+
+  it('speaks once, just before the spoon passes, for three route seconds', () => {
+    const r = route(); startPour(r.m);
+    const seen = [];
+    let was = false;
+    while (r.m.stage === 'play') {
+      r.advance(1 / 120);
+      const { speaking } = pedestrianRemark(r.m);
+      if (speaking !== was) seen.push({ speaking, clock: r.m.clock });
+      was = speaking;
+    }
+    expect(seen).toHaveLength(2);
+    expect(seen[0].clock).toBeCloseTo(level - N.notice, 1);
+    expect(seen[1].clock - seen[0].clock).toBeCloseTo(N.speech, 1);
+    expect(level).toBeGreaterThan(seen[0].clock); expect(level).toBeLessThan(seen[1].clock);
+    expect(pedestrianRemark(r.m).speaking).toBe(false);
+  });
+
+  it('is silent during the introduction and the result', () => {
+    const r = route();
+    expect(pedestrianRemark(r.m).speaking).toBe(false);
+    r.advance(P.introTime + P.duration + 1);
+    expect(r.m.stage).toBe('outro');
+    expect(pedestrianRemark(r.m).speaking).toBe(false);
+  });
+
+  it('freezes with the route clock and survives a long background frame', () => {
+    const r = route(); startPour(r.m);
+    r.advance(level - N.notice + 1);
+    const before = structuredClone(r.m);
+    // Paused: no simulation update. Wall time alone cannot dismiss the remark.
+    expect(pedestrianRemark(r.m)).toEqual(pedestrianRemark(before));
+    expect(pedestrianRemark(r.m).speaking).toBe(true);
+    r.advance(1);
+    expect(pedestrianRemark(r.m).speaking).toBe(true);
+    r.advance(1.1);
+    expect(pedestrianRemark(r.m).speaking).toBe(false);
+  });
+
+  it('is not an obstacle: papers at the bystander miss the sidewalk with no score or cash change', () => {
+    for (const aim of ['near', 'far']) {
+      const r = route(); startPour(r.m);
+      const at = (N.x - P.targets[aim].ahead) / P.speed;
+      while (r.m.clock < at - 1e-9) r.advance(Math.min(1 / 120, at - r.m.clock));
+      aimPour(r.m, aim); expect(throwPaper(r.sim)).toBe(true);
+      r.advance(1);
+      expect(r.events.filter((e) => e.type.startsWith('paper') && e.type !== 'paperPassed').map((e) => e.type))
+        .toEqual(['paperThrow', 'paperMiss']);
+      expect(r.m).toMatchObject({ delivered: 0, windows: 0, dogs: 0, misses: 1, papers: r.m.scheduled + P.sparePapers - 1 });
+      expect(r.state).toMatchObject({ score: 123, teaCash: 17 });
+    }
+  });
+
+  it('leaves seeded routes, timings and perfect-route rewards unchanged', () => {
+    const a = route(9); const b = route(9);
+    expect(Object.keys(a.m)).not.toContain('pedestrian');
+    deliverAll(a); deliverAll(b, 1 / 144);
+    expect(a.m.houses).toEqual(b.m.houses);
+    expect(a.m.summary).toEqual(b.m.summary);
+    expect(a.m.summary).toMatchObject({ perfect: true, points: 225, cash: 5 });
+    expect(a.events.map((e) => e.type)).toEqual(b.events.map((e) => e.type));
   });
 });

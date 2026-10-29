@@ -475,6 +475,9 @@ export const CONFIG = deepFreeze({
       near: { ahead: 145, y: 450, flight: 0.65 },
       far: { ahead: 200, y: 335, flight: 0.9 },
     },
+    // One bystander between houses 5 and 6: scenery, not a target or obstacle.
+    // Speech starts `notice` route seconds before the spoon draws level.
+    pedestrian: { x: 2910, notice: 1.95, speech: 3 },
   },
 
   // Easy Touch (input/gestures.js): forgiving gestures on the cup for milk and sugar.

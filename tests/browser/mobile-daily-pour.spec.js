@@ -1,5 +1,5 @@
 import { test, expect, openGame } from './fixtures.js';
-import { expectPourControls, toPaperOffer } from './dailyPour.js';
+import { advancePaperRoute, bubbleShown, expectPourControls, remarkStart, toPaperOffer } from './dailyPour.js';
 
 for (const [name, viewport] of [
   ['phone-portrait', { width: 393, height: 851 }],
@@ -35,6 +35,24 @@ for (const [name, viewport] of [
     expect(await page.evaluate(() => window.__TEACUP__.game.state.dailyPour)).toEqual(frozen);
     await page.locator('#closeBreak').tap();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'dailyPour');
+    expect(problems).toEqual([]);
+  });
+}
+
+for (const [name, viewport] of [['phone-portrait', { width: 393, height: 851 }], ['tablet-landscape', { width: 1180, height: 820 }]]) {
+  test(`the bystander's remark is readable on ${name}`, async ({ page, problems }) => {
+    await page.setViewportSize(viewport);
+    await openGame(page, '&seed=42&view=compact&touch=easy');
+    await toPaperOffer(page);
+    await page.locator('[data-interlude="accept"]').tap();
+    await page.locator('#mainBtn').tap();
+    const start = await remarkStart(page);
+    await advancePaperRoute(page, start + 0.5);
+    expect(await bubbleShown(page)).toBe(true);
+    for (const action of ['aimPaper', 'throwPaper']) await expect(page.locator(`[data-paper="${action}"]`)).toBeInViewport();
+    await page.screenshot({ path: `docs/images/daily-pour/pedestrian-${name}.png`, fullPage: true, scale: 'css' });
+    await advancePaperRoute(page, start + 3.05);
+    expect(await bubbleShown(page)).toBe(false);
     expect(problems).toEqual([]);
   });
 }

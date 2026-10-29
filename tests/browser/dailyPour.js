@@ -61,3 +61,25 @@ export async function expectPourControls(page) {
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }
+
+/** Route clock at which the bystander starts speaking, from the shipped config. */
+export const remarkStart = (page) => page.evaluate(() => {
+  const { pedestrian, speed } = window.__TEACUP__.config.dailyPour;
+  return pedestrian.x / speed - pedestrian.notice;
+});
+
+/** Reads drawn pixels: is the speech bubble's fill above the bystander? */
+export async function bubbleShown(page) {
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+  return page.evaluate(() => {
+    const { game, config } = window.__TEACUP__;
+    const P = config.dailyPour;
+    const canvas = document.getElementById('game');
+    const sx = canvas.width / config.arena.width;
+    const sy = canvas.height / config.arena.height;
+    const x = Math.max(14, P.riderX + P.pedestrian.x - game.state.dailyPour.distance);
+    const { data } = canvas.getContext('2d').getImageData(Math.round(x * sx), Math.round(240 * sy), 1, Math.round(165 * sy));
+    for (let i = 0; i < data.length; i += 4) if (data[i] === 255 && data[i + 1] === 250 && data[i + 2] === 240) return true;
+    return false;
+  });
+}

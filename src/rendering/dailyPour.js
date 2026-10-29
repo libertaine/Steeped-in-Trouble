@@ -1,6 +1,7 @@
 // Original Canvas scenery. Every moving object reads the paused simulation
 // clock; this painter owns no route, collisions, random draws, or rewards.
 import { CONFIG } from '../config.js';
+import { PEDESTRIAN_LINE, pedestrianRemark } from '../gameplay/dailyPour.js';
 
 const P = CONFIG.dailyPour;
 const W = CONFIG.arena.width;
@@ -142,6 +143,81 @@ export function createPourPainter(ctx, { compact = () => false } = {}) {
     }
     if (h.deliveredAt !== null && m.age - h.deliveredAt < 1.4) text(`+${P.deliveryPoints}`, x, P.targets[h.aim].y - 80, 28, INK);
   }
+  function wrap(s, maxWidth) {
+    const lines = [];
+    for (const word of s.split(' ')) {
+      const last = lines.at(-1);
+      if (last && ctx.measureText(`${last} ${word}`).width <= maxWidth) lines[lines.length - 1] = `${last} ${word}`;
+      else lines.push(word);
+    }
+    return lines;
+  }
+  // A bystander on the sidewalk who turns to follow the spoon. Not a target.
+  function pedestrian(m) {
+    const { x: worldX, since, speaking } = pedestrianRemark(m);
+    const x = P.riderX + worldX - m.distance;
+    if (x < -60 || x > W + 60) return;
+    const noticed = since >= 0;
+    const look = noticed ? Math.max(-1, Math.min(1, (P.riderX - x) / 120)) * Math.min(1, since / 0.25) : 0;
+    const y = Math.sin(m.age * 2.2) * 1.2;
+    ellipse(x, 527, 22, 5, '#193e3633');
+    line([[x - 6, 486], [x - 8, 524]], '#3d4f5c', 6);
+    line([[x + 6, 486], [x + 8, 524]], '#3d4f5c', 6);
+    ellipse(x - 10, 525, 7, 3.5, INK); ellipse(x + 10, 525, 7, 3.5, INK);
+    ctx.fillStyle = '#8c5a7a'; ctx.beginPath();
+    ctx.moveTo(x - 13, 446 + y); ctx.lineTo(x + 13, 446 + y); ctx.lineTo(x + 18, 492); ctx.lineTo(x - 18, 492);
+    ctx.closePath(); ctx.fill();
+    line([[x, 448 + y], [x, 490]], '#6f465f', 2);
+    const side = look < 0 ? -1 : 1;
+    // Speaking, the near arm points at the spoon; otherwise both hang.
+    line([[x + side * 12, 452 + y], speaking ? [x + side * 34, 440 + y] : [x + side * 17, 484]], '#8c5a7a', 6);
+    line([[x - side * 12, 452 + y], [x - side * 17, 484]], '#8c5a7a', 6);
+    ellipse(x + side * (speaking ? 37 : 17), (speaking ? 439 : 487) + y, 4, 4, '#e9c9a3');
+    const hx = x + look * 3;
+    const hy = 430 + y;
+    ellipse(hx, hy, 12, 13, '#e9c9a3');
+    ellipse(hx - side * 11, hy + 1, 3, 4, '#d9b48c');
+    box(hx - 13, hy - 15, 26, 7, '#3a5347', 3);
+    ellipse(hx + look * 9, hy - 9, 10, 3, '#3a5347');
+    const blink = since > 0.35 && since < 0.47;
+    for (const ex of [-4.5, 4.5]) {
+      const eye = hx + ex + look * 3;
+      if (blink) line([[eye - 2.5, hy - 1], [eye + 2.5, hy - 1]], INK, 1.5);
+      else ellipse(eye, hy - 1, speaking ? 2.4 : 1.6, speaking ? 2.8 : 1.6, INK);
+      // Raised, then slightly uneven: the face of someone reconsidering anatomy.
+      const lift = speaking ? (ex < 0 ? 5 : 3.5) : 2.5;
+      line([[eye - 3, hy - 3.5 - lift], [eye + 3, hy - 4 - lift]], INK, 1.5);
+    }
+    if (speaking) ellipse(hx + look * 3, hy + 6, 2.5, 3.2, '#6f3d3d');
+    else line([[hx - 3 + look * 3, hy + 6], [hx + 3 + look * 3, hy + 6]], INK, 1.5);
+    if (since >= -0.6 && since < 0) text('?', hx + 20, hy - 22, 26, INK);
+  }
+  function speech(m) {
+    const { x: worldX, since, speaking } = pedestrianRemark(m);
+    if (!speaking) return;
+    const size = fontSize(27, 19);
+    const lead = Math.round(size * 1.18);
+    ctx.font = `bold ${size}px Georgia`;
+    const lines = wrap(PEDESTRIAN_LINE, fontSize(232, 165));
+    const w = Math.max(...lines.map((s) => ctx.measureText(s).width)) + 28;
+    const h = lines.length * lead + 20;
+    const x = P.riderX + worldX - m.distance;
+    // Centred over the bystander, clamped to the screen; the tail keeps pointing at them.
+    const cx = Math.max(12 + w / 2, Math.min(W - 12 - w / 2, x));
+    const bottom = 398;
+    const top = bottom - h;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, since / 0.15, (P.pedestrian.speech - since) / 0.3);
+    const tip = Math.max(cx - w / 2 + 14, Math.min(cx + w / 2 - 14, x));
+    ctx.fillStyle = '#fffaf0'; ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.roundRect(cx - w / 2, top, w, h, 14); ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(tip - 10, bottom - 2); ctx.lineTo(Math.max(-20, x) + 2, 412); ctx.lineTo(tip + 8, bottom - 2);
+    ctx.fill(); ctx.stroke();
+    box(tip - 11, bottom - 5, 21, 6, '#fffaf0');
+    lines.forEach((s, i) => text(s, cx, top + 10 + lead * (i + 0.5), size, INK));
+    ctx.restore();
+  }
   function bicycle(m) {
     const t = m.age;
     ctx.save(); ctx.translate(P.riderX, Math.sin(t * 11) * 2);
@@ -220,6 +296,8 @@ export function createPourPainter(ctx, { compact = () => false } = {}) {
     draw(m, paused = false) {
       scenery(m);
       m.houses.forEach((h) => house(h, m));
+      pedestrian(m);
+      speech(m);
       bicycle(m);
       for (const p of m.flights) {
         const u = Math.min(1, p.elapsed / p.duration);

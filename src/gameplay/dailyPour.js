@@ -11,6 +11,15 @@ export const HEADLINES = Object.freeze([
   'NEIGHBORHOOD DENIES KNOWING SPOON', 'DOG EATS NEWS, DEMANDS MORE',
 ]);
 
+export const PEDESTRIAN_LINE = 'Is that a spoon riding a bicycle? I didn’t think they had legs.';
+
+/** The bystander reads route progress only: no state, rolls, collisions or rewards. */
+export function pedestrianRemark(m) {
+  const { x, notice, speech } = P.pedestrian;
+  const since = m.clock - (x / P.speed - notice);
+  return { x, since, speaking: since >= 0 && since < speech };
+}
+
 export function planRoute(rng) {
   return Array.from({ length: P.houses }, (_, i) => {
     const subscriber = i !== 3 && i !== 7;

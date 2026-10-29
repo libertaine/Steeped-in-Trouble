@@ -1,5 +1,7 @@
 import { test, expect, openGame } from './fixtures.js';
-import { advancePaperRoute, expectPourControls, perfectPaperRoute, toPaperOffer } from './dailyPour.js';
+import {
+  advancePaperRoute, bubbleShown, expectPourControls, perfectPaperRoute, remarkStart, toPaperOffer,
+} from './dailyPour.js';
 import { toShortage } from './errand.js';
 
 const imagePath = (name) => `docs/images/daily-pour/${name}.png`;
@@ -118,6 +120,52 @@ test('paper keys, auto-repeat, pause, Tea Break and backgrounding cannot leak ga
   expect(await page.evaluate(() => ({ milk: window.__TEACUP__.game.state.milkLeft, sugar: window.__TEACUP__.game.state.sugarLeft }))).toEqual(before);
   expect(problems).toEqual([]);
 });
+
+for (const [view, viewport] of [['full', { width: 1440, height: 1080 }], ['compact', { width: 1280, height: 800 }]]) {
+  test(`the bystander's remark appears, pauses and leaves the route untouched in ${view} view`, async ({ page, problems }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await openGame(page, `&seed=42&view=${view}`); await toPaperOffer(page);
+    await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
+    const start = await remarkStart(page);
+    await advancePaperRoute(page, start - 0.25);
+    expect(await bubbleShown(page)).toBe(false);
+    await advancePaperRoute(page, start + 0.5);
+    expect(await bubbleShown(page)).toBe(true);
+    await shot(page, testInfo, `pedestrian-${view}`);
+    // Paused mid-sentence: route, bubble timing and pixels all hold still.
+    await page.keyboard.press('KeyP');
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+    const frozen = await page.evaluate(() => structuredClone(window.__TEACUP__.game.state.dailyPour));
+    const pixels = () => page.evaluate(() => document.getElementById('game').toDataURL());
+    const still = await pixels();
+    await page.waitForTimeout(400);
+    expect(await page.evaluate(() => window.__TEACUP__.game.state.dailyPour)).toEqual(frozen);
+    expect(await pixels()).toBe(still);
+    await page.keyboard.press('KeyP');
+    expect(await bubbleShown(page)).toBe(true);
+    // Backgrounded for longer than the remark lasts: it is still there on return.
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+    await page.waitForTimeout(3200);
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await page.keyboard.press('KeyP');
+    expect(await page.evaluate(() => window.__TEACUP__.game.state.dailyPour.clock)).toBeLessThan(start + 1);
+    expect(await bubbleShown(page)).toBe(true);
+    await advancePaperRoute(page, start + 3.05);
+    expect(await bubbleShown(page)).toBe(false);
+    expect(await page.evaluate(() => {
+      const m = window.__TEACUP__.game.state.dailyPour;
+      return { delivered: m.delivered, misses: m.misses, windows: m.windows, dogs: m.dogs, papers: m.papers, stage: m.stage };
+    })).toEqual({ delivered: 0, misses: 0, windows: 0, dogs: 0, papers: 9, stage: 'play' });
+    expect(problems).toEqual([]);
+  });
+}
 
 test('a successful aerial jump clears the actual coffee body in the existing Tea Run', async ({ page, problems }, testInfo) => {
   await openGame(page, '&seed=42&view=full'); await toShortage(page);
