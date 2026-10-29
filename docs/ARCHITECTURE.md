@@ -634,3 +634,52 @@ choice and control placement. No new layout mode is introduced.
 Coffee-cup collision and rendering share `CONFIG.teaRun.obstacles.coffeeCup.height`.
 The upper hitbox boundary is `clearance + height` (118 logical units), so
 aerial impulses can clear the cup and its decorative rope is non-solid.
+
+## Day transitions (0.14.0, in development)
+
+`gameplay/days.js` derives Day and cup from the global normal-round number,
+computes bounded Heat, and composes it after the existing tea/fortune modifiers.
+`state.heat` and `state.dayPending` are the only new stored progression values.
+A new pot resets them. Day number and local cup are derived, and the phase plus
+pending flag makes a separate consumed-choice flag unnecessary.
+
+`readLeaves()` marks a boundary pending only on a successful tenth normal-round
+completion. Fatal spills enter game over without offering a Day. No special
+encounter increments Heat or global round. The next-normal-cup handoff is:
+
+```text
+normal completion -> reading / next fortune -> upgrade (if due)
+  -> shortage / Tea Run -> hot chocolate -> coffee boss -> arcade offer / mission
+  -> day (if pending) -> Fresh Brew / Keep -> next normal cup
+```
+
+Only scheduled activities run; the existing scheduler still controls conflicts
+and deferral. All encounter returns, including `leaveHavoc()` and `leaveGrind()`,
+now call `continueFromReading()` so pending activities and the Day choice survive.
+Returning to this handler never redraws a fortune or rewards a completed round.
+
+The `day` phase has no clock, automatic choice, or primary-button action.
+`chooseDay('fresh'|'keep')` validates the phase and pending flag, clears pending
+before applying the choice, and calls `brewNextCup()` once. That function alone
+increments the global round, progresses Heat, transfers `nextFortune`, and starts
+normal combat. Repeated choice calls return false once the phase has changed.
+`dayEnd` and `dayStart` events drive input resets, synthesized sounds and the
+short existing Canvas banner. Captions rotate by derived Day, without RNG.
+
+`withHeat()` composes normal-cup modifiers only; boss and bonus setup remains
+independent. `updateSpawning()` clamps the final jittered normal arrival gap.
+Exact formulas and caps are in [Game design](GAME_DESIGN.md#days-and-heat-0140-in-development).
+The existing tea/fortune cap remains a separate first step.
+
+The accessible DOM `#dayOffer` uses existing choice-card styles. `ui/hud.js`
+controls visibility and text, and `ui/presentation.js` moves it into
+`#phaseChoices` in Compact View, just like upgrade and arcade choices. Number
+keys dispatch through the phase-validated command; repeated keydown events are
+ignored. Touch/mouse use `data-day`; hidden-page and open-menu input is blocked.
+The Day phase does not advance during pause, blur or backgrounding.
+
+`src/dev/days.js` prepares deterministic practice checkpoints and finishes them
+through real collisions, readings, upgrades and choices. It is referenced only
+inside the `import.meta.env.DEV` branch in `main.js`, so its implementation and
+`practiceDay` hook are removed from production. The pre-existing `?debug` state
+inspection facility remains available for production browser tests.
