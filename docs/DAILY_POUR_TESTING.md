@@ -110,6 +110,11 @@ Windows, Node 24.22.1, from a fresh copy of the release candidate:
   — 36 Chromium, 36 Firefox, 52 mobile Chromium — no failures or retries.
 - Pedestrian screenshots inspected at Desktop Full and Compact, phone
   portrait and tablet landscape; all regenerated captures re-inspected.
+- The first PR CI run retried the full-view pedestrian test once: it
+  bounded real elapsed time around a slow full-page screenshot. It now
+  requires the exact frozen route clock while backgrounded. Afterwards the
+  pedestrian tests passed 36/36 at 8 workers × 6 repeats, and the complete
+  `npm ci`, `npm run check` (527) and browser suite (124) were rerun clean.
 
 Automated browser emulation does not establish physical device behavior.
 The project owner's playtest approved the route and Tea Run fix for 0.12.0.

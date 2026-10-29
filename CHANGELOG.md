@@ -5,7 +5,7 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
-## [0.12.0] - 2026-10-28 — The Daily Pour
+## [0.12.0] - 2026-10-29 — The Daily Pour
 
 The spoon has a paper route. Nobody knows why.
 
