@@ -5,6 +5,49 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+### Added
+
+- **0.15.0 — Crossing the Street** (in development): a third optional
+  Arcade Interlude, offered after round 27 in Chapter 2 and then every 14
+  normal rounds (WHY DID THE SPOON CROSS THE ROAD?). CROSS THE ROAD starts
+  it; STAY RIGHT HERE costs nothing. Behind the offer, the street is
+  already busy.
+- A top-down street crossing: hop the silver spoon one square at a time
+  (arrow keys or WASD, or a four-way touch pad; hold to repeat every
+  0.15 s) across three lanes, a safe median and two more lanes to the tea
+  shop. Small cars, delivery vans and a milk truck run in alternating
+  directions at each lane's own speed and spacing.
+- Three attempts and 40 seconds. A bump knocks the spoon aside, dazed, then
+  back to the curb, costing one attempt, never a cup; the traffic pattern
+  carries on unchanged. 10 points for the first landing in each lane,
+  +50 and 5 Tea Cash for reaching the shop, +40 for doing it without a bump.
+  Results: NOT A SCRATCH ON THE SILVER!, THE SPOON MADE IT!, or THE
+  TRAFFIC HAS SPOKEN. Rewards settle once.
+- A roadside sign, a pedestrian signal that counts down the clock, and a
+  short doorstep exchange at the tea shop after a successful crossing.
+- Fixed 120 Hz steps with closed-form traffic positions, swept-box
+  collisions (no tunnelling at any speed), an independently salted road
+  generator, and a fairness check: every road must admit a cautious
+  crossing from the curb at every sampled moment, or it is redrawn.
+- Synthesized hop, lane, whoosh, clank, success and failure sounds and a
+  hurried variation of the soundtrack; reduced-motion handling.
+- Development-only `?debug&arcade=crossingStreet&seed=42` (with
+  `&crossing=late|last`), `__TEACUP__.launchCrossingStreet()` and
+  `__TEACUP__.crossForMe()`; see the
+  [testing guide](docs/CROSSING_STREET_TESTING.md).
+
+### Changed
+
+- Leaving Crossing the Street, any key still held (not only Space) is
+  ignored in the next cup until released and pressed again. The other
+  adventures keep their existing behaviour.
+- Day practice helpers date Crossing the Street out of the way, as they do
+  the other adventures.
+
+Teacup combat, continuous steam, Auto Steam, shot statistics and secrets,
+the Day system and Heat, the other adventures' dates and priorities are
+unchanged.
+
 ## [0.14.0] - 2026-10-29 — Another Day, Another Brew
 
 ### Added

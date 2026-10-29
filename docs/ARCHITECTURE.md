@@ -31,6 +31,7 @@ src/
 │   ├── arcadeInterludes.js small optional-mission registry, eligibility, scheduling, one-time rewards
 │   ├── dailyPour.js     independent paper route, fixed-step flights, delivery testing and settlement
 │   ├── biscuitBreakout.js seeded biscuit wall, fixed-step paddle and cube physics, results and settlement
+│   ├── crossingStreet.js seeded road and its fairness planner, fixed-step hops, swept collisions, settlement
 │   ├── autoSteam.js     pure decisions about firing at aligned targets
 │   ├── grind.js         The Daily Grind: the coffee boss's schedule, valve, attacks, scalds, rewards
 │   ├── upgrades.js      spoon upgrades: definitions, offers, stacking limits
@@ -41,7 +42,9 @@ src/
 │   ├── effects.js       cosmetic particles and the spill flash
 │   ├── grind.js         draws the espresso machine and its attacks
 │   ├── dailyPour.js     draws the paper route
-│   └── biscuitBreakout.js draws the tray, biscuits, spoon paddle, cube and the talking biscuit
+│   ├── biscuitBreakout.js draws the tray, biscuits, spoon paddle, cube and the talking biscuit
+│   └── crossingStreet.js  draws the street, traffic, the spoon, the tea shop and the offer preview
+├── dev/                 development-only practice helpers (days.js, crossing.js); removed from production
 ├── input/               controls.js wires input; gestures.js recognises touches; settings.js persists preferences
 ├── audio/
 │   ├── audio.js         optional synthesized sound effects; owns the AudioContext
@@ -683,3 +686,77 @@ through real collisions, readings, upgrades and choices. It is referenced only
 inside the `import.meta.env.DEV` branch in `main.js`, so its implementation and
 `practiceDay` hook are removed from production. The pre-existing `?debug` state
 inspection facility remains available for production browser tests.
+
+## Crossing the Street (0.15.0)
+
+`INTERLUDES` gains `crossingStreet` with its own `CONFIG.arcade` rule; the
+scheduler itself is unchanged, and with three entries still offers the
+earliest-due adventure (ties in registry order), one per reading.
+`chooseInterlude(true)` creates the mission in the new `crossingStreet`
+phase:
+
+```text
+reading → [upgrade choice] → arcadeOffer → crossingStreet.intro → play → outro
+                                  │                                       │
+                                  └── skip ──→ continueFromReading ←──────┘
+                                                   │
+                         deferred encounter / pending Day choice / next cup
+```
+
+`gameplay/crossingStreet.js` owns the road, the spoon, hops, collisions,
+attempts, the clock and settlement, as plain data with no DOM or canvas.
+Its generator is the game seed XOR `CROSSING_SALT` (`0x0c2055ed`), used only
+by `planRoad()` when the mission is created, so playing or skipping it never
+changes teas, leaves, fortunes, bosses, the Tea Run, paper routes or biscuit
+walls (tested). After that nothing draws randomness.
+
+`updateCrossing(sim, dt, walk)` runs 120 Hz ticks from a carried accumulator
+(non-finite or negative `dt` counts as none; one call is capped at 0.25 s).
+Each tick increments `m.ticks`, and every vehicle's position is the closed
+form `vehicleX(lane, v, ticks / 120)` on a loop from `-margin` to
+`-margin + span`, so traffic never drifts and frame rate cannot matter
+(30, 60, 120 and 240 Hz replay identically). The spoon's position is a cell
+plus an optional `hop` (`from`, `time`); `spoonPoint()` interpolates it, and
+the renderer draws at that same point. `struckBy()` compares the spoon's box
+with each vehicle's swept x-range over the tick (two ranges if it wrapped),
+and only in rows the box overlaps; boxes must overlap, not merely touch.
+
+Input is split into a fresh-press command and a held state.
+`game.hop(dir)` (only in `play`) sets the single-slot `m.pressed`, which is
+taken when the spoon is free; `walk = { up, down, left, right }` only
+continues the direction of the latest press, every `repeat` seconds. A
+held key never starts a hop on its own. `pause()` clears `m.pressed`; a
+bump or respawn clears both.
+
+Fairness is checked at creation: `planCrossing(lanes, t0)` is a
+breadth-first search over (step, cell), one move or wait every `repeat`
+seconds, where a cell is blocked for a step if any vehicle's swept range
+during it (padded by two ticks) comes within `fair.margin` of the spoon's
+box. Because the search is per cell and per step, one search is a fraction
+of a millisecond and checking a whole road about 3 ms. `fairRoad()` requires a route from the curb from every
+`fair.every` seconds up to `fair.until`; `planRoad()` redraws (from the same
+generator) until one is fair, with `gentleRoad()` as a never-yet-needed
+fallback. Tests replay planner routes through the real simulation, and
+`src/dev/crossing.js`'s `crossForMe()` uses it as an autopilot.
+
+`awardInterlude()` settles once at the result. `shopExchange(m)` derives
+the doorstep conversation from the outro clock, so it freezes with pauses.
+`rendering/crossingStreet.js` draws from mission state; its only
+randomness is a fixed, private preview road drawn behind the offer card
+(`drawPreview()`), from the renderer's own clock.
+
+`controls.js` gives the arrows and WASD exclusively to the street while
+`game.crossingControls()` is true (including when paused from it): a fresh
+keydown sets `walk[dir]` and calls `hop`; auto-repeat is ignored; every
+other key except Enter, P and R is swallowed, so Space, milk, sugar and
+turning do nothing. The touch pad (`.controls-crossing`, `data-walk`) does
+the same on `pointerdown`, releasing on up, cancel and lost capture.
+`held` is never written by the street. `crossingStart`, `crossingGo`,
+`crossingFinish` and `crossingEnd` reset input; on `crossingEnd`,
+`controls.settle(true)` additionally marks every key still physically down
+as stale, so neither a held Space nor a held arrow can steam or turn the
+spoon in the next cup until it is released and pressed again. The existing
+`settle()` used by the other adventures is unchanged.
+
+Development-only helpers (inside `import.meta.env.DEV`) are documented in
+[the testing guide](CROSSING_STREET_TESTING.md).

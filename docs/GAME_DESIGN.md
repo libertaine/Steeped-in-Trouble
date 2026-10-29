@@ -1080,8 +1080,8 @@ physics library. More biscuit characters and secrets may come later.
 completed normal teacup rounds. Derive Day as `floor((round - 1) / 10) + 1`
 and cup within the Day as `(round - 1) % 10 + 1`. Global `state.round` keeps
 increasing: Day 2 begins at round 11, Day 3 at round 21. Readings, upgrades,
-pauses, shortages, offers, Tea Run, Daily Pour, Biscuit Breakout, Hot Chocolate
-Havoc and The Daily Grind never count as normal rounds.
+pauses, shortages, offers, Tea Run, Daily Pour, Biscuit Breakout, Crossing the
+Street, Hot Chocolate Havoc and The Daily Grind never count as normal rounds.
 
 After the tenth completion, finish the reading and upgrade, then resolve all
 scheduled encounters in the existing priority order. Immediately before the
@@ -1138,3 +1138,127 @@ The HUD shows `DAY 2 · CUP 3/10 · HEAT 2` alongside the global cup/round.
 The chosen Day gets a brief Canvas acknowledgement and optional kettle sound.
 Reduced motion removes the banner's pop; Sound off covers all new audio.
 See [Day testing](DAYS_TESTING.md) for replayable practice and measured values.
+
+## Crossing the Street (0.15.0)
+
+*"Why did the spoon cross the road? Nobody knows. But apparently, it's our
+problem now."*
+
+### Scheduling
+
+Crossing the Street is the third Arcade Interlude, first eligible after
+round 27 in Chapter 2 and then 14 normal rounds after each offer
+(`CONFIG.arcade.crossingStreet`). With the Daily Pour at 12, 26, 40… and
+Biscuit Breakout at 19, 33, 47…, a pot that skips every offer sees them at
+12, 19, 26, **27**, 33, 40, **41**, 47, 54, **55**… One adventure at most is
+offered per reading; if several are due the one waiting longest goes first
+(ties in registry order), and an overdue adventure stays eligible without
+building a backlog. Fortune readings and upgrades finish first; Tea
+Shortages, milestone bosses, rematches and Hot Chocolate Havoc keep their
+priority. After a Day-ending reading the offer (and the adventure) come
+before the Day choice, which then waits, is shown once, and is applied once.
+
+The shared offer card reads WHY DID THE SPOON CROSS THE ROAD? —
+"Nobody knows. But apparently, it's our problem now." CROSS THE ROAD starts
+it; STAY RIGHT HERE carries on for free. Behind the card the canvas shows
+the street already: traffic going by, the tea shop opposite, and the spoon
+waiting on the curb without a care in the world.
+
+Crossing the Street is not the Tea Run. It never restocks tea, adds sugar,
+or answers a pending Tea Shortage.
+
+### The street
+
+Seen from above, from the bottom: the near sidewalk where the spoon
+starts, three lanes, a planted median, two more lanes, the far sidewalk,
+and the tea shop. The street is a grid of 13 columns by 8 rows (72 units);
+the paving joints mark the columns. The sidewalks and median are never
+driven on, so they are always safe. Neighbouring lanes run in opposite
+directions, with faint chevrons painted on the road showing which way.
+
+Each lane has a character: two of small cars (fast, 190–235 units/s), two
+of delivery vans with the odd car (130–160), and one milk-truck lane with
+vans (100–125). Lengths are 92, 148 and 196 units; every vehicle's hitbox is
+exactly its drawn body. Each lane's speed, spacing, paint and order come
+from the mission's own seeded generator, and between nose and tail there is
+always at least 180 units and 1.15 seconds of that lane's speed. Vehicles
+loop off one edge and back on at the other, out of sight. The road never
+changes during a mission, including after a bump, so its pattern can be
+learnt.
+
+Every road is checked when it is made: a cautious crossing (one move or
+wait every 0.15 s, never in a square any vehicle comes near during that
+time) must reach the shop within 12 seconds starting from the curb at every
+other second of the first 44 (every moment the mission can start or
+respawn). A road that fails is redrawn from the same generator (a fixed
+gentle road is the last resort); for seeds 0–999 every first draw passed.
+With perfect play such a crossing takes 1.4–2.6 seconds (10th–99th
+percentile over 300 seeds and 89 starting moments each); a straight dash
+works from only 2% of those moments.
+
+### Movement and collisions
+
+Arrow keys or WASD (or the four-way pad on touch) hop one square. A hop
+takes 0.11 seconds, with a small jump; holding a direction repeats it every
+0.15 seconds. Each fresh press is one hop; a press during a hop waits for
+the landing (only the latest is kept). The first hop of the crossing, of
+each respawn, and after a pause always needs a fresh press: nothing held
+across a transition moves the spoon. The spoon cannot leave the grid.
+Space does nothing; Enter only starts or leaves; P pauses.
+
+The spoon's hitbox (24 × 40) moves through the hop exactly with the
+drawing. Each tick (120 Hz) it is tested against the space each vehicle
+swept during that tick, so no speed can carry a vehicle through it, and
+boxes that only touch do not collide. A bump: CLANK!, the spoon is knocked
+aside spinning and dazed for 0.9 seconds (it cannot be bumped again), then
+stands back on the near curb, frozen for 0.3 seconds. Presses during that
+time are dropped. Traffic and the 40-second clock carry on throughout.
+
+### Ending, scoring and rewards
+
+The crossing ends when the spoon lands on the far sidewalk, after the third
+bump, or when 40 seconds pass. Bumps cost attempts, never cups.
+
+| Event | Reward |
+| --- | --- |
+| First landing in each traffic lane | 10 points, once per lane per mission; kept after bumps |
+| Reaching the tea shop | +50 points and +5 Tea Cash |
+| …without a single bump | +40 points |
+| A bump | One of three attempts |
+| Skipping | Nothing |
+
+A perfect crossing earns 140 points; success with bumps 100. Results:
+NOT A SCRATCH ON THE SILVER! (*The traffic has filed a complaint.*), THE
+SPOON MADE IT! (*Against the advice of several motorists.*), or THE TRAFFIC
+HAS SPOKEN. (*The spoon intends to appeal.*). Rewards settle once, when the
+result appears; the result cannot be dismissed for its first 1.5 seconds.
+
+### Jokes (spoilers)
+
+A sign on the near sidewalk: NO JAYWALKING. NO EXCEPTIONS FOR CUTLERY. It
+is scenery. A pedestrian signal beside it shows a red hand, always, and a
+countdown of the mission clock. The milk truck is a cow-spotted tanker of
+uncertain origin: SUSPICIOUSLY FRESH, with horns on the cab.
+
+After a successful crossing the shop door opens on the shopkeeper, a teapot
+with a moustache: "We don't serve spoons." The spoon: "Good. I'm here for
+the tea." The bubbles sit above the far sidewalk, never over the road, and
+last 3.4 seconds; the result card appears after 0.8 seconds, below them.
+No dialogue choices, effects or NPC mechanics.
+
+### Presentation and sound
+
+The spoon is the Tea Run's silver spoon at a smaller scale (a little larger
+on phones), leaning into sideways hops. Light metallic hop, a ding per new
+lane, a soft whoosh as traffic passes close by (lower for the bigger
+vehicles), a comedic clank, a success chime and a short failure cue; no
+horns. The soundtrack plays its bouncy section at 128 bpm, pressing on in
+the last ten seconds. Reduced motion lowers the hop, stops the dazed spin,
+stars, rising popups and ring. Sound off silences everything.
+
+### Not included
+
+More roads or levels, traffic lights that can be changed, power-ups,
+pedestrians with behaviour, new teas, fortunes, bosses, upgrades,
+persistent achievements, leaderboards, and changes to Days, Heat or
+teacup combat. All tuning is provisional and lives in `CONFIG.crossingStreet`.

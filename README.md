@@ -11,8 +11,9 @@ in the leaves you've defeated, upgrade your spoon, and discover what happens
 when the tea starts making its own rules.
 
 Between cups, things get stranger. Run to the tea shop, deliver newspapers
-from a bicycle, or launch a sugar cube at a wall of rebellious biscuits.
-Apparently, all of this is in the spoon's job description.
+from a bicycle, launch a sugar cube at a wall of rebellious biscuits, or hop
+across a very busy road. Apparently, all of this is in the spoon's job
+description.
 
 **Simple arcade action, unexpected little adventures, and a generous helping of nonsense.**
 
@@ -35,6 +36,10 @@ starts with a gentler challenge or keeps building the Heat. Your upgrades,
 unlocked teas, fortunes, score, and arcade adventures carry forward either way.
 **Days control difficulty. Chapters control content.**
 See the [Day testing guide](docs/DAYS_TESTING.md) for practice and qualification.
+
+**In development — 0.15.0, Crossing the Street:** a third optional arcade
+adventure, waiting for playtesting before release. See the
+[Crossing the Street guide](docs/CROSSING_STREET_TESTING.md).
 
 Already in the published game:
 
@@ -105,6 +110,8 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 | The Daily Pour: aim porch / mailbox, throw | <kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>Space</kbd> | **AIM** / **THROW** |
 | Biscuit Breakout: Break / Leave them alone | <kbd>1</kbd> / <kbd>2</kbd> | tap a choice |
 | Biscuit Breakout: move the spoon, launch the cube | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>, <kbd>Space</kbd> | hold **◀** / **▶**, **LAUNCH** |
+| Crossing the Street: Cross / Stay | <kbd>1</kbd> / <kbd>2</kbd> | tap a choice |
+| Crossing the Street: hop (hold to repeat) | <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> | **▲** **◀** **▼** **▶** pad |
 
 Phones start with **Easy Touch**: hold the two
 steering pads, double-tap the cup for milk, and hold the cup for sugar.
@@ -127,6 +134,13 @@ seconds with three sugar cubes: keep the cube bouncing off the spoon (its
 edges send it off at an angle) and break the wall. Each biscuit earns 10
 points, breaking 70% earns 5 Tea Cash, and a clear adds 50 points. Losing
 cubes never costs a cup, and skipping is free.
+
+In 0.15.0 (in development), after round 27, the spoon may decide to cross
+the road. Crossing the Street hops it one square at a time across five
+lanes of traffic, with a safe median halfway, to the tea shop opposite, in
+40 seconds. A bump sends it back to the curb and costs one of three
+attempts, never a cup. Each new lane earns 10 points; reaching the shop
+earns 50 more and 5 Tea Cash, and 40 more without a bump. Skipping is free.
 
 Now and then the leaves foretell **Karma**. For that one cup, a leaf that
 reaches the rim bounces back instead of spilling; if it comes back again it
@@ -211,6 +225,8 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-
   (secrets included, so beware of spoilers), and future ideas
 - [Day testing](docs/DAYS_TESTING.md): 0.14.0 approval, practice shortcuts,
   deterministic tuning and human testing instructions
+- [Crossing the Street testing](docs/CROSSING_STREET_TESTING.md): 0.15.0
+  development shortcuts, deterministic replay and playtesting instructions
 - [Development](DEVELOPMENT.md): the principles for working on the game
 - [Contributing](CONTRIBUTING.md): branching, checks, and releases
 - [Reference prototype](docs/reference/README.md): the preserved original and
