@@ -15,6 +15,11 @@ const SOUNDS = {
   paperDelivery: [1320, 0.22, 'sine', 0.02, 0, 1.4],
   paperWindow: [2400, 0.18, 'square', 0.012, 0, 0.15],
   paperDog: [170, 0.18, 'sawtooth', 0.022, 0, 0.65],
+  // Biscuit Breakout: a spoon's ting, a soft tick off the walls, and a sad little drop.
+  cubeLaunch: [660, 0.12, 'triangle', 0.014, 0, 1.5],
+  cubePaddle: [1175, 0.08, 'sine', 0.016, 0, 1.1],
+  cubeWall: [330, 0.04, 'triangle', 0.006, 0, 0.9],
+  cubeLost: [300, 0.35, 'triangle', 0.018, 0, 0.45],
   // Karma: a light rubbery boing off the rim, then a soft cartoon puff.
   karmaBounce: [520, 0.16, 'sine', 0.014, 0, 1.7],
   karmaPuff: [1400, 0.16, 'triangle', 0.008, 0, 0.3],
@@ -59,6 +64,11 @@ const SOUNDS = {
 // Little tunes: lists of notes.
 const TUNES = {
   pourFinish: [[659, 0.12, 'triangle', 0.024], [880, 0.12, 'triangle', 0.024, 0.12], [1319, 0.4, 'sine', 0.026, 0.24]],
+  breakoutGo: [[784, 0.1, 'triangle', 0.02], [1047, 0.25, 'triangle', 0.022, 0.1]],
+  breakoutFinish: [[523, 0.12, 'triangle', 0.024], [659, 0.12, 'triangle', 0.024, 0.12], [784, 0.12, 'triangle', 0.024, 0.24],
+    [1047, 0.45, 'sine', 0.028, 0.36]],
+  // An indignant little squeak from the biscuit with a face.
+  biscuitTalk: [[880, 0.08, 'square', 0.008, 0, 1.4], [1175, 0.14, 'square', 0.008, 0.1, 0.7]],
   // Karma revealed: out and back again.
   karma: [[523, 0.14, 'sine', 0.026], [784, 0.14, 'sine', 0.026, 0.12], [1047, 0.16, 'sine', 0.028, 0.24],
     [784, 0.14, 'sine', 0.022, 0.38], [523, 0.4, 'sine', 0.026, 0.5]],
@@ -239,6 +249,8 @@ export function createAudio() {
       }
       else if (event.type === 'roundStart' && event.opens) TUNES.chapter.forEach(beep);
       // Coins ding; a tea packet rustles a little lower.
+      // Biscuits crunch a little higher as the wall comes down.
+      else if (event.type === 'biscuitBreak') beep([190 + 9 * (event.broken ?? 0), 0.09, 'sawtooth', 0.012, 0, 0.55]);
       else if (event.type === 'runPickup') beep(event.kind === 'coin' ? [1760, 0.09, 'sine', 0.014, 0, 1.2] : [880, 0.14, 'triangle', 0.016, 0, 1.3]);
       else if (SOUNDS[event.type]) beep(SOUNDS[event.type]);
       else tuneFor(event)?.forEach(beep);

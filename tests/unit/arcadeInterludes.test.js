@@ -64,6 +64,7 @@ describe('optional Arcade Interludes', () => {
     expect(g.state).toMatchObject({ score, teaCash, lives, spoon, progress, fortune: nextFortune, round: 13 });
     expect(g.state.target).toBeGreaterThanOrEqual(target);
     expect(g.state.dailyPour).toBeNull(); expect(g.chooseInterlude(true)).toBe(false);
+    g.state.arcade.after.biscuitBreakout = 1000; // only the paper route's own schedule here
     g.state.round = 25; expect(eligibleInterlude(g.state)).toBeNull();
     g.state.round = 26; expect(eligibleInterlude(g.state)).toBe('dailyPour');
     consumeInterlude(g.state, 'dailyPour'); expect(eligibleInterlude(g.state)).toBeNull();

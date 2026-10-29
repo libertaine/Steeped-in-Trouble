@@ -19,6 +19,8 @@ import { createTeaPainter } from './tea.js';
 import { createRunPainter } from './teaRun.js';
 import { createPourPainter } from './dailyPour.js';
 import { pourInProgress } from '../gameplay/dailyPour.js';
+import { createBreakoutPainter } from './biscuitBreakout.js';
+import { breakoutInProgress } from '../gameplay/biscuitBreakout.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
 const { revealAt, lieRetractAt } = CONFIG.fortunes;
@@ -126,6 +128,7 @@ const OVERLAY_TEXT = {
 export function createRenderer(canvas, { quality = 'high', compact = () => false } = {}) {
   const ctx = canvas.getContext('2d');
   const newspaper = createPourPainter(ctx, { compact: () => canvas.clientWidth < 560 });
+  const biscuits = createBreakoutPainter(ctx, { compact: () => canvas.clientWidth < 560 });
   let time = 0; // animation clock, independent of the simulation
   let gradients = null;
   const tea = createTeaPainter(ctx);
@@ -1571,6 +1574,11 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       const pour = pourInProgress(state);
       if (pour) {
         newspaper.draw(pour, state.phase === PHASE.PAUSED);
+        return;
+      }
+      const wall = breakoutInProgress(state);
+      if (wall) {
+        biscuits.draw(wall, state.phase === PHASE.PAUSED);
         return;
       }
       // The Tea Run leaves the cup behind altogether.

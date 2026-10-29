@@ -294,6 +294,7 @@ canvas {
  */
 .controls-easy,
 .controls-pour,
+.controls-breakout,
 .controls-run {
   display: none;
 }
@@ -322,6 +323,13 @@ body[data-mode="arcadeOffer"] .controls-easy { display: none; }
 body[data-mode="pour"] .controls-pour { display: flex; }
 .controls-pour button { flex: 1; touch-action: none; }
 .controls-pour [data-paper="throwPaper"] { background: #486541; color: #fff4cf; }
+body[data-mode="breakout"] .controls-classic,
+body[data-mode="breakout"] .controls-easy { display: none; }
+body[data-mode="breakout"] .controls-breakout { display: flex; align-items: stretch; gap: 12px; }
+.controls-breakout button { flex: 1; touch-action: none; }
+.controls-breakout .launch-pad { flex: 1.3; background: #6b5232; color: #fff4cf; }
+body[data-view="compact"][data-mode="breakout"] #compactMilk,
+body[data-view="compact"][data-mode="breakout"] #compactSugar,
 body[data-view="compact"][data-mode="pour"] #compactMilk,
 body[data-view="compact"][data-mode="pour"] #compactSugar,
 body[data-view="compact"][data-phase="arcadeOffer"] #mainBtn { display: none; }
@@ -347,7 +355,7 @@ body[data-view="compact"][data-phase="arcadeOffer"] #mainBtn { display: none; }
   color: #b9c8b8;
 }
 
-.controls-mobile .run-pad, .controls-mobile .paper-pad {
+.controls-mobile .run-pad, .controls-mobile .paper-pad, .controls-mobile .launch-pad {
   min-height: 78px;
   font-size: 18px;
   font-weight: 800;
@@ -774,7 +782,8 @@ body[data-view="compact"] .controls-mobile { grid-row: 4; padding: 6px 8px; gap:
 body[data-view="compact"] .controls-mobile button { min-height: 52px; font-size: 14px; }
 body[data-view="compact"] .controls-mobile .steer { min-height: 64px; font-size: 28px; }
 body[data-view="compact"] .controls-mobile .run-pad,
-body[data-view="compact"] .controls-mobile .paper-pad { min-height: 74px; font-size: 18px; }
+body[data-view="compact"] .controls-mobile .paper-pad,
+body[data-view="compact"] .controls-mobile .launch-pad { min-height: 74px; font-size: 18px; }
 body[data-view="compact"] .easy-hint { font-size: 12px; }
 body[data-view="compact"] .action-dock { display: flex; grid-row: 5; gap: 8px; padding: 0 8px 8px; }
 body[data-view="compact"] .action-dock button { min-height: 44px; font-size: 13px; }
@@ -804,6 +813,8 @@ body[data-view="compact"][data-phase="reading"]:has(#upgradeOffer:not([hidden]))
   body[data-view="compact"] .easy-hint { flex-basis: 100%; order: -1; }
   body[data-view="compact"] .controls-classic button { flex-basis: 28%; }
   body[data-view="compact"] .controls-pour { flex-direction: column; }
+  body[data-view="compact"] .controls-breakout { flex-wrap: wrap; gap: 8px; }
+  body[data-view="compact"] .controls-breakout .launch-pad { flex-basis: 100%; order: -1; }
   body[data-view="compact"] .action-dock { grid-column: 2; grid-row: 3; flex-direction: column; }
   body[data-view="compact"] .offer-cards { grid-template-columns: 1fr; }
   body[data-view="compact"] .upgrade-card small { font-size: 12px; }

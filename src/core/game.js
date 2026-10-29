@@ -18,7 +18,10 @@
 // whether it has just come on tap, and the chapter, and whether this cup opens it);
 // and for The Tea Shortage: shortage, teaBought, shortageSkipped, and in the
 // Tea Run: runStart, runGo, runJump, runSlide, runLand, runHit, runPickup,
-// runFinish, runFail, runEnd; and under Karma: karmaBounce, karmaPuff.
+// runFinish, runFail, runEnd; Arcade Interludes: arcadeOffer, arcadeSkipped, and
+// The Daily Pour's pour* and paper* events, and Biscuit Breakout's breakoutStart,
+// breakoutGo, cubeLaunch, cubeWall, cubePaddle, biscuitBreak, biscuitTalk,
+// cubeLost, breakoutFinish, breakoutEnd; and under Karma: karmaBounce, karmaPuff.
 
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
@@ -41,6 +44,9 @@ import { ERRANDS, buyTea, earnTeaCash, scheduleNextShortage, shortageDue } from 
 import { createRun, press, startRunning, updateRun } from '../gameplay/teaRun.js';
 import { consumeInterlude, createArcadeSchedule, eligibleInterlude } from '../gameplay/arcadeInterludes.js';
 import { aimPour, createDailyPour, startPour, throwPaper, updateDailyPour } from '../gameplay/dailyPour.js';
+import {
+  BREAKOUT_SALT, createBreakout, launchCube, startBreakout, updateBreakout,
+} from '../gameplay/biscuitBreakout.js';
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import {
@@ -81,12 +87,15 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
   const runSim = { state, rng: errand, emit };
   const papers = createRandom(toSeed(rng.seed ?? 0) ^ 0xda11b007);
   const pourSim = { state, rng: papers, emit };
+  const crumbs = createRandom(toSeed(rng.seed ?? 0) ^ BREAKOUT_SALT);
+  const breakoutSim = { state, rng: crumbs, emit };
   const pinnedTea = typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
   const grinding = (stage) => state.phase === PHASE.GRIND && (!stage || state.grind.stage === stage);
   const running = (stage) => state.phase === PHASE.TEA_RUN && (!stage || state.run.stage === stage);
   const pouring = (stage) => state.phase === PHASE.DAILY_POUR && (!stage || state.dailyPour.stage === stage);
+  const breaking = (stage) => state.phase === PHASE.BISCUIT_BREAKOUT && (!stage || state.biscuitBreakout.stage === stage);
   const offerOpen = () => state.phase === PHASE.READING && !!state.offer && state.readingTime >= OFFER_AT;
   const errandOpen = () => state.phase === PHASE.SHORTAGE && state.shortage.time >= CONFIG.shortage.chooseAt;
 
@@ -176,6 +185,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     state.arcadeDue = null;
     state.interlude = null;
     state.dailyPour = null;
+    state.biscuitBreakout = null;
     emit('matchStart');
     startRound();
   }
@@ -236,16 +246,33 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
 
   function chooseInterlude(accept) {
     if (state.phase !== PHASE.ARCADE_OFFER || typeof accept !== 'boolean') return false;
+    const id = state.interlude?.id ?? 'dailyPour';
     state.interlude = null;
     if (!accept) {
-      emit('arcadeSkipped');
+      emit('arcadeSkipped', { id });
       continueFromReading();
+      return true;
+    }
+    if (id === 'biscuitBreakout') {
+      state.biscuitBreakout = createBreakout(crumbs);
+      state.phase = PHASE.BISCUIT_BREAKOUT;
+      emit('breakoutStart', { biscuits: state.biscuitBreakout.total });
       return true;
     }
     state.dailyPour = createDailyPour(papers);
     state.phase = PHASE.DAILY_POUR;
     emit('pourStart');
     return true;
+  }
+
+  function beginBreakout() {
+    if (startBreakout(state.biscuitBreakout)) emit('breakoutGo');
+  }
+
+  function leaveBreakout() {
+    state.biscuitBreakout = null;
+    emit('breakoutEnd');
+    continueFromReading();
   }
 
   function beginPour() {
@@ -595,6 +622,10 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
       updateDailyPour(pourSim, dt);
       return;
     }
+    if (breaking()) {
+      updateBreakout(breakoutSim, dt, input);
+      return;
+    }
     if (!playing()) return;
     state.graceTime = Math.max(0, state.graceTime - dt);
     if (state.goldenSpoon > 0) {
@@ -618,7 +649,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
 
   function pause() {
     if (!playing() && !chocolate('intro') && !chocolate('play') && !grinding('intro') && !grinding('fight')
-      && !running('intro') && !running('run') && !pouring()) return;
+      && !running('intro') && !running('run') && !pouring() && !breaking()) return;
     state.pausedFrom = state.phase;
     state.phase = PHASE.PAUSED;
     emit('paused');
@@ -660,6 +691,11 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
         else if (pouring('play')) pause();
         else if (state.dailyPour.time >= CONFIG.dailyPour.outroMin) leavePour();
         break;
+      case PHASE.BISCUIT_BREAKOUT:
+        if (breaking('intro')) beginBreakout();
+        else if (breaking('play')) pause();
+        else if (state.biscuitBreakout.time >= CONFIG.biscuitBreakout.outroMin) leaveBreakout();
+        break;
       case PHASE.PLAYING:
         pause();
         break;
@@ -680,8 +716,9 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
      * upgrade card can take it as a click.
      */
     confirm() {
-      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.TEA_RUN, PHASE.DAILY_POUR].includes(state.phase)) return false;
-      if (pouring('play')) return false;
+      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.TEA_RUN, PHASE.DAILY_POUR,
+        PHASE.BISCUIT_BREAKOUT].includes(state.phase)) return false;
+      if (pouring('play') || breaking('play')) return false;
       if (state.offer || chocolate('play') || grinding('fight') || running('run') || running('finish')) return false;
       primaryAction();
       return true;
@@ -695,6 +732,19 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     throwPaper: () => pouring('play') && throwPaper(pourSim),
     /** Used by input to give these keys exclusively to this mission, even while paused. */
     paperControls: () => pouring() || (state.phase === PHASE.PAUSED && state.pausedFrom === PHASE.DAILY_POUR),
+    /**
+     * Biscuit Breakout: Space (or LAUNCH) sends the waiting cube up; before
+     * play it starts the mission, like JUMP before the Tea Run. Never in the outro.
+     */
+    launchCube() {
+      if (breaking('intro')) {
+        beginBreakout();
+        return true;
+      }
+      return breaking('play') && launchCube(breakoutSim);
+    },
+    /** Used by input to keep Space for the spoon paddle, even while paused. */
+    breakoutControls: () => breaking() || (state.phase === PHASE.PAUSED && state.pausedFrom === PHASE.BISCUIT_BREAKOUT),
     /**
      * Answer the Tea Shortage: 'buy' (if the Tea Cash runs to it), 'run', or
      * 'skip'. Returns true if the choice was taken.
@@ -758,7 +808,7 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     },
     /** P: pause or resume during a round. Returns true if handled. */
     togglePause() {
-      if (pouring()) {
+      if (pouring() || breaking()) {
         pause();
         return true;
       }

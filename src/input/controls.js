@@ -9,7 +9,8 @@
 // or tap, and the Tea Shortage is answered with 1 / 2 / 3. Milk and sugar sit
 // on Q / E beside the turning keys, on the up and down arrows beside the
 // other arrows, and on M / S; in the Tea Run the same arrows (and Space)
-// jump and slide instead.
+// jump and slide instead. In Biscuit Breakout the turning keys move the spoon
+// paddle, and Space (or LAUNCH) only ever launches the sugar cube.
 //
 // Every command is answered by the game only in the part of the game it
 // belongs to (a jump does nothing in a cup, milk nothing on the sidewalk), so
@@ -49,7 +50,8 @@ const SLIDE_KEYS = new Set(['ArrowDown']);
  *   togglePause(): boolean, restart(): boolean, pause(): void, choose(index: number): boolean,
  *   jump?(): boolean, slide?(): boolean, errand?(choice: string): boolean,
  *   paperControls?(): boolean, aimPaper?(aim?: string): boolean,
- *   throwPaper?(): boolean, interlude?(accept: boolean): boolean }} options.commands
+ *   throwPaper?(): boolean, interlude?(accept: boolean): boolean,
+ *   breakoutControls?(): boolean, launchCube?(): boolean }} options.commands
  * @param {() => ('cup' | 'flame' | null)} [options.gestureMode] what the cup's gestures do right now
  * @param {() => ('easy' | 'classic')} [options.scheme] the touch layout; gestures only work in Easy Touch
  * @param {(kind: string, point?: { x: number, y: number }) => void} [options.onGesture]
@@ -64,6 +66,8 @@ export function createControls({
   const win = doc.defaultView;
   const held = { left: false, right: false, fire: false };
   const keyboardPads = new Map();
+  const down = new Set(); // key codes physically held
+  let staleSpace = false; // a Space held over from an arcade adventure: its auto-repeat is ignored until released
   const cleanups = [];
   let mode = null; // the gesture mode last seen
   let flamePointer = null; // the finger holding the flame in the hot chocolate
@@ -117,7 +121,7 @@ export function createControls({
     if (target?.closest?.('input, select, textarea, [contenteditable="true"]')) return;
     const code = e.code;
     if (target?.closest?.('button:not(#mainBtn), a') && (code === 'Space' || code === 'Enter')) {
-      if (e.repeat && target.closest('[data-run], [data-paper]')) e.preventDefault();
+      if (e.repeat && target.closest('[data-run], [data-paper], [data-biscuit]')) e.preventDefault();
       const hold = target.closest('[data-hold]')?.dataset.hold;
       if (hold) {
         e.preventDefault();
@@ -128,6 +132,12 @@ export function createControls({
       return; // Native activation belongs to the focused UI, never to a gameplay shortcut.
     }
     if (CAPTURED_KEYS.has(code)) e.preventDefault();
+    if (code === 'Space' && staleSpace) return; // a held launch or throw never becomes steam
+    down.add(code);
+    if (commands.breakoutControls?.() && ['ArrowUp', 'ArrowDown', 'Space'].includes(code)) {
+      if (code === 'Space' && !e.repeat) commands.launchCube?.();
+      return; // Exclusive to the paddle: no steam, milk, sugar, or runner action. Turning keys still steer.
+    }
     if (commands.paperControls?.() && ['ArrowUp', 'ArrowDown', 'Space'].includes(code)) {
       if (!e.repeat) {
         if (code === 'Space') commands.throwPaper?.();
@@ -155,6 +165,8 @@ export function createControls({
   });
 
   listen(win, 'keyup', (e) => {
+    down.delete(e.code);
+    if (e.code === 'Space') staleSpace = false;
     const padHold = keyboardPads.get(e.code);
     if (padHold) held[padHold] = false;
     keyboardPads.delete(e.code);
@@ -162,7 +174,11 @@ export function createControls({
     if (hold) held[hold] = false;
   });
 
-  listen(win, 'blur', release);
+  listen(win, 'blur', () => {
+    down.clear();
+    staleSpace = false;
+    release();
+  });
   listen(doc, 'visibilitychange', () => {
     if (doc.visibilityState === 'hidden') release();
   });
@@ -195,9 +211,9 @@ export function createControls({
     listen(button, 'lostpointercapture', up);
   }
 
-  // Runner and paper-route actions answer as the finger lands, with no held action.
-  for (const button of [...doc.querySelectorAll('[data-run]'), ...doc.querySelectorAll('[data-paper]')]) {
-    const action = button.dataset.run ?? button.dataset.paper;
+  // Runner, paper-route and LAUNCH actions answer as the finger lands, with no held action.
+  for (const button of ['[data-run]', '[data-paper]', '[data-biscuit]'].flatMap((s) => [...doc.querySelectorAll(s)])) {
+    const action = button.dataset.run ?? button.dataset.paper ?? button.dataset.biscuit;
     listen(button, 'pointerdown', (e) => {
       if (!enabled()) return;
       e.preventDefault();
@@ -277,6 +293,14 @@ export function createControls({
   return {
     held,
     reset,
+    /**
+     * Leaving an arcade adventure: drop every hold, and ignore a Space that is
+     * still down (its auto-repeat) until it is released and pressed afresh.
+     */
+    settle() {
+      reset();
+      if (down.has('Space')) staleSpace = true;
+    },
     /** Call every frame: notices a long press, and forgets gestures when the game moves on. */
     update() {
       if (!enabled()) { reset(); return; }

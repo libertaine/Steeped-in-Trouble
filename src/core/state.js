@@ -16,6 +16,7 @@ export const PHASE = Object.freeze({
   TEA_RUN: 'teaRun', // The Tea Run, the side-scrolling errand to the shop
   ARCADE_OFFER: 'arcadeOffer',
   DAILY_POUR: 'dailyPour',
+  BISCUIT_BREAKOUT: 'biscuitBreakout',
   GAME_OVER: 'gameover',
 });
 
@@ -109,6 +110,7 @@ export function createInitialState() {
     arcadeDue: null, // mission id decided once at the reading
     interlude: null, // optional offer: { id }
     dailyPour: null,
+    biscuitBreakout: null, // see gameplay/biscuitBreakout.js
 
     // A setting rather than play, so it is kept from pot to pot: fire at whatever lines up with the spoon.
     autoSteam: false,

@@ -4,7 +4,9 @@ import { CONFIG } from './config.js';
 import { createGame } from './core/game.js';
 import { createLoop } from './core/timing.js';
 import { ERRANDS } from './gameplay/shortage.js';
+import { FORTUNES } from './gameplay/fortunes.js';
 import { createDailyPour } from './gameplay/dailyPour.js';
+import { BREAKOUT_SALT, createBreakout } from './gameplay/biscuitBreakout.js';
 import { createRandom, toSeed } from './core/random.js';
 import { createControls } from './input/controls.js';
 import { initialSettings, isTouchDevice, normalize, saveSettings } from './input/settings.js';
@@ -72,8 +74,8 @@ function boot() {
     }
     if (save) saveSettings(storage, settings);
     document.getElementById('activeControls').textContent = settings.touch === 'easy'
-      ? 'Easy Touch: hold ◀ / ▶ to steer; double-tap the cup for milk; hold the cup for sugar. In hot chocolate, hold the cup for flames. On the Tea Run use Jump / Slide. Keyboard controls work too.'
-      : 'Classic Touch: hold Turn to steer and Steam to fire; tap Milk or Sugar. On the Tea Run use Jump / Slide. Keyboard controls work too.';
+      ? 'Easy Touch: hold ◀ / ▶ to steer; double-tap the cup for milk; hold the cup for sugar. In hot chocolate, hold the cup for flames. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH. Keyboard controls work too.'
+      : 'Classic Touch: hold Turn to steer and Steam to fire; tap Milk or Sugar. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH. Keyboard controls work too.';
   }
   applySettings(settings);
   touchButton?.addEventListener('click', () => {
@@ -124,6 +126,8 @@ function boot() {
       paperControls: game.paperControls,
       aimPaper: game.aimPaper,
       throwPaper: game.throwPaper,
+      breakoutControls: game.breakoutControls,
+      launchCube: game.launchCube,
       errand: game.chooseErrand,
       jump: game.jump,
       slide: game.slide,
@@ -164,13 +168,16 @@ function boot() {
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
   const RESETS = new Set(['paused', 'resumed', 'matchStart', 'roundStart', 'reading', 'shortage',
     'arcadeOffer', 'arcadeSkipped', 'pourStart', 'pourGo', 'pourFinish', 'pourEnd',
+    'breakoutStart', 'breakoutGo', 'breakoutFinish', 'breakoutEnd',
     'runBird', 'runZap', 'runOrbit', 'runReturn',
     'runStart', 'runGo', 'runFinish', 'runFail', 'runEnd', 'chocolateStart', 'havocStart', 'havocEnd',
     'grindStart', 'grindFight', 'grindDefeat', 'grindEscape', 'gameover']);
 
   function handleEvents() {
     for (const event of game.drainEvents()) {
-      if (RESETS.has(event.type)) controls.reset();
+      // Leaving an adventure, a Space still held from it must not become steam in the cup.
+      if (event.type === 'pourEnd' || event.type === 'breakoutEnd') controls.settle();
+      else if (RESETS.has(event.type)) controls.reset();
       effects.handle(event);
       audio.handle(event);
     }
@@ -224,6 +231,33 @@ function boot() {
         controls.reset();
       };
       if (params.get('arcade') === 'dailyPour') window.__TEACUP__.launchDailyPour();
+      let wallSeed = game.seed;
+      // The same for Biscuit Breakout: call again without an argument to rebuild the same wall.
+      window.__TEACUP__.launchBiscuitBreakout = (seed = wallSeed) => {
+        wallSeed = seed;
+        game.state.phase = 'gameover';
+        game.restart();
+        Object.assign(game.state, { round: 19, progress: { chapter: 2, starts: [1, 6] },
+          phase: 'arcadeOffer', interlude: { id: 'biscuitBreakout' },
+          grindAfter: null, havocDue: false, grindDue: false, shortageDue: false });
+        game.chooseInterlude(true);
+        game.state.biscuitBreakout = createBreakout(createRandom(toSeed(seed) ^ BREAKOUT_SALT));
+        controls.reset();
+      };
+      if (params.get('arcade') === 'biscuitBreakout') window.__TEACUP__.launchBiscuitBreakout();
+      // A fresh pot brewed straight into a cup (cup 2 by default) under a chosen fortune, through the real reading
+      // hand-off (so it lasts exactly that one cup). ?fortune=karma does this on load.
+      window.__TEACUP__.brewWithFortune = (id = 'karma', { cup = 2 } = {}) => {
+        if (!Object.hasOwn(FORTUNES, id)) return false;
+        game.state.phase = 'gameover';
+        game.restart();
+        Object.assign(game.state, { round: Math.max(1, cup - 1), phase: 'reading', readingTime: 10, nextFortune: id, offer: null,
+          grindAfter: null, havocDue: false, grindDue: false, shortageDue: false, arcadeDue: null });
+        game.primaryAction();
+        controls.reset();
+        return game.state.fortune === id;
+      };
+      if (params.has('fortune')) window.__TEACUP__.brewWithFortune(params.get('fortune'));
     }
     // Vite removes this helper from production. No player-facing secret menu.
     if (import.meta.env.DEV) window.__TEACUP__.previewAerial = (kind) => {

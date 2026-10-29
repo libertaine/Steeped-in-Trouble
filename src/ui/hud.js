@@ -14,6 +14,7 @@ import { grindInProgress } from '../gameplay/grind.js';
 import { canBuyTea } from '../gameplay/shortage.js';
 import { runInProgress } from '../gameplay/teaRun.js';
 import { pourInProgress } from '../gameplay/dailyPour.js';
+import { breakoutInProgress } from '../gameplay/biscuitBreakout.js';
 import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
@@ -30,6 +31,7 @@ const COPY = {
     [PHASE.TEA_RUN]: 'THE TEA RUN',
     [PHASE.ARCADE_OFFER]: 'EXTRA! EXTRA!',
     [PHASE.DAILY_POUR]: 'THE DAILY POUR',
+    [PHASE.BISCUIT_BREAKOUT]: 'BISCUIT BREAKOUT',
     [PHASE.GAME_OVER]: 'THE CUP RUNNETH OVER',
   },
   title: {
@@ -43,6 +45,7 @@ const COPY = {
     [PHASE.TEA_RUN]: () => RUN.title.run,
     [PHASE.ARCADE_OFFER]: () => 'A spoon with a second job',
     [PHASE.DAILY_POUR]: () => 'The Daily Pour',
+    [PHASE.BISCUIT_BREAKOUT]: () => 'Biscuit Breakout',
     [PHASE.GAME_OVER]: () => 'The last drop',
   },
   button: {
@@ -56,6 +59,7 @@ const COPY = {
     [PHASE.TEA_RUN]: 'Pause / resume (P)',
     [PHASE.ARCADE_OFFER]: 'Deliver or skip (1 / 2)',
     [PHASE.DAILY_POUR]: 'Pause / resume (P)',
+    [PHASE.BISCUIT_BREAKOUT]: 'Pause / resume (P)',
     [PHASE.GAME_OVER]: 'Start a fresh pot →',
   },
   tip: {
@@ -68,8 +72,39 @@ const COPY = {
     [PHASE.TEA_RUN]: '',
     [PHASE.ARCADE_OFFER]: 'The Daily Pour needs a delivery spoon. Deliver papers, or carry on brewing. Skipping costs nothing.',
     [PHASE.DAILY_POUR]: '',
+    [PHASE.BISCUIT_BREAKOUT]: '',
     [PHASE.READING]: 'The pattern was made by the leaves you defeated, though the leaves have opinions of their own. The omen applies to the next cup.',
     [PHASE.GAME_OVER]: 'Three spills end the pot. Brew again to rewrite the future.',
+  },
+};
+
+// The Arcade Interlude offer, per adventure: the same card, in its own words.
+export const ARCADE_OFFERS = Object.freeze({
+  dailyPour: {
+    status: 'EXTRA! EXTRA!', title: 'A spoon with a second job', heading: 'EXTRA! EXTRA!',
+    pitch: 'The Daily Pour needs a delivery spoon.',
+    accept: 'DELIVER PAPERS', acceptInfo: 'A short, optional paper route',
+    skip: 'NO THANKS', skipInfo: 'Costs nothing. Carry on brewing.',
+    button: 'Deliver or skip (1 / 2)',
+    tip: 'The Daily Pour needs a delivery spoon. Deliver papers, or carry on brewing. Skipping costs nothing.',
+  },
+  biscuitBreakout: {
+    status: 'THE BISCUITS ARE REVOLTING!', title: 'A wall has been built', heading: 'THE BISCUITS ARE REVOLTING!',
+    pitch: '“Their demands are unclear. Their formation is not.”',
+    accept: 'BREAK THE BISCUITS', acceptInfo: 'A short, optional brick-breaking round',
+    skip: 'LEAVE THEM ALONE', skipInfo: 'Costs nothing. Carry on brewing.',
+    button: 'Break or skip (1 / 2)',
+    tip: 'The spoon is the paddle and a sugar cube is the ball. Break the biscuits, or leave them alone. Skipping costs nothing.',
+  },
+});
+
+// Biscuit Breakout, stage by stage.
+const BREAKOUT = {
+  button: { intro: 'Start breaking →', play: 'Pause / resume (P)', outro: 'Back to the tea →' },
+  tip: {
+    intro: '← / → (or A / D) move the spoon; Space launches the sugar cube. On touch, hold ◀ / ▶ and tap LAUNCH.',
+    play: 'Catch the cube on the spoon: its edges send it off at an angle. Three cubes and 45 seconds. Nothing here costs a cup.',
+    outro: 'Your cups, your spoon, and the next fortune are exactly as you left them.',
   },
 };
 
@@ -175,7 +210,8 @@ function omenStatus(state) {
 
 /** The small in-play indicator of the fortune shaping this round. */
 function omenText(state, fortune) {
-  if (!fortune || havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)) return '';
+  if (!fortune || havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)
+    || breakoutInProgress(state)) return '';
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
   return `✦ ${fortune.name} · ${fortune.tag} · ${omenStatus(state)}`;
 }
@@ -183,7 +219,8 @@ function omenText(state, fortune) {
 /** The small in-play indicator of the tea brewed for this round. */
 function teaText(state) {
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
-  if (havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)) return '';
+  if (havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)
+    || breakoutInProgress(state)) return '';
   const tea = TEAS[state.tea];
   return `☕ ${tea.name} · ${tea.tag}`;
 }
@@ -209,6 +246,7 @@ function autoText(state) {
 /** What the page is showing, for the touch controls: the cup, the shortage's choice, or the errand. */
 export function pageMode(state) {
   if (pourInProgress(state)) return 'pour';
+  if (breakoutInProgress(state)) return 'breakout';
   if (state.phase === PHASE.ARCADE_OFFER) return 'arcadeOffer';
   if (state.phase === PHASE.SHORTAGE) return 'shortage';
   return runInProgress(state) ? 'run' : 'cup';
@@ -236,8 +274,10 @@ export function hudText(state) {
   const grind = grindInProgress(state);
   const run = runInProgress(state);
   const pour = pourInProgress(state);
+  const breakout = breakoutInProgress(state);
   // Between rounds (a reading, the bonus, the boss, or an errand) the panel looks ahead to the next cup.
-  const between = state.phase === PHASE.READING || state.phase === PHASE.SHORTAGE || state.phase === PHASE.ARCADE_OFFER || !!havoc || !!grind || !!run || !!pour;
+  const between = state.phase === PHASE.READING || state.phase === PHASE.SHORTAGE || state.phase === PHASE.ARCADE_OFFER
+    || !!havoc || !!grind || !!run || !!pour || !!breakout;
   const shown = between ? state.nextFortune : state.fortune;
   const fortune = shown ? FORTUNES[shown] : null;
   const offering = state.phase === PHASE.READING && !!state.offer;
@@ -286,6 +326,31 @@ export function hudText(state) {
     easyHint: havoc ? 'Hold cup: flames' : 'Double-tap: milk\nHold: sugar',
   };
   if (state.phase === PHASE.SHORTAGE) values.roundNum = `${pad(state.round, 2)}½`;
+  if (state.phase === PHASE.ARCADE_OFFER) {
+    const offer = ARCADE_OFFERS[state.interlude?.id] ?? ARCADE_OFFERS.dailyPour;
+    Object.assign(values, {
+      hudStatus: offer.status, roundTitle: offer.title, mainBtn: offer.button, gameTip: offer.tip,
+      arcadeTitle: offer.heading, arcadePitch: offer.pitch, arcadeAccept: offer.accept,
+      arcadeAcceptInfo: offer.acceptInfo, arcadeSkip: offer.skip, arcadeSkipInfo: offer.skipInfo,
+    });
+  }
+  if (breakout) {
+    const B = CONFIG.biscuitBreakout;
+    const paused = state.phase === PHASE.PAUSED;
+    Object.assign(values, {
+      roundTitle: breakout.stage === 'outro' ? breakout.summary.title : 'Biscuit Breakout',
+      roundNum: `${pad(state.round, 2)}½`,
+      hudStatus: paused ? 'BREAKOUT PAUSED' : breakout.stage === 'outro' ? 'CRUMBS COUNTED'
+        : `BISCUIT BREAKOUT · ${Math.max(0, Math.ceil(B.duration - breakout.clock - 1e-6))}s`,
+      hudScore: `BISCUITS ${breakout.broken}/${breakout.total}`,
+      hudLives: `CUBES ${'■ '.repeat(breakout.cubes)}${'□ '.repeat(B.cubes - breakout.cubes)}`.trim(),
+      hudStrainer: '', teaName: 'Biscuits, regrettably',
+      killLabel: 'Biscuits broken', killCount: `${breakout.broken} / ${breakout.total}`,
+      compactProgress: `Biscuits ${breakout.broken}/${breakout.total}`,
+      mainBtn: paused ? 'Resume breakout →' : BREAKOUT.button[breakout.stage],
+      gameTip: BREAKOUT.tip[breakout.stage],
+    });
+  }
   if (pour) {
     Object.assign(values, {
       roundTitle: pour.stage === 'outro' ? pour.summary.title : 'The Daily Pour',

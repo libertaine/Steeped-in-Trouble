@@ -111,6 +111,14 @@ export function musicMood(state, tension = 0) {
     case PHASE.DAILY_POUR:
       return { section: state.dailyPour.stage === 'play' ? 'havoc' : 'reading', tempo: 116,
         tension: 0, golden: false, stormy: false, chocolate: true };
+    case PHASE.BISCUIT_BREAKOUT: {
+      // Bouncy, hurrying a little in the last ten seconds.
+      const m = state.biscuitBreakout;
+      if (m.stage !== 'play') return { section: 'reading', tempo: 72, tension: 0, golden: false, stormy: false, chocolate: true };
+      const left = CONFIG.biscuitBreakout.duration - m.clock;
+      const hurry = left < 10 ? 1 - left / 10 : 0;
+      return { section: 'havoc', tempo: 120 + 12 * hurry, tension: hurry, golden: false, stormy: false, chocolate: true };
+    }
     case PHASE.TEA_RUN: {
       // The errand borrows the hot chocolate's bounce, hurrying a little as the shop's closing time nears.
       const r = state.run;
