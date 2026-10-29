@@ -13,16 +13,21 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **0.11.0 — The Flying Spoon** is the current release: a pocket-sized
-teacup and more trips to the shop. The game is experimental and still
-changing, but there's plenty in the cup already:
+Version **[0.12.0 — The Daily Pour](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.12.0)**
+is the current release. The spoon has a paper route. Nobody knows why.
+The game is experimental and still changing, but there's plenty in the cup
+already:
 
 - Arcade defence around a living teacup whose tea swirls, ripples, and
   reacts to every shot.
-- New in 0.11.0: Compact / Full View, the Tea Break, and recurring optional
-  Tea Shortages after rounds 9, 16, 23, and every seven rounds thereafter.
-- An optional Tea Run to the shop, Tea Cash, Easy Touch,
-  and Auto Steam for a more relaxed pot. Classic Touch remains available.
+- New in 0.12.0: **The Daily Pour**, an optional newspaper-delivery side
+  mission. A silver spoon rides a bicycle through the neighborhood; aim
+  for mailboxes or porches and throw newspapers for modest rewards, or
+  skip it at no cost. The Tea Run's suspended coffee cups can now be
+  cleared with a well-timed aerial jump, as well as by sliding.
+- Compact / Full View, the Tea Break, recurring optional Tea Shortages,
+  an optional Tea Run to the shop, Tea Cash, Easy Touch, and Auto Steam for
+  a more relaxed pot. Classic Touch remains available.
 - Five tea varieties, each changing how its round plays, from
   leaves that dart or change lanes to spice currents that sweep the cup.
   They arrive as you progress, in chapters: a steady first chapter to learn
@@ -36,12 +41,6 @@ changing, but there's plenty in the cup already:
   the cup, and the tea.
 
 See the [changelog](CHANGELOG.md) for what changed in each version.
-
-Development is now **0.12.0 — The Daily Pour, Milestone 1**: an optional
-30-second newspaper route starring a silver spoon on a bicycle, plus finite
-coffee-cup collision bodies in the Tea Run. This work awaits human
-playtesting; 0.11.0 remains the published release. For direct practice and
-same-course replay, see [Daily Pour testing](docs/DAILY_POUR_TESTING.md).
 
 ## How to play
 
@@ -81,6 +80,8 @@ same-course replay, see [Daily Pour testing](docs/DAILY_POUR_TESTING.md).
 | Restart after game over | <kbd>R</kbd> | main button |
 | Tea Shortage: Buy / Run / Skip | <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> | tap a choice |
 | Tea Run: jump / slide | <kbd>Space</kbd> or <kbd>↑</kbd> / <kbd>↓</kbd> | **JUMP** / **SLIDE** |
+| The Daily Pour: Deliver / No thanks | <kbd>1</kbd> / <kbd>2</kbd> | tap a choice |
+| The Daily Pour: aim porch / mailbox, throw | <kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>Space</kbd> | **AIM** / **THROW** |
 
 Phones start with **Easy Touch**: hold the two
 steering pads, double-tap the cup for milk, and hold the cup for sugar.
@@ -92,6 +93,11 @@ Buy tea for 20 Tea Cash, fetch it in a roughly 34-second run, or skip for
 free. Buying and a successful run each add one sugar burst to the next
 normal cup; a successful run also earns 5 Tea Cash. Neither a failed run
 nor skipping costs a cup. Your spoon and next fortune wait for you.
+
+Later in Chapter 2, the neighborhood may need a delivery spoon. The Daily
+Pour is a 30-second paper route: line the marked mailbox or porch up with
+your landing ring and throw. Each delivery earns 25 points, five or more
+earn 5 Tea Cash, and a perfect route adds a bonus. Skipping is free.
 
 ## Options
 

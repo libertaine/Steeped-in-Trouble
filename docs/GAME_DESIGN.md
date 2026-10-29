@@ -885,7 +885,7 @@ None are planned commitments.
 Out of scope for now: online leaderboards, multiplayer, accounts, and cloud
 saves.
 
-## The Daily Pour — 0.12.0 development
+## The Daily Pour (0.12.0)
 
 The spoon has a paper route. Nobody knows why.
 
@@ -917,6 +917,17 @@ the marked non-subscribing dog feeds its appetite for journalism; a far
 throw into a non-subscriber's window summons an angry neighbor. A garden
 gnome watches the spoon pass. These jokes are predictable route features.
 
+Between houses No. 20 and No. 22 (always the fifth and sixth houses) a
+pedestrian stands on the sidewalk. About two seconds before the spoon draws
+level, a small question mark appears, they turn to face the bicycle,
+raise their eyebrows, point, and say: "Is that a spoon riding a bicycle? I
+didn't think they had legs." The bubble stays for three route seconds
+while the spoon rides past without comment; the pedestrian's head follows
+it. Once per route, no input required, no sound needed. The pedestrian is
+not a target, obstacle or collision: a paper thrown at them simply lands
+on the sidewalk as an ordinary miss. Timing is derived from route progress,
+so pausing freezes the bubble and backgrounding cannot skip it.
+
 Each delivery earns 25 points, settled at the result. Delivering at least
 60% (five of seven) earns 5 Tea Cash. Delivering all seven with no wasted
 throws or mishaps adds 50 points: DELIVERY OF THE CENTURY! Otherwise a
@@ -938,6 +949,8 @@ successful impulses improving clearance. The first jump's physics and the
 70% aerial success chance are unchanged, as are bird, power-line and orbit
 encounters.
 
-Human playtesting will decide delivery timing, route readability and
-frequency before release. Additional minigames, Arcade Collection,
-Chapter 3, online scoring and permanent progression remain deferred.
+Released in 0.12.0 after project-owner playtesting. The route is
+deliberately basic; values remain tunable in `CONFIG.dailyPour`. Additional
+delivery mechanics, more pedestrians and dialogue, further minigames,
+Arcade Collection, Chapter 3, online scoring and permanent progression
+remain deferred.

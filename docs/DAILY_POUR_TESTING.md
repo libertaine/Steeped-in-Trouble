@@ -1,6 +1,7 @@
-# The Daily Pour — Milestone 1 playtesting
+# The Daily Pour — developer testing
 
-0.12.0 is in development. The published release is still 0.11.0.
+The Daily Pour shipped in 0.12.0. This guide keeps the developer checks,
+direct practice launcher and deterministic replay for future changes.
 
 Use Node 24 LTS (22.12+ also works):
 
@@ -63,6 +64,15 @@ browser fixture supplies one obstacle and uses real seeded aerial impulses.
   double jump over it. The body ends at 118 units; the rope is decorative.
   First-jump physics and the 70% aerial chance are unchanged. Check bird,
   power-line and orbital encounters as in the Flying Spoon testing guide.
+- Ride past the pedestrian between houses No. 20 and No. 22 (about 54%
+  of the route). A question mark appears, they turn and point, and the
+  bubble reads "Is that a spoon riding a bicycle? I didn't think they had
+  legs." for three route seconds while the spoon rides on. No input is
+  needed and sound is irrelevant. Pause mid-sentence: the bubble and
+  animation freeze. A paper thrown at them is an ordinary sidewalk miss.
+  The remark is derived from the route clock (`pedestrianRemark()`); jump
+  to it in development by riding the route, or advance the simulation to
+  `CONFIG.dailyPour.pedestrian.x / speed - notice` as the browser tests do.
 - Use Desktop Full and Compact Views, phone portrait/landscape and tablet
   portrait/landscape. No new mobile layout is introduced. Check sound on
   and off, target clarity, button reach and clipping on real devices.
@@ -73,45 +83,33 @@ The unit suite covers route seeds, target validity, aim, fixed trajectories,
 arrival timing, cooldown, limited papers, misses, non-subscribers, dog/window
 gags, poor/success/perfect results, one-time settlement, 30/60/144 Hz parity,
 eligibility, priorities, postponement, no backlog, skipping, restart, pause,
-and private random streams. Existing progression, boss, fortune, upgrade,
-Tea Shortage, runner reward and aerial-encounter tests remain in the suite.
+and private random streams. Pedestrian tests check the fixed position against
+200 seeds, the exact line, one three-second remark before the spoon passes,
+silence in the introduction and result, freezing without simulation time,
+papers at the pedestrian resolving as ordinary misses, and unchanged seeded
+routes, events and perfect-route rewards.
 
 Browser coverage includes the real offer and return, perfect-route input,
 keyboard repeat, exclusive keys, Tea Break/backgrounding, touch cancellation,
-and phone/tablet controls. Screenshots are generated in
-[`docs/images/daily-pour`](images/daily-pour/README.md) for introduction,
-riding, delivery, miss, angry neighbor, result, Compact/Full View, the four
-mobile/tablet viewports and aerial coffee-cup clearance.
+and phone/tablet controls. Pedestrian tests read drawn canvas pixels to
+confirm the bubble appears and is dismissed, pause mid-remark (state and
+pixels unchanged), background the page for longer than the remark lasts,
+and check that no paper, delivery or miss changes. Screenshots are generated
+in [`docs/images/daily-pour`](images/daily-pour/README.md).
 
-Automated browser emulation does not establish physical phone/tablet
-behavior or how enjoyable the route is. Human playtesting remains the
-release gate; delivery timing and encounter frequency are provisional.
+## Release qualification — 2026-10-28
 
-## Local results — 2026-10-28
+Windows, Node 24.22.1, from a fresh copy of the release candidate:
 
-Windows, Node 24.22.1:
+- `npm ci`: clean installation, 116 packages, 0 vulnerabilities. (Other
+  local processes held the workspace's native Vite binding, so the clean
+  install ran in a fresh copy; the workspace was restored from it and the
+  binding verified byte-identical. No dependency versions changed.)
+- `npm run check`: lint, **527 unit tests in 29 files**, production build.
+- `npm run test:browser`: fresh production build and server, **124 passed**
+  — 36 Chromium, 36 Firefox, 52 mobile Chromium — no failures or retries.
+- Pedestrian screenshots inspected at Desktop Full and Compact, phone
+  portrait and tablet landscape; all regenerated captures re-inspected.
 
-- `npm ci`: final package/lockfile installed successfully in
-  `tmp/daily-pour-dependencies` (116 packages). The original dependency tree
-  contained a locked native binding; its existing processes were preserved
-  and missing files restored from the identical clean dependency installation.
-- `npm run check`: lint, **521 unit tests in 29 files**, and production build
-  passed in the original workspace. No dependency versions changed.
-- Complete production browser suite: **118 passed**, no retries or skips —
-  34 Chromium, 34 Firefox, 50 mobile Chromium. Used a fresh build/server on
-  port 4282 with three workers and `tmp/daily-pour-qualified-results`.
-- After final screenshot inspection, the paper buttons were stacked within
-  the existing short-landscape thumb rail to fit the AIM label. Lint and a
-  fresh build passed; the **five focused mobile tests passed** with a new
-  text-fit assertion. These overlap the 118-test suite and are not additional
-  unique tests. Final phone/tablet screenshots were regenerated and inspected.
-- Firefox's restricted-sandbox startup crash was resolved by launching the
-  browser suite outside that process sandbox.
-- The Vite-only launcher reproduced seed 42, changed the route for seed 7,
-  and exercised a real delivery and sound on/off without browser errors.
-- Source review and the [screenshot gallery](images/daily-pour/README.md)
-  cover the requested scenes. Main and the peeled v0.11.0 tag still target
-  `1435d6e973673ed1ae42fcb5316cdc371a29f387`; published release notes are unchanged.
-
-GitHub CI status is recorded on the draft PR. Human timing/frequency tuning,
-subjective sound/play quality and physical device testing remain open.
+Automated browser emulation does not establish physical device behavior.
+The project owner's playtest approved the route and Tea Run fix for 0.12.0.

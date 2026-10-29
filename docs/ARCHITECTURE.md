@@ -507,7 +507,7 @@ cup and start a new grace period.
   and hardware limits. `PLAYWRIGHT_PORT` selects a separate local preview
   port when another server is already running.
 
-## Arcade Interludes and The Daily Pour (0.12.0 development)
+## Arcade Interludes and The Daily Pour (0.12.0)
 
 `gameplay/arcadeInterludes.js` is a small registry and scheduling helper,
 not a replacement phase engine. At each reading, after existing encounters
@@ -538,6 +538,15 @@ produces all house data before rendering. `updateDailyPour()` advances in
 aim and world-space landing point at release. Arrival tests that point
 against a physical target's width and required aim; rendering draws the
 same trajectory endpoints. No homing or proximity-based instant rewards.
+
+The pedestrian is not mission state. `CONFIG.dailyPour.pedestrian` fixes a
+world x in the gap between houses 5 and 6 (clear of every seed's targets),
+and `pedestrianRemark(m)` derives the speech window from `m.clock` alone.
+No random draws, collisions, events or rewards are involved, so pausing,
+frame rate and backgrounding cannot change it, and seeded results are
+identical. `rendering/dailyPour.js` word-wraps the line with `measureText`,
+clamps the bubble inside the arena, and draws it under the bicycle, papers
+and HUD.
 
 Pausing saves `pausedFrom = dailyPour` and skips all simulation ticks.
 Input routes Up/Down/Space exclusively to aim/throw in this phase, ignores

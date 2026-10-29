@@ -1,6 +1,6 @@
 # The Daily Pour screenshots
 
-Production-build captures from the Milestone 1 browser tests. Opened and
+Production-build captures from the 0.12.0 browser tests. Opened and
 inspected for text readability, target/collision alignment, clipping,
 control placement and layout at desktop, phone and tablet sizes.
 Screenshots use CSS-pixel scale; browser emulation is not hardware testing.
@@ -18,6 +18,10 @@ Screenshots use CSS-pixel scale; browser emulation is not hardware testing.
 | Phone landscape, 851 × 393 | [Intro](phone-landscape-intro.png), [Play](phone-landscape.png) |
 | Tablet portrait, 820 × 1180 | [Intro](tablet-portrait-intro.png), [Play](tablet-portrait.png) |
 | Tablet landscape, 1180 × 820 | [Intro](tablet-landscape-intro.png), [Play](tablet-landscape.png) |
+| Pedestrian remark, Desktop Full View 1440 × 1080 | [Full](pedestrian-full.png) |
+| Pedestrian remark, Desktop Compact View 1280 × 800 | [Compact](pedestrian-compact.png) |
+| Pedestrian remark, phone portrait 393 × 851 | [Phone](pedestrian-phone-portrait.png) |
+| Pedestrian remark, tablet landscape 1180 × 820 | [Tablet](pedestrian-tablet-landscape.png) |
 | Tea Run: actual successful aerial impulse above coffee | [Clearance](coffee-cup-clearance.png) |
 
 The tests use seed 42, including the Tea Run's actual successful 70%-chance
@@ -30,3 +34,8 @@ was moved below the dog. Subscriber target outlines now display the actual
 collision width, including the more forgiving first two deliveries.
 The short-landscape paper buttons use a vertical stack in the existing
 thumb rail so the AIM label fits; a browser assertion checks text overflow.
+
+The pedestrian captures are taken half a second into the remark, from
+pixels drawn by the production renderer. The bubble wraps to four lines,
+stays inside the arena, and sits in the gap between two houses, clear of
+both delivery targets, the aim banner, the landing ring and the HUD.

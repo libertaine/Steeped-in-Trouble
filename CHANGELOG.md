@@ -5,26 +5,39 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-28 — The Daily Pour
+
+The spoon has a paper route. Nobody knows why.
+
 ### Added
 
-- **0.12.0 Milestone 1 — The Daily Pour:** optional newspaper delivery after
-  round 12 in Chapter 2, then every 14 normal rounds after an offer. A small
-  Arcade Interlude registry postpones offers behind existing encounters and
-  preserves readings, upgrades, Tea Shortages, bosses, and bonus rounds.
-- A 30-second, independently seeded neighborhood route: aim for mailboxes
-  or porches, throw animated papers, ride a pedaling silver-spoon bicycle,
-  and occasionally inform a dog or an extremely unwilling neighbor.
-- Delivery scoring, modest Tea Cash rewards, perfect-route results, original
-  Canvas art and synthesized sounds, keyboard and touch controls, and a
-  development-only direct launcher with deterministic course replay.
+- **The Daily Pour:** an optional arcade adventure offered after round 12
+  in Chapter 2, then every 14 normal rounds after an offer. Skipping costs
+  nothing; cups, score, upgrades, Tea Cash and the waiting fortune carry on.
+- A 30-second, independently seeded neighborhood route ridden by a silver
+  spoon on a bicycle. Aim for mailboxes (↓) or porches (↑) and throw (Space,
+  or AIM / THROW on touch); papers fly to fixed landing points.
+- Delivery scoring and modest rewards: 25 points per delivery, 5 Tea Cash
+  for five or more of seven, and a 50-point bonus for a perfect route.
+- Neighborhood humor: a dog with an appetite for journalism, an extremely
+  unwilling non-subscriber, a watchful garden gnome, and one pedestrian with
+  questions about spoon anatomy. All are scenery, not obstacles or targets.
+- Lightweight Arcade Interlude scheduling that waits behind existing
+  encounters and preserves readings, upgrades, Tea Shortages, bosses and
+  bonus rounds without building a backlog.
+- Original Canvas vector art, synthesized sounds and soundtrack variation,
+  keyboard and touch controls, and a development-only direct launcher with
+  deterministic course replay (see `docs/DAILY_POUR_TESTING.md`).
 
 ### Fixed
 
-- Suspended Tea Run coffee cups now collide only with their visible body:
-  height 78, clearance 40. The rope is decorative. Sliding still works;
-  successful aerial jumps can clear the body. Aerial success remains 70%.
+- Suspended Tea Run coffee cups now have finite physical collision boxes
+  (height 78, clearance 40). The rope is decorative.
+- Successful aerial jumps can genuinely clear the cups, while sliding
+  remains valid. Aerial success remains 70%.
 
-Human playtesting remains the release gate. No 0.12.0 release is published.
+Teacup combat, Auto Steam and existing Tea Run encounters are unchanged.
+Released following project-owner playtesting.
 
 ## [0.11.0] - 2026-10-28 — The Flying Spoon
 
@@ -303,7 +316,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.11.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.12.0...main
+[0.12.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.8.0...v0.9.0
