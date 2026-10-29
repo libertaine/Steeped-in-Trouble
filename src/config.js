@@ -449,7 +449,7 @@ export const CONFIG = deepFreeze({
     obstacles: {
       sugarCube: { width: 38, height: 38, inset: 5, roll: 45, action: 'jump' }, // rolls towards the spoon
       puddle: { width: 90, height: 8, inset: 14, action: 'jump' },
-      coffeeCup: { width: 76, clearance: 40, inset: 8, action: 'slide' }, // hangs this far above the paving
+      coffeeCup: { width: 76, height: 78, clearance: 40, inset: 8, action: 'slide' }, // rope is decorative
     },
     // Things to pick up on the way: a few points each, kept however the run ends.
     coinGap: 1.6, // a row of coins may sit in a gap at least this long…
@@ -459,6 +459,25 @@ export const CONFIG = deepFreeze({
     pickupRadius: 15,
     coinPoints: 5,
     packetPoints: 10, // a packet stays a small bonus beside an ordinary round
+  },
+
+  // Optional arcade offers count normal rounds only. Missed dates collapse into one opportunity.
+  arcade: {
+    dailyPour: { firstAfter: 12, repeatEvery: 14, minChapter: 2 },
+  },
+  dailyPour: {
+    introTime: 3, outroMin: 1.5, duration: 30,
+    speed: 165, houses: 9, firstAt: 4, houseInterval: 2.8,
+    cooldown: 0.85, sparePapers: 2, successRatio: 0.6,
+    deliveryPoints: 25, successCash: 5, perfectBonus: 50,
+    riderX: 190, releaseY: 552,
+    targets: {
+      near: { ahead: 145, y: 450, flight: 0.65 },
+      far: { ahead: 200, y: 335, flight: 0.9 },
+    },
+    // One bystander between houses 5 and 6: scenery, not a target or obstacle.
+    // Speech starts `notice` route seconds before the spoon draws level.
+    pedestrian: { x: 2910, notice: 1.95, speech: 3 },
   },
 
   // Easy Touch (input/gestures.js): forgiving gestures on the cup for milk and sugar.

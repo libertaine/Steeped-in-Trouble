@@ -28,6 +28,8 @@ src/
 │   ├── chocolate.js     Hot Chocolate Havoc: the bonus round's schedule, marshmallows, flames, scoring
 │   ├── shortage.js      Tea Cash, shortage scheduling, and restock
 │   ├── teaRun.js        seeded runner course, actions, collisions, and settlement
+│   ├── arcadeInterludes.js small optional-mission registry, eligibility, scheduling, one-time rewards
+│   ├── dailyPour.js     independent paper route, fixed-step flights, delivery testing and settlement
 │   ├── autoSteam.js     pure decisions about firing at aligned targets
 │   ├── grind.js         The Daily Grind: the coffee boss's schedule, valve, attacks, scalds, rewards
 │   ├── upgrades.js      spoon upgrades: definitions, offers, stacking limits
@@ -45,6 +47,10 @@ src/
 ```
 
 ## The one rule: simulation vs. presentation
+
+The Daily Pour adds `rendering/dailyPour.js` alongside the existing painters.
+It reads simulation state, including animation clocks, and never generates
+a route or chooses a delivery result.
 
 `core/` and `gameplay/` never touch the DOM, canvas, audio, `Math.random`, or
 the clock. They mutate a plain state object and push **events** describing
@@ -500,3 +506,55 @@ cup and start a new grace period.
   inspection; see [mobile browser testing](MOBILE_TESTING.md) for coverage
   and hardware limits. `PLAYWRIGHT_PORT` selects a separate local preview
   port when another server is already running.
+
+## Arcade Interludes and The Daily Pour (0.12.0)
+
+`gameplay/arcadeInterludes.js` is a small registry and scheduling helper,
+not a replacement phase engine. At each reading, after existing encounters
+are decided, `eligibleInterlude()` selects at most one eligible mission.
+Shortage, Havoc, and Grind flags postpone it to a later reading. An upgrade
+choice remains in the reading phase and must be resolved before continuing.
+The current mission's offer and gameplay are ordinary phases:
+
+```text
+reading → [upgrade choice] → arcadeOffer → dailyPour.intro → play → outro
+                                  │                              │
+                                  └── skip ──→ continueFromReading ←┘
+                                                   │
+                                     deferred encounter / next cup
+```
+
+`state.arcade.after` stores one due round per registered mission, not a
+queue. Offering consumes the opportunity (including a skip), records the
+normal round in `offeredAt`, and schedules the next opportunity 14 rounds
+later. `resetMatch()` clears all arcade state. Existing adventures retain
+their own phases and mechanics. `awardInterlude()` applies positive points
+and cash once, using the mission summary as the settlement guard.
+
+The paper RNG is seeded from the game's seed XOR `0xda11b007`; it never
+advances the normal, tea, boss, bonus, or Tea Run streams. `planRoute()`
+produces all house data before rendering. `updateDailyPour()` advances in
+120 Hz simulation ticks using a carried accumulator. Each paper locks its
+aim and world-space landing point at release. Arrival tests that point
+against a physical target's width and required aim; rendering draws the
+same trajectory endpoints. No homing or proximity-based instant rewards.
+
+The pedestrian is not mission state. `CONFIG.dailyPour.pedestrian` fixes a
+world x in the gap between houses 5 and 6 (clear of every seed's targets),
+and `pedestrianRemark(m)` derives the speech window from `m.clock` alone.
+No random draws, collisions, events or rewards are involved, so pausing,
+frame rate and backgrounding cannot change it, and seeded results are
+identical. `rendering/dailyPour.js` word-wraps the line with `measureText`,
+clamps the bubble inside the arena, and draws it under the bicycle, papers
+and HUD.
+
+Pausing saves `pausedFrom = dailyPour` and skips all simulation ticks.
+Input routes Up/Down/Space exclusively to aim/throw in this phase, ignores
+keyboard repeats, and resets at offer, intro, play, result and return
+boundaries. The existing blur/visibility handlers pause it; Tea Break
+blocks both input and simulation. Compact/Full View reuses the existing
+choice and control placement. No new layout mode is introduced.
+
+Coffee-cup collision and rendering share `CONFIG.teaRun.obstacles.coffeeCup.height`.
+The upper hitbox boundary is `clearance + height` (118 logical units), so
+aerial impulses can clear the cup and its decorative rope is non-solid.

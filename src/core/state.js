@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import { modifiersFor } from '../gameplay/fortunes.js';
 import { createProgress } from '../gameplay/progress.js';
 import { createSpoon } from '../gameplay/upgrades.js';
+import { createArcadeSchedule } from '../gameplay/arcadeInterludes.js';
 
 /** Game phases. See docs/ARCHITECTURE.md for the transition diagram. */
 export const PHASE = Object.freeze({
@@ -13,6 +14,8 @@ export const PHASE = Object.freeze({
   GRIND: 'grind', // The Daily Grind, the coffee boss, likewise between rounds
   SHORTAGE: 'shortage', // The Tea Shortage: buy, run, or skip, after a reading
   TEA_RUN: 'teaRun', // The Tea Run, the side-scrolling errand to the shop
+  ARCADE_OFFER: 'arcadeOffer',
+  DAILY_POUR: 'dailyPour',
   GAME_OVER: 'gameover',
 });
 
@@ -100,6 +103,10 @@ export function createInitialState() {
     shortageDue: false, // decided at each reading: a shortage before the next cup?
     shortage: null, // the announcement in progress: { time }
     run: null, // the errand in progress; see createRun()
+    arcade: createArcadeSchedule(),
+    arcadeDue: null, // mission id decided once at the reading
+    interlude: null, // optional offer: { id }
+    dailyPour: null,
 
     // A setting rather than play, so it is kept from pot to pot: fire at whatever lines up with the spoon.
     autoSteam: false,

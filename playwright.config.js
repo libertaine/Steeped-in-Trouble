@@ -28,7 +28,7 @@ export default defineConfig({
   webServer: BASE_URL ? undefined : {
     command: `npm run build && npm run preview -- --port ${PORT}`,
     url: `http://localhost:${PORT}/Steeped-in-Trouble/`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

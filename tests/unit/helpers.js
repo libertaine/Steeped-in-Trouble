@@ -103,6 +103,7 @@ export function brewNext(game, { win = false } = {}) {
   game.primaryAction();
   answerShortage(game);
   finishBonus(game, { win });
+  game.chooseInterlude(false); // optional paper routes never trap normal-round helpers
 }
 
 /**

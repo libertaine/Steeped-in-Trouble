@@ -884,3 +884,73 @@ None are planned commitments.
 
 Out of scope for now: online leaderboards, multiplayer, accounts, and cloud
 saves.
+
+## The Daily Pour (0.12.0)
+
+The spoon has a paper route. Nobody knows why.
+
+An optional Arcade Interlude becomes eligible after completing round 12,
+once Chapter 2 is open. Later opportunities occur 14 normal rounds after
+the previous offer. These values live in `CONFIG.arcade.dailyPour`.
+Fortune readings and upgrade choices finish first; Tea Shortages, milestone
+bosses, rematches and Hot Chocolate Havoc take priority. A conflicting date
+waits for a later eligible reading and never builds a backlog. Shortages
+continue at 9, 16, 23, 30, 37 and every seven rounds thereafter.
+
+The offer says EXTRA! EXTRA! — The Daily Pour needs a delivery spoon.
+DELIVER PAPERS starts the mission; NO THANKS carries on for free. Both
+answers consume the opportunity. Mouse, keyboard (1/2) and touch work.
+
+The bicycle travels automatically through nine houses over 30 seconds.
+Seven houses subscribe; two display NO PAPER. Subscribers mark either a
+near mailbox or far porch. Up selects the porch; Down selects the mailbox;
+Space throws. Touch uses AIM (toggle) and THROW. There is no steering,
+braking, acceleration or jumping. The first two deliveries are mailboxes
+with wider timing windows. A landing ring shows where a released paper
+will go; line the marked target up with that ring before throwing.
+
+Papers fly to fixed world-space endpoints. Only arriving at the correct
+subscriber target delivers one. The 0.85-second cooldown and nine-paper
+bag (seven subscriptions plus two spares) make well-timed throws useful.
+One delivery per subscriber. Misses fall onto the sidewalk. Throwing near
+the marked non-subscribing dog feeds its appetite for journalism; a far
+throw into a non-subscriber's window summons an angry neighbor. A garden
+gnome watches the spoon pass. These jokes are predictable route features.
+
+Between houses No. 20 and No. 22 (always the fifth and sixth houses) a
+pedestrian stands on the sidewalk. About two seconds before the spoon draws
+level, a small question mark appears, they turn to face the bicycle,
+raise their eyebrows, point, and say: "Is that a spoon riding a bicycle? I
+didn't think they had legs." The bubble stays for three route seconds
+while the spoon rides past without comment; the pedestrian's head follows
+it. Once per route, no input required, no sound needed. The pedestrian is
+not a target, obstacle or collision: a paper thrown at them simply lands
+on the sidewalk as an ordinary miss. Timing is derived from route progress,
+so pausing freezes the bubble and backgrounding cannot skip it.
+
+Each delivery earns 25 points, settled at the result. Delivering at least
+60% (five of seven) earns 5 Tea Cash. Delivering all seven with no wasted
+throws or mishaps adds 50 points: DELIVERY OF THE CENTURY! Otherwise a
+successful route announces THE NEWS HAS SPREAD.; a poor one announces
+YOUR CONTRACT HAS BEEN REVIEWED. There are no cash penalties, lost cups,
+restocks, upgrade changes or progression costs. The route always finishes.
+All values are provisional and configurable in `CONFIG.dailyPour`.
+
+The existing Sound toggle covers the bicycle bell, throw, delivery, window,
+dog and completion effects plus a playful variation of the synthesized
+soundtrack. Pausing or backgrounding freezes the entire route and every
+flight. Results must remain visible briefly before returning to the
+waiting next activity. Rewards settle once.
+
+In the Tea Run, a suspended coffee cup has a 78-unit body beginning 40
+units above the paving. Its rope is decorative. Sliding remains reliable;
+a well-timed successful aerial jump can now clear it from above, with more
+successful impulses improving clearance. The first jump's physics and the
+70% aerial success chance are unchanged, as are bird, power-line and orbit
+encounters.
+
+Released in 0.12.0 after project-owner playtesting. The route is
+deliberately basic; values remain tunable in `CONFIG.dailyPour`. Additional
+delivery mechanics, more pedestrians and dialogue, further minigames,
+Arcade Collection, Chapter 3, online scoring and permanent progression
+remain deferred.

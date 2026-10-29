@@ -47,7 +47,9 @@ const SLIDE_KEYS = new Set(['ArrowDown']);
  * @param {Document} options.doc
  * @param {{ fire(): void, milk(): void, sugar(): void, confirm(): boolean,
  *   togglePause(): boolean, restart(): boolean, pause(): void, choose(index: number): boolean,
- *   jump?(): boolean, slide?(): boolean, errand?(choice: string): boolean }} options.commands
+ *   jump?(): boolean, slide?(): boolean, errand?(choice: string): boolean,
+ *   paperControls?(): boolean, aimPaper?(aim?: string): boolean,
+ *   throwPaper?(): boolean, interlude?(accept: boolean): boolean }} options.commands
  * @param {() => ('cup' | 'flame' | null)} [options.gestureMode] what the cup's gestures do right now
  * @param {() => ('easy' | 'classic')} [options.scheme] the touch layout; gestures only work in Easy Touch
  * @param {(kind: string, point?: { x: number, y: number }) => void} [options.onGesture]
@@ -115,7 +117,7 @@ export function createControls({
     if (target?.closest?.('input, select, textarea, [contenteditable="true"]')) return;
     const code = e.code;
     if (target?.closest?.('button:not(#mainBtn), a') && (code === 'Space' || code === 'Enter')) {
-      if (e.repeat && target.closest('[data-run]')) e.preventDefault();
+      if (e.repeat && target.closest('[data-run], [data-paper]')) e.preventDefault();
       const hold = target.closest('[data-hold]')?.dataset.hold;
       if (hold) {
         e.preventDefault();
@@ -126,6 +128,13 @@ export function createControls({
       return; // Native activation belongs to the focused UI, never to a gameplay shortcut.
     }
     if (CAPTURED_KEYS.has(code)) e.preventDefault();
+    if (commands.paperControls?.() && ['ArrowUp', 'ArrowDown', 'Space'].includes(code)) {
+      if (!e.repeat) {
+        if (code === 'Space') commands.throwPaper?.();
+        else commands.aimPaper?.(code === 'ArrowUp' ? 'far' : 'near');
+      }
+      return; // Exclusive to the route: no steam, milk, sugar, or runner action.
+    }
     const hold = KEY_BINDINGS[code];
     if (hold) {
       held[hold] = true;
@@ -186,9 +195,9 @@ export function createControls({
     listen(button, 'lostpointercapture', up);
   }
 
-  // The Tea Run's JUMP and SLIDE act as the finger lands, not on click, so they answer at once.
-  for (const button of doc.querySelectorAll('[data-run]')) {
-    const action = button.dataset.run;
+  // Runner and paper-route actions answer as the finger lands, with no held action.
+  for (const button of [...doc.querySelectorAll('[data-run]'), ...doc.querySelectorAll('[data-paper]')]) {
+    const action = button.dataset.run ?? button.dataset.paper;
     listen(button, 'pointerdown', (e) => {
       if (!enabled()) return;
       e.preventDefault();
@@ -209,6 +218,9 @@ export function createControls({
   }
   for (const button of doc.querySelectorAll('[data-errand]')) {
     listen(button, 'click', () => { if (enabled()) commands.errand?.(button.dataset.errand); });
+  }
+  for (const button of doc.querySelectorAll('[data-interlude]')) {
+    listen(button, 'click', () => { if (enabled()) commands.interlude?.(button.dataset.interlude === 'accept'); });
   }
 
   // Easy Touch: gestures on the cup.

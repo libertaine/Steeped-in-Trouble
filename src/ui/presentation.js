@@ -17,7 +17,7 @@ export function createPresentation({ doc = document, game, params, storage, rese
   const dock = doc.getElementById('actionDock');
   const choices = doc.getElementById('phaseChoices');
   const stage = doc.querySelector('.stage');
-  const offers = [doc.getElementById('upgradeOffer'), doc.getElementById('errandOffer')];
+  const offers = [doc.getElementById('upgradeOffer'), doc.getElementById('errandOffer'), doc.getElementById('arcadeOffer')].filter(Boolean);
   const panels = [...aside.children];
   const sections = panels.map((panel, index) => {
     const details = doc.createElement('details');
@@ -100,11 +100,12 @@ export function createPresentation({ doc = document, game, params, storage, rese
     update() {
       const s = game.state;
       body.dataset.phase = s.phase;
-      body.dataset.active = String(game.touchGestures() !== null || (s.phase === 'teaRun' && s.run.stage === 'run'));
+      body.dataset.active = String(game.touchGestures() !== null || (s.phase === 'teaRun' && s.run.stage === 'run')
+        || (s.phase === 'dailyPour' && s.dailyPour.stage === 'play'));
       // Keep the animation and reveal unobscured, and required choices directly reachable.
       menu.disabled = s.phase === 'shortage' || (s.phase === 'reading'
         && s.readingTime < CONFIG.fortunes.revealAt);
-      menu.textContent = ['playing', 'chocolate', 'grind', 'teaRun'].includes(s.phase) ? 'Pause / Menu' : 'Tea Break';
+      menu.textContent = ['playing', 'chocolate', 'grind', 'teaRun', 'dailyPour'].includes(s.phase) ? 'Pause / Menu' : 'Tea Break';
     },
     dispose() {
       closeMenu();
