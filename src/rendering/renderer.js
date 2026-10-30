@@ -21,6 +21,8 @@ import { createPourPainter } from './dailyPour.js';
 import { pourInProgress } from '../gameplay/dailyPour.js';
 import { createBreakoutPainter } from './biscuitBreakout.js';
 import { breakoutInProgress } from '../gameplay/biscuitBreakout.js';
+import { createCrossingPainter } from './crossingStreet.js';
+import { crossingInProgress } from '../gameplay/crossingStreet.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
 const { revealAt, lieRetractAt } = CONFIG.fortunes;
@@ -129,6 +131,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
   const ctx = canvas.getContext('2d');
   const newspaper = createPourPainter(ctx, { compact: () => canvas.clientWidth < 560 });
   const biscuits = createBreakoutPainter(ctx, { compact: () => canvas.clientWidth < 560 });
+  const street = createCrossingPainter(ctx, { compact: () => canvas.clientWidth < 560 });
   let time = 0; // animation clock, independent of the simulation
   let gradients = null;
   const tea = createTeaPainter(ctx);
@@ -1579,6 +1582,16 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       const wall = breakoutInProgress(state);
       if (wall) {
         biscuits.draw(wall, state.phase === PHASE.PAUSED);
+        return;
+      }
+      const road = crossingInProgress(state);
+      if (road) {
+        street.draw(road, state.phase === PHASE.PAUSED);
+        return;
+      }
+      // Offered the crossing, the spoon is already at the curb, eyeing the traffic.
+      if (state.phase === PHASE.ARCADE_OFFER && state.interlude?.id === 'crossingStreet') {
+        street.drawPreview(time);
         return;
       }
       // The Tea Run leaves the cup behind altogether.

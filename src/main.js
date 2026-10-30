@@ -17,6 +17,7 @@ import { createRenderer } from './rendering/renderer.js';
 import { createHud } from './ui/hud.js';
 import { createPresentation } from './ui/presentation.js';
 import { prepareDayPractice } from './dev/days.js';
+import { crossForMe, prepareCrossingPractice } from './dev/crossing.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -75,8 +76,8 @@ function boot() {
     }
     if (save) saveSettings(storage, settings);
     document.getElementById('activeControls').textContent = settings.touch === 'easy'
-      ? 'Easy Touch: hold ◀ / ▶ to steer; double-tap the cup for milk; hold the cup for sugar. In hot chocolate, hold the cup for flames. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH. Keyboard controls work too.'
-      : 'Classic Touch: hold Turn to steer and Steam to fire; tap Milk or Sugar. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH. Keyboard controls work too.';
+      ? 'Easy Touch: hold ◀ / ▶ to steer; double-tap the cup for milk; hold the cup for sugar. In hot chocolate, hold the cup for flames. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH; crossing the street, tap the arrow pad. Keyboard controls work too.'
+      : 'Classic Touch: hold Turn to steer and Steam to fire; tap Milk or Sugar. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH; crossing the street, tap the arrow pad. Keyboard controls work too.';
   }
   applySettings(settings);
   touchButton?.addEventListener('click', () => {
@@ -131,6 +132,8 @@ function boot() {
       throwPaper: game.throwPaper,
       breakoutControls: game.breakoutControls,
       launchCube: game.launchCube,
+      crossingControls: game.crossingControls,
+      hop: game.hop,
       errand: game.chooseErrand,
       jump: game.jump,
       slide: game.slide,
@@ -174,6 +177,8 @@ function boot() {
     'arcadeOffer', 'arcadeSkipped', 'pourStart', 'pourGo', 'pourFinish', 'pourEnd',
     // Not breakoutGo: a direction held through the introduction keeps steering the spoon.
     'breakoutStart', 'breakoutFinish', 'breakoutEnd',
+    // The street needs a fresh press for every first hop, so nothing held carries in.
+    'crossingStart', 'crossingGo', 'crossingFinish', 'crossingEnd',
     'runBird', 'runZap', 'runOrbit', 'runReturn',
     'runStart', 'runGo', 'runFinish', 'runFail', 'runEnd', 'chocolateStart', 'havocStart', 'havocEnd',
     'grindStart', 'grindFight', 'grindDefeat', 'grindEscape', 'gameover']);
@@ -182,6 +187,8 @@ function boot() {
     for (const event of game.drainEvents()) {
       // Leaving an adventure, a Space still held from it must not become steam in the cup.
       if (event.type === 'pourEnd' || event.type === 'breakoutEnd') controls.settle();
+      // Nor may an arrow still held from the street start turning the spoon.
+      else if (event.type === 'crossingEnd') controls.settle(true);
       else if (RESETS.has(event.type)) controls.reset();
       effects.handle(event);
       audio.handle(event);
@@ -194,7 +201,7 @@ function boot() {
     // Input can leave the runner between frames. Clear its holds before the
     // next cup advances, so the Space used to go home cannot also fire steam.
     handleEvents();
-    if (!presentation.blocked) game.update(dt, controls.held);
+    if (!presentation.blocked) game.update(dt, controls.held, controls.walk);
     handleEvents();
     audio.update(game.state, dt);
     renderer.draw(game.state, effects.fx, dt);
@@ -256,6 +263,18 @@ function boot() {
         controls.reset();
       };
       if (params.get('arcade') === 'biscuitBreakout') window.__TEACUP__.launchBiscuitBreakout();
+      let roadSeed = game.seed;
+      // And Crossing the Street: call again without a seed to replay the same traffic. A mode of
+      // 'late' starts with 5 seconds left, 'last' with one attempt left (see dev/crossing.js).
+      window.__TEACUP__.launchCrossingStreet = (seed = roadSeed, mode = 'start') => {
+        roadSeed = seed;
+        const ok = prepareCrossingPractice(game, seed, mode);
+        controls.reset();
+        return ok;
+      };
+      // Plays a cautious, collision-free crossing from wherever the spoon is.
+      window.__TEACUP__.crossForMe = () => crossForMe(game);
+      if (params.get('arcade') === 'crossingStreet') window.__TEACUP__.launchCrossingStreet(roadSeed, params.get('crossing') ?? 'start');
       // A fresh pot brewed straight into a cup (cup 2 by default) under a chosen fortune, through the real reading
       // hand-off (so it lasts exactly that one cup). ?fortune=karma does this on load.
       window.__TEACUP__.brewWithFortune = (id = 'karma', { cup = 2 } = {}) => {

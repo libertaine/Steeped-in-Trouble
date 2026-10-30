@@ -16,6 +16,7 @@ import { canBuyTea } from '../gameplay/shortage.js';
 import { runInProgress } from '../gameplay/teaRun.js';
 import { pourInProgress } from '../gameplay/dailyPour.js';
 import { breakoutInProgress } from '../gameplay/biscuitBreakout.js';
+import { TRAFFIC_ROWS, crossingInProgress } from '../gameplay/crossingStreet.js';
 import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
@@ -34,6 +35,7 @@ const COPY = {
     [PHASE.ARCADE_OFFER]: 'EXTRA! EXTRA!',
     [PHASE.DAILY_POUR]: 'THE DAILY POUR',
     [PHASE.BISCUIT_BREAKOUT]: 'BISCUIT BREAKOUT',
+    [PHASE.CROSSING_STREET]: 'CROSSING THE STREET',
     [PHASE.GAME_OVER]: 'THE CUP RUNNETH OVER',
   },
   title: {
@@ -49,6 +51,7 @@ const COPY = {
     [PHASE.ARCADE_OFFER]: () => 'A spoon with a second job',
     [PHASE.DAILY_POUR]: () => 'The Daily Pour',
     [PHASE.BISCUIT_BREAKOUT]: () => 'Biscuit Breakout',
+    [PHASE.CROSSING_STREET]: () => 'Crossing the Street',
     [PHASE.GAME_OVER]: () => 'The last drop',
   },
   button: {
@@ -64,6 +67,7 @@ const COPY = {
     [PHASE.ARCADE_OFFER]: 'Deliver or skip (1 / 2)',
     [PHASE.DAILY_POUR]: 'Pause / resume (P)',
     [PHASE.BISCUIT_BREAKOUT]: 'Pause / resume (P)',
+    [PHASE.CROSSING_STREET]: 'Pause / resume (P)',
     [PHASE.GAME_OVER]: 'Start a fresh pot →',
   },
   tip: {
@@ -78,6 +82,7 @@ const COPY = {
     [PHASE.ARCADE_OFFER]: 'The Daily Pour needs a delivery spoon. Deliver papers, or carry on brewing. Skipping costs nothing.',
     [PHASE.DAILY_POUR]: '',
     [PHASE.BISCUIT_BREAKOUT]: '',
+    [PHASE.CROSSING_STREET]: '',
     [PHASE.READING]: 'The pattern was made by the leaves you defeated, though the leaves have opinions of their own. The omen applies to the next cup.',
     [PHASE.GAME_OVER]: 'Three spills end the pot. Brew again to rewrite the future.',
   },
@@ -101,7 +106,25 @@ export const ARCADE_OFFERS = Object.freeze({
     button: 'Break or skip (1 / 2)',
     tip: 'The spoon is the paddle and a sugar cube is the ball. Break the biscuits, or leave them alone. Skipping costs nothing.',
   },
+  crossingStreet: {
+    status: 'WHY DID THE SPOON CROSS THE ROAD?', title: 'A busy road', heading: 'WHY DID THE SPOON CROSS THE ROAD?',
+    pitch: '“Nobody knows. But apparently, it’s our problem now.”',
+    accept: 'CROSS THE ROAD', acceptInfo: 'A short, optional dash through traffic',
+    skip: 'STAY RIGHT HERE', skipInfo: 'Costs nothing. Carry on brewing.',
+    button: 'Cross or stay (1 / 2)',
+    tip: 'Hop the spoon across five lanes of traffic to the tea shop, or stay right here. Skipping costs nothing.',
+  },
 });
+
+// Crossing the Street, stage by stage.
+const CROSSING = {
+  button: { intro: 'Start crossing →', play: 'Pause / resume (P)', outro: 'Back to the tea →' },
+  tip: {
+    intro: 'Arrow keys or WASD hop the spoon one square; hold to keep hopping. On touch, use the arrow pad.',
+    play: `Reach the tea shop in ${CONFIG.crossingStreet.duration} seconds. A bump sends the spoon back to the curb and costs one of ${CONFIG.crossingStreet.attempts} attempts, never a cup. The median is safe.`,
+    outro: 'Your cups, your spoon, and the next fortune are exactly as you left them.',
+  },
+};
 
 // Biscuit Breakout, stage by stage.
 const BREAKOUT = {
@@ -216,7 +239,7 @@ function omenStatus(state) {
 /** The small in-play indicator of the fortune shaping this round. */
 function omenText(state, fortune) {
   if (!fortune || havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)
-    || breakoutInProgress(state)) return '';
+    || breakoutInProgress(state) || crossingInProgress(state)) return '';
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
   return `✦ ${fortune.name} · ${fortune.tag} · ${omenStatus(state)}`;
 }
@@ -225,7 +248,7 @@ function omenText(state, fortune) {
 function teaText(state) {
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
   if (havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)
-    || breakoutInProgress(state)) return '';
+    || breakoutInProgress(state) || crossingInProgress(state)) return '';
   const tea = TEAS[state.tea];
   return `☕ ${tea.name} · ${tea.tag}`;
 }
@@ -253,6 +276,7 @@ export function pageMode(state) {
   if (state.phase === PHASE.DAY) return 'day';
   if (pourInProgress(state)) return 'pour';
   if (breakoutInProgress(state)) return 'breakout';
+  if (crossingInProgress(state)) return 'crossing';
   if (state.phase === PHASE.ARCADE_OFFER) return 'arcadeOffer';
   if (state.phase === PHASE.SHORTAGE) return 'shortage';
   return runInProgress(state) ? 'run' : 'cup';
@@ -281,9 +305,10 @@ export function hudText(state) {
   const run = runInProgress(state);
   const pour = pourInProgress(state);
   const breakout = breakoutInProgress(state);
+  const street = crossingInProgress(state);
   // Between rounds (a reading, the bonus, the boss, or an errand) the panel looks ahead to the next cup.
   const between = state.phase === PHASE.DAY || state.phase === PHASE.READING || state.phase === PHASE.SHORTAGE || state.phase === PHASE.ARCADE_OFFER
-    || !!havoc || !!grind || !!run || !!pour || !!breakout;
+    || !!havoc || !!grind || !!run || !!pour || !!breakout || !!street;
   const shown = between ? state.nextFortune : state.fortune;
   const fortune = shown ? FORTUNES[shown] : null;
   const offering = state.phase === PHASE.READING && !!state.offer;
@@ -358,6 +383,24 @@ export function hudText(state) {
       compactProgress: `Biscuits ${breakout.broken}/${breakout.total}`,
       mainBtn: paused ? 'Resume breakout →' : BREAKOUT.button[breakout.stage],
       gameTip: BREAKOUT.tip[breakout.stage],
+    });
+  }
+  if (street) {
+    const C = CONFIG.crossingStreet;
+    const paused = state.phase === PHASE.PAUSED;
+    const points = street.summary?.points ?? street.credited.length * C.lanePoints;
+    Object.assign(values, {
+      roundTitle: street.stage === 'outro' ? street.summary.title : 'Crossing the Street',
+      roundNum: `${pad(state.round, 2)}½`,
+      hudStatus: paused ? 'TRAFFIC PAUSED' : street.stage === 'outro' ? (street.summary.success ? 'SAFELY ACROSS' : 'BACK ON THE CURB')
+        : `CROSSING THE STREET · ${Math.max(0, Math.ceil(C.duration - street.clock - 1e-6))}s`,
+      hudScore: `POINTS ${points}`,
+      hudLives: `ATTEMPTS ${'● '.repeat(Math.max(0, street.attempts))}${'○ '.repeat(C.attempts - Math.max(0, street.attempts))}`.trim(),
+      hudStrainer: '', teaName: 'Across the road, apparently',
+      killLabel: 'Lanes crossed', killCount: `${street.credited.length} / ${TRAFFIC_ROWS.length}`,
+      compactProgress: `Lanes ${street.credited.length}/${TRAFFIC_ROWS.length} · ${points} pts`,
+      mainBtn: paused ? 'Resume crossing →' : CROSSING.button[street.stage],
+      gameTip: CROSSING.tip[street.stage],
     });
   }
   if (pour) {

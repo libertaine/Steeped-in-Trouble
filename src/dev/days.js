@@ -16,6 +16,7 @@ export function prepareDayPractice(game, mode = 'end') {
   });
   s.arcade.after.dailyPour = round + 2;
   s.arcade.after.biscuitBreakout = round + 9;
+  s.arcade.after.crossingStreet = round + 5;
   s.target = difficultyAt(s.heat).target;
   s.kills = s.target - 1;
   if (mode === 'near') return true;

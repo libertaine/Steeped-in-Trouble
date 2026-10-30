@@ -102,11 +102,12 @@ export function createPresentation({ doc = document, game, params, storage, rese
       body.dataset.phase = s.phase;
       body.dataset.active = String(game.touchGestures() !== null || (s.phase === 'teaRun' && s.run.stage === 'run')
         || (s.phase === 'dailyPour' && s.dailyPour.stage === 'play')
-        || (s.phase === 'biscuitBreakout' && s.biscuitBreakout.stage === 'play'));
+        || (s.phase === 'biscuitBreakout' && s.biscuitBreakout.stage === 'play')
+        || (s.phase === 'crossingStreet' && s.crossingStreet.stage === 'play'));
       // Keep the animation and reveal unobscured, and required choices directly reachable.
       menu.disabled = s.phase === 'shortage' || (s.phase === 'reading'
         && s.readingTime < CONFIG.fortunes.revealAt);
-      menu.textContent = ['playing', 'chocolate', 'grind', 'teaRun', 'dailyPour', 'biscuitBreakout'].includes(s.phase) ? 'Pause / Menu' : 'Tea Break';
+      menu.textContent = ['playing', 'chocolate', 'grind', 'teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet'].includes(s.phase) ? 'Pause / Menu' : 'Tea Break';
     },
     dispose() {
       closeMenu();
