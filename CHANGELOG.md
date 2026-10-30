@@ -5,6 +5,25 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+### 0.16.0 — The Arcade Collection (in development)
+
+- **THE SPOON'S OTHER JOBS:** play The Tea Run, The Daily Pour, Biscuit
+  Breakout and Crossing the Street immediately from the start, game over,
+  or Tea Break. All four use the existing mechanics and controls. Your
+  active teacup waits in memory while the spoon takes another job.
+- Play Again draws a new layout; Retry This One keeps the seed. Completed
+  practice attempts, best points, wins and existing perfect results are
+  saved in this browser. Practice rewards never reach the main pot.
+- **Continue Your Pot:** one automatic checkpoint after each completed
+  normal round, including settled rewards, the next fortune, pending
+  choices and all eight gameplay RNG cursors. Closing mid-round returns to
+  that reading, not the moment the browser closed. New Pot and Clear Saved
+  Pot require confirmation; neither removes arcade records.
+- Versioned, validated local data with graceful corruption and storage
+  failure handling, input quarantine, original Canvas menu illustrations,
+  keyboard/touch navigation, and a dedicated playtesting guide.
+- Human playtesting remains required. No 0.16.0 tag or release is published.
+
 ## [0.15.0] - 2026-10-30 — Crossing the Street
 
 WHY DID THE SPOON CROSS THE ROAD? *"Nobody knows. But apparently, it's our

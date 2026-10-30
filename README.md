@@ -31,6 +31,14 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 Version **[0.15.0 — Crossing the Street](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.15.0)**
 is the current release.
 
+In development: **0.16.0 — The Arcade Collection.** **THE SPOON'S OTHER JOBS**
+opens all four adventures whenever you fancy a few minutes of unreasonable
+employment. Chase personal records saved on this device, retry the same
+layout, or play a new one. **Continue Your Pot** brings you back to the latest
+completed normal cup. Apparently, defending a teacup doesn't pay enough.
+See the [Arcade Collection playtesting guide](docs/ARCADE_COLLECTION_TESTING.md).
+This feature branch is awaiting human playtesting; 0.16.0 is not published.
+
 **Crossing the Street:** Why did the spoon cross the road? Nobody knows. But
 apparently, it's our problem now. Dodge traffic, survive an unreasonable
 number of motorists, and reach the tea shop in one piece. Like every arcade
