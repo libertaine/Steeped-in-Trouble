@@ -57,3 +57,15 @@ export function continueFrom(createGame, checkpoint, rounds, streams) {
   }
   return { game, readings: out };
 }
+
+/** An undefended pot: no input at all until the cup is lost. Where every leaf goes, sampled twice a second. */
+export function undefended(game, seconds = 120) {
+  const s = game.state;
+  const r6 = (n) => Math.round(n * 1e6) / 1e6;
+  const trace = [];
+  for (let frame = 0; frame < seconds * 60 && s.phase === 'playing'; frame++) {
+    game.update(1 / 60);
+    if (frame % 30 === 0) trace.push({ frame, lives: s.lives, enemies: s.enemies.map((e) => [r6(e.angle), r6(e.radius)]) });
+  }
+  return { trace, phase: s.phase, lives: s.lives, score: s.score };
+}

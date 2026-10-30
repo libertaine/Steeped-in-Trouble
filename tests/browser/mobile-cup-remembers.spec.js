@@ -1,5 +1,5 @@
 import { expect, openGame, test } from './fixtures.js';
-import { milkyRound, revealed } from './cup.js';
+import { capture, milkyRound, revealed } from './cup.js';
 
 async function inView(page, selectors) {
   const boxes = await page.evaluate((list) => list.map((selector) => {
@@ -22,13 +22,13 @@ for (const [width, height] of [[390, 844], [360, 740], [844, 390], [915, 412]]) 
     await milkyRound(page);
     await expect(page.locator('#compactMemory')).toHaveText(/Your defensive tactics favored The Veil\./);
     await inView(page, ['#game', '#compactMemory']);
-    await page.screenshot({ path: info.outputPath('compact-memory.png') });
+    await capture(page, info, `compact-memory-${width}x${height}`);
     const fortune = await revealed(page);
     await expect(page.locator('#compactFortune')).toContainText('Next cup:');
     if (fortune !== 'lie') await expect(page.locator('#compactEffect')).not.toBeEmpty();
     await expect(page.locator('#upgradeOffer')).toBeVisible();
     await inView(page, ['#game', '#upgradeOffer', '[data-choice="0"]', '[data-choice="1"]']);
-    await page.screenshot({ path: info.outputPath('compact-upgrade.png') });
+    await capture(page, info, `compact-upgrade-${width}x${height}`);
     expect(problems).toEqual([]);
   });
 }

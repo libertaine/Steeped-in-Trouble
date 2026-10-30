@@ -49,7 +49,7 @@ test('the first Daily Grind follows round 5, and when it escapes it is back two 
   await expect(page.locator('#gameTip')).toHaveText(/^It will be back after 2 more cups/);
   await leaveFight(page);
   await expect(page.locator('#roundNum')).toHaveText('06');
-  await expect(page.locator('#hudLives')).toHaveText(/CUPS ♥ ♥ ♥/);
+  await expect(page.locator('#hudLives')).toHaveText('CUP STABLE');
   expect(await page.evaluate(() => window.__TEACUP__.game.state.progress.chapter)).toBe(1);
 
   await finishRound(page);

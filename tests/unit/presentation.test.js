@@ -70,7 +70,8 @@ describe('HUD text', () => {
     expect(text).toMatchObject({
       hudStatus: 'READY TO BREW',
       hudScore: 'SCORE 0000',
-      hudLives: 'CUPS ♥ ♥ ♥ ',
+      hudLives: 'CUP STABLE',
+      cupStatus: 'Cup condition: Cup stable.',
       roundNum: '01',
       killCount: '0 / 16',
       mainBtn: 'Brew the first cup →',
@@ -83,7 +84,7 @@ describe('HUD text', () => {
     game.state.lives = 2;
     completeRound(game);
     const text = hudText(game.state);
-    expect(text.hudLives).toBe('CUPS ♥ ♥ ♡ ');
+    expect(text.hudLives).toBe('PORCELAIN CRACKED');
     expect(text.hudStatus).toBe('READING THE LEAVES');
     expect(text.fortuneLabel).toBe('Fortune for the next cup');
     expect(text.fortuneName).toBeTruthy();

@@ -6,11 +6,11 @@
 // only calls public game methods, so it is shared with the tests.
 import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { continueFrom, killLast, leave, signature, spill } from '../support/legacyPlay.js';
+import { continueFrom, killLast, leave, signature, spill, undefended } from '../support/legacyPlay.js';
 
 const [root, out] = process.argv.slice(2);
 const { createGame } = await import(pathToFileURL(`${root}/src/core/game.js`).href);
-const result = { version: '0.16.0', checkpoints: {}, continuations: {}, readings: {} };
+const result = { version: '0.16.0', checkpoints: {}, continuations: {}, readings: {}, undefended: {} };
 
 // A critical cup (two genuine spills) with an upgrade pending at the round 3 reading.
 {
@@ -49,6 +49,12 @@ for (const seed of [1, 2, 3, 42, 99]) {
     leave(game);
   }
   result.readings[seed] = readings;
+}
+// Undefended pots: every leaf's path, and each spill, until the cup is lost.
+for (const seed of [5, 21]) {
+  const game = createGame({ seed });
+  game.primaryAction();
+  result.undefended[seed] = undefended(game);
 }
 writeFileSync(out, `${JSON.stringify(result, null, 1)}\n`);
 console.log('wrote', out);

@@ -209,7 +209,7 @@ for (const quality of ['high', 'low']) {
     await page.locator('[data-run="jump"]').tap();
     await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
     await expect(page.locator('#hudScore')).toContainText('SCORE');
-    await expect(page.locator('#hudLives')).toContainText('CUPS');
+    await expect(page.locator('#hudLives')).toHaveText(/^(REINFORCED|CUP STABLE|PORCELAIN CRACKED|STRUCTURAL FAILURE IMMINENT)$/);
     expect((await viewport(page)).overflow).toBeLessThanOrEqual(0);
     expect(problems).toEqual([]);
   });
