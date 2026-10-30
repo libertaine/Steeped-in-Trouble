@@ -1263,7 +1263,7 @@ pedestrians with behaviour, new teas, fortunes, bosses, upgrades,
 persistent achievements, leaderboards, and changes to Days, Heat or
 teacup combat. All tuning is provisional and lives in `CONFIG.crossingStreet`.
 
-## 0.16.0 development — The Arcade Collection
+## 0.16.0 — The Arcade Collection
 
 **THE SPOON'S OTHER JOBS**
 
@@ -1305,5 +1305,6 @@ shows the saved round/Day, checkpoint limitations and the browser-local
 privacy note. Denied or corrupt storage leaves gameplay available with a
 small explanation. Future save formats may require an explicit migration.
 
-Human playtesting remains the release gate; see
+Publication was approved by the project owner after initial human playtesting
+with no errors observed. Gameplay and save behavior remain as approved; see
 [ARCADE_COLLECTION_TESTING.md](ARCADE_COLLECTION_TESTING.md).

@@ -764,7 +764,7 @@ spoon in the next cup until it is released and pressed again. The existing
 Development-only helpers (inside `import.meta.env.DEV`) are documented in
 [the testing guide](CROSSING_STREET_TESTING.md).
 
-## Arcade Collection and Continue Pot (0.16.0 development)
+## Arcade Collection and Continue Pot (0.16.0)
 
 `createGame({ seed, practice: id })` creates a new simulation and all eight
 new generators. It launches an existing adventure without running normal

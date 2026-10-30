@@ -1,12 +1,44 @@
-# The Arcade Collection — 0.16.0 playtesting
+# The Arcade Collection — 0.16.0 testing
 
 **THE SPOON'S OTHER JOBS**
 
 *Apparently, defending a teacup doesn't pay enough.*
 
-0.16.0 is a development candidate. **0.15.0 is still the published release.**
-Human playtesting remains required before release. Nothing in this guide
-authorizes merging, tagging or publishing the candidate.
+The project owner approved publication of **0.16.0 — The Arcade Collection**
+after initial human playtesting: **no errors observed; proceed with release**.
+Approved gameplay, physics, timing, scoring, difficulty and save behavior
+remain unchanged during release finalization. This approval does not claim
+comprehensive human coverage or physical-device qualification.
+
+## Release qualification
+
+The previously qualified implementation at `d9262919f2fea3b76aebf4c33b89b03fbc4dcb51`
+passed 779 unit tests, 195 browser tests, the production build, and Windows,
+Ubuntu and browser CI. Final documentation-only local qualification on
+2026-10-30 used Node 24.22.1, a clean dependency installation and fresh
+production builds:
+
+| Check | Result |
+| --- | --- |
+| `npm ci` | Passed; 0 vulnerabilities reported |
+| `npm run check` | Lint passed; 779 unit tests in 38 files passed; production build passed |
+| `npm run test:browser -- --workers=6` | 195 passed, no retries: 60 Chromium, 60 Firefox, 75 mobile Chromium |
+| Save determinism | Uninterrupted/restored play through round 40 passed from rounds 1 and 31 under both Day choices, including subsequent encounters |
+
+The first install hit a native Rolldown binding held by this project's old
+Vite server; only that server was stopped before the successful clean install.
+An initial sandboxed browser run recorded 60 Firefox blank-page creation
+crashes (`browserContext.newPage: Target crashed`) and one mobile double-tap
+assertion failure, then stalled during cleanup. Its logs and traces were
+retained. A single Firefox probe reproduced the crash inside the sandbox and
+passed outside it. The full unchanged suite then passed outside the sandbox
+with six workers and a fresh preview on port 4186, including the double-tap
+test. No gameplay changes, test weakening, exclusions or retries were used.
+Automated screenshots were regenerated during testing; approved documentation
+images were preserved byte-for-byte.
+
+Final-head CI and deployment results are linked from PR #28 and the release.
+Physical phone/tablet testing and comprehensive human coverage are not claimed.
 
 ## Playing the collection
 
@@ -166,7 +198,11 @@ paths; use a disposable browser profile if preserving personal play data.
 A known result only announces a record when it actually improves the stored
 best. The production collection and Continue work without these helpers.
 
-## Human playtesting before release
+## Human regression checklist
+
+Initial project-owner playtesting is approved as recorded above. The checklist
+below remains useful for future testing; it is not a claim that every item or
+physical device has been tested.
 
 1. Try each job from a fresh start without playing normal cups. Read its
    introduction, play naturally and verify the familiar movement, difficulty,

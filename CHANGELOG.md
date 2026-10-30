@@ -5,7 +5,7 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
-### 0.16.0 — The Arcade Collection (in development)
+## [0.16.0] - 2026-10-30 — The Arcade Collection
 
 - **THE SPOON'S OTHER JOBS:** play The Tea Run, The Daily Pour, Biscuit
   Breakout and Crossing the Street immediately from the start, game over,
@@ -22,7 +22,10 @@ All notable changes to this project are documented here. The project uses
 - Versioned, validated local data with graceful corruption and storage
   failure handling, input quarantine, original Canvas menu illustrations,
   keyboard/touch navigation, and a dedicated playtesting guide.
-- Human playtesting remains required. No 0.16.0 tag or release is published.
+
+Released following project-owner approval after initial human playtesting,
+with no errors observed. Approved gameplay, timing, scoring and save behavior
+were frozen for publication.
 
 ## [0.15.0] - 2026-10-30 — Crossing the Street
 
@@ -460,7 +463,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.15.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.16.0...main
+[0.16.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.12.0...v0.13.0
