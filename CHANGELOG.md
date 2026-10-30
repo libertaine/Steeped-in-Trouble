@@ -5,11 +5,11 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
-### 0.17.0 — The Cup Remembers (in development, awaiting human playtesting)
+## [0.17.0] - 2026-10-30 — The Cup Remembers
 
 *The leaves remember what you did. The porcelain remembers what happened.*
 
-#### Added
+### Added
 
 - **What the cup remembers:** each reading opens with up to two truthful
   observations about the round (its leaf pattern, spills, heavy milk or
@@ -37,7 +37,7 @@ All notable changes to this project are documented here. The project uses
 - Development-only `?debug&cup=` scenarios: healthy, cracked, critical,
   leaf, repair, seams, shatter and migrated.
 
-#### Changed
+### Changed
 
 - Continue Your Pot checkpoints are schema 2 (a ninth, Golden Leaf, stream
   and the porcelain's history). Saved 0.16.0 pots are migrated with every
@@ -48,6 +48,9 @@ All notable changes to this project are documented here. The project uses
 - Fortune selection, every weight and every other gameplay rule are
   unchanged; authentic 0.16.0 readings, leaf paths and continuations are
   replayed in the tests.
+- Desktop keyboard gameplay is the primary supported experience; tablet
+  and phone compatibility remain best effort. Existing automated mobile
+  checks and touch accommodations are retained.
 
 ## [0.16.0] - 2026-10-30 — The Arcade Collection
 
@@ -507,7 +510,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.16.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.17.0...main
+[0.17.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.13.0...v0.14.0

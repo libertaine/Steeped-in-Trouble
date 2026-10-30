@@ -28,14 +28,14 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.16.0 — The Arcade Collection](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.16.0)**
+Version **[0.17.0 — The Cup Remembers](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.17.0)**
 is the current release.
 
-### In development: 0.17.0 — The Cup Remembers
+### The Cup Remembers
 
 *The leaves remember what you did. The porcelain remembers what happened.*
 
-Being tested before release. After each cup, the reading explains which of
+After each cup, the reading explains which of
 your actions favored which fortunes, then names the fortune the leaves
 actually chose and what it does. Your play makes a fortune more likely; it
 never guarantees one. The teacup shows its condition instead of hearts: a
@@ -43,6 +43,11 @@ spill cracks the porcelain where the leaf went over, a rare Golden Leaf
 mends a crack with permanent gold, and losing the last cup breaks the cup
 apart. Saved 0.16.0 pots continue. See the
 [testing guide](docs/CUP_REMEMBERS_TESTING.md).
+
+Desktop browsers with keyboard controls are the primary supported experience.
+Gameplay quality comes first, followed by desktop presentation and controls,
+then performance and reliability. Tablet and phone compatibility are best
+effort; the existing touch controls and Compact View remain available.
 
 ### The Spoon's Other Jobs
 

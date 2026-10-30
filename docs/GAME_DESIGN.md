@@ -22,6 +22,12 @@ Themes:
 - Fast arcade gameplay with strategic decisions: *how* you clear a round
   shapes the next one.
 
+The game is desktop-first. Priorities are gameplay quality, desktop
+presentation and keyboard controls, then performance and reliability.
+Tablet compatibility and phone compatibility follow as best effort, in
+that order. Existing touch and Compact View accommodations remain supported
+by automated tests; physical-device testing is not a publication gate.
+
 ## Implemented in 0.1.0
 
 ### The cup
@@ -1309,11 +1315,13 @@ Publication was approved by the project owner after initial human playtesting
 with no errors observed. Gameplay and save behavior remain as approved; see
 [ARCADE_COLLECTION_TESTING.md](ARCADE_COLLECTION_TESTING.md).
 
-## 0.17.0 — The Cup Remembers (in development)
+## 0.17.0 — The Cup Remembers
 
 *The leaves remember what you did. The porcelain remembers what happened.*
 
-Two improvements to the main game, awaiting human playtesting. Combat,
+Two improvements to the main game, approved for publication after initial
+project-owner playtesting with no errors reported. Broader public feedback
+is planned; physical phone and tablet testing remain unverified. Combat,
 fortune odds, scoring, bosses, Days and the adventures are unchanged.
 
 ### What the cup remembers

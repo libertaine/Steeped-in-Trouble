@@ -4,6 +4,13 @@ Steeped in Trouble is a static browser game. It uses vanilla JavaScript ES
 modules, Canvas 2D, and Vite for builds. There is no runtime dependency and
 no backend.
 
+Desktop keyboard gameplay is the primary qualification target, on Chromium
+and Firefox with Windows and Ubuntu CI. Gameplay quality, desktop
+presentation and controls, then performance and reliability take priority.
+Tablet and phone compatibility are best effort, in that order. Existing
+automated mobile tests remain in CI; physical-device testing is unverified
+and is not required for publication.
+
 ```text
 src/
 ├── main.js              wires everything together; the only file that knows all parts

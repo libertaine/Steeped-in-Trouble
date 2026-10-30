@@ -4,10 +4,18 @@
 
 *The leaves remember what you did. The porcelain remembers what happened.*
 
-0.17.0 is in development and awaits human playtesting. It adds two things to
+0.17.0 was approved for publication on 2026-10-30 after initial project-owner
+playtesting: **No errors reported.** It adds two things to
 the main game and changes nothing else: an explanation of how a round leaned
 on the next fortune, and a teacup whose porcelain cracks, warns, mends with
-gold, and finally breaks. The published release is still 0.16.0.
+gold, and finally breaks. Broader public feedback is planned after publication;
+extensive public or physical-device playtesting is not claimed.
+
+Desktop keyboard gameplay is the primary supported experience. Priorities
+are gameplay quality, desktop presentation and keyboard controls, performance
+and reliability, then tablet and phone compatibility as best effort.
+Physical phone and tablet testing remain unverified and are not publication
+gates. Existing automated mobile checks remain required and unchanged.
 
 ## Qualification
 
@@ -228,10 +236,13 @@ deleted.
 Production-build captures are in
 [docs/images/cup-remembers](images/cup-remembers/README.md).
 
-## Human playtesting
+## Human playtesting and public feedback
 
-Please play at least two full pots, one deliberately careless, with sound on
-for part of it, and once with Compact View on a phone. Then tell us:
+Initial project-owner playtesting is complete and publication is authorized.
+The following checklist guides broader feedback after release. Please play
+two pots on desktop, one deliberately careless, with sound on for part of it,
+and try Compact View. Optional physical tablet or phone feedback is welcome.
+Then tell us:
 
 1. **The reading.** Before the fortune appears, do the memories make sense?
    Do they ever claim something you did not do? When the leaves pick a
@@ -255,5 +266,5 @@ for part of it, and once with Compact View on a phone. Then tell us:
 8. **Nothing else changed.** Do combat, fortunes, upgrades, bosses, the
    adventures, the Arcade Collection and scoring feel exactly as before?
 
-Release remains gated on this feedback. Cracked lanes, gold seam bonuses and
+Broader feedback is planned after publication. Cracked lanes, gold seam bonuses and
 any other effect of damage on play are deliberately not part of 0.17.0.
