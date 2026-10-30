@@ -1,7 +1,12 @@
 // The only resumable boundary is a fully settled normal-round reading.
 // Schema changes belong here; unsupported versions fail closed until a
 // deliberate migration is added to migrateCheckpoint().
+//
+// Schema 1 (0.16.0): eight random streams, no porcelain.
+// Schema 2 (0.17.0): adds the Golden Leaf's stream, state.porcelain, and the
+//   Golden Leaf's (always empty here) state.goldenLeaf / goldenLeafTimer.
 import { CONFIG } from '../config.js';
+import { createRandom, toSeed } from './random.js';
 import { createInitialState, PHASE } from './state.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
 import { TEAS } from '../gameplay/teas.js';
@@ -10,10 +15,14 @@ import { SECRETS } from '../gameplay/secrets.js';
 import { COMBOS } from '../gameplay/combos.js';
 import { MAX_HEAT, endsDay } from '../gameplay/days.js';
 import { INTERLUDES, eligibleInterlude } from '../gameplay/arcadeInterludes.js';
+import { FRACTURE_KINDS, cracksFor, porcelainForLives } from '../gameplay/porcelain.js';
+import { GOLDEN_LEAF_SALT } from '../gameplay/goldenLeaf.js';
 
-export const POT_SCHEMA_VERSION = 1;
-export const RANDOM_STREAMS = Object.freeze(['normal', 'chocolate', 'boss', 'tea',
+export const POT_SCHEMA_VERSION = 2;
+const V1_STREAMS = Object.freeze(['normal', 'chocolate', 'boss', 'tea',
   'teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet']);
+export const RANDOM_STREAMS = Object.freeze([...V1_STREAMS, 'goldenLeaf']);
+const V2_STATE = Object.freeze(['porcelain', 'goldenLeaf', 'goldenLeafTimer']);
 const own = (o, k) => Object.hasOwn(o, k);
 const object = (o) => o !== null && typeof o === 'object' && !Array.isArray(o)
   && Object.getPrototypeOf(o) === Object.prototype;
@@ -25,13 +34,63 @@ const ids = (a, registry) => Array.isArray(a) && a.length <= Object.keys(registr
   && new Set(a).size === a.length && a.every((id) => known(id, registry));
 const optionalRound = (n) => n === null || integer(n, 1);
 
-export function migrateCheckpoint(data) {
-  return data?.schemaVersion === POT_SCHEMA_VERSION ? data : null;
+/**
+ * Schema 1 to 2. Everything a 0.16.0 save holds is kept exactly, its eight
+ * random cursors included; the pending reading, offer, Day choice and
+ * encounters come along untouched, so nothing is rerolled. The Golden Leaf's
+ * stream starts where a fresh pot's would, from the pot's own seed. A 0.16.0
+ * save never recorded where its leaves spilled, so its cracks (one per cup
+ * below three) are drawn at fixed places rather than invented ones.
+ * @returns {object|null} a schema 2 checkpoint, or null if `data` is not a sound schema 1 save
+ */
+function fromVersion1(data) {
+  if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || !keys(data.random, V1_STREAMS)) return null;
+  const template = Object.keys(createInitialState()).filter((key) => !V2_STATE.includes(key));
+  if (!keys(data.state, template) || !integer(data.state.lives) || !integer(data.random.normal?.seed, 0, 0xffffffff)) return null;
+  const leaf = createRandom(toSeed(data.random.normal.seed) ^ GOLDEN_LEAF_SALT).exportState();
+  const migrated = {
+    schemaVersion: POT_SCHEMA_VERSION,
+    state: { ...structuredClone(data.state), porcelain: porcelainForLives(data.state.lives), goldenLeaf: null, goldenLeafTimer: null },
+    random: { ...structuredClone(data.random), goldenLeaf: leaf },
+    pinnedTea: data.pinnedTea,
+  };
+  return validateCheckpoint(migrated) ? migrated : null;
 }
 
+/**
+ * Bring a saved checkpoint up to the current schema, validated. The original
+ * is never changed (callers keep it until the migrated pot saves over it).
+ * @returns {object|null} a valid current checkpoint, or null
+ */
+export function migrateCheckpoint(data) {
+  try {
+    if (data?.schemaVersion === POT_SCHEMA_VERSION) return validateCheckpoint(data) ? data : null;
+    if (data?.schemaVersion === 1) return fromVersion1(data);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** The cup's fractures: well formed, bounded, and exactly one active crack per cup below three. */
+function validPorcelain(p, lives) {
+  if (!keys(p, ['serial', 'fractures']) || !integer(p.serial) || !Array.isArray(p.fractures)
+    || p.fractures.length > CONFIG.porcelain.maxFractures || p.fractures.length > p.serial) return false;
+  const seen = new Set();
+  for (const f of p.fractures) {
+    if (!keys(f, ['id', 'kind', 'angle', 'seed']) || !integer(f.id, 0, p.serial - 1) || seen.has(f.id)
+      || !FRACTURE_KINDS.includes(f.kind) || !finite(f.angle) || f.angle < 0 || f.angle >= Math.PI * 2
+      || !integer(f.seed, 0, 0xffffffff)) return false;
+    if (seen.size && f.id < Math.max(...seen)) return false; // oldest first
+    seen.add(f.id);
+  }
+  return p.fractures.filter((f) => f.kind === 'crack').length === cracksFor(lives);
+}
+
+/** Strictly the current schema. Older saves go through migrateCheckpoint() first. */
 export function validateCheckpoint(data) {
   try {
-    if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || !migrateCheckpoint(data)) return false;
+    if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || data.schemaVersion !== POT_SCHEMA_VERSION) return false;
     if (data.pinnedTea !== null && !known(data.pinnedTea, TEAS)) return false;
     if (!keys(data.random, RANDOM_STREAMS) || !RANDOM_STREAMS.every((id) => {
       const r = data.random[id];
@@ -43,7 +102,7 @@ export function validateCheckpoint(data) {
     // Check every scalar rather than accepting unexamined nested data. Empty
     // fields at this stable boundary must stay empty, never active missions.
     const nested = ['progress', 'spoon', 'offer', 'modifiers', 'teaServed', 'secrets', 'discovered',
-      'stir', 'volleys', 'aerialDiscoveries', 'arcade', 'residue', 'roundStats'];
+      'stir', 'volleys', 'aerialDiscoveries', 'arcade', 'residue', 'roundStats', 'porcelain'];
     for (const [key, value] of Object.entries(template)) {
       if (nested.includes(key) || ['fortune', 'nextFortune', 'arcadeDue', 'havocAfter', 'grindAfter', 'shortageAfter'].includes(key)) continue;
       if (value === null) { if (s[key] !== null) return false; }
@@ -86,6 +145,7 @@ export function validateCheckpoint(data) {
         && ['radius', 'angle', 'spin', 'size'].every((k) => finite(leaf[k])) && leaf.size > 0 && leaf.radius >= 0)) return false;
     if (!keys(s.roundStats, Object.keys(template.roundStats)) || !Object.entries(s.roundStats).every(([k, v]) =>
       k === 'motionTime' ? finite(v) && v >= 0 : integer(v))) return false;
+    if (!validPorcelain(s.porcelain, s.lives)) return false;
     return true;
   } catch {
     return false;

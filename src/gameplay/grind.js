@@ -17,6 +17,7 @@ import { PHASE } from '../core/state.js';
 import { LANES, LANE_STEP, TAU, angleDifference, laneAngle, wrapLane } from './arena.js';
 import { advanceEnemy, washBack } from './enemies.js';
 import { spoonLane } from './player.js';
+import { restoreLife } from './porcelain.js';
 import { findStrikingShot, spendDart } from './weapons.js';
 
 const G = CONFIG.grind;
@@ -395,7 +396,8 @@ export function updateGrind(sim, dt) {
  * Perfect Brew, which restores a cup (up to G.maxLives), or pays a little
  * extra if there's no room.
  */
-function finish({ state, emit }, result, reason = null) {
+function finish(sim, result, reason = null) {
+  const { state, emit } = sim;
   const g = state.grind;
   g.stage = 'outro';
   g.time = 0;
@@ -419,9 +421,8 @@ function finish({ state, emit }, result, reason = null) {
     state.goldenSpoon = Math.max(state.goldenSpoon, G.goldenSpoon);
     if (g.scalds === 0) {
       summary.perfect = true;
-      if (state.lives < G.maxLives) {
-        state.lives++;
-        summary.cup = true;
+      if (restoreLife(sim, G.maxLives, 'grind')) {
+        summary.cup = true; // and a crack, if there is one, is mended with gold
       } else {
         summary.bonus += G.fullCupPoints;
       }

@@ -20,6 +20,7 @@ import { breakoutInProgress } from '../gameplay/biscuitBreakout.js';
 import { TRAFFIC_ROWS, crossingInProgress } from '../gameplay/crossingStreet.js';
 import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
+import { cupCondition } from '../gameplay/porcelain.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
 
 const COPY = {
@@ -199,6 +200,7 @@ function statusText(state) {
   if (state.phase === PHASE.PLAYING) {
     if (state.goldenSpoon > 0) return `✦ GOLDEN SPOON ${Math.ceil(state.goldenSpoon)}s`;
     if (state.graceTime > 0) return 'THE CUP RECOVERS';
+    if (state.goldenLeaf) return `✦ GOLDEN LEAF · STEAM IT TO MEND ${Math.ceil(state.goldenLeaf.time)}s`;
   }
   return COPY.status[state.phase];
 }
@@ -323,7 +325,9 @@ export function hudText(state) {
     dayCompleted: `Day ${dayOf(state.round)} complete. Choose how tomorrow brews.`,
     dayCaption: DAY_CAPTIONS[(dayOf(state.round) - 1) % DAY_CAPTIONS.length],
     hudScore: `SCORE ${pad(state.score, 4)}`,
-    hudLives: `CUPS ${'♥ '.repeat(Math.max(0, state.lives))}${'♡ '.repeat(Math.max(0, CONFIG.lives - state.lives))}`,
+    // The teacup shows its condition, not a count (gameplay/porcelain.js); the adventures keep their own counters below.
+    hudLives: cupCondition(state.lives).label,
+    cupStatus: `Cup condition: ${cupCondition(state.lives).words}`,
     roundTitle: COPY.title[state.phase](state),
     roundNum: pad(state.round, 2),
     killCount: `${state.kills} / ${state.target}`,
@@ -530,6 +534,11 @@ export function createHud(doc = document) {
       const tone = values.hudOmen && state.fortune ? FORTUNES[state.fortune].tone : '';
       if (omen && omen.dataset.tone !== tone) omen.dataset.tone = tone;
       // The tea pill takes the tea's colour.
+      // The condition pill takes the cup's condition for colour, while it shows it.
+      const lives = (elements.hudLives ??= doc.getElementById('hudLives'));
+      const condition = cupCondition(state.lives);
+      const shownCondition = values.hudLives === condition.label ? condition.id : '';
+      if (lives && lives.dataset.condition !== shownCondition) lives.dataset.condition = shownCondition;
       const teaPill = (elements.hudTea ??= doc.getElementById('hudTea'));
       const teaId = values.hudTea ? state.tea : '';
       if (teaPill && teaPill.dataset.tea !== teaId) teaPill.dataset.tea = teaId;

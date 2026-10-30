@@ -77,7 +77,7 @@
       </div>
       <div class="pills">
         <span class="hudlabel pill" id="hudScore">SCORE 0000</span>
-        <span class="hudlabel pill" id="hudLives">CUPS ♥ ♥ ♥</span>
+        <span class="hudlabel pill" id="hudLives" data-condition="stable">CUP STABLE</span>
         <span class="hudlabel pill strainer" id="hudStrainer">STRAINER 1/1</span>
         <span class="hudlabel pill auto" id="hudAuto"></span>
       </div>
@@ -85,6 +85,7 @@
         <span id="compactRound"></span><span id="compactMilk"></span><span id="compactSugar"></span><span id="compactProgress"></span>
       </div>
     </div>
+    <p id="cupStatus" class="sr-only" role="status">Cup condition: Cup stable.</p>
     <div id="phaseChoices"><p id="compactMemory" aria-live="polite"></p><p id="compactFortune" aria-live="polite"></p><p id="compactEffect"></p></div>
     <div class="controls-mobile controls-classic">
       <button data-hold="left" aria-label="Rotate counterclockwise">◀ TURN</button>

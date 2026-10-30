@@ -227,6 +227,29 @@ export const CONFIG = deepFreeze({
     laneReach: 4,
   },
 
+  // The cup's condition (gameplay/porcelain.js): cracks, chips and gold seams. Presentation of lives only.
+  porcelain: {
+    maxFractures: 14, // history kept per pot; the oldest seam or chip gives way first, never an active crack
+    // Where a 0.16.0 save's existing damage is drawn: those saves never recorded where leaves spilled.
+    migratedAngles: [2.35, 0.7, 3.95], // lower left, lower right, upper left; clear of the spoon's starting place
+  },
+
+  // The Golden Leaf (gameplay/goldenLeaf.js): a rare chance to mend a cracked cup.
+  // Provisional tuning, for playtesting.
+  goldenLeaf: {
+    chance: 0.15, // per normal round that starts with the cup below its usual three cups
+    delayMin: 5, // seconds into the round before it may appear
+    delayMax: 16,
+    life: 7, // seconds before it sinks out of reach
+    radiusMin: 120,
+    radiusMax: 185,
+    laneReach: 4, // appears within this many lanes of the spoon
+    sway: 0.25, // lanes it sways either side of its own (the steam's hit width is 0.48)
+    swayRate: 1.1, // radians per second
+    bob: 9, // units it bobs in and out
+    bobRate: 1.7,
+  },
+
   // Unexpected brews: combinations that unlock a new behaviour (gameplay/combos.js).
   combos: {
     stormSpread: 1.6, // The Perfect Storm: milk clouds this much wider…

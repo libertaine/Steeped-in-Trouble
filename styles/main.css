@@ -159,6 +159,37 @@ canvas {
   background: #11211fc9;
 }
 
+#hudLives[data-condition="cracked"] {
+  border-color: #e8c77a99;
+}
+
+#hudLives[data-condition="critical"] {
+  border-color: #ffae42;
+  color: #ffd29a;
+  animation: cup-critical 2.6s ease-in-out infinite;
+}
+
+#hudLives[data-condition="reinforced"] {
+  border-color: #cfe6d4aa;
+}
+
+@keyframes cup-critical {
+  50% { box-shadow: 0 0 12px #ffae4266; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #hudLives[data-condition="critical"] { animation: none; box-shadow: 0 0 8px #ffae4255; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .stage {
   position: relative;
 }

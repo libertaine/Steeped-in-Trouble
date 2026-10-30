@@ -23,6 +23,7 @@ import { pourInProgress } from '../gameplay/dailyPour.js';
 import { createBreakoutPainter } from './biscuitBreakout.js';
 import { breakoutInProgress } from '../gameplay/biscuitBreakout.js';
 import { createCrossingPainter } from './crossingStreet.js';
+import { createPorcelainPainter } from './porcelain.js';
 import { crossingInProgress } from '../gameplay/crossingStreet.js';
 
 const { width: W, height: H, centerX: CX, centerY: CY, rimRadius: OUTER } = CONFIG.arena;
@@ -116,9 +117,10 @@ const OVERLAY_TEXT = {
     hint: '',
   },
   [PHASE.GAME_OVER]: {
-    heading: 'THE POT IS EMPTY',
-    title: 'A splendid spill',
-    line: (state) => `Final score: ${state.score}`,
+    heading: 'STRUCTURAL FAILURE',
+    title: 'The cup has had enough.',
+    line: () => 'Management regrets to announce a structural failure.',
+    score: (state) => `Final score: ${state.score}`,
     hint: 'Press Enter for a new pot',
   },
 };
@@ -136,6 +138,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
   let time = 0; // animation clock, independent of the simulation
   let gradients = null;
   const tea = createTeaPainter(ctx);
+  const porcelain = createPorcelainPainter(ctx);
   const espresso = createGrindPainter(ctx, { circle, text, laneBeam, highQuality: () => renderer.quality === 'high' });
   const errand = createRunPainter(ctx, { circle, text, compact: () => canvas.clientWidth < 560, highQuality: () => renderer.quality === 'high' });
   const aim = { lane: null, prev: null, fade: 1 }; // the highlighted lane, and the one fading out
@@ -205,28 +208,6 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     ctx.beginPath();
     ctx.moveTo(0, -size * 0.83);
     ctx.lineTo(0, size * 0.7);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawCup() {
-    circle(CX, CY, OUTER + 52, '#78948022', 16);
-    circle(CX, CY, OUTER + 43, '#8ca58836', 3);
-    circle(CX, CY, OUTER + 26, '#a9b68d28', 17);
-    circle(CX, CY, OUTER + 15, '#eee8ce', 3);
-    circle(CX, CY, OUTER + 10, '#678b6f', 14);
-    circle(CX, CY, OUTER + 2, '#a9bc94', 3);
-
-    // An abstract saucer handle, drawn with original curved vector paths.
-    ctx.save();
-    ctx.strokeStyle = '#b6c4a388';
-    ctx.lineWidth = 11;
-    ctx.beginPath();
-    ctx.moveTo(CX + OUTER + 5, CY - 77);
-    ctx.bezierCurveTo(CX + OUTER + 124, CY - 124, CX + OUTER + 124, CY + 130, CX + OUTER + 4, CY + 82);
-    ctx.stroke();
-    ctx.strokeStyle = '#304f41';
-    ctx.lineWidth = 5;
     ctx.stroke();
     ctx.restore();
   }
@@ -1584,17 +1565,28 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
   function drawOverlay(state, fx) {
     if (state.phase === PHASE.PLAYING) return;
     const copy = OVERLAY_TEXT[state.phase];
-    if (copy) {
+    // A broken cup is seen breaking before the news arrives (at once with reduced motion).
+    const broken = state.phase === PHASE.GAME_OVER && fx.shatter && !fx.tea?.reduced
+      ? clamp((fx.shatter.age - 0.9) / 0.4, 0, 1) : 1;
+    if (copy && broken > 0) {
       ctx.save();
+      ctx.globalAlpha = broken;
       ctx.fillStyle = 'rgba(12,27,24,.67)';
       ctx.beginPath();
       ctx.arc(CX, CY, 191, 0, TAU);
       ctx.fill();
       circle(CX, CY, 190, '#c2dbb3', 1, false, 0.42);
-      text(copy.heading, CX, CY - 58, 14, '#d3e9d9', 'center', 'ui-monospace,monospace');
-      text(copy.title, CX, CY - 10, 30, '#f5dfb6');
-      text(copy.line(state), CX, CY + 31, 15, '#d1dec8');
-      text(copy.hint, CX, CY + 63, 13, '#bad8c9', 'center', 'ui-monospace,monospace');
+      text(copy.heading, CX, CY - 58, 14, copy.score ? '#ffcf8a' : '#d3e9d9', 'center', 'ui-monospace,monospace');
+      if (copy.score) {
+        fitted(copy.title.toUpperCase(), CX, CY - 22, 26, '#f5dfb6', 340);
+        fitted(copy.line(state), CX, CY + 12, 14, '#d1dec8', 330, 'Georgia,serif', 'italic ');
+        text(copy.score(state), CX, CY + 42, 15, '#f1e4c4');
+        text(copy.hint, CX, CY + 72, 13, '#bad8c9', 'center', 'ui-monospace,monospace');
+      } else {
+        text(copy.title, CX, CY - 10, 30, '#f5dfb6');
+        text(copy.line(state), CX, CY + 31, 15, '#d1dec8');
+        text(copy.hint, CX, CY + 63, 13, '#bad8c9', 'center', 'ui-monospace,monospace');
+      }
       ctx.restore();
     }
     if (state.phase === PHASE.READING) {
@@ -1665,16 +1657,24 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
         ctx.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
       }
       trackAim(state, dt);
-      drawCup();
+      const reduced = !!fx.tea?.reduced;
+      const over = state.phase === PHASE.GAME_OVER;
+      // The porcelain remembers: the whole cup, or at the end of a pot its pieces.
+      if (over) porcelain.drawShattered(state, fx.shatter?.age ?? Infinity, reduced);
+      else porcelain.drawCup();
       if (fx.tea) tea.paint(fx.tea, state, { quality: renderer.quality, scale: canvas.width / W });
       drawGuides();
+      const cup = { clock: fx.cupClock ?? 0, reduced };
+      if (!over) {
+        porcelain.drawFractures(state, fx, cup);
+        porcelain.drawWarning(state, cup);
+      }
       const havoc = havocInProgress(state);
       const grind = grindInProgress(state);
       const inPlay = !havoc && !grind && (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED);
       const live = inPlay || !!havoc || !!grind;
       if (inPlay) drawStrainer(state);
       if (inPlay) drawKarmaRim(state);
-      const reduced = !!fx.tea?.reduced;
       drawAimBeams(state, fx);
       drawClouds(state.clouds);
       if (inPlay) drawPulse(state, reduced);
@@ -1696,6 +1696,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       for (const g of fx.ghosts ?? []) drawGhost(g);
       if (state.golden) drawGolden(state.golden);
       if (state.prismatic) drawPrismatic(state.prismatic);
+      if (state.goldenLeaf) porcelain.drawGoldenLeaf(state.goldenLeaf, time);
       for (const s of state.shots) drawShot(s, state.spoon.polished);
       if (grind) espresso.drawMachine(grind, state, fx, time);
       if (inPlay) drawWake(state.wake);

@@ -22,6 +22,7 @@ import { createPresentation } from './ui/presentation.js';
 import { prepareDayPractice } from './dev/days.js';
 import { crossForMe, prepareCrossingPractice } from './dev/crossing.js';
 import { prepareCheckpoint, prepareRecord } from './dev/collection.js';
+import { prepareCup, seedLegacyPot } from './dev/cup.js';
 import { POT_SCHEMA_VERSION } from './core/checkpoint.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
@@ -67,6 +68,8 @@ function boot() {
   } catch {
     // Storage may be unavailable; the defaults will do.
   }
+  // ?debug&cup=migrated: an authentic 0.16.0 pot is stored first, so Continue Your Pot migrates it (development only).
+  if (import.meta.env.DEV && params.has('debug') && params.get('cup') === 'migrated') seedLegacyPot(storage);
   const progress = createLocalProgress(storage);
   const sessions = createSessions(mainPot, progress);
   const game = sessions.game;
@@ -317,6 +320,13 @@ function boot() {
         return game.state.fortune === id;
       };
       if (params.has('fortune')) window.__TEACUP__.brewWithFortune(params.get('fortune'));
+      // The Cup Remembers: healthy, cracked, critical, leaf, repair, seams or shatter (see dev/cup.js).
+      window.__TEACUP__.cup = (mode = 'cracked') => {
+        const ok = prepareCup(game, mode);
+        controls.reset();
+        return ok;
+      };
+      if (params.has('cup') && params.get('cup') !== 'migrated') window.__TEACUP__.cup(params.get('cup'));
     }
     // Vite removes this helper from production. No player-facing secret menu.
     if (import.meta.env.DEV) window.__TEACUP__.previewAerial = (kind) => {
