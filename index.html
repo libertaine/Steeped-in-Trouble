@@ -22,7 +22,7 @@
 <main>
   <section class="playfield" aria-label="Game area">
     <div class="stage">
-      <canvas id="game" width="920" height="790" role="img" data-gestures aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
+      <canvas id="game" width="920" height="790" role="img" tabindex="-1" data-gestures aria-label="Circular teacup arena with a silver spoon defending the rim from rising tea leaves"></canvas>
       <div class="touch-ring" id="touchRing" aria-hidden="true" hidden></div>
       <div class="upgrade-offer day-offer" id="dayOffer" role="group" aria-labelledby="dayTitle" hidden>
         <div class="offer-head">
@@ -120,6 +120,21 @@
     <div id="actionDock" class="action-dock">
       <button id="menuBtn" aria-haspopup="dialog">Pause / Menu</button>
     </div>
+    <div class="collection-entry" id="collectionEntry">
+      <button id="collectionBtn" aria-haspopup="dialog">THE SPOON'S OTHER JOBS</button>
+      <button id="newPotBtn" hidden>BREW A NEW POT</button>
+    </div>
+    <div id="practiceBar" class="practice-bar" hidden>
+      <p class="practice-label">ARCADE PRACTICE · Your teacup is waiting.</p>
+      <p id="personalBest" role="status" hidden><strong>NEW PERSONAL BEST!</strong><br /><em>The spoon is requesting a trophy. Management is reviewing the budget.</em></p>
+      <div class="practice-actions">
+        <button id="playAgainBtn" hidden>PLAY AGAIN</button>
+        <button id="retryBtn" hidden>RETRY THIS ONE</button>
+        <button id="chooseJobBtn">CHOOSE ANOTHER JOB</button>
+        <button id="backPotBtn">BACK TO THE TEACUP</button>
+      </div>
+    </div>
+    <p id="potNotice" class="local-notice" role="status"></p>
   </section>
   <aside>
     <section class="panel">
@@ -174,7 +189,30 @@
 </main>
 <dialog id="teaBreak" aria-labelledby="teaBreakTitle">
   <div class="break-head"><h2 id="teaBreakTitle">The Tea Break</h2><button id="closeBreak" autofocus>Back to cup</button></div>
+  <button id="breakCollectionBtn">THE SPOON'S OTHER JOBS</button>
+  <div class="save-controls">
+    <p id="savedPotInfo"></p><button id="clearPotBtn" hidden>Clear saved pot</button>
+    <p class="note">The latest completed normal round is saved. Closing mid-round returns to that checkpoint.</p>
+    <p class="note">Progress and arcade records are saved in this browser on this device. Clearing browser data may erase them.</p>
+  </div>
   <div id="breakContent"></div>
+</dialog>
+<dialog id="arcadeCollection" aria-labelledby="collectionTitle">
+  <button id="closeCollectionTop" aria-label="Back to the teacup">BACK TO THE TEACUP</button>
+  <div class="collection-heading">
+    <p class="eyebrow">Four adventures. One overworked utensil.</p>
+    <h2 id="collectionTitle">THE SPOON'S OTHER JOBS</h2>
+    <p><em>Apparently, defending a teacup doesn't pay enough.</em></p>
+  </div>
+  <div id="jobCards" class="job-cards"></div>
+  <p id="recordNotice" class="local-notice" role="status"></p>
+  <p class="note">Progress and arcade records are saved in this browser on this device. Clearing browser data may erase them.</p>
+  <button id="closeCollectionBtn">BACK TO THE TEACUP</button>
+</dialog>
+<dialog id="potConfirmation" aria-labelledby="confirmPotTitle">
+  <h2 id="confirmPotTitle">Replace your saved pot?</h2>
+  <p id="confirmPotText">Your saved pot will be replaced. Arcade records stay.</p>
+  <div class="practice-actions"><button id="cancelPotBtn" autofocus>Keep it</button><button id="confirmPotBtn">Replace pot</button></div>
 </dialog>
 <div class="bottom">Original teacup concept; all artwork procedurally drawn with HTML Canvas paths. No arcade-game assets, fonts, or external libraries.</div>
 <script type="module" src="/src/main.js"></script>

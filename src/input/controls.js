@@ -128,7 +128,15 @@ export function createControls({
 
   listen(win, 'keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return; // leave browser shortcuts alone
-    if (!enabled()) return;
+    if (!enabled()) {
+      // Keys first pressed in a dialog also need a fresh release before they
+      // can become gameplay controls on the other side of that dialog.
+      if (CAPTURED_KEYS.has(e.code) || Object.hasOwn(WALK_KEYS, e.code)) {
+        down.add(e.code);
+        stale.add(e.code);
+      }
+      return;
+    }
     const target = e.target;
     if (target?.closest?.('input, select, textarea, [contenteditable="true"]')) return;
     const code = e.code;
