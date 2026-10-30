@@ -7,6 +7,7 @@ import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { LANES, LANE_STEP, TAU, laneAngle, toCanvasPoint as polar } from '../gameplay/arena.js';
 import { FORTUNES, glyphPoint } from '../gameplay/fortunes.js';
+import { readingMemory } from '../gameplay/memory.js';
 import { SECRETS } from '../gameplay/secrets.js';
 import { COMBOS } from '../gameplay/combos.js';
 import { spoonLane } from '../gameplay/player.js';
@@ -1433,7 +1434,31 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     ctx.restore();
   }
 
-  /** The fortune card: a shimmer, the name, its little joke, and how to carry on. */
+  /** Text shrunk (never below 10 px) until it fits `width`. */
+  function fitted(t, x, y, size, color, width, font = 'Georgia,serif', style = '') {
+    ctx.save();
+    let px = size;
+    ctx.font = `${style}${px}px ${font}`;
+    while (px > 10 && ctx.measureText(t).width > width) ctx.font = `${style}${--px}px ${font}`;
+    ctx.restore();
+    text(t, x, y, px, color, 'center', font, style);
+  }
+
+  function cardPath(x0, y0, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x0, y0, w, h, r);
+    else ctx.rect(x0, y0, w, h);
+  }
+
+  /** The reading's explanation, worked out once per reading (it draws no numbers). */
+  let memory = { key: null, value: null };
+  function remembered(state) {
+    const key = `${state.round}|${state.nextFortune}|${state.secrets.join()}|${state.roundStats.volleys}`;
+    if (memory.key !== key) memory = { key, value: readingMemory(state) };
+    return memory.value;
+  }
+
+  /** The fortune card: a shimmer, the next cup's fortune, what it does, and how to carry on. */
   function drawFortuneCard(state, fx) {
     const t = state.readingTime;
     const a = clamp((t - (revealAt - 0.5)) / 0.6, 0, 1);
@@ -1441,16 +1466,14 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     const lying = state.nextFortune === 'lie';
     const shownId = readingFortune(state);
     const f = FORTUNES[shownId];
-    const x0 = CX - 205;
-    const y0 = CY + 148;
-    const w = 410;
-    const h = 112;
+    const w = 420;
+    const h = 132;
+    const x0 = CX - w / 2;
+    const y0 = CY + 140;
     ctx.save();
     ctx.globalAlpha = a;
-    ctx.fillStyle = '#10271ee0';
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(x0, y0, w, h, 12);
-    else ctx.rect(x0, y0, w, h);
+    ctx.fillStyle = '#10271ee6';
+    cardPath(x0, y0, w, h, 12);
     ctx.fill();
     // Good omens glow gold, troublesome ones smoulder, odd ones shift colour.
     const tone = lying && t < lieRetractAt ? 'good' : f.tone;
@@ -1477,13 +1500,13 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     ctx.save();
     ctx.globalAlpha = a;
     const confessed = lying && t >= lieRetractAt;
-    const heading = confessed ? 'THE LEAVES… RECONSIDER'
-      : f.subtitle ? `THE LEAVES FORETELL · ${f.subtitle.toUpperCase()}` : 'THE LEAVES FORETELL';
-    text(heading, CX, y0 + 17, 11, '#bcdbbc', 'center', MONO);
-    const name = lying && !confessed ? fx.fib.claim : FORTUNES[state.nextFortune].name;
-    const quote = lying ? (confessed ? fx.fib.retraction : 'The leaves have never been more certain.') : f.quote;
+    const real = FORTUNES[state.nextFortune];
+    const heading = lying ? (confessed ? 'NEXT CUP · THE LEAVES… RECONSIDER' : 'NEXT CUP · THE LEAVES FORETELL')
+      : real.subtitle ? `NEXT CUP · ${real.subtitle.toUpperCase()}` : 'NEXT CUP';
+    text(heading, CX, y0 + 16, 11, '#bcdbbc', 'center', MONO);
+    const name = lying && !confessed ? fx.fib.claim : real.name;
     let nx = CX;
-    let ny = y0 + 44;
+    let ny = y0 + 42;
     if (fx.glitch > 0) {
       nx += (Math.random() - 0.5) * 10 * fx.glitch;
       ny += (Math.random() - 0.5) * 6 * fx.glitch;
@@ -1494,11 +1517,15 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     }
     const nameColor = confessed ? `hsl(${(time * 90) % 360},65%,80%)` : lying ? FORTUNES.crown.color : f.color;
     text(name.toUpperCase(), nx, ny, 25, nameColor);
-    text(quote, CX, y0 + 72, 15, '#e8dcc0', 'center', 'Georgia,serif', 'italic ');
+    // What it does, then what the leaves make of it. The Leaves Lie keeps its secret until it confesses.
+    const effect = lying && !confessed ? 'The leaves have never been more certain.' : real.effect;
+    const remark = lying ? (confessed ? fx.fib.retraction : '') : remembered(state)?.remark ?? '';
+    fitted(effect, CX, y0 + 68, 15, '#f1e4c4', w - 28);
+    if (remark) fitted(remark, CX, y0 + 90, 14, '#c9dcc4', w - 28, 'Georgia,serif', 'italic ');
     const ready = clamp((t - revealAt - 0.4) / 0.5, 0, 1);
     ctx.globalAlpha = a * ready * (0.65 + 0.35 * Math.sin(time * 2.5));
     const next = state.offer ? 'CHOOSE A SPOON UPGRADE — 1 OR 2' : 'ENTER — BREW THE NEXT CUP';
-    text(next, CX, y0 + 96, 10, state.offer ? '#f0d494' : '#bad8c9', 'center', MONO);
+    text(next, CX, y0 + 116, 10, state.offer ? '#f0d494' : '#bad8c9', 'center', MONO);
     ctx.restore();
   }
 
@@ -1506,30 +1533,51 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     for (const p of particles) circle(p.x, p.y, p.size, p.color, 0, true, p.time / p.life);
   }
 
-  /** A secret the leaves noticed: a small banner at the top of the cup during the reading. */
-  function drawSecrets(state) {
-    const a = clamp((state.readingTime - 0.4) / 0.5, 0, 1);
-    if (a <= 0.01 || !state.secrets.length) return;
-    const y0 = CY - 246;
+  /**
+   * What the cup remembers: at the top of the cup, before the fortune is
+   * revealed, what the round did and which fortunes that favoured. Secrets
+   * the leaves noticed join it, in their own words.
+   */
+  function drawMemory(state) {
+    const t = state.readingTime;
+    const a = clamp((t - 0.35) / 0.5, 0, 1);
+    const m = remembered(state);
+    if (a <= 0.01 || !m) return;
+    const w = 440;
+    const rows = m.observations.length;
+    const secrets = state.secrets.length;
+    const h = 30 + rows * 36 + (secrets ? 18 + secrets * 36 : 0);
+    const x0 = CX - w / 2;
+    const y0 = CY - 238;
     ctx.save();
     ctx.globalAlpha = a;
     ctx.fillStyle = '#10271ee6';
-    const h = 26 + state.secrets.length * 38;
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(CX - 150, y0, 300, h, 10);
-    else ctx.rect(CX - 150, y0, 300, h);
+    cardPath(x0, y0, w, h, 10);
     ctx.fill();
-    ctx.strokeStyle = '#c79bff';
+    ctx.strokeStyle = secrets ? '#c79bff' : '#9cc3a6';
     ctx.lineWidth = 1;
-    ctx.globalAlpha = a * (0.5 + 0.3 * Math.sin(time * 2.4));
+    ctx.globalAlpha = a * (0.45 + 0.2 * Math.sin(time * 2.4));
     ctx.stroke();
     ctx.globalAlpha = a;
-    text('THE LEAVES ARE IMPRESSED.', CX, y0 + 17, 11, '#e2d4ff', 'center', MONO);
-    state.secrets.forEach((id, i) => {
-      const y = y0 + 38 + i * 38;
-      text(SECRETS[id].words, CX, y, 16, '#f5dfb6', 'center', 'Georgia,serif', 'italic ');
-      text(SECRETS[id].reward, CX, y + 17, 11, '#cbbde6', 'center', MONO);
+    text('WHAT THE CUP REMEMBERS', CX, y0 + 15, 11, '#bcdbbc', 'center', MONO);
+    let y = y0 + 37;
+    m.observations.forEach((o, i) => {
+      // Each memory surfaces in turn, all before the fortune is revealed.
+      ctx.globalAlpha = a * clamp((t - 0.45 - i * 0.35) / 0.4, 0, 1);
+      fitted(o.fact, CX, y, 15, '#f1e4c4', w - 24);
+      fitted(o.influence, CX, y + 17, 13, '#bcdbbc', w - 24, 'Georgia,serif', 'italic ');
+      y += 36;
     });
+    if (secrets) {
+      ctx.globalAlpha = a;
+      text('THE LEAVES ARE IMPRESSED.', CX, y, 11, '#e2d4ff', 'center', MONO);
+      y += 20;
+      for (const id of state.secrets) {
+        fitted(SECRETS[id].words, CX, y, 16, '#f5dfb6', w - 24, 'Georgia,serif', 'italic ');
+        text(SECRETS[id].reward, CX, y + 17, 11, '#cbbde6', 'center', MONO);
+        y += 36;
+      }
+    }
     ctx.restore();
   }
 
@@ -1550,8 +1598,8 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       ctx.restore();
     }
     if (state.phase === PHASE.READING) {
+      drawMemory(state);
       drawFortuneCard(state, fx);
-      drawSecrets(state);
     }
     // Preserved from the prototype: the spill flash is drawn here, so it only
     // shows outside active play (e.g. on the final, game-ending spill).

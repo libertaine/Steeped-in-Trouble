@@ -20,6 +20,7 @@ import { CONFIG } from '../config.js';
 import { LANES, wrapLane } from './arena.js';
 
 const F = CONFIG.fortunes;
+const pct = (multiplier) => Math.round((multiplier - 1) * 100);
 
 /** Neutral values: a round with no fortune plays with these. */
 export const BASE_MODIFIERS = Object.freeze({
@@ -92,6 +93,7 @@ export const FORTUNES = Object.freeze({
     name: 'The Crown',
     quote: 'Heavy is the head that wears the teacup.',
     info: 'A cluster of leaves foretells abundance: +1 sugar burst.',
+    effect: `+${F.crownBonusSugar} sugar burst.`, // the reading's one-line summary (gameplay/memory.js)
     tag: '+1 sugar',
     tone: 'good',
     color: '#eed393',
@@ -106,6 +108,7 @@ export const FORTUNES = Object.freeze({
     name: 'The Veil',
     quote: 'Some things are better left a little cloudy.',
     info: 'Milky leaves promise cover: milk clouds last 2.5 seconds longer.',
+    effect: `Milk clouds last ${F.veilMilkBonus} seconds longer.`,
     tag: 'longer milk',
     tone: 'good',
     color: '#d1e8de',
@@ -125,6 +128,7 @@ export const FORTUNES = Object.freeze({
     name: 'The Spiral',
     quote: 'The leaves have taken up interpretive dance.',
     info: 'Scattered leaves foretell crosswinds: foes drift between lanes; each kill scores 25% more.',
+    effect: `Leaves drift between lanes; each kill scores ${pct(F.spiralScoreMultiplier)}% more.`,
     tag: 'drifting leaves, +25%',
     tone: 'trouble',
     color: '#b7dcbe',
@@ -142,6 +146,7 @@ export const FORTUNES = Object.freeze({
     name: 'The Star',
     quote: 'A clear cup and a steady spoon.',
     info: 'A clear cup guides the spoon: steam darts travel 35% faster.',
+    effect: `Steam travels ${pct(F.starSteamMultiplier)}% faster.`,
     tag: 'fast steam',
     tone: 'good',
     color: '#cfdeef',
@@ -160,6 +165,7 @@ export const FORTUNES = Object.freeze({
     name: 'Sugar Rush',
     quote: 'One lump or seventeen?',
     info: `Sugar bursts regenerate: one every ${F.sugarRushInterval} seconds, up to your usual supply.`,
+    effect: `Sugar bursts regrow, one every ${F.sugarRushInterval} seconds.`,
     tag: 'sugar regrows',
     tone: 'good',
     color: '#ffe7a3',
@@ -172,6 +178,7 @@ export const FORTUNES = Object.freeze({
     name: 'Double Trouble',
     quote: 'Two spoons would be excessive. Two shots, however…',
     info: 'Every puff of steam is two darts that veer gently apart.',
+    effect: 'Every puff of steam is two darts.',
     tag: 'twin steam',
     tone: 'good',
     color: '#c8f5e6',
@@ -189,6 +196,7 @@ export const FORTUNES = Object.freeze({
     name: 'Tempestuous Tea',
     quote: 'A disturbance in the steeping.',
     info: 'The tea is in a mood: wilder currents, and leaves rise 18% faster.',
+    effect: `Leaves rise ${pct(F.tempestEnemySpeed)}% faster, and milk drifts on wild currents.`,
     tag: 'faster leaves',
     tone: 'trouble',
     color: '#f2a27a',
@@ -203,6 +211,7 @@ export const FORTUNES = Object.freeze({
     name: 'Golden Opportunity',
     quote: 'Fortune favors the well-caffeinated.',
     info: 'A golden sugar cube will appear briefly. Steam it before it dissolves.',
+    effect: 'A golden sugar cube will appear. Steam it before it dissolves.',
     tag: 'watch for gold',
     tone: 'good',
     rare: true,
@@ -220,6 +229,7 @@ export const FORTUNES = Object.freeze({
     name: 'The Leaves Lie',
     quote: 'Your future is perfectly clear. Probably.',
     info: 'Nothing is promised. Something may happen anyway.',
+    effect: 'Nothing is promised. Something may happen anyway.',
     tag: '???',
     tone: 'odd',
     rare: true,
@@ -247,6 +257,7 @@ export const FORTUNES = Object.freeze({
     quote: 'The leaves have been warned. They chose not to listen.',
     info: 'For one cup, escaping leaves cannot cost you a cup: the rim bounces each one back once, '
       + 'and if it returns it vanishes in a puff of steam. The strainer is never needed.',
+    effect: 'Escaping leaves bounce back once instead of costing a cup.',
     tag: 'rim rebounds',
     tone: 'good',
     rare: true,

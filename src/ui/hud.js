@@ -11,6 +11,7 @@ import { OFFER_AT } from '../core/game.js';
 import { PHASE } from '../core/state.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
+import { readingMemory } from '../gameplay/memory.js';
 import { grindInProgress } from '../gameplay/grind.js';
 import { canBuyTea } from '../gameplay/shortage.js';
 import { runInProgress } from '../gameplay/teaRun.js';
@@ -460,8 +461,13 @@ export function hudText(state) {
     });
     if (state.phase === PHASE.GRIND) values.mainBtn = GRIND.button[grind.stage];
   }
-  values.compactFortune = state.phase === PHASE.READING && state.readingTime >= CONFIG.fortunes.revealAt
-    ? `Next cup: ${values.fortuneName}` : '';
+  // What the cup remembers: in full in the panel, and its reasons in a line under the compact cup.
+  const memory = readingMemory(state);
+  values.readingMemory = memory ? memory.observations.map((o) => `${o.fact} ${o.influence}`).join(' ') : '';
+  values.compactMemory = memory ? memory.observations.map((o) => o.influence).join(' ') : '';
+  const revealed = state.phase === PHASE.READING && state.readingTime >= CONFIG.fortunes.revealAt;
+  values.compactFortune = revealed ? `Next cup: ${values.fortuneName}` : '';
+  values.compactEffect = revealed && !stillLying(state) ? FORTUNES[state.nextFortune].effect : '';
   return values;
 }
 

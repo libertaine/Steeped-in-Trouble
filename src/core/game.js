@@ -34,7 +34,8 @@ import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
 import { advanceChapter, createProgress, currentChapter, opensChapter, teaAge } from '../gameplay/progress.js';
 import { dayOf, difficultyAt, endsDay, nextHeat, withHeat } from '../gameplay/days.js';
-import { TEAS, chooseTea, createCurrent, roundModifiers, teaFortuneNudges, updateCurrent } from '../gameplay/teas.js';
+import { TEAS, chooseTea, createCurrent, roundModifiers, updateCurrent } from '../gameplay/teas.js';
+import { fortuneRecord } from '../gameplay/memory.js';
 import { updateGolden } from '../gameplay/golden.js';
 import { rollPrismatic, updatePrismatic } from '../gameplay/prismatic.js';
 import { SECRETS, findSecrets } from '../gameplay/secrets.js';
@@ -219,12 +220,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = 
     state.dayPending = endsDay(state.round);
     state.readingTime = 0;
     clearField();
-    const { milkKills, milkUses, sugarUses, escapes, nearMisses } = state.roundStats;
-    state.nextFortune = drawFortune({
-      milkKills, milkUses, sugarUses, escapes, nearMisses,
-      leafLanes: state.residue.map((leaf) => leaf.lane),
-      nudges: teaFortuneNudges(state.tea),
-    }, rng);
+    // The same record explains the reading afterwards (gameplay/memory.js), without drawing again.
+    state.nextFortune = drawFortune(fortuneRecord(state), rng);
     state.offer = offerDue(state.round) ? drawOffer(state.spoon, rng) : null;
     state.havocDue = havocDue(state, treats);
     if (state.havocDue && milestoneDue(state)) {

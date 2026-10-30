@@ -172,6 +172,14 @@ export const CONFIG = deepFreeze({
 
     // Selection: the classic pattern reading is a strong tendency, never a guarantee.
     patternWeight: 6, // weight given to the fortune the leaf pattern points at
+
+    // What the cup remembers (gameplay/memory.js). Presentation thresholds
+    // only: they choose what the reading mentions, never what it draws.
+    memory: {
+      maxShown: 2, // observations per reading (a secret shown beside them takes a slot)
+      heavyMilk: 2, // milk pours in one cup worth mentioning
+      heavySugar: 2, // sugar bursts likewise
+    },
   },
 
   // Spoon upgrades: chosen after some rounds, kept until the pot runs dry.

@@ -1,0 +1,8562 @@
+{
+ "version": "0.16.0",
+ "checkpoints": {
+  "critical": {
+   "schemaVersion": 1,
+   "state": {
+    "phase": "reading",
+    "pausedFrom": "playing",
+    "round": 3,
+    "heat": 2,
+    "dayPending": false,
+    "score": 30,
+    "lives": 1,
+    "kills": 20,
+    "target": 20,
+    "milkLeft": 2,
+    "sugarLeft": 2,
+    "strainerLeft": 0,
+    "graceTime": 0,
+    "progress": {
+     "chapter": 1,
+     "starts": [
+      1
+     ]
+    },
+    "spoon": {
+     "polished": 0,
+     "quickStir": 1,
+     "sugarScoop": 0,
+     "strainer": 0
+    },
+    "goldenSpoon": 0,
+    "offer": [
+     "polished",
+     "quickStir"
+    ],
+    "fortune": "doubleTrouble",
+    "nextFortune": "doubleTrouble",
+    "modifiers": {
+     "bonusSugar": 0,
+     "milkDurationBonus": 0,
+     "steamSpeedMultiplier": 1,
+     "scoreMultiplier": 1,
+     "laneDrift": false,
+     "sugarRegenInterval": 0,
+     "twinSteam": true,
+     "enemySpeedMultiplier": 1,
+     "goldenCube": false,
+     "stormyMilk": false,
+     "karma": false,
+     "spawnIntervalMultiplier": 1,
+     "dartChance": 0,
+     "wanderChance": 0,
+     "spiceCurrents": false
+    },
+    "tea": "house",
+    "teaAge": 3,
+    "teaServed": {
+     "house": 3,
+     "herbal": 2
+    },
+    "current": null,
+    "angle": 4.71238898038469,
+    "shotCooldown": 0.09000000000000002,
+    "spawnTimer": 999999.8999999997,
+    "readingTime": 0,
+    "sugarRegenTimer": 0,
+    "goldenTimer": null,
+    "golden": null,
+    "prismaticTimer": null,
+    "prismatic": null,
+    "extraSugar": 0,
+    "secrets": [],
+    "discovered": [],
+    "stir": {
+     "dir": 0,
+     "time": 0
+    },
+    "wake": null,
+    "volleys": {},
+    "havocAfter": 3,
+    "lastHavoc": 0,
+    "havocDue": true,
+    "chocolate": null,
+    "grindAfter": 5,
+    "lastGrind": 0,
+    "grindDue": false,
+    "grind": null,
+    "teaCash": 15,
+    "shortageAfter": 9,
+    "aerialDiscoveries": [],
+    "shortageDue": false,
+    "shortage": null,
+    "run": null,
+    "arcade": {
+     "after": {
+      "dailyPour": 12,
+      "biscuitBreakout": 19,
+      "crossingStreet": 27
+     },
+     "offeredAt": null
+    },
+    "arcadeDue": null,
+    "interlude": null,
+    "dailyPour": null,
+    "biscuitBreakout": null,
+    "crossingStreet": null,
+    "autoSteam": false,
+    "shots": [],
+    "enemies": [],
+    "clouds": [],
+    "pulse": 0,
+    "residue": [
+     {
+      "lane": 0,
+      "radius": 79.66759410873055,
+      "angle": 4.740021162820754,
+      "spin": 1.439461775124073,
+      "size": 5.601545761106536
+     }
+    ],
+    "roundStats": {
+     "milkKills": 0,
+     "milkUses": 0,
+     "sugarUses": 0,
+     "escapes": 2,
+     "nearMisses": 0,
+     "motionTime": 0,
+     "volleys": 1,
+     "wastedVolleys": 0,
+     "steamKills": 1,
+     "karmaBounces": 0,
+     "karmaPuffs": 0
+    }
+   },
+   "random": {
+    "normal": {
+     "seed": 4242,
+     "state": 4103147947
+    },
+    "chocolate": {
+     "seed": 1592643666,
+     "state": 3424209479
+    },
+    "boss": {
+     "seed": 12644220,
+     "state": 12644220
+    },
+    "tea": {
+     "seed": 8304504,
+     "state": 2407764790
+    },
+    "teaRun": {
+     "seed": 5968108,
+     "state": 5968108
+    },
+    "dailyPour": {
+     "seed": 3658588309,
+     "state": 3658588309
+    },
+    "biscuitBreakout": {
+     "seed": 2975601127,
+     "state": 2975601127
+    },
+    "crossingStreet": {
+     "seed": 203441535,
+     "state": 203441535
+    }
+   },
+   "pinnedTea": null
+  },
+  "dayEnd": {
+   "schemaVersion": 1,
+   "state": {
+    "phase": "reading",
+    "pausedFrom": "playing",
+    "round": 10,
+    "heat": 9,
+    "dayPending": true,
+    "score": 463,
+    "lives": 4,
+    "kills": 32,
+    "target": 32,
+    "milkLeft": 2,
+    "sugarLeft": 5,
+    "strainerLeft": 2,
+    "graceTime": 0,
+    "progress": {
+     "chapter": 2,
+     "starts": [
+      1,
+      6
+     ]
+    },
+    "spoon": {
+     "polished": 0,
+     "quickStir": 2,
+     "sugarScoop": 2,
+     "strainer": 1
+    },
+    "goldenSpoon": 11.583333333333313,
+    "offer": null,
+    "fortune": "crown",
+    "nextFortune": "crown",
+    "modifiers": {
+     "bonusSugar": 1,
+     "milkDurationBonus": 0,
+     "steamSpeedMultiplier": 1,
+     "scoreMultiplier": 1.25,
+     "laneDrift": false,
+     "sugarRegenInterval": 0,
+     "twinSteam": false,
+     "enemySpeedMultiplier": 1,
+     "goldenCube": false,
+     "stormyMilk": false,
+     "karma": false,
+     "spawnIntervalMultiplier": 0.88,
+     "dartChance": 0,
+     "wanderChance": 0,
+     "spiceCurrents": false
+    },
+    "tea": "black",
+    "teaAge": 1,
+    "teaServed": {
+     "house": 7,
+     "herbal": 5,
+     "earlGrey": 3,
+     "chai": 9,
+     "green": 8,
+     "black": 10
+    },
+    "current": null,
+    "angle": 4.71238898038469,
+    "shotCooldown": 0.01166666666666668,
+    "spawnTimer": 999999.9166666664,
+    "readingTime": 0,
+    "sugarRegenTimer": 0,
+    "goldenTimer": null,
+    "golden": null,
+    "prismaticTimer": null,
+    "prismatic": null,
+    "extraSugar": 0,
+    "secrets": [],
+    "discovered": [],
+    "stir": {
+     "dir": 0,
+     "time": 0
+    },
+    "wake": null,
+    "volleys": {},
+    "havocAfter": null,
+    "lastHavoc": 3,
+    "havocDue": false,
+    "chocolate": null,
+    "grindAfter": null,
+    "lastGrind": 5,
+    "grindDue": false,
+    "grind": null,
+    "teaCash": 65,
+    "shortageAfter": 16,
+    "aerialDiscoveries": [],
+    "shortageDue": false,
+    "shortage": null,
+    "run": null,
+    "arcade": {
+     "after": {
+      "dailyPour": 12,
+      "biscuitBreakout": 19,
+      "crossingStreet": 27
+     },
+     "offeredAt": null
+    },
+    "arcadeDue": null,
+    "interlude": null,
+    "dailyPour": null,
+    "biscuitBreakout": null,
+    "crossingStreet": null,
+    "autoSteam": false,
+    "shots": [],
+    "enemies": [],
+    "clouds": [],
+    "pulse": 0,
+    "residue": [
+     {
+      "lane": 0,
+      "radius": 121.12745642662048,
+      "angle": -1.5695892599180827,
+      "spin": 0.08460187073796988,
+      "size": 6.5560177124571055
+     }
+    ],
+    "roundStats": {
+     "milkKills": 0,
+     "milkUses": 0,
+     "sugarUses": 0,
+     "escapes": 0,
+     "nearMisses": 0,
+     "motionTime": 0,
+     "volleys": 1,
+     "wastedVolleys": 0,
+     "steamKills": 1,
+     "karmaBounces": 0,
+     "karmaPuffs": 0
+    }
+   },
+   "random": {
+    "normal": {
+     "seed": 77,
+     "state": 1192153920
+    },
+    "chocolate": {
+     "seed": 1592639629,
+     "state": 768980368
+    },
+    "boss": {
+     "seed": 12648355,
+     "state": 3675779981
+    },
+    "tea": {
+     "seed": 8300455,
+     "state": 2279878347
+    },
+    "teaRun": {
+     "seed": 5963827,
+     "state": 5963827
+    },
+    "dailyPour": {
+     "seed": 3658592330,
+     "state": 3658592330
+    },
+    "biscuitBreakout": {
+     "seed": 2975596856,
+     "state": 2975596856
+    },
+    "crossingStreet": {
+     "seed": 203445664,
+     "state": 203445664
+    }
+   },
+   "pinnedTea": null
+  }
+ },
+ "continuations": {
+  "critical": [
+   {
+    "round": 4,
+    "nextFortune": "star",
+    "offer": null,
+    "tea": "herbal",
+    "score": 40,
+    "lives": 1,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 3,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 4242,
+      "state": 2207640937
+     },
+     "chocolate": {
+      "seed": 1592643666,
+      "state": 201089932
+     },
+     "boss": {
+      "seed": 12644220,
+      "state": 12644220
+     },
+     "tea": {
+      "seed": 8304504,
+      "state": 1775929120
+     },
+     "teaRun": {
+      "seed": 5968108,
+      "state": 5968108
+     },
+     "dailyPour": {
+      "seed": 3658588309,
+      "state": 3658588309
+     },
+     "biscuitBreakout": {
+      "seed": 2975601127,
+      "state": 2975601127
+     },
+     "crossingStreet": {
+      "seed": 203441535,
+      "state": 203441535
+     }
+    }
+   },
+   {
+    "round": 5,
+    "nextFortune": "crown",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "earlGrey",
+    "score": 50,
+    "lives": 1,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 4,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 4242,
+      "state": 3975265553
+     },
+     "chocolate": {
+      "seed": 1592643666,
+      "state": 201089932
+     },
+     "boss": {
+      "seed": 12644220,
+      "state": 12644220
+     },
+     "tea": {
+      "seed": 8304504,
+      "state": 1144093450
+     },
+     "teaRun": {
+      "seed": 5968108,
+      "state": 5968108
+     },
+     "dailyPour": {
+      "seed": 3658588309,
+      "state": 3658588309
+     },
+     "biscuitBreakout": {
+      "seed": 2975601127,
+      "state": 2975601127
+     },
+     "crossingStreet": {
+      "seed": 203441535,
+      "state": 203441535
+     }
+    }
+   },
+   {
+    "round": 6,
+    "nextFortune": "karma",
+    "offer": null,
+    "tea": "chai",
+    "score": 420,
+    "lives": 2,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 5,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 4242,
+      "state": 2079758543
+     },
+     "chocolate": {
+      "seed": 1592643666,
+      "state": 2032655745
+     },
+     "boss": {
+      "seed": 12644220,
+      "state": 12644220
+     },
+     "tea": {
+      "seed": 8304504,
+      "state": 512257780
+     },
+     "teaRun": {
+      "seed": 5968108,
+      "state": 5968108
+     },
+     "dailyPour": {
+      "seed": 3658588309,
+      "state": 3658588309
+     },
+     "biscuitBreakout": {
+      "seed": 2975601127,
+      "state": 2975601127
+     },
+     "crossingStreet": {
+      "seed": 203441535,
+      "state": 203441535
+     }
+    }
+   },
+   {
+    "round": 7,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "herbal",
+    "score": 430,
+    "lives": 2,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 6,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 4242,
+      "state": 1383981676
+     },
+     "chocolate": {
+      "seed": 1592643666,
+      "state": 1272937681
+     },
+     "boss": {
+      "seed": 12644220,
+      "state": 12644220
+     },
+     "tea": {
+      "seed": 8304504,
+      "state": 4175389406
+     },
+     "teaRun": {
+      "seed": 5968108,
+      "state": 5968108
+     },
+     "dailyPour": {
+      "seed": 3658588309,
+      "state": 3658588309
+     },
+     "biscuitBreakout": {
+      "seed": 2975601127,
+      "state": 2975601127
+     },
+     "crossingStreet": {
+      "seed": 203441535,
+      "state": 203441535
+     }
+    }
+   },
+   {
+    "round": 8,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "green",
+    "score": 440,
+    "lives": 2,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 7,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 4242,
+      "state": 3783441962
+     },
+     "chocolate": {
+      "seed": 1592643666,
+      "state": 1272937681
+     },
+     "boss": {
+      "seed": 12644220,
+      "state": 12644220
+     },
+     "tea": {
+      "seed": 8304504,
+      "state": 3543553736
+     },
+     "teaRun": {
+      "seed": 5968108,
+      "state": 5968108
+     },
+     "dailyPour": {
+      "seed": 3658588309,
+      "state": 3658588309
+     },
+     "biscuitBreakout": {
+      "seed": 2975601127,
+      "state": 2975601127
+     },
+     "crossingStreet": {
+      "seed": 203441535,
+      "state": 203441535
+     }
+    }
+   },
+   {
+    "round": 9,
+    "nextFortune": "golden",
+    "offer": [
+     "sugarScoop",
+     "quickStir"
+    ],
+    "tea": "earlGrey",
+    "score": 450,
+    "lives": 2,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 8,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 4242,
+      "state": 1256099282
+     },
+     "chocolate": {
+      "seed": 1592643666,
+      "state": 3104503494
+     },
+     "boss": {
+      "seed": 12644220,
+      "state": 12644220
+     },
+     "tea": {
+      "seed": 8304504,
+      "state": 2911718066
+     },
+     "teaRun": {
+      "seed": 5968108,
+      "state": 5968108
+     },
+     "dailyPour": {
+      "seed": 3658588309,
+      "state": 3658588309
+     },
+     "biscuitBreakout": {
+      "seed": 2975601127,
+      "state": 2975601127
+     },
+     "crossingStreet": {
+      "seed": 203441535,
+      "state": 203441535
+     }
+    }
+   },
+   {
+    "round": 10,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "black",
+    "score": 463,
+    "lives": 2,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 9,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 4242,
+      "state": 1192158085
+     },
+     "chocolate": {
+      "seed": 1592643666,
+      "state": 2344785430
+     },
+     "boss": {
+      "seed": 12644220,
+      "state": 1844210033
+     },
+     "tea": {
+      "seed": 8304504,
+      "state": 2279882396
+     },
+     "teaRun": {
+      "seed": 5968108,
+      "state": 5968108
+     },
+     "dailyPour": {
+      "seed": 3658588309,
+      "state": 3658588309
+     },
+     "biscuitBreakout": {
+      "seed": 2975601127,
+      "state": 2975601127
+     },
+     "crossingStreet": {
+      "seed": 203441535,
+      "state": 203441535
+     }
+    }
+   },
+   {
+    "round": 11,
+    "nextFortune": "veil",
+    "offer": [
+     "sugarScoop",
+     "polished"
+    ],
+    "tea": "house",
+    "score": 473,
+    "lives": 2,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 10,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 4242,
+      "state": 2959782701
+     },
+     "chocolate": {
+      "seed": 1592643666,
+      "state": 2344785430
+     },
+     "boss": {
+      "seed": 12644220,
+      "state": 3675775846
+     },
+     "tea": {
+      "seed": 8304504,
+      "state": 1648046726
+     },
+     "teaRun": {
+      "seed": 5968108,
+      "state": 5968108
+     },
+     "dailyPour": {
+      "seed": 3658588309,
+      "state": 3658588309
+     },
+     "biscuitBreakout": {
+      "seed": 2975601127,
+      "state": 2975601127
+     },
+     "crossingStreet": {
+      "seed": 203441535,
+      "state": 203441535
+     }
+    }
+   }
+  ],
+  "dayEnd": [
+   {
+    "round": 11,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "quickStir"
+    ],
+    "tea": "earlGrey",
+    "score": 473,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 10,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 2959778536
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 2600546181
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 3675779981
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 1648042677
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     }
+    }
+   },
+   {
+    "round": 12,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "herbal",
+    "score": 483,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 11,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 1064271526
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 1840828117
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 1212378498
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 1016207007
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     }
+    }
+   },
+   {
+    "round": 13,
+    "nextFortune": "crown",
+    "offer": [
+     "strainer",
+     "quickStir"
+    ],
+    "tea": "earlGrey",
+    "score": 493,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 12,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 368494659
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 1840828117
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 3043944311
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 384371337
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     }
+    }
+   },
+   {
+    "round": 14,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "green",
+    "score": 503,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 13,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 2767954945
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 3672393930
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 580542828
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 4047502963
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     }
+    }
+   },
+   {
+    "round": 15,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "polished",
+     "quickStir"
+    ],
+    "tea": "house",
+    "score": 1023,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 14,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 240612265
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 1208992447
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 580542828
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 3415667293
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     }
+    }
+   },
+   {
+    "round": 16,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "green",
+    "score": 1033,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 15,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 2640072551
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 3040558260
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 580542828
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 2783831623
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     }
+    }
+   }
+  ]
+ },
+ "readings": {
+  "1": [
+   {
+    "round": 1,
+    "nextFortune": "karma",
+    "offer": [
+     "quickStir",
+     "sugarScoop"
+    ],
+    "tea": "house",
+    "score": 10,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 0,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 4231026100
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 3424205494
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 12648431
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 3671432149
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 2,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "herbal",
+    "score": 20,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 1,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 2335519090
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 3424205494
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 12648431
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 3039596479
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 3,
+    "nextFortune": "crown",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "earlGrey",
+    "score": 30,
+    "lives": 3,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 2,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 4103143706
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 3424205494
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 12648431
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 2407760809
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 4,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "herbal",
+    "score": 40,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 3,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 4039202509
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 201085947
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 12648431
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 1775925139
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 5,
+    "nextFortune": "spiral",
+    "offer": [
+     "strainer",
+     "sugarScoop"
+    ],
+    "tea": "house",
+    "score": 50,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 4,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 1511859829
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 201085947
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 12648431
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 1144089469
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 6,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 423,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 5,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 3911320115
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 2032651760
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 12648431
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 512253799
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 7,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "sugarScoop",
+     "polished"
+    ],
+    "tea": "herbal",
+    "score": 433,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 6,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 3215543248
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 3104499509
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 12648431
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 4175385425
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 8,
+    "nextFortune": "lie",
+    "offer": null,
+    "tea": "green",
+    "score": 443,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 7,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 1320036238
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 3104499509
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 12648431
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 3543549755
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 9,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "sugarScoop"
+    ],
+    "tea": "earlGrey",
+    "score": 453,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 8,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 3087660854
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 641098026
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1844214244
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 2911714085
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 10,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "black",
+    "score": 976,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 9,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 1192153844
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 2472663839
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1844214244
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 2279878415
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 11,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "quickStir"
+    ],
+    "tea": "herbal",
+    "score": 986,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 10,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 2959778460
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 9262356
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1844214244
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 1648042745
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 12,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "chai",
+    "score": 996,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 11,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 1064271450
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 1840828169
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1844214244
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 1016207075
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 13,
+    "nextFortune": "crown",
+    "offer": [
+     "quickStir",
+     "sugarScoop"
+    ],
+    "tea": "house",
+    "score": 1006,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 12,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 368494583
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 2912675918
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 3675780057
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 384371405
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 14,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 1016,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 13,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 2767954869
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 2912675918
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1212378574
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 4047503031
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 15,
+    "nextFortune": "golden",
+    "offer": [
+     "polished",
+     "sugarScoop"
+    ],
+    "tea": "herbal",
+    "score": 1026,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 14,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 240612189
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 449274435
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 3043944387
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 3415667361
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 16,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "green",
+    "score": 1036,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 15,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 176670992
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 2280840248
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 580542904
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 2783831691
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 17,
+    "nextFortune": "golden",
+    "offer": [
+     "sugarScoop",
+     "quickStir"
+    ],
+    "tea": "herbal",
+    "score": 1046,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 16,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 1944295608
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 4112406061
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 2412108717
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 2151996021
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 18,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "black",
+    "score": 1059,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 17,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 3711920224
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 1649004578
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 2412108717
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 1520160351
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 19,
+    "nextFortune": "crown",
+    "offer": [
+     "quickStir"
+    ],
+    "tea": "house",
+    "score": 1069,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "biscuitBreakout",
+    "dayPending": false,
+    "heat": 18,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 1184577544
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 889286514
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 4243674530
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 888324681
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 20,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 1079,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 19,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 3584037830
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 889286514
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1780273047
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 256489011
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 21,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 1089,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 20,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 1688530820
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 2720852327
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 3611838860
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 3919620637
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 22,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "herbal",
+    "score": 1099,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 21,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 4087991106
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 257450844
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1148437377
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 3287784967
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 23,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "green",
+    "score": 1619,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 22,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 2192484096
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 2089016657
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1148437377
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 2655949297
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 24,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 1629,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 23,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 296977086
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 3920582470
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1148437377
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 2024113627
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 25,
+    "nextFortune": "star",
+    "offer": null,
+    "tea": "green",
+    "score": 1639,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 24,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 2696437372
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 1457180987
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 1148437377
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 1392277957
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 26,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "black",
+    "score": 1652,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 25,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 800930362
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 697462923
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 2980003190
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 760442287
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 27,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "house",
+    "score": 2172,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 26,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 3200390648
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 697462923
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 2980003190
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 128606617
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 28,
+    "nextFortune": "tempest",
+    "offer": null,
+    "tea": "chai",
+    "score": 2182,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 27,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 673047968
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 2529028736
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 2980003190
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 3791738243
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 29,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 2192,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "crossingStreet",
+    "dayPending": false,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 3072508254
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 3600876485
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 2980003190
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 3159902573
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   },
+   {
+    "round": 30,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "herbal",
+    "score": 2202,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 1,
+      "state": 3008567057
+     },
+     "chocolate": {
+      "seed": 1592639681,
+      "state": 3600876485
+     },
+     "boss": {
+      "seed": 12648431,
+      "state": 516601707
+     },
+     "tea": {
+      "seed": 8300523,
+      "state": 2528066903
+     },
+     "teaRun": {
+      "seed": 5963903,
+      "state": 5963903
+     },
+     "dailyPour": {
+      "seed": 3658592262,
+      "state": 3658592262
+     },
+     "biscuitBreakout": {
+      "seed": 2975596916,
+      "state": 2975596916
+     },
+     "crossingStreet": {
+      "seed": 203445740,
+      "state": 203445740
+     }
+    }
+   }
+  ],
+  "2": [
+   {
+    "round": 1,
+    "nextFortune": "golden",
+    "offer": [
+     "sugarScoop",
+     "quickStir"
+    ],
+    "tea": "house",
+    "score": 10,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 0,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 4231026101
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3424205495
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 12648428
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 3671432146
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 2,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "herbal",
+    "score": 20,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 1,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 4167084904
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3424205495
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 12648428
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 3039596476
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 3,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "quickStir"
+    ],
+    "tea": "earlGrey",
+    "score": 30,
+    "lives": 3,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 2,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 1007906554
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3424205495
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 12648428
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 2407760806
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 4,
+    "nextFortune": "spiral",
+    "offer": null,
+    "tea": "house",
+    "score": 40,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 3,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 943965357
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 201085948
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 12648428
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 1775925136
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 5,
+    "nextFortune": "lie",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "herbal",
+    "score": 53,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 4,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 2711589973
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 201085948
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 12648428
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 1144089466
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 6,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "chai",
+    "score": 423,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 5,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 816082963
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 2032651761
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 12648428
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 512253796
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 7,
+    "nextFortune": "crown",
+    "offer": [
+     "sugarScoop",
+     "strainer"
+    ],
+    "tea": "house",
+    "score": 433,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 6,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 120306096
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 1272933697
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 12648428
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 4175385422
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 8,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "green",
+    "score": 443,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 7,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 2519766382
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 1272933697
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 12648428
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 3543549752
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 9,
+    "nextFortune": "crown",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "herbal",
+    "score": 453,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 8,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 1823989515
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3104499510
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1844214241
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 2911714082
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 10,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "black",
+    "score": 976,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 9,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 4223449801
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 641098027
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1844214241
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 2279878412
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 11,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "quickStir"
+    ],
+    "tea": "earlGrey",
+    "score": 986,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 10,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 1696107121
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 2472663840
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1844214241
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 1648042742
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 12,
+    "nextFortune": "veil",
+    "offer": null,
+    "tea": "house",
+    "score": 996,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 11,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 1632165924
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 9262357
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1844214241
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 1016207072
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 13,
+    "nextFortune": "crown",
+    "offer": [
+     "quickStir",
+     "polished"
+    ],
+    "tea": "chai",
+    "score": 1006,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 12,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 3399790540
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3544511589
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 3675780054
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 384371402
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 14,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 1016,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 13,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 1504283530
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3544511589
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1212378571
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 4047503028
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 15,
+    "nextFortune": "sugarRush",
+    "offer": [
+     "quickStir",
+     "polished"
+    ],
+    "tea": "black",
+    "score": 1029,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 14,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 808506663
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 1081110106
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1212378571
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 3415667358
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 16,
+    "nextFortune": "star",
+    "offer": null,
+    "tea": "green",
+    "score": 1039,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 15,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 3207966949
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 321392042
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 3043944384
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 2783831688
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 17,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "quickStir",
+     "polished"
+    ],
+    "tea": "herbal",
+    "score": 1049,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 16,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 2512190082
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 321392042
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 580542901
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 2151996018
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 18,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "house",
+    "score": 1569,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 17,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 616683072
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 2152957855
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 580542901
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 1520160348
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 19,
+    "nextFortune": "golden",
+    "offer": [
+     "polished"
+    ],
+    "tea": "green",
+    "score": 1579,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "biscuitBreakout",
+    "dayPending": false,
+    "heat": 18,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 552741875
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3224805604
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 580542901
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 888324678
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 20,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "chai",
+    "score": 1589,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 19,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 488800678
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3224805604
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 580542901
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 256489008
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 21,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "house",
+    "score": 1599,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 20,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 424859481
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 761404121
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 580542901
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 3919620634
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 22,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 1609,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 21,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 2824319767
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 1686057
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 2412108714
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 3287784964
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 23,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "black",
+    "score": 1622,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 22,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 928812757
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 1686057
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 4243674527
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 2655949294
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 24,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "green",
+    "score": 2142,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 23,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 3328273043
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 1833251870
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 4243674527
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 2024113624
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 25,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "herbal",
+    "score": 2152,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 24,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 1432766033
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3664817683
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 4243674527
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 1392277954
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 26,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "house",
+    "score": 2162,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 25,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 3832226319
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 1201416200
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 4243674527
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 760442284
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 27,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 2172,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 26,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 1936719309
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 3032982013
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1780273044
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 128606614
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 28,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 2692,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 27,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 41212299
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 569580530
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1780273044
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 3791738240
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 29,
+    "nextFortune": "sugarRush",
+    "offer": null,
+    "tea": "black",
+    "score": 2705,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 2440672585
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 2401146343
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1780273044
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 3159902570
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   },
+   {
+    "round": 30,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "house",
+    "score": 2715,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2,
+      "state": 2376731388
+     },
+     "chocolate": {
+      "seed": 1592639682,
+      "state": 1641428279
+     },
+     "boss": {
+      "seed": 12648428,
+      "state": 1780273044
+     },
+     "tea": {
+      "seed": 8300520,
+      "state": 2528066900
+     },
+     "teaRun": {
+      "seed": 5963900,
+      "state": 5963900
+     },
+     "dailyPour": {
+      "seed": 3658592261,
+      "state": 3658592261
+     },
+     "biscuitBreakout": {
+      "seed": 2975596919,
+      "state": 2975596919
+     },
+     "crossingStreet": {
+      "seed": 203445743,
+      "state": 203445743
+     }
+    }
+   }
+  ],
+  "3": [
+   {
+    "round": 1,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "quickStir",
+     "sugarScoop"
+    ],
+    "tea": "house",
+    "score": 10,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 0,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 4231026102
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3424205496
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 12648429
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 3671432147
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 2,
+    "nextFortune": "star",
+    "offer": null,
+    "tea": "herbal",
+    "score": 20,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 1,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 4167084905
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3424205496
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 12648429
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 3039596477
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 3,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "sugarScoop",
+     "strainer"
+    ],
+    "tea": "house",
+    "score": 30,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 2,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 1639742225
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3424205496
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 12648429
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 2407760807
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 4,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "herbal",
+    "score": 40,
+    "lives": 3,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 3,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 4039202511
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3424205496
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 12648429
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 1775925137
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 5,
+    "nextFortune": "crown",
+    "offer": [
+     "quickStir",
+     "strainer"
+    ],
+    "tea": "earlGrey",
+    "score": 50,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 4,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 3343425644
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 201085949
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 12648429
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 1144089467
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 6,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 420,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 5,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 1447918634
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 201085949
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 12648429
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 512253797
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 7,
+    "nextFortune": "star",
+    "offer": [
+     "sugarScoop",
+     "strainer"
+    ],
+    "tea": "earlGrey",
+    "score": 430,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 6,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 3215543250
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 2032651762
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 12648429
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 4175385423
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 8,
+    "nextFortune": "spiral",
+    "offer": null,
+    "tea": "green",
+    "score": 440,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 7,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 1320036240
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3864217575
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 12648429
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 3543549753
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 9,
+    "nextFortune": "tempest",
+    "offer": [
+     "polished",
+     "quickStir"
+    ],
+    "tea": "chai",
+    "score": 453,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 8,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 3087660856
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3104499511
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 1844214242
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 2911714083
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 10,
+    "nextFortune": "spiral",
+    "offer": null,
+    "tea": "black",
+    "score": 466,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 9,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 1192153846
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3104499511
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 3675780055
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 2279878413
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 11,
+    "nextFortune": "lie",
+    "offer": [
+     "quickStir",
+     "strainer"
+    ],
+    "tea": "house",
+    "score": 989,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 10,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 2959778462
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 641098028
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 3675780055
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 1648042743
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 12,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "herbal",
+    "score": 999,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 11,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 1064271452
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 2472663841
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 3675780055
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 1016207073
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 13,
+    "nextFortune": "lie",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "green",
+    "score": 1009,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 12,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 368494585
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 9262358
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 3675780055
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 384371403
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 14,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "black",
+    "score": 1022,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 13,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 2767954871
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3544511590
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 1212378572
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 4047503029
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 15,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "strainer"
+    ],
+    "tea": "earlGrey",
+    "score": 1542,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 14,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 240612191
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3544511590
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 1212378572
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 3415667359
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 16,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "herbal",
+    "score": 1552,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 15,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 176670994
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 1081110107
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 1212378572
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 2783831689
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 17,
+    "nextFortune": "golden",
+    "offer": [
+     "polished",
+     "strainer"
+    ],
+    "tea": "chai",
+    "score": 1562,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 16,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 3775861423
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 2912675920
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 1212378572
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 2151996019
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 18,
+    "nextFortune": "lie",
+    "offer": null,
+    "tea": "house",
+    "score": 1572,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 17,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 3711920226
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 449274437
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 1212378572
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 1520160349
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 19,
+    "nextFortune": "sugarRush",
+    "offer": [
+     "strainer"
+    ],
+    "tea": "green",
+    "score": 1582,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 18,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 1184577546
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3984523669
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 3043944385
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 888324679
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 20,
+    "nextFortune": "star",
+    "offer": null,
+    "tea": "herbal",
+    "score": 2102,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "biscuitBreakout",
+    "dayPending": true,
+    "heat": 19,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 3584037832
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3984523669
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 3043944385
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 256489009
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 21,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "black",
+    "score": 2115,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 20,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 1688530822
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 1521122186
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 3043944385
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 3919620635
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 22,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "herbal",
+    "score": 2125,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 21,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 4087991108
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3352687999
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 3043944385
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 3287784965
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 23,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 2135,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 22,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 2192484098
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 889286516
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 580542902
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 2655949295
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 24,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "house",
+    "score": 2145,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 23,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 296977088
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 2720852329
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 2412108715
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 2024113625
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 25,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 2155,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 24,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 233035891
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 257450846
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 4243674528
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 1392277955
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 26,
+    "nextFortune": "sugarRush",
+    "offer": null,
+    "tea": "black",
+    "score": 2168,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 25,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 2632496177
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 2089016659
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 1780273045
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 760442285
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 27,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "green",
+    "score": 2178,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "crossingStreet",
+    "dayPending": false,
+    "heat": 26,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 736989167
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3920582472
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 3611838858
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 128606615
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 28,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "black",
+    "score": 2191,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 27,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 3136449453
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 1457180989
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 1148437375
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 3791738241
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 29,
+    "nextFortune": "lie",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 2201,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 3072508256
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 3288746802
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 1148437375
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 3159902571
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   },
+   {
+    "round": 30,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "herbal",
+    "score": 2211,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 3,
+      "state": 1177001246
+     },
+     "chocolate": {
+      "seed": 1592639683,
+      "state": 2529028738
+     },
+     "boss": {
+      "seed": 12648429,
+      "state": 2980003188
+     },
+     "tea": {
+      "seed": 8300521,
+      "state": 2528066901
+     },
+     "teaRun": {
+      "seed": 5963901,
+      "state": 5963901
+     },
+     "dailyPour": {
+      "seed": 3658592260,
+      "state": 3658592260
+     },
+     "biscuitBreakout": {
+      "seed": 2975596918,
+      "state": 2975596918
+     },
+     "crossingStreet": {
+      "seed": 203445742,
+      "state": 203445742
+     }
+    }
+   }
+  ],
+  "42": [
+   {
+    "round": 1,
+    "nextFortune": "crown",
+    "offer": [
+     "sugarScoop",
+     "polished"
+    ],
+    "tea": "house",
+    "score": 10,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 0,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 4231026141
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3424205535
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 12648388
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 3671432106
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 2,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 20,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 1,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 2335519131
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3424205535
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 12648388
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 3039596436
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 3,
+    "nextFortune": "crown",
+    "offer": [
+     "quickStir",
+     "strainer"
+    ],
+    "tea": "herbal",
+    "score": 30,
+    "lives": 3,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 2,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 4103143747
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3424205535
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 12648388
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 2407760766
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 4,
+    "nextFortune": "tempest",
+    "offer": null,
+    "tea": "house",
+    "score": 40,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 3,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 4039202550
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 201085988
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 12648388
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 1775925096
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 5,
+    "nextFortune": "golden",
+    "offer": [
+     "quickStir",
+     "sugarScoop"
+    ],
+    "tea": "herbal",
+    "score": 50,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 4,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 1511859870
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 201085988
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 12648388
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 1144089426
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 6,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 420,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 5,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 3279484486
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 2032651801
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 12648388
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 512253756
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 7,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "sugarScoop"
+    ],
+    "tea": "herbal",
+    "score": 430,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 6,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 752141806
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3864217614
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 12648388
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 4175385382
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 8,
+    "nextFortune": "veil",
+    "offer": null,
+    "tea": "green",
+    "score": 440,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 7,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 3151602092
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3104499550
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 12648388
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 3543549712
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 9,
+    "nextFortune": "star",
+    "offer": [
+     "sugarScoop",
+     "strainer"
+    ],
+    "tea": "herbal",
+    "score": 450,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 8,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 624259412
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3104499550
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 1844214201
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 2911714042
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 10,
+    "nextFortune": "star",
+    "offer": null,
+    "tea": "black",
+    "score": 463,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 9,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 560318215
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 641098067
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 3675780014
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 2279878372
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 11,
+    "nextFortune": "veil",
+    "offer": [
+     "quickStir",
+     "polished"
+    ],
+    "tea": "earlGrey",
+    "score": 473,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 10,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 2327942831
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 2472663880
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 3675780014
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 1648042702
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 12,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "house",
+    "score": 483,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 11,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 432435821
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 1712945816
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 1212378531
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 1016207032
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 13,
+    "nextFortune": "crown",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "black",
+    "score": 1006,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 12,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 4031626250
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 1712945816
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 1212378531
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 384371362
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 14,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 1016,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 13,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 2136119240
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3544511629
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 1212378531
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 4047502988
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 15,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "strainer"
+    ],
+    "tea": "earlGrey",
+    "score": 1026,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 14,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 3903743856
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 321392082
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 1212378531
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 3415667318
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 16,
+    "nextFortune": "tempest",
+    "offer": null,
+    "tea": "green",
+    "score": 1036,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 15,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 2008236846
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 321392082
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 3043944344
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 2783831648
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 17,
+    "nextFortune": "tempest",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "herbal",
+    "score": 1046,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 16,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 3775861462
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 2152957895
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 580542861
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 2151995978
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 18,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "house",
+    "score": 1056,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 17,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 1880354452
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3984523708
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 2412108674
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 1520160308
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 19,
+    "nextFortune": "crown",
+    "offer": [
+     "polished"
+    ],
+    "tea": "chai",
+    "score": 1066,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "biscuitBreakout",
+    "dayPending": false,
+    "heat": 18,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 1816413255
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 1521122225
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 4243674487
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 888324638
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 20,
+    "nextFortune": "sugarRush",
+    "offer": null,
+    "tea": "green",
+    "score": 1076,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 19,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 4215873541
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3352688038
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 1780273004
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 256488968
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 21,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "black",
+    "score": 1089,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 20,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 2320366531
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 889286555
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 3611838817
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 3919620594
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 22,
+    "nextFortune": "sugarRush",
+    "offer": null,
+    "tea": "chai",
+    "score": 1099,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 21,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 424859521
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 2720852368
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 1148437334
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 3287784924
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 23,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 1109,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 22,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 2824319807
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 257450885
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 2980003147
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 2655949254
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 24,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "herbal",
+    "score": 1629,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 23,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 928812797
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 2089016698
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 2980003147
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 2024113584
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 25,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "black",
+    "score": 1642,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 24,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 864871600
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 1329298634
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 2980003147
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 1392277914
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 26,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "house",
+    "score": 1652,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 25,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 800930403
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 1329298634
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 2980003147
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 760442244
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 27,
+    "nextFortune": "karma",
+    "offer": null,
+    "tea": "chai",
+    "score": 1662,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 26,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 2568555019
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 3160864447
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 2980003147
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 128606574
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 28,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "green",
+    "score": 1672,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 27,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 673048009
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 4232712196
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 516601664
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 3791738200
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 29,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "black",
+    "score": 2195,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 609106812
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 4232712196
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 516601664
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 3159902530
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   },
+   {
+    "round": 30,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "chai",
+    "score": 2205,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 42,
+      "state": 3008567098
+     },
+     "chocolate": {
+      "seed": 1592639722,
+      "state": 1769310713
+     },
+     "boss": {
+      "seed": 12648388,
+      "state": 516601664
+     },
+     "tea": {
+      "seed": 8300480,
+      "state": 2528066860
+     },
+     "teaRun": {
+      "seed": 5963860,
+      "state": 5963860
+     },
+     "dailyPour": {
+      "seed": 3658592301,
+      "state": 3658592301
+     },
+     "biscuitBreakout": {
+      "seed": 2975596895,
+      "state": 2975596895
+     },
+     "crossingStreet": {
+      "seed": 203445703,
+      "state": 203445703
+     }
+    }
+   }
+  ],
+  "99": [
+   {
+    "round": 1,
+    "nextFortune": "crown",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "house",
+    "score": 10,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 0,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 4231026198
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 3424205464
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 12648333
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 3671432051
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 2,
+    "nextFortune": "tempest",
+    "offer": null,
+    "tea": "herbal",
+    "score": 20,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 1,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 4167085001
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 3424205464
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 12648333
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 3039596381
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 3,
+    "nextFortune": "crown",
+    "offer": [
+     "sugarScoop",
+     "strainer"
+    ],
+    "tea": "earlGrey",
+    "score": 30,
+    "lives": 3,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 2,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 1639742321
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 3424205464
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 12648333
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 2407760711
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 4,
+    "nextFortune": "lie",
+    "offer": null,
+    "tea": "house",
+    "score": 40,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 3,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 4039202607
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 201085917
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 12648333
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 1775925041
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 5,
+    "nextFortune": "crown",
+    "offer": [
+     "sugarScoop",
+     "quickStir"
+    ],
+    "tea": "earlGrey",
+    "score": 50,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 4,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 1511859927
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 201085917
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 12648333
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 1144089371
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 6,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "chai",
+    "score": 420,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 5,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 3911320213
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 2032651730
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 12648333
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 512253701
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 7,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "strainer"
+    ],
+    "tea": "herbal",
+    "score": 430,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 6,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 1383977533
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 3864217543
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 12648333
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 4175385327
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 8,
+    "nextFortune": "star",
+    "offer": null,
+    "tea": "green",
+    "score": 440,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 7,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 3783437819
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 1400816060
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 12648333
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 3543549657
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 9,
+    "nextFortune": "crown",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "earlGrey",
+    "score": 450,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 8,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 1256095139
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 3232381873
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 1844214146
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 2911713987
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 10,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "black",
+    "score": 973,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 9,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 3655555425
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 768980390
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 1844214146
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 2279878317
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 11,
+    "nextFortune": "crown",
+    "offer": [
+     "quickStir",
+     "polished"
+    ],
+    "tea": "herbal",
+    "score": 983,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 10,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 1128212745
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 2600546203
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 1844214146
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 1648042647
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 12,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "house",
+    "score": 993,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 11,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 1064271548
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 137144720
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 1844214146
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 1016206977
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 13,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "quickStir"
+    ],
+    "tea": "earlGrey",
+    "score": 1003,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 12,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 2831896164
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 1968710533
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3675779959
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 384371307
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 14,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "chai",
+    "score": 1523,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 13,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 936389154
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 3800276346
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3675779959
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 4047502933
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 15,
+    "nextFortune": "crown",
+    "offer": [
+     "polished",
+     "quickStir"
+    ],
+    "tea": "black",
+    "score": 1536,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 14,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 2072178100
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 1336874863
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3675779959
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 3415667263
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 16,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "green",
+    "score": 1546,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 15,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 176671090
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 3168440676
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3675779959
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 2783831593
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 17,
+    "nextFortune": "crown",
+    "offer": [
+     "quickStir"
+    ],
+    "tea": "house",
+    "score": 1556,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 16,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 1944295706
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 705039193
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 1212378476
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 2151995923
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 18,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "chai",
+    "score": 1566,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 17,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 48788696
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 2536605006
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 1212378476
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 1520160253
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 19,
+    "nextFortune": "lie",
+    "offer": [
+     "quickStir"
+    ],
+    "tea": "herbal",
+    "score": 1576,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 18,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 4279814795
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 1776886942
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3043944289
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 888324583
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 20,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 2096,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "biscuitBreakout",
+    "dayPending": true,
+    "heat": 19,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 2384307785
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 1776886942
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3043944289
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 256488913
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 21,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "green",
+    "score": 2106,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 20,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 488800775
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 3608452755
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3043944289
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 3919620539
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 22,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 2116,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 21,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 2888261061
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 1145051272
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3043944289
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 3287784869
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 23,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "black",
+    "score": 2129,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 22,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 2824319864
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 2976617085
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3043944289
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 2655949199
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 24,
+    "nextFortune": "star",
+    "offer": null,
+    "tea": "house",
+    "score": 2139,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 23,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 928812854
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 2216899021
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 580542806
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 2024113529
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 25,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "green",
+    "score": 2149,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 24,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 864871657
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 2216899021
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 2412108619
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 1392277859
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 26,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 2159,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "dailyPour",
+    "dayPending": false,
+    "heat": 25,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 800930460
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 4048464834
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 4243674432
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 760442189
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 27,
+    "nextFortune": "doubleTrouble",
+    "offer": null,
+    "tea": "herbal",
+    "score": 2169,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": "crossingStreet",
+    "dayPending": false,
+    "heat": 26,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 3200390746
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 1585063351
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 1780272949
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 128606519
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 28,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "black",
+    "score": 2182,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 27,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 3136449549
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 3416629164
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3611838762
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 3791738145
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 29,
+    "nextFortune": "golden",
+    "offer": null,
+    "tea": "chai",
+    "score": 2702,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 1240942539
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 953227681
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3611838762
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 3159902475
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   },
+   {
+    "round": 30,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 2712,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 28,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 99,
+      "state": 1177001342
+     },
+     "chocolate": {
+      "seed": 1592639651,
+      "state": 193509617
+     },
+     "boss": {
+      "seed": 12648333,
+      "state": 3611838762
+     },
+     "tea": {
+      "seed": 8300425,
+      "state": 2528066805
+     },
+     "teaRun": {
+      "seed": 5963805,
+      "state": 5963805
+     },
+     "dailyPour": {
+      "seed": 3658592356,
+      "state": 3658592356
+     },
+     "biscuitBreakout": {
+      "seed": 2975596822,
+      "state": 2975596822
+     },
+     "crossingStreet": {
+      "seed": 203445646,
+      "state": 203445646
+     }
+    }
+   }
+  ]
+ }
+}
