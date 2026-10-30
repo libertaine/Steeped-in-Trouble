@@ -29,6 +29,7 @@
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
 import { PHASE, createInitialState, createRoundStats } from './state.js';
+import { captureCheckpoint, validateCheckpoint } from './checkpoint.js';
 import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
 import { advanceChapter, createProgress, currentChapter, opensChapter, teaAge } from '../gameplay/progress.js';
@@ -69,36 +70,47 @@ export const OFFER_AT = revealAt + 0.6;
 const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
 
 /**
- * @param {{ seed?: number, random?: ReturnType<typeof createRandom>, tea?: string }} [options]
+ * @param {{ seed?: number, random?: ReturnType<typeof createRandom>, tea?: string, checkpoint?: object, practice?: string }} [options]
  *   Pass a seed (or a generator) to reproduce an exact gameplay sequence.
  *   Pass a tea id (see TEAS) to brew only that variety, every cup, as if it
  *   had been on tap from the first; the chapters run as usual around it.
  */
-export function createGame({ seed, random, tea: onlyTea } = {}) {
-  const rng = random ?? createRandom(seed);
+export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = null } = {}) {
+  if (checkpoint && !validateCheckpoint(checkpoint)) throw new TypeError('Invalid pot checkpoint');
+  if (practice && !['teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet'].includes(practice)) {
+    throw new TypeError('Unknown practice adventure');
+  }
+  if (practice && checkpoint) throw new TypeError('Practice cannot restore a pot');
+  const restoreRandom = (id, fallback) => checkpoint
+    ? createRandom(checkpoint.random[id].seed, checkpoint.random[id].state) : fallback();
+  const rng = restoreRandom('normal', () => random ?? createRandom(seed));
   const state = createInitialState();
   const events = [];
   const emit = (type, data = {}) => events.push({ type, ...data });
   const sim = { state, rng, emit };
   // The bonus round draws from its own generator, so the normal rounds play
   // out identically whether or not one happens.
-  const treats = createRandom(toSeed(rng.seed ?? 0) ^ 0x5eedc0c0);
+  const treats = restoreRandom('chocolate', () => createRandom(toSeed(rng.seed ?? 0) ^ 0x5eedc0c0));
   const havoc = { state, rng: treats, emit };
   // So does the coffee boss.
-  const brew = createRandom(toSeed(rng.seed ?? 0) ^ 0xc0ffee);
+  const brew = restoreRandom('boss', () => createRandom(toSeed(rng.seed ?? 0) ^ 0xc0ffee));
   const grindSim = { state, rng: brew, emit };
   // And the tea varieties, so the cups are steeped in the same order however they are played.
-  const steep = createRandom(toSeed(rng.seed ?? 0) ^ 0x7ea7ea);
+  const steep = restoreRandom('tea', () => createRandom(toSeed(rng.seed ?? 0) ^ 0x7ea7ea));
   // And the Tea Run, so the errand never changes the teas, fortunes, or leaves that follow it.
-  const errand = createRandom(toSeed(rng.seed ?? 0) ^ 0x5b007e);
+  const errand = restoreRandom('teaRun', () => createRandom(toSeed(rng.seed ?? 0) ^ 0x5b007e));
   const runSim = { state, rng: errand, emit };
-  const papers = createRandom(toSeed(rng.seed ?? 0) ^ 0xda11b007);
+  const papers = restoreRandom('dailyPour', () => createRandom(toSeed(rng.seed ?? 0) ^ 0xda11b007));
   const pourSim = { state, rng: papers, emit };
-  const crumbs = createRandom(toSeed(rng.seed ?? 0) ^ BREAKOUT_SALT);
+  const crumbs = restoreRandom('biscuitBreakout', () => createRandom(toSeed(rng.seed ?? 0) ^ BREAKOUT_SALT));
   const breakoutSim = { state, rng: crumbs, emit };
-  const traffic = createRandom(toSeed(rng.seed ?? 0) ^ CROSSING_SALT);
+  const traffic = restoreRandom('crossingStreet', () => createRandom(toSeed(rng.seed ?? 0) ^ CROSSING_SALT));
   const crossingSim = { state, rng: traffic, emit };
-  const pinnedTea = typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
+  const pinnedTea = checkpoint ? checkpoint.pinnedTea
+    : typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
+  const randomStreams = { normal: rng, chocolate: treats, boss: brew, tea: steep,
+    teaRun: errand, dailyPour: papers, biscuitBreakout: crumbs, crossingStreet: traffic };
+  const exportCheckpoint = () => practice ? null : captureCheckpoint(state, randomStreams, pinnedTea);
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
   const grinding = (stage) => state.phase === PHASE.GRIND && (!stage || state.grind.stage === stage);
@@ -230,6 +242,9 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
       SECRETS[id].award(state);
       emit('secret', { id, angle: state.angle });
     }
+    // All rewards, offers, fortunes and schedules are now final. Event data is
+    // a detached snapshot, not a reference that input can change before storage.
+    if (!practice) emit('checkpoint', { checkpoint: exportCheckpoint() });
   }
 
   function brewNextCup(fresh = false) {
@@ -714,6 +729,9 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
 
   /** The main button: start, pause/resume, or brew the next cup. */
   function primaryAction() {
+    // Practice results stay in their own instance until the collection chooses
+    // a retry or exits. Ordinary settlement still runs, only on this state.
+    if (practice && practiceMission()?.summary && state.phase !== PHASE.PAUSED) return;
     switch (state.phase) {
       case PHASE.READY:
       case PHASE.GAME_OVER:
@@ -761,9 +779,26 @@ export function createGame({ seed, random, tea: onlyTea } = {}) {
     }
   }
 
+  function practiceMission() {
+    return practice ? state[practice === 'teaRun' ? 'run' : practice] : null;
+  }
+
+  if (checkpoint) Object.assign(state, structuredClone(checkpoint.state));
+  if (practice === 'teaRun') startRun();
+  else if (practice) {
+    state.phase = PHASE.ARCADE_OFFER;
+    state.interlude = { id: practice };
+    chooseInterlude(true);
+  }
+
   return {
     state,
     seed: rng.seed,
+    practice,
+    practiceMission,
+    exportCheckpoint,
+    exportRandom: () => Object.fromEntries(Object.entries(randomStreams).map(([id, stream]) =>
+      [id, stream.exportState?.() ?? null])),
     update,
     primaryAction,
     /**

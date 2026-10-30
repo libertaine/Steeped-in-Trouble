@@ -865,3 +865,57 @@ body[data-view="compact"][data-phase="reading"]:has(#upgradeOffer:not([hidden]))
   body[data-view="compact"][data-phase="day"] .day-offer .errand-card strong { font-size: 14px; }
   body[data-view="compact"][data-phase="day"] .day-offer .errand-card small { font-size: 11px; line-height: 1.25; }
 }
+
+/* The spoon's other jobs: a small browser-local collection, not another HUD. */
+#arcadeCollection, #potConfirmation {
+  color: var(--ink); background: #12251f; border: 1px solid #87aa8e;
+  border-radius: 18px; width: min(850px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px); padding: 22px; overscroll-behavior: contain;
+}
+#arcadeCollection::backdrop, #potConfirmation::backdrop { background: #06140df0; }
+#potConfirmation { width: min(440px, calc(100% - 24px)); }
+.collection-heading { text-align: center; margin-bottom: 22px; }
+.collection-heading h2 { font: 700 clamp(22px, 4vw, 32px)/1.15 Georgia, serif; color: #f1dfbd; margin: 8px 0; }
+.collection-heading p { margin: 8px 0; }
+.job-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.job-card { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--edge);
+  border-radius: 12px; padding: 16px; background: #192e26; }
+.job-card canvas { display: block; width: 100%; height: auto; max-height: 90px; object-fit: contain; }
+.job-card h3 { color: #f1dfbd; font: 700 21px Georgia, serif; margin: 12px 0 0; }
+.job-card p { margin: 10px 0; }
+.job-card .job-record { margin-top: auto; padding-top: 10px; color: var(--mint); font-size: 12px; }
+.job-card button { width: 100%; }
+#arcadeCollection button, #potConfirmation button, .collection-entry button, .practice-bar button { min-height: 48px; }
+#closeCollectionBtn { width: 100%; }
+.collection-entry, .practice-bar { padding: 8px 12px 12px; text-align: center; }
+.collection-entry { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+.practice-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.practice-actions button { flex: 1 1 145px; font-size: 12px; }
+.practice-label { font-size: 12px; color: var(--mint); margin: 4px 0 8px; }
+#personalBest { color: var(--gold); margin: 8px 0 12px; }
+#personalBest em { font-size: 12px; }
+.local-notice { color: var(--muted); font-size: 12px; padding: 0 12px; text-align: center; }
+.save-controls { padding: 8px 0; }
+.collection-entry[hidden], .practice-bar[hidden], .practice-actions [hidden],
+#personalBest[hidden], #newPotBtn[hidden], #clearPotBtn[hidden], #mainBtn[hidden] { display: none !important; }
+body[data-practice-result="true"] .controls-mobile { display: none; }
+body[data-view="compact"] .collection-entry, body[data-view="compact"] .practice-bar { grid-row: 6; }
+body[data-view="compact"] #potNotice { grid-row: 7; margin: 0 0 6px; font-size: 11px; }
+body[data-view="compact"]:not([data-phase="ready"]):not([data-phase="reading"]) #potNotice { display: none; }
+@media (max-width: 540px) {
+  #arcadeCollection { padding: 16px; }
+  .job-cards { grid-template-columns: minmax(0, 1fr); }
+  .collection-heading .eyebrow { font-size: 10px; }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  body[data-view="compact"] .collection-entry, body[data-view="compact"] .practice-bar { grid-column: 1 / -1; grid-row: 4; padding: 4px 8px; }
+  body[data-view="compact"] #potNotice { grid-column: 1 / -1; grid-row: 5; }
+  body[data-view="compact"] .practice-label { display: none; }
+  body[data-view="compact"] #personalBest { margin: 2px 0 6px; }
+}
+/* Full View keeps the same Tea Break entry as Compact View. */
+body[data-view="full"] .action-dock { display: flex; justify-content: flex-end; padding: 6px 12px; }
+body[data-view="compact"] .job-card canvas { width: 100%; height: auto; }
+body[data-view="full"] .panel .collection-entry { padding: 0; margin-top: 8px; }
+body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-size: 12px; }
+#closeCollectionTop { display: block; margin: 0 0 14px auto; font-size: 11px; }

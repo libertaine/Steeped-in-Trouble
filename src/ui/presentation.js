@@ -14,6 +14,7 @@ export function createPresentation({ doc = document, game, params, storage, rese
   const main = doc.querySelector('main');
   const primary = doc.getElementById('mainBtn');
   const primaryHome = primary.parentElement;
+  const collectionEntry = doc.getElementById('collectionEntry');
   const dock = doc.getElementById('actionDock');
   const choices = doc.getElementById('phaseChoices');
   const stage = doc.querySelector('.stage');
@@ -48,9 +49,11 @@ export function createPresentation({ doc = document, game, params, storage, rese
     breakView.textContent = `View: ${view}`;
     if (view === 'compact') {
       dock.prepend(primary);
+      if (collectionEntry) doc.querySelector('.playfield').append(collectionEntry);
       offers.forEach((offer) => choices.append(offer));
     } else {
       primaryHome.insertBefore(primary, doc.getElementById('gameTip'));
+      if (collectionEntry) primaryHome.insertBefore(collectionEntry, doc.getElementById('gameTip'));
       offers.forEach((offer) => stage.append(offer));
     }
     resetInput();
@@ -96,6 +99,7 @@ export function createPresentation({ doc = document, game, params, storage, rese
   applyView();
 
   return {
+    closeMenu,
     get blocked() { return dialog.open; },
     update() {
       const s = game.state;

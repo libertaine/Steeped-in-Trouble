@@ -2,6 +2,9 @@
 
 import { CONFIG } from './config.js';
 import { createGame } from './core/game.js';
+import { createSessions } from './core/sessions.js';
+import { createLocalProgress } from './storage/localProgress.js';
+import { createCollectionUI } from './ui/collection.js';
 import { createLoop } from './core/timing.js';
 import { ERRANDS } from './gameplay/shortage.js';
 import { FORTUNES } from './gameplay/fortunes.js';
@@ -18,6 +21,8 @@ import { createHud } from './ui/hud.js';
 import { createPresentation } from './ui/presentation.js';
 import { prepareDayPractice } from './dev/days.js';
 import { crossForMe, prepareCrossingPractice } from './dev/crossing.js';
+import { prepareCheckpoint, prepareRecord } from './dev/collection.js';
+import { POT_SCHEMA_VERSION } from './core/checkpoint.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -48,7 +53,7 @@ function boot() {
   const params = new URLSearchParams(window.location.search);
   const canvas = document.getElementById('game');
   // ?tea=<id> brews only one variety (see gameplay/teas.js); unknown ids are ignored.
-  const game = createGame({ seed: seedFromUrl(params), tea: params.get('tea') ?? undefined });
+  const mainPot = createGame({ seed: seedFromUrl(params), tea: params.get('tea') ?? undefined });
   const effects = createEffects();
   const renderer = createRenderer(canvas, { quality: initialQuality(params),
     compact: () => document.body.dataset.view === 'compact' });
@@ -62,6 +67,9 @@ function boot() {
   } catch {
     // Storage may be unavailable; the defaults will do.
   }
+  const progress = createLocalProgress(storage);
+  const sessions = createSessions(mainPot, progress);
+  const game = sessions.game;
   let settings = initialSettings({ params, storage, touchDevice: isTouchDevice(window) });
   const touchButton = document.getElementById('touchBtn');
   const autoButton = document.getElementById('autoSteamBtn');
@@ -110,16 +118,16 @@ function boot() {
     ring.classList.add(kind === 'press' ? 'charging' : kind);
   }
 
-  let presentation;
+  let presentation, collectionUI;
   const controls = createControls({
     doc: document,
     commands: {
       fire: game.fireSteam,
       milk: game.pourMilk,
       sugar: game.sugarBurst,
-      confirm: game.confirm,
+      confirm: () => collectionUI?.primary() || game.confirm(),
       togglePause: game.togglePause,
-      restart: game.restart,
+      restart: () => game.state.phase === 'gameover' && (collectionUI?.primary() || game.restart()),
       pause: game.pause,
       // 1 and 2 pick an upgrade; during the Tea Shortage, 1 / 2 / 3 answer it.
       choose: (index) => game.chooseUpgrade(index) || game.chooseErrand(ERRANDS[index])
@@ -141,12 +149,16 @@ function boot() {
     gestureMode: game.touchGestures,
     scheme: () => settings.touch,
     onGesture: showRing,
-    enabled: () => !presentation?.blocked && document.visibilityState !== 'hidden',
+    enabled: () => !presentation?.blocked && !collectionUI?.blocked && document.visibilityState !== 'hidden',
   });
   presentation = createPresentation({ doc: document, game, params, storage, resetInput: controls.reset });
+  collectionUI = createCollectionUI({ doc: document, sessions, progress, presentation,
+    settleInput: () => controls.settle(true), onActivate: () => game.setAutoSteam(settings.autoSteam) });
 
   const soundButton = document.getElementById('soundBtn');
-  document.getElementById('mainBtn').addEventListener('click', () => game.primaryAction());
+  document.getElementById('mainBtn').addEventListener('click', () => {
+    if (!collectionUI.primary()) game.primaryAction();
+  });
   soundButton.addEventListener('click', () => {
     soundButton.textContent = `Sound: ${audio.toggle() ? 'on' : 'off'}`;
   });
@@ -185,6 +197,7 @@ function boot() {
 
   function handleEvents() {
     for (const event of game.drainEvents()) {
+      sessions.handle(event);
       // Leaving an adventure, a Space still held from it must not become steam in the cup.
       if (event.type === 'pourEnd' || event.type === 'breakoutEnd') controls.settle();
       // Nor may an arrow still held from the street start turning the spoon.
@@ -193,6 +206,7 @@ function boot() {
       effects.handle(event);
       audio.handle(event);
     }
+    sessions.settle();
   }
 
   const loop = createLoop((dt) => {
@@ -201,16 +215,18 @@ function boot() {
     // Input can leave the runner between frames. Clear its holds before the
     // next cup advances, so the Space used to go home cannot also fire steam.
     handleEvents();
-    if (!presentation.blocked) game.update(dt, controls.held, controls.walk);
+    if (!presentation.blocked && !collectionUI.blocked) game.update(dt, controls.held, controls.walk);
     handleEvents();
     audio.update(game.state, dt);
     renderer.draw(game.state, effects.fx, dt);
     hud.update(game.state);
     presentation.update();
+    collectionUI.update();
   });
 
   hud.update(game.state);
   presentation.update();
+  collectionUI.update();
   loop.start();
 
   const instance = {
@@ -219,6 +235,7 @@ function boot() {
       loop.stop();
       controls.dispose();
       presentation.dispose();
+      collectionUI.dispose();
       detachScaling();
       delete window[INSTANCE_KEY];
     },
@@ -229,6 +246,18 @@ function boot() {
   if (params.has('debug')) {
     window.__TEACUP__ = { game, effects, version: __APP_VERSION__, config: CONFIG, settings: () => ({ ...settings }) };
     if (import.meta.env.DEV) {
+      window.__TEACUP__.openCollection = () => collectionUI.open();
+      window.__TEACUP__.launchPractice = (id, seed = 42) => {
+        collectionUI.open();
+        const ok = sessions.launch(id, seed);
+        if (ok) document.getElementById('arcadeCollection').close();
+        controls.settle(true);
+        return ok;
+      };
+      window.__TEACUP__.personalBest = () => prepareRecord(sessions);
+      window.__TEACUP__.createCheckpoint = () => prepareCheckpoint(sessions);
+      window.__TEACUP__.restoreCheckpoint = () => { controls.settle(true); return sessions.continuePot(); };
+      window.__TEACUP__.saveSchema = () => POT_SCHEMA_VERSION;
       window.__TEACUP__.practiceDay = (mode = 'end') => {
         const result = prepareDayPractice(game, mode);
         controls.reset();

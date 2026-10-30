@@ -19,11 +19,14 @@ export function randomSeed() {
 
 /**
  * Create a mulberry32 generator.
- * @returns {{ seed: number, next(): number, range(min: number, max: number): number, int(n: number): number }}
+ * @param {number} seed original seed
+ * @param {number} state optional saved uint32 cursor; no draw is consumed
+ * @returns {{ seed: number, exportState(): {seed: number, state: number}, next(): number, range(min: number, max: number): number, int(n: number): number }}
  */
-export function createRandom(seed = randomSeed()) {
-  let s = toSeed(seed);
-  const initial = s;
+export function createRandom(seed = randomSeed(), state = toSeed(seed)) {
+  if (!Number.isInteger(state) || state < 0 || state > 0xffffffff) throw new TypeError('Invalid random state');
+  let s = state;
+  const initial = toSeed(seed);
   const next = () => {
     s = (s + 0x6d2b79f5) >>> 0;
     let t = s;
@@ -33,6 +36,8 @@ export function createRandom(seed = randomSeed()) {
   };
   return {
     seed: initial,
+    // Reading the cursor never draws a number. Restoring retains the original seed.
+    exportState: () => ({ seed: initial, state: s }),
     next,
     /** Uniform float in [min, max). */
     range: (min, max) => min + next() * (max - min),

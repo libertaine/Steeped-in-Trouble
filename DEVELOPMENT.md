@@ -25,3 +25,13 @@ feel like making a game, not running a program.
 
 For commands and code structure, see the [README](README.md) and
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## 0.16.0 local progress
+
+Version 0.16.0 includes the Arcade Collection and genuine normal-round
+checkpoints. See [docs/ARCADE_COLLECTION_TESTING.md](docs/ARCADE_COLLECTION_TESTING.md)
+for the two browser-local schemas, deterministic continuation tests, safe
+development helpers and playtesting steps. Run the existing check and browser
+scripts before review. The project owner approved publication after initial
+human playtesting with no errors observed. Gameplay and save behavior were
+frozen for release; physical-device qualification is not claimed.

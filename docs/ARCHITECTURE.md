@@ -12,6 +12,8 @@ src/
 │   ├── game.js          simulation: phase machine + per-frame update, emits events
 │   ├── state.js         phases and the plain-data state shape
 │   ├── random.js        seeded RNG (mulberry32)
+│   ├── checkpoint.js    versioned normal-round snapshots and strict validation
+│   ├── sessions.js      active instance routing, suspended pot, disposable practice
 │   └── timing.js        requestAnimationFrame loop with clamped delta time
 ├── gameplay/            rules, as pure functions over state
 │   ├── arena.js         lanes, angles, polar → canvas mapping
@@ -44,12 +46,13 @@ src/
 │   ├── dailyPour.js     draws the paper route
 │   ├── biscuitBreakout.js draws the tray, biscuits, spoon paddle, cube and the talking biscuit
 │   └── crossingStreet.js  draws the street, traffic, the spoon, the tea shop and the offer preview
-├── dev/                 development-only practice helpers (days.js, crossing.js); removed from production
+├── dev/                 development-only practice helpers (days.js, crossing.js, collection.js); removed from production
+├── storage/localProgress.js injected localStorage adapter: separate arcade records and pot checkpoint
 ├── input/               controls.js wires input; gestures.js recognises touches; settings.js persists preferences
 ├── audio/
 │   ├── audio.js         optional synthesized sound effects; owns the AudioContext
 │   └── music.js         the adaptive procedural soundtrack
-└── ui/hud.js            DOM HUD text
+└── ui/                  hud.js, presentation.js, collection.js: HUD, views/Tea Break, collection/save controls
 ```
 
 ## The one rule: simulation vs. presentation
@@ -760,3 +763,61 @@ spoon in the next cup until it is released and pressed again. The existing
 
 Development-only helpers (inside `import.meta.env.DEV`) are documented in
 [the testing guide](CROSSING_STREET_TESTING.md).
+
+## Arcade Collection and Continue Pot (0.16.0)
+
+`createGame({ seed, practice: id })` creates a new simulation and all eight
+new generators. It launches an existing adventure without running normal
+rounds or consuming the real pot's schedules. The usual Tea Run restock and
+`awardInterlude()` execute only against this disposable state. A settled
+practice instance cannot continue into a normal cup; replay creates another
+instance. The adventure engines, fixed steps, input and rewards are unchanged.
+
+`createSessions()` retains the main game object while the collection blocks
+its updates. The current RAF delta is discarded while a menu is open; no
+simulation time accumulates for return. The stable game facade dispatches
+input to the current instance. Its `update` method retains normal instance
+semantics so the existing deterministic browser harness can freeze the clock.
+Transitions call `controls.settle(true)`; keys pressed while menus block
+input are also quarantined until keyup. Native buttons retain keyboard focus,
+and auto-repeat cannot activate collection or confirmation buttons twice.
+
+`readLeaves()` emits a detached `checkpoint` **after** fortune and offer
+selection, all encounter scheduling, Tea Cash, secrets and secret rewards.
+Only the main session's checkpoint events can write the pot key. The reading
+animation may advance before the event is drained, so storage uses the event's
+snapshot, never the then-current live state. Capturing does not draw RNG.
+Game over clears the key; practice settlement writes only the record key.
+
+The schema-1 checkpoint contains the entire validated plain logical state,
+`pinnedTea`, and `{ seed, state }` for normal combat/fortunes, tea varieties,
+chocolate, boss, Tea Run, Daily Pour, Biscuit Breakout and Crossing the Street.
+Mulberry32's algorithm and initial seeded sequence are unchanged.
+`createRandom(seed, cursor)` restores without drawing; `exportState()` reads
+without drawing. `createGame({ checkpoint })` validates, constructs fresh
+closures and copies logical state without resetMatch/startRound or events.
+No DOM, renderer, audio, pending browser callback or event queue is serialized.
+
+Only a completed-round `reading` with empty transient fields and consistent
+choices, identifiers, finite numeric values, chapter and Day state is
+accepted. `migrateCheckpoint()` is the explicit future migration entry point;
+it currently accepts schema 1 only. Changes to the state shape require a
+save-schema decision rather than silently accepting partial state. Settings
+are still independent browser preferences and the current Auto Steam setting
+is applied when a saved pot is activated.
+
+`storage/localProgress.js` accepts an injected Storage-like object. It catches
+reads, parsing, quota failures and removals independently for each key. It
+never calls `clear()`. Failed record writes still keep session records in
+memory and show a small notice. Failed checkpoint writes retain the last
+saved checkpoint. A failed clear reports the error and retains the old save;
+a confirmed new pot can still be played. If storage stays inaccessible, the
+previous disk checkpoint may remain on the next visit. No frame writes occur.
+
+Records use the adventure summary's total `points`, not main-pot score.
+Completions are deduplicated by practice-instance identity with a WeakSet.
+Tea Run records success/failure but has no invented perfect result; the other
+three persist their existing `perfect` flag. New personal best requires
+strictly greater points, so ties and an initial zero are not improvements.
+See [the testing guide](ARCADE_COLLECTION_TESTING.md) for commands, limitations
+and the human playtesting checklist.

@@ -1262,3 +1262,49 @@ More roads or levels, traffic lights that can be changed, power-ups,
 pedestrians with behaviour, new teas, fortunes, bosses, upgrades,
 persistent achievements, leaderboards, and changes to Days, Heat or
 teacup combat. All tuning is provisional and lives in `CONFIG.crossingStreet`.
+
+## 0.16.0 — The Arcade Collection
+
+**THE SPOON'S OTHER JOBS**
+
+*Apparently, defending a teacup doesn't pay enough.*
+
+Four arcade adventures. One extremely overworked utensil. The collection
+lets players run, deliver papers, break biscuits or cross the street without
+waiting for any normal-round milestone. All four existing adventures retain
+their original timing, difficulty, controls, jokes and results.
+
+The start and game-over screens link to the collection; Tea Break opens it
+from a pot. The active pot waits exactly where it was, with no elapsed
+simulation time. Practice owns separate state and random streams. It may
+calculate ordinary rewards internally, but no score, Tea Cash, restock,
+upgrades, cups, fortunes, chapters, Day/Heat or schedules transfer home.
+
+Each job card has a miniature original Canvas scene, the familiar pitch and
+a local personal best. Records count completed attempts, successful results,
+and existing perfect results (Daily Pour, Biscuit Breakout, Crossing the
+Street). Tea Run has no perfect counter. Best means the largest final
+points from that adventure's normal settlement, including existing bonuses.
+A tie does not announce a new record. Unfinished runs do not count.
+
+After the usual result, Play Again draws a new seed, Retry This One rebuilds
+the same initial conditions, Choose Another Job returns to the cards, and
+Back to the Teacup restores the pot. Controls are released at each boundary.
+There is no replay recording or practice difficulty selector.
+
+The spoon also gets one browser-local automatic checkpoint. Each completed
+normal round saves the fully settled reading, including next fortune,
+upgrade offer, pending encounters and Day choice. Continue Your Pot restores
+that genuine reading and the exact future RNG cursors. Closing during the
+next cup or any adventure returns to the last completed normal round. This
+is deliberately not a save-anywhere feature. Practice never overwrites it.
+
+New Pot and Clear Saved Pot ask before replacing/removing a valid save.
+Game over removes continuation. Neither touches arcade records. Tea Break
+shows the saved round/Day, checkpoint limitations and the browser-local
+privacy note. Denied or corrupt storage leaves gameplay available with a
+small explanation. Future save formats may require an explicit migration.
+
+Publication was approved by the project owner after initial human playtesting
+with no errors observed. Gameplay and save behavior remain as approved; see
+[ARCADE_COLLECTION_TESTING.md](ARCADE_COLLECTION_TESTING.md).

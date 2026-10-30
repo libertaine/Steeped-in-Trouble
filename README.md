@@ -28,8 +28,34 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.15.0 — Crossing the Street](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.15.0)**
+Version **[0.16.0 — The Arcade Collection](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.16.0)**
 is the current release.
+
+### The Spoon's Other Jobs
+
+**THE SPOON'S OTHER JOBS**
+
+*Apparently, defending a teacup doesn't pay enough.*
+
+Jump directly into The Tea Run, The Daily Pour, Biscuit Breakout, or Crossing
+the Street. Chase personal records without disturbing your main game. Retry
+the same layout or play a new one, from the initial screen, game over, or Tea Break.
+
+### Continue Your Pot
+
+Your progress is automatically saved after completed normal tea rounds, so
+you can return later without starting from scratch. **Continue Your Pot**
+returns to your last completed round's reading and pending choices. Closing
+halfway through a cup or adventure returns to that checkpoint; mid-round
+positions are not saved. Starting a new pot or clearing the saved pot asks
+for confirmation and leaves arcade records alone.
+
+Saves and personal arcade records stay locally in your browser on this device.
+There is no account, cloud synchronization, or cross-device saving. Clearing
+browser data may erase your progress.
+See the [Arcade Collection testing guide](docs/ARCADE_COLLECTION_TESTING.md).
+
+### More adventures in the pot
 
 **Crossing the Street:** Why did the spoon cross the road? Nobody knows. But
 apparently, it's our problem now. Dodge traffic, survive an unreasonable
