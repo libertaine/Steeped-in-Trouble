@@ -5,48 +5,60 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-30 — Crossing the Street
+
+WHY DID THE SPOON CROSS THE ROAD? *"Nobody knows. But apparently, it's our
+problem now."*
+
 ### Added
 
-- **0.15.0 — Crossing the Street** (in development): a third optional
-  Arcade Interlude, offered after round 27 in Chapter 2 and then every 14
-  normal rounds (WHY DID THE SPOON CROSS THE ROAD?). CROSS THE ROAD starts
-  it; STAY RIGHT HERE costs nothing. Behind the offer, the street is
+- **Crossing the Street:** a third optional Arcade Interlude, offered after
+  round 27 in Chapter 2 and then every 14 normal rounds. CROSS THE ROAD
+  starts it; STAY RIGHT HERE costs nothing. Behind the offer, the street is
   already busy.
 - A top-down street crossing: hop the silver spoon one square at a time
   (arrow keys or WASD, or a four-way touch pad; hold to repeat every
   0.15 s) across three lanes, a safe median and two more lanes to the tea
   shop. Small cars, delivery vans and a milk truck run in alternating
-  directions at each lane's own speed and spacing.
+  directions at each lane's own speed and spacing, in seeded, learnable
+  patterns.
 - Three attempts and 40 seconds. A bump knocks the spoon aside, dazed, then
   back to the curb, costing one attempt, never a cup; the traffic pattern
-  carries on unchanged. 10 points for the first landing in each lane,
-  +50 and 5 Tea Cash for reaching the shop, +40 for doing it without a bump.
-  Results: NOT A SCRATCH ON THE SILVER!, THE SPOON MADE IT!, or THE
-  TRAFFIC HAS SPOKEN. Rewards settle once.
-- A roadside sign, a pedestrian signal that counts down the clock, and a
-  short doorstep exchange at the tea shop after a successful crossing.
+  carries on unchanged.
+- Scoring: 10 points for the first landing in each lane, +50 and 5 Tea Cash
+  for reaching the shop, +40 for doing it without a bump. Results: NOT A
+  SCRATCH ON THE SILVER!, THE SPOON MADE IT!, or THE TRAFFIC HAS SPOKEN.
+  Rewards settle once.
+- Original procedural street art and humor: a roadside sign with views on
+  cutlery, a pedestrian signal that counts down the clock, a SUSPICIOUSLY
+  FRESH milk truck, and a short doorstep exchange with the shopkeeper.
+- Synthesized hop, lane, whoosh, clank, success and failure sounds and a
+  hurried variation of the soundtrack.
 - Fixed 120 Hz steps with closed-form traffic positions, swept-box
   collisions (no tunnelling at any speed), an independently salted road
   generator, and a fairness check: every road must admit a cautious
   crossing from the curb at every sampled moment, or it is redrawn.
-- Synthesized hop, lane, whoosh, clank, success and failure sounds and a
-  hurried variation of the soundtrack; reduced-motion handling.
-- Development-only `?debug&arcade=crossingStreet&seed=42` (with
-  `&crossing=late|last`), `__TEACUP__.launchCrossingStreet()` and
-  `__TEACUP__.crossForMe()`; see the
+- Development-only practice shortcuts and deterministic replay; see the
   [testing guide](docs/CROSSING_STREET_TESTING.md).
 
 ### Changed
 
-- Leaving Crossing the Street, any key still held (not only Space) is
-  ignored in the next cup until released and pressed again. The other
-  adventures keep their existing behaviour.
-- Day practice helpers date Crossing the Street out of the way, as they do
-  the other adventures.
+- The Arcade Interlude schedule now holds three adventures. When more than
+  one is due, the one that has waited longest is offered first; shortages,
+  bosses and bonuses keep their priority.
+- A crossing due after a Day-ending round resolves (played, failed or
+  skipped) before the Day choice, which then appears and applies once.
+- Input stays with the street: every first hop needs a fresh press after
+  the introduction, a bump or a pause, and leaving the crossing, any key
+  still held (not only Space) is ignored in the next cup until released.
+  The other adventures keep their existing behaviour. Pause, the Tea Break,
+  backgrounding, sound-off and reduced motion are respected.
 
 Teacup combat, continuous steam, Auto Steam, shot statistics and secrets,
-the Day system and Heat, the other adventures' dates and priorities are
-unchanged.
+the Day system and Heat, and the other adventures are unchanged.
+
+Released following project-owner playtesting approval. Gameplay, timing and
+scoring were frozen for publication.
 
 ## [0.14.0] - 2026-10-29 — Another Day, Another Brew
 
@@ -429,7 +441,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.14.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.15.0...main
+[0.15.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.11.0...v0.12.0

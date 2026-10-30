@@ -28,18 +28,19 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.14.0 — Another Day, Another Brew](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.14.0)**
+Version **[0.15.0 — Crossing the Street](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.15.0)**
 is the current release.
 
-**Another Day, Another Brew:** Every ten normal cups, decide whether tomorrow
-starts with a gentler challenge or keeps building the Heat. Your upgrades,
+**Crossing the Street:** Why did the spoon cross the road? Nobody knows. But
+apparently, it's our problem now. Dodge traffic, survive an unreasonable
+number of motorists, and reach the tea shop in one piece. Like every arcade
+adventure, it's optional: skipping it costs nothing.
+
+**Another Day, Another Brew** (0.14.0): Every ten normal cups, decide whether
+tomorrow starts with a gentler challenge or keeps building the Heat. Your upgrades,
 unlocked teas, fortunes, score, and arcade adventures carry forward either way.
 **Days control difficulty. Chapters control content.**
 See the [Day testing guide](docs/DAYS_TESTING.md) for practice and qualification.
-
-**In development — 0.15.0, Crossing the Street:** a third optional arcade
-adventure, waiting for playtesting before release. See the
-[Crossing the Street guide](docs/CROSSING_STREET_TESTING.md).
 
 Already in the published game:
 
@@ -135,12 +136,12 @@ edges send it off at an angle) and break the wall. Each biscuit earns 10
 points, breaking 70% earns 5 Tea Cash, and a clear adds 50 points. Losing
 cubes never costs a cup, and skipping is free.
 
-In 0.15.0 (in development), after round 27, the spoon may decide to cross
-the road. Crossing the Street hops it one square at a time across five
-lanes of traffic, with a safe median halfway, to the tea shop opposite, in
-40 seconds. A bump sends it back to the curb and costs one of three
-attempts, never a cup. Each new lane earns 10 points; reaching the shop
-earns 50 more and 5 Tea Cash, and 40 more without a bump. Skipping is free.
+After round 27, the spoon may decide to cross the road. Crossing the Street
+hops it one square at a time across five lanes of traffic, with a safe
+median halfway, to the tea shop opposite, in 40 seconds. A bump sends it
+back to the curb and costs one of three attempts, never a cup. Each new lane
+earns 10 points; reaching the shop earns 50 more and 5 Tea Cash, and 40 more
+without a bump. Skipping is free.
 
 Now and then the leaves foretell **Karma**. For that one cup, a leaf that
 reaches the rim bounces back instead of spilling; if it comes back again it
@@ -226,7 +227,7 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-
 - [Day testing](docs/DAYS_TESTING.md): 0.14.0 approval, practice shortcuts,
   deterministic tuning and human testing instructions
 - [Crossing the Street testing](docs/CROSSING_STREET_TESTING.md): 0.15.0
-  development shortcuts, deterministic replay and playtesting instructions
+  approval, practice shortcuts, deterministic replay and testing instructions
 - [Development](DEVELOPMENT.md): the principles for working on the game
 - [Contributing](CONTRIBUTING.md): branching, checks, and releases
 - [Reference prototype](docs/reference/README.md): the preserved original and

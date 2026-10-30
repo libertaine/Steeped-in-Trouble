@@ -1,8 +1,15 @@
-# Crossing the Street — developer and playtest guide
+# Crossing the Street — 0.15.0 testing
 
-0.15.0 adds Crossing the Street, a third optional Arcade Interlude. This
-guide covers the automated checks, the development-only shortcuts with
-deterministic replay, and what to look for when playing.
+**0.15.0 — Crossing the Street** was approved for release by the project
+owner on 2026-10-30 after playtesting: the game looks good. Gameplay,
+traffic, scoring, movement timing and controls were frozen for
+publication; only release documentation changed afterwards. Physical
+phone/tablet playtesting has not been independently verified; the
+screen-size evidence below uses browser emulation.
+
+Crossing the Street is a third optional Arcade Interlude. This guide covers
+the automated checks, the development-only shortcuts with deterministic
+replay, and what to look for when playing.
 
 Use Node 24 LTS (22.12+ also works):
 
@@ -24,7 +31,9 @@ npm run test:browser -- crossingStreet.spec.js mobile-crossing-street.spec.js --
 
 ## Shortcuts and replay (development only)
 
-Start `npm run dev`, then open one of:
+These are tools for developers, not player features: they work only on the
+development server, not `npm run preview` or the published site. Start
+`npm run dev`, then open one of:
 
 | URL | What it does |
 | --- | --- |
@@ -154,21 +163,31 @@ portrait and landscape and tablet portrait and landscape; the shop exchange
 and result on a phone and tablet; touch skip. Screenshots are written to
 [`docs/images/crossing-street`](images/crossing-street/README.md).
 
-## Automated qualification — 2026-10-29
+## Automated qualification and release approval
 
-Windows, Node 24.22.1, branch `feat/crossing-the-street-0.15.0`:
+Candidate qualification on 2026-10-29 (Windows, Node 24.22.1, branch
+`feat/crossing-the-street-0.15.0`, head `de61617`):
 
 - `npm ci`: clean, 0 vulnerabilities.
 - `npm run check`: lint, **689 unit tests in 35 files** (620 before this
   release, plus 69), production build.
 - `npm run test:browser`: fresh production build and server, **176 passed**
   (Chromium, Firefox, mobile Chromium), no failures or retries.
+- [CI run](https://github.com/libertaine/Steeped-in-Trouble/actions/runs/40950560781)
+  passed Windows and Ubuntu lint/unit/build checks and the browser suite.
 - Screenshots inspected at Desktop Full and Compact, phone portrait and
   landscape, tablet portrait and landscape; see the image README.
 
-Automated browser emulation does not establish physical device behavior.
+Final release qualification on 2026-10-30, after the documentation-only
+release changes, repeated the clean install, `npm run check` and the full
+browser suite against a fresh production build:
 
-## Project-owner playtesting
+- `npm ci`: clean, 0 vulnerabilities.
+- `npm run check`: lint, **689 unit tests in 35 files**, production build.
+- `npm run test:browser`: **176 passed** (Chromium, Firefox, mobile
+  Chromium), no failures or retries.
 
-Pending. The adventure is not to be published before the project owner has
-played it.
+Project-owner playtesting approved the adventure; no gameplay, traffic,
+scoring or timing changes were made after approval. Automated browser
+emulation does not establish physical device behavior, and physical
+phone/tablet play remains unverified.
