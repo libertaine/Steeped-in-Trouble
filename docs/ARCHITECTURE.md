@@ -249,8 +249,10 @@ generator derived from the same seed (`treats` and `brew` in
 `createGame()`), so neither changes the sequence the normal rounds see. The
 tea varieties draw from a fourth (`steep`), which advances by exactly two
 numbers per round start, so the teas come in the same order however the
-cups are played. Effects use `Math.random`, so changing particles can never
-change gameplay. The URL parameter `?seed=` sets the seed in the browser,
+cups are played. Every later system that needs chance (the Tea Run, The
+Daily Pour, Biscuit Breakout, Crossing the Street, and the Golden Leaf) has
+its own salted generator too. Effects use `Math.random`, so changing
+particles can never change gameplay. The URL parameter `?seed=` sets the seed in the browser,
 `?tea=<id>` brews only one variety (`createGame({ tea })`; unknown ids are
 ignored), and the `?debug` parameter exposes `window.__TEACUP__.game` for
 tests and tinkering.
@@ -800,8 +802,8 @@ No DOM, renderer, audio, pending browser callback or event queue is serialized.
 
 Only a completed-round `reading` with empty transient fields and consistent
 choices, identifiers, finite numeric values, chapter and Day state is
-accepted. `migrateCheckpoint()` is the explicit future migration entry point;
-it currently accepts schema 1 only. Changes to the state shape require a
+accepted. `migrateCheckpoint()` is the explicit migration entry point (schema 2
+since 0.17.0; see below). Changes to the state shape require a
 save-schema decision rather than silently accepting partial state. Settings
 are still independent browser preferences and the current Auto Steam setting
 is applied when a saved pot is activated.
@@ -821,3 +823,52 @@ three persist their existing `perfect` flag. New personal best requires
 strictly greater points, so ties and an initial zero are not improvements.
 See [the testing guide](ARCADE_COLLECTION_TESTING.md) for commands, limitations
 and the human playtesting checklist.
+
+## The Cup Remembers (0.17.0)
+
+**Reading memory.** `gameplay/memory.js` turns `fortuneRecord(state)` (the
+record `readLeaves()` hands to `drawFortune()`) and the drawn fortune into
+`{ observations, neutral, favored, agreed, name, effect, remark }`. It is pure:
+no random numbers, no state, so the renderer and HUD may call it every frame
+(the renderer memoizes per reading) and a restored checkpoint explains itself
+identically. Each fortune has an `effect` line in `fortunes.js`. The renderer
+draws the memory panel (`drawMemory()`) and the reworked fortune card; the HUD
+writes `#readingMemory`, `#compactMemory` and `#compactEffect`.
+
+**Porcelain.** `gameplay/porcelain.js` owns the rules and
+`state.porcelain = { serial, fractures: [{ id, kind, angle, seed }] }`, kind
+`crack`, `seam` or `chip`. `escape()` calls `crackCup()` right after
+`state.lives--` and adds `lives` and a copy of the fracture to the `escape`
+event. Every restoration (`goldenLeaf.js`, `awardGolden()`, the grind's
+Perfect Brew) goes through `restoreLife(sim, max, source)`, which gilds the
+most recent crack and emits `mend` when the cup returns to three or below.
+The invariant `cracks === max(0, CONFIG.lives - lives)` is enforced by
+checkpoint validation and checked every frame in long seeded tests. History
+is capped by `CONFIG.porcelain.maxFractures`. `cupCondition(lives)` gives the
+HUD its label and screen-reader words; the label and lives are presentation
+of the same number.
+
+**Golden Leaf.** `gameplay/goldenLeaf.js`, updated after the prismatic cube
+in a normal round. `startRound()` calls `rollGoldenLeaf()` after
+`clearField()`; it draws twice from the leaf's own stream (`gilt` in
+`createGame()`, salted by `GOLDEN_LEAF_SALT`) only when the cup is cracked.
+State: `goldenLeafTimer` and `goldenLeaf` (`{ home, depth, phase, angle,
+radius, time, life }`), both cleared with the field. Collision is
+`findStrikingShot()` and `spendDart(..., true)`, as for the cubes.
+
+**Rendering.** `rendering/porcelain.js` draws the cup (formerly `drawCup()`),
+cracks, chips, seams, the critical rim, the Golden Leaf, and the shattered cup
+at game over. Shapes come from `fractureShape(fracture)`, a private Mulberry32
+seeded only by the fracture, cached per fracture. Effects add `impacts`,
+`mends`, `shatter` and `cupClock`, all frozen while paused; reduced motion
+(the tea's `prefers-reduced-motion` reading) steadies the pulse and skips the
+break animation.
+
+**Checkpoints.** Schema 2 adds the `goldenLeaf` stream and the three state
+fields. `migrateCheckpoint()` validates and returns current data, or turns a
+sound schema 1 checkpoint into schema 2 (original state and eight cursors
+kept, a fresh salted Golden Leaf stream, `porcelainForLives()` cracks at
+`CONFIG.porcelain.migratedAngles`). `validateCheckpoint()` accepts only the
+current schema. `createGame({ checkpoint })` and `createLocalProgress()` both
+migrate first; storage keeps the old save until the next checkpoint write.
+The 0.16.0 fixture and its generator live in `tests/fixtures/`.

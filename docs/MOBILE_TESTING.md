@@ -18,6 +18,13 @@ continuous steering, pointer cancellation, boss/bonus order, and runner results.
 The earlier tea-pill regression explicitly selects Full View, which retains
 that detailed pill; Compact moves that explanation into the Tea Break.
 
+0.17.0 adds `mobile-cup-remembers.spec.js` (the reading's memory, next cup
+and upgrade offer in Compact View at 390 × 844, 360 × 740, 844 × 390 and
+915 × 412) and `mobile-cup-porcelain.spec.js` (the condition pill fitting,
+critical cup, gold repair and shattered cup on phone and tablet in both
+orientations, and reduced motion). See
+[CUP_REMEMBERS_TESTING.md](CUP_REMEMBERS_TESTING.md).
+
 Screenshots saved in Playwright's test output cover gameplay at each size,
 the reveal, upgrades, the Tea Break, Tea Run, and desktop Full View. Inspect
 the actual composition as well as DOM geometry. Representative captures are

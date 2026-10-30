@@ -1308,3 +1308,62 @@ small explanation. Future save formats may require an explicit migration.
 Publication was approved by the project owner after initial human playtesting
 with no errors observed. Gameplay and save behavior remain as approved; see
 [ARCADE_COLLECTION_TESTING.md](ARCADE_COLLECTION_TESTING.md).
+
+## 0.17.0 — The Cup Remembers (in development)
+
+*The leaves remember what you did. The porcelain remembers what happened.*
+
+Two improvements to the main game, awaiting human playtesting. Combat,
+fortune odds, scoring, bosses, Days and the adventures are unchanged.
+
+### What the cup remembers
+
+The reading always said the pattern came from the leaves the player
+defeated; now it says how. Before the reveal, a panel at the top of the cup
+names up to two things the round did and the fortune each favored. At the
+reveal, the card names the next cup, its effect in one line, and a remark
+that admits when the leaves chose otherwise. The words are influence, never
+cause: fortunes remain a weighted draw.
+
+The cup only mentions what really moves the draw: the leaf pattern that won
+the +6 pattern weight (The Veil, The Crown, The Spiral), spills and narrow
+escapes (Tempestuous Tea), two or more milk pours (The Veil), two or more
+sugar bursts (Sugar Rush), and, beside a stronger memory, a clean cup (The
+Star, Double Trouble, Golden Opportunity) or Herbal Tea's taste for The
+Leaves Lie. An uneventful cup gets one neutral line instead of an invented
+cause. Karma never claims to be summoned. Secrets stay secret until earned.
+
+### The porcelain remembers
+
+Lives are still counted, but the teacup now shows its condition: REINFORCED
+(four), CUP STABLE (three), PORCELAIN CRACKED (two), STRUCTURAL FAILURE
+IMMINENT (one), SHATTERED. A spill that costs a cup cracks the rim where the
+leaf went over. The cracks stay in the porcelain ring and a sliver of tea,
+beneath the leaves and the spoon, and are subtle until the cup is critical,
+when they branch further and glow amber with a slow pulse round the rim.
+Losing a bonus fourth cup only chips the glaze. Nothing that is not a lost
+cup ever cracks it.
+
+### The Golden Leaf and kintsugi (spoilers)
+
+A cup that starts cracked has a 15% chance (a playtesting value) of one
+Golden Leaf: a gilded leaf swaying gently in a lane near the spoon for seven
+seconds. A dart that strikes it restores one cup, never beyond three, and
+the most recent crack fills with gold. The seam stays for the whole pot, so
+a long pot's cup slowly tells the story of what it survived. Any other way
+back (a golden cube's extra cup, a Perfect Brew) gilds a crack in the same
+way when the cup is below three. The leaf is a bonus target: no score, no
+residue, no progress, and never a reason for the leaves to read differently.
+
+### The final break
+
+The last spill breaks the cup apart: cracks race round, the pieces part,
+tea runs between them, and the spoon is left among the wreckage. *THE CUP
+HAS HAD ENOUGH. Management regrets to announce a structural failure.* A new
+pot is one key away, and brings a whole cup.
+
+### Not included
+
+Cracked lanes that slow or speed anything, bonuses for gold seams, and any
+other effect of damage on play are deferred until players have tried this.
+See [CUP_REMEMBERS_TESTING.md](CUP_REMEMBERS_TESTING.md).
