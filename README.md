@@ -28,8 +28,26 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.16.0 — The Arcade Collection](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.16.0)**
+Version **[0.17.0 — The Cup Remembers](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.17.0)**
 is the current release.
+
+### The Cup Remembers
+
+*The leaves remember what you did. The porcelain remembers what happened.*
+
+After each cup, the reading explains which of
+your actions favored which fortunes, then names the fortune the leaves
+actually chose and what it does. Your play makes a fortune more likely; it
+never guarantees one. The teacup shows its condition instead of hearts: a
+spill cracks the porcelain where the leaf went over, a rare Golden Leaf
+mends a crack with permanent gold, and losing the last cup breaks the cup
+apart. Saved 0.16.0 pots continue. See the
+[testing guide](docs/CUP_REMEMBERS_TESTING.md).
+
+Desktop browsers with keyboard controls are the primary supported experience.
+Gameplay quality comes first, followed by desktop presentation and controls,
+then performance and reliability. Tablet and phone compatibility are best
+effort; the existing touch controls and Compact View remain available.
 
 ### The Spoon's Other Jobs
 
@@ -98,8 +116,9 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 ## How to play
 
 - Tea leaves drift out from the centre of the cup. Each one that reaches the
-  rim spills, costing one of your three cups. Lose them all and the pot runs
-  dry.
+  rim spills, costing one of your three cups. The cup's condition, from CUP
+  STABLE to STRUCTURAL FAILURE IMMINENT, shows how many it can still afford.
+  Lose them all and the cup breaks.
 - The spoon circles the rim and fires down the lane that glows. Steam is
   unlimited. Each round you also get a couple of milk pours, which push
   leaves back and slow them (strongly in front of the spoon, and briefly
@@ -254,6 +273,11 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-
   deterministic tuning and human testing instructions
 - [Crossing the Street testing](docs/CROSSING_STREET_TESTING.md): 0.15.0
   approval, practice shortcuts, deterministic replay and testing instructions
+- [Arcade Collection testing](docs/ARCADE_COLLECTION_TESTING.md): 0.16.0
+  approval, Continue Your Pot and the human playtesting checklist
+- [The Cup Remembers testing](docs/CUP_REMEMBERS_TESTING.md): 0.17.0 fortune
+  explanations, porcelain damage, Golden Leaves, save migration and
+  playtesting instructions
 - [Development](DEVELOPMENT.md): the principles for working on the game
 - [Contributing](CONTRIBUTING.md): branching, checks, and releases
 - [Reference prototype](docs/reference/README.md): the preserved original and

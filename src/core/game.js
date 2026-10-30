@@ -6,7 +6,8 @@
 //
 // Events: matchStart, roundStart, steam, sugar, sugarRegen, milk, milkPulse, kill, drift,
 // escape, strain, recoil, goldenAppear, goldenCatch, goldenGone, goldenSpoon,
-// goldenSpoonEnd, prismaticAppear, prismaticCatch, prismaticGone, nova, secret,
+// goldenSpoonEnd, prismaticAppear, prismaticCatch, prismaticGone, goldenLeafAppear,
+// goldenLeafCatch, goldenLeafGone, mend (a crack filled with gold), nova, secret,
 // discover, reading, reveal, retract, upgrade, gameover, paused,
 // resumed; and in Hot Chocolate Havoc: chocolateStart, havocStart, flame,
 // toast, burn, perfect, scoop, crumble, bump, giantAppear, giantGrow,
@@ -29,14 +30,17 @@
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
 import { PHASE, createInitialState, createRoundStats } from './state.js';
-import { captureCheckpoint, validateCheckpoint } from './checkpoint.js';
+import { captureCheckpoint, migrateCheckpoint } from './checkpoint.js';
 import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
 import { advanceChapter, createProgress, currentChapter, opensChapter, teaAge } from '../gameplay/progress.js';
 import { dayOf, difficultyAt, endsDay, nextHeat, withHeat } from '../gameplay/days.js';
-import { TEAS, chooseTea, createCurrent, roundModifiers, teaFortuneNudges, updateCurrent } from '../gameplay/teas.js';
+import { TEAS, chooseTea, createCurrent, roundModifiers, updateCurrent } from '../gameplay/teas.js';
+import { fortuneRecord } from '../gameplay/memory.js';
 import { updateGolden } from '../gameplay/golden.js';
 import { rollPrismatic, updatePrismatic } from '../gameplay/prismatic.js';
+import { GOLDEN_LEAF_SALT, rollGoldenLeaf, updateGoldenLeaf } from '../gameplay/goldenLeaf.js';
+import { crackCup, createPorcelain } from '../gameplay/porcelain.js';
 import { SECRETS, findSecrets } from '../gameplay/secrets.js';
 import { discover, giltSplashTarget, inWake, tornadoWake } from '../gameplay/combos.js';
 import { moveSpoon } from '../gameplay/player.js';
@@ -75,8 +79,10 @@ const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
  *   Pass a tea id (see TEAS) to brew only that variety, every cup, as if it
  *   had been on tap from the first; the chapters run as usual around it.
  */
-export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = null } = {}) {
-  if (checkpoint && !validateCheckpoint(checkpoint)) throw new TypeError('Invalid pot checkpoint');
+export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, practice = null } = {}) {
+  // Older saves are migrated (and validated) first; the caller's copy is never changed.
+  const checkpoint = saved ? migrateCheckpoint(saved) : null;
+  if (saved && !checkpoint) throw new TypeError('Invalid pot checkpoint');
   if (practice && !['teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet'].includes(practice)) {
     throw new TypeError('Unknown practice adventure');
   }
@@ -106,10 +112,13 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = 
   const breakoutSim = { state, rng: crumbs, emit };
   const traffic = restoreRandom('crossingStreet', () => createRandom(toSeed(rng.seed ?? 0) ^ CROSSING_SALT));
   const crossingSim = { state, rng: traffic, emit };
+  // And the Golden Leaf, so a chance to mend the cup never moves anything else.
+  const gilt = restoreRandom('goldenLeaf', () => createRandom(toSeed(rng.seed ?? 0) ^ GOLDEN_LEAF_SALT));
+  const leafSim = { state, rng: gilt, emit };
   const pinnedTea = checkpoint ? checkpoint.pinnedTea
     : typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
   const randomStreams = { normal: rng, chocolate: treats, boss: brew, tea: steep,
-    teaRun: errand, dailyPour: papers, biscuitBreakout: crumbs, crossingStreet: traffic };
+    teaRun: errand, dailyPour: papers, biscuitBreakout: crumbs, crossingStreet: traffic, goldenLeaf: gilt };
   const exportCheckpoint = () => practice ? null : captureCheckpoint(state, randomStreams, pinnedTea);
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
@@ -129,6 +138,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = 
     state.goldenTimer = null;
     state.prismatic = null;
     state.prismaticTimer = null;
+    state.goldenLeaf = null;
+    state.goldenLeafTimer = null;
     state.volleys = {};
     state.stir = { dir: 0, time: 0 };
     state.wake = null;
@@ -165,6 +176,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = 
     state.sugarRegenTimer = state.modifiers.sugarRegenInterval;
     if (state.modifiers.goldenCube) state.goldenTimer = rng.range(CONFIG.golden.delayMin, CONFIG.golden.delayMax);
     state.prismaticTimer = rollPrismatic(state.round, rng);
+    state.goldenLeafTimer = rollGoldenLeaf(state, gilt);
     state.spawnTimer = CONFIG.spawning.firstDelay;
     state.shotCooldown = 0;
     state.roundStats = createRoundStats();
@@ -181,6 +193,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = 
     state.dayPending = false;
     state.score = 0;
     state.lives = CONFIG.lives;
+    state.porcelain = createPorcelain();
     state.fortune = null;
     state.nextFortune = null;
     state.tea = 'house';
@@ -219,12 +232,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = 
     state.dayPending = endsDay(state.round);
     state.readingTime = 0;
     clearField();
-    const { milkKills, milkUses, sugarUses, escapes, nearMisses } = state.roundStats;
-    state.nextFortune = drawFortune({
-      milkKills, milkUses, sugarUses, escapes, nearMisses,
-      leafLanes: state.residue.map((leaf) => leaf.lane),
-      nudges: teaFortuneNudges(state.tea),
-    }, rng);
+    // The same record explains the reading afterwards (gameplay/memory.js), without drawing again.
+    state.nextFortune = drawFortune(fortuneRecord(state), rng);
     state.offer = offerDue(state.round) ? drawOffer(state.spoon, rng) : null;
     state.havocDue = havocDue(state, treats);
     if (state.havocDue && milestoneDue(state)) {
@@ -519,7 +528,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = 
   /**
    * A leaf has reached the rim. While the cup recovers from a spill it is
    * sloshed back into the tea; otherwise the strainer catches it if it can,
-   * and failing that it spills and costs a cup.
+   * and failing that it spills and costs a cup, and the porcelain cracks where it went over.
    * @returns {boolean} true if the leaf stays in the cup
    */
   function escape(enemy) {
@@ -540,7 +549,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = 
     }
     state.lives--;
     stats.escapes++;
-    emit('escape', { angle: enemy.angle });
+    const fracture = crackCup(state, enemy.angle);
+    emit('escape', { angle: enemy.angle, lives: state.lives, fracture: { ...fracture } });
     if (state.lives <= 0) finishGame();
     else state.graceTime = CONFIG.grace.duration;
     return false;
@@ -708,6 +718,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint, practice = 
     updateShots(state, dt);
     updateGolden(sim, dt);
     updatePrismatic(sim, dt);
+    updateGoldenLeaf(leafSim, dt);
     updateEnemies(dt);
   }
 

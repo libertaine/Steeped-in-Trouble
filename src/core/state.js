@@ -3,6 +3,7 @@ import { modifiersFor } from '../gameplay/fortunes.js';
 import { createProgress } from '../gameplay/progress.js';
 import { createSpoon } from '../gameplay/upgrades.js';
 import { createArcadeSchedule } from '../gameplay/arcadeInterludes.js';
+import { createPorcelain } from '../gameplay/porcelain.js';
 
 /** Game phases. See docs/ARCHITECTURE.md for the transition diagram. */
 export const PHASE = Object.freeze({
@@ -57,6 +58,7 @@ export function createInitialState() {
     sugarLeft: CONFIG.sugar.perRound,
     strainerLeft: CONFIG.strainer.perRound, // escaping leaves the strainer can still catch this round
     graceTime: 0, // seconds left in which the cup is recovering from a spill
+    porcelain: createPorcelain(), // the cup's cracks, chips and gold seams; see gameplay/porcelain.js
 
     // Kept for the whole pot, separate from the round's fortune modifiers.
     progress: createProgress(), // the chapter, and the round each one began; see gameplay/progress.js
@@ -83,6 +85,8 @@ export function createInitialState() {
     golden: null, // the golden sugar cube on the field: { angle, radius, time, life }
     prismaticTimer: null, // seconds until the Prismatic Sugar Cube appears this round, or null
     prismatic: null, // the prismatic cube on the field: { angle, radius, time, life }
+    goldenLeafTimer: null, // seconds until this cup's Golden Leaf appears, or null (gameplay/goldenLeaf.js)
+    goldenLeaf: null, // the Golden Leaf on the field: { home, depth, phase, angle, radius, time, life }
     extraSugar: 0, // sugar bursts promised for the next cup on top of the usual
     secrets: [], // secret ids the leaves noticed at the latest reading
     discovered: [], // unexpected brews (gameplay/combos.js) already announced this pot

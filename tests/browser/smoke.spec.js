@@ -8,7 +8,7 @@ test('loads the game without errors or missing files', async ({ page, problems }
   await expect(page).toHaveTitle(/Steeped in Trouble/);
   await expect(page.locator('#hudStatus')).toHaveText('READY TO BREW');
   await expect(page.locator('#hudScore')).toHaveText('SCORE 0000');
-  await expect(page.locator('#hudLives')).toHaveText(/CUPS ♥ ♥ ♥/);
+  await expect(page.locator('#hudLives')).toHaveText('CUP STABLE');
   await expect(page.locator('#version')).toHaveText(/^VERSION \d+\.\d+\.\d+$/);
 
   const canvas = await page.locator('#game').evaluate((c) => {
@@ -94,12 +94,12 @@ test('reaches game over and restarts a fresh match', async ({ page, problems }) 
   await page.keyboard.press('Enter');
   // Without defending, the strainer catches one leaf and three more escape.
   await expect(page.locator('#hudStatus')).toHaveText('THE CUP RUNNETH OVER', { timeout: 60_000 });
-  await expect(page.locator('#hudLives')).toHaveText(/CUPS ♡ ♡ ♡/);
+  await expect(page.locator('#hudLives')).toHaveText('SHATTERED');
   await expect(page.locator('#mainBtn')).toHaveText('Start a fresh pot →');
 
   await page.keyboard.press('Enter');
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
-  await expect(page.locator('#hudLives')).toHaveText(/CUPS ♥ ♥ ♥/);
+  await expect(page.locator('#hudLives')).toHaveText('CUP STABLE');
   await expect(page.locator('#hudScore')).toHaveText('SCORE 0000');
   await expect(page.locator('#roundNum')).toHaveText('01');
   expect(problems).toEqual([]);
@@ -172,7 +172,7 @@ test('a Hot Chocolate Havoc bonus round plays through and returns to the tea', a
 
   await expect(page.locator('#hudStatus')).toHaveText(/DEFEND THE RIM|GOLDEN SPOON/);
   await expect(page.locator('#roundNum')).toHaveText('02');
-  await expect(page.locator('#hudLives')).toHaveText(/CUPS ♥ ♥ ♥/);
+  await expect(page.locator('#hudLives')).toHaveText('CUP STABLE');
   expect(await page.evaluate((id) => window.__TEACUP__.game.state.spoon[id], picked)).toBe(1);
   expect(problems).toEqual([]);
 });
@@ -219,7 +219,7 @@ test('The Daily Grind can be met, fought with Q and E, and escaped without endin
 
   await expect(page.locator('#hudStatus')).toHaveText(/DEFEND THE RIM|GOLDEN SPOON/);
   await expect(page.locator('#roundNum')).toHaveText('02');
-  await expect(page.locator('#hudLives')).toHaveText(/CUPS ♥ ♥ ♥/);
+  await expect(page.locator('#hudLives')).toHaveText('CUP STABLE');
   expect((await gameState(page)).fortune).toBe(nextFortune);
   expect(problems).toEqual([]);
 });

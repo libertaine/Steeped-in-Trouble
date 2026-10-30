@@ -6,6 +6,7 @@
 import { CONFIG } from '../config.js';
 import { laneAngle, wrapLane } from './arena.js';
 import { spoonLane } from './player.js';
+import { restoreLife } from './porcelain.js';
 import { findStrikingShot, spendDart, sugarCapacity } from './weapons.js';
 
 const G = CONFIG.golden;
@@ -25,8 +26,9 @@ export function gildSpoon(state) {
   state.goldenSpoon = Math.max(state.goldenSpoon, CONFIG.goldenSpoon.duration);
 }
 
-/** Roll and apply a reward. Returns { reward, points }. */
-export function awardGolden({ state, rng }) {
+/** Roll and apply a reward. Returns { reward, points }. A restored cup mends a crack (gameplay/porcelain.js). */
+export function awardGolden(sim) {
+  const { state, rng } = sim;
   const roll = rng.next();
   const points = (n) => {
     state.score += n;
@@ -45,8 +47,7 @@ export function awardGolden({ state, rng }) {
     return { reward: 'goldenSpoon', points: 0 };
   }
   edge += G.lifeChance;
-  if (roll < edge && state.lives < CONFIG.lives + 1) {
-    state.lives++;
+  if (roll < edge && restoreLife(sim, CONFIG.lives + 1, 'goldenCube')) {
     return { reward: 'life', points: 0 };
   }
   edge += G.sugarChance;

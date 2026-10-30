@@ -5,6 +5,7 @@
 // gesture), which satisfies browser autoplay rules. Any audio failure is
 // ignored so it can never interrupt play.
 
+import { CONFIG } from '../config.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
 import { createMusic } from './music.js';
 
@@ -90,6 +91,15 @@ const TUNES = {
   jackpot: [[1047, 0.1, 'square', 0.014], [1319, 0.1, 'square', 0.014, 0.08], [1568, 0.1, 'square', 0.014, 0.16],
     [2093, 0.5, 'sine', 0.032, 0.24]],
   goldenGone: [[600, 0.25, 'sine', 0.02], [450, 0.35, 'sine', 0.02, 0.15]],
+  // The Cup Remembers: porcelain under strain, a leaf of gold, kintsugi, and the final break.
+  chip: [[2637, 0.05, 'triangle', 0.008, 0.05, 0.6]],
+  stress: [[92, 0.6, 'sawtooth', 0.01, 0.12, 1.5], [2794, 0.04, 'square', 0.004, 0.3, 0.5], [3136, 0.03, 'square', 0.003, 0.52, 0.5]],
+  goldenLeafAppear: [[1319, 0.14, 'sine', 0.016], [1976, 0.22, 'sine', 0.014, 0.1]],
+  goldenLeafCatch: [[1568, 0.1, 'sine', 0.018], [2093, 0.16, 'sine', 0.018, 0.08]],
+  mend: [[784, 0.4, 'sine', 0.02, 0.12, 1.01], [1175, 0.5, 'sine', 0.016, 0.26, 1.01], [1568, 0.8, 'sine', 0.014, 0.42, 1.01]],
+  goldenLeafGone: [[700, 0.3, 'sine', 0.012], [520, 0.4, 'sine', 0.012, 0.15]],
+  shatter: [[2349, 0.06, 'square', 0.01], [1760, 0.08, 'square', 0.009, 0.06], [2637, 0.05, 'triangle', 0.008, 0.14],
+    [110, 0.5, 'sawtooth', 0.02, 0.02, 0.5], [3136, 0.04, 'triangle', 0.006, 0.3], [2093, 0.06, 'triangle', 0.006, 0.42]],
   // A pour, then the backwash rolling in.
   milk: [[260, 0.24, 'sine', 0.027], [170, 0.5, 'triangle', 0.022, 0.06]],
   // The recovery pulse: a soft, low hush as the whole cup slows.
@@ -259,6 +269,13 @@ export function createAudio() {
         if (event.how === 'rim') beep([event.points ? 360 : 240, 0.1, 'sine', 0.02]); // plop
       }
       else if (event.type === 'roundStart' && event.opens) TUNES.chapter.forEach(beep);
+      // A spill: the usual splash, then the porcelain's own voice: a chip's tink, or under the last cup a creak.
+      else if (event.type === 'escape') {
+        beep(SOUNDS.escape);
+        if (event.lives >= CONFIG.lives) TUNES.chip.forEach(beep);
+        else if (event.lives === 1) TUNES.stress.forEach(beep);
+      }
+      else if (event.type === 'gameover') [SOUNDS.gameover, ...TUNES.shatter].forEach(beep);
       // Coins ding; a tea packet rustles a little lower.
       // Biscuits crunch a little higher as the wall comes down.
       else if (event.type === 'crossingFinish') (event.success ? TUNES.crossingMade : TUNES.crossingFailed).forEach(beep);

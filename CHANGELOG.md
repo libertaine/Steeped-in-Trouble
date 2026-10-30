@@ -5,6 +5,53 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-10-30 — The Cup Remembers
+
+*The leaves remember what you did. The porcelain remembers what happened.*
+
+### Added
+
+- **What the cup remembers:** each reading opens with up to two truthful
+  observations about the round (its leaf pattern, spills, heavy milk or
+  sugar, narrow escapes, a clean cup) and the fortune each favored, or one
+  neutral line when nothing stood out. The fortune card then names the
+  actual next cup, its effect in one line, and whether the leaves took the
+  hint. Secrets join the panel in their own words. Compact View shows the
+  reasons and effect as text under the cup.
+- **The cup's condition** replaces the heart counter: REINFORCED, CUP STABLE,
+  PORCELAIN CRACKED, STRUCTURAL FAILURE IMMINENT, SHATTERED, with a polite
+  screen-reader status. Adventures keep their own counters.
+- **Cracks** at the exact place each damaging spill went over the rim,
+  deterministic and cumulative, kept to the porcelain and a sliver of tea.
+  Losing a bonus fourth cup leaves only a chip in the glaze.
+- **Critical warning** at one cup left: an amber label, a slow amber rim
+  pulse (steady with reduced motion), amber-edged branching cracks, and a
+  ceramic creak.
+- **Golden Leaf:** a rare bonus target (15% of normal cups that start
+  cracked, provisional) that restores one cup, never a fourth, and fills a
+  crack with **kintsugi gold** that stays for the rest of the pot. It scores
+  nothing and is never a tea leaf. Golden cube and Perfect Brew restorations
+  gild a crack too, with their odds unchanged.
+- **The final break:** the cup parts into pieces and spills its tea before
+  *THE CUP HAS HAD ENOUGH.* Skippable at once; static with reduced motion.
+- Development-only `?debug&cup=` scenarios: healthy, cracked, critical,
+  leaf, repair, seams, shatter and migrated.
+
+### Changed
+
+- Continue Your Pot checkpoints are schema 2 (a ninth, Golden Leaf, stream
+  and the porcelain's history). Saved 0.16.0 pots are migrated with every
+  original random cursor, pending reading, upgrade, Day choice and encounter
+  intact; their cracks are drawn at fixed places because 0.16.0 never
+  recorded where its leaves spilled. An old save is kept until the continued
+  pot saves over it.
+- Fortune selection, every weight and every other gameplay rule are
+  unchanged; authentic 0.16.0 readings, leaf paths and continuations are
+  replayed in the tests.
+- Desktop keyboard gameplay is the primary supported experience; tablet
+  and phone compatibility remain best effort. Existing automated mobile
+  checks and touch accommodations are retained.
+
 ## [0.16.0] - 2026-10-30 — The Arcade Collection
 
 - **THE SPOON'S OTHER JOBS:** play The Tea Run, The Daily Pour, Biscuit
@@ -463,7 +510,8 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.16.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.17.0...main
+[0.17.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.13.0...v0.14.0

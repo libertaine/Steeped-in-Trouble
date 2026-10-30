@@ -81,7 +81,7 @@ test('the Tea Run plays with the keyboard, pauses, and comes back to the tea', a
   expect(after).toMatchObject({ lives: before.lives, fortune: before.nextFortune, round: before.round + 1, run: null });
   expect(after.sugarLeft).toBe((await usualSugar(page)) + 1);
   await expect(page.locator('#hudScore')).toContainText('SCORE');
-  await expect(page.locator('#hudLives')).toContainText('CUPS');
+  await expect(page.locator('#hudLives')).toHaveText(/^(REINFORCED|CUP STABLE|PORCELAIN CRACKED|STRUCTURAL FAILURE IMMINENT)$/);
   // Jump and slide keys are milk and sugar again.
   await page.keyboard.press('ArrowUp');
   await expect(page.locator('#milkCount')).toHaveText('1');

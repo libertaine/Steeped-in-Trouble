@@ -16,6 +16,7 @@ import { TEAS } from '../gameplay/teas.js';
 import { createTea } from './tea.js';
 
 const GOLD = '#ffd45e';
+const AMBER = '#ffae42'; // the cracked cup's warning
 const RIM = CONFIG.arena.rimRadius;
 const { centerX: CX, centerY: CY } = CONFIG.arena;
 const SPOON_RADIUS = RIM + 7;
@@ -143,11 +144,17 @@ export function createEffects({ random = Math.random } = {}) {
     shake: 0, // seconds of cup shake left
     teaCard: null, // { tea, debut, delay, time, life }: the round's tea being announced (after `delay` seconds)
     chapterCard: null, // { chapter, time, life }: a new chapter being announced
+    // The Cup Remembers (rendering/porcelain.js).
+    impacts: [], // the rim giving way where a leaf spilled: { id, time, life } (id: the new fracture's)
+    mends: [], // gold running into a newly mended crack: { id, time, life }
+    shatter: null, // { age }: seconds since the cup broke, at the end of a pot
+    cupClock: 0, // seconds of cup time, for the slow critical pulse; it stands still while paused
   };
   const queue = [];
   let prankTimer = null; // seconds until The Leaves Lie misbehaves
   let golden = null; // the cube's last known spot, for sparkles
   let prismatic = null; // the same for the prismatic cube
+  let goldLeaf = null; // the same for the Golden Leaf
   let bigSpoon = null; // { time, life } while the spoon is comically large
   let strained = false; // has the strainer been explained this pot?
   let burnedOnce = false; // has the first burn been explained this pot?
@@ -231,6 +238,8 @@ export function createEffects({ random = Math.random } = {}) {
     fx.flyingBeans = [];
     fx.teaCard = null;
     fx.chapterCard = null;
+    fx.impacts = [];
+    fx.mends = [];
   }
 
   /** Coffee-coloured steam, billowing up from a point. */
@@ -264,6 +273,8 @@ export function createEffects({ random = Math.random } = {}) {
 
   const handlers = {
     matchStart() {
+      fx.shatter = null;
+      fx.cupClock = 0;
       strained = false;
       burnedOnce = false;
       grindMet = false;
@@ -275,6 +286,7 @@ export function createEffects({ random = Math.random } = {}) {
       clearScene();
       golden = null;
       prismatic = null;
+      goldLeaf = null;
       bigSpoon = null;
       prankTimer = fortune === 'lie' ? rnd(3, 10) : null;
       herbalTimer = tea === 'herbal' ? rnd(4, 8) : null;
@@ -422,8 +434,16 @@ export function createEffects({ random = Math.random } = {}) {
       herbalTimer = null;
       golden = null;
       prismatic = null;
+      goldLeaf = null;
       bigSpoon = null;
       hush();
+      // The cup breaks: the renderer parts the porcelain; a little tea and glaze fly.
+      fx.shatter = { age: 0 };
+      const calm = tea.liquid.reduced;
+      burst(calm ? 12 : 40, () => RIM + rnd(0, 40), () => rnd(0, TAU), (i) => (i % 3 ? '#eee8ce' : '#8fae92'),
+        () => rnd(0.5, 1.2), calm ? 0.4 : 1.8, [1.5, 3.5]);
+      burst(calm ? 8 : 26, () => RIM + rnd(-4, 20), () => rnd(0, TAU), (i) => (i % 2 ? '#7a4a22' : '#a8672e'),
+        () => rnd(0.6, 1.4), calm ? 0.3 : 1.2, [2, 4.5]);
     },
     strain({ angle, left }) {
       fx.glints.push({ angle, time: 1.1, life: 1.1 });
@@ -497,10 +517,41 @@ export function createEffects({ random = Math.random } = {}) {
       burst(50, () => rnd(170, 255), () => -Math.PI / 2 + rnd(-0.6, 0.6),
         (i) => ['#c79bff', '#ffd36b', '#8dffb8', '#7ccfff', '#ffffff'][i % 5], () => rnd(0.6, 1.4), 1.6);
     },
-    escape({ angle }) {
+    escape({ angle, lives = CONFIG.lives, fracture = null }) {
       fx.flash = 0.5;
       burst(20, () => CONFIG.arena.rimRadius, () => angle + rnd(-0.1, 0.1), '#e6ad82', 0.7);
-      if (random() < 0.15) say(pick(ESCAPE_REMARKS), { color: '#e6ad82', life: 2.4 });
+      // The porcelain answers: a flash along the new fracture, and a few flakes of glaze.
+      if (fracture) fx.impacts.push({ id: fracture.id, time: 0.7, life: 0.7 });
+      burst(10, () => RIM + rnd(14, 44), () => angle + rnd(-0.05, 0.05), (i) => (i % 2 ? '#eee8ce' : '#8fae92'),
+        () => rnd(0.3, 0.7), 0.9, [1, 2.4]);
+      if (lives >= CONFIG.lives) say('A chip in the glaze. The cup holds steady.', { color: '#e4eef0', life: 2.6 });
+      else if (lives === CONFIG.lives - 1) say('The porcelain cracks.', { color: '#e6ad82', life: 2.4 });
+      else if (lives === 1) say('STRUCTURAL FAILURE IMMINENT. One more spill and the cup breaks.', { color: AMBER, life: 3.6 });
+      else if (lives > 1 && random() < 0.15) say(pick(ESCAPE_REMARKS), { color: '#e6ad82', life: 2.4 });
+    },
+    mend({ id, angle, source }) {
+      // Gold runs into the crack.
+      fx.mends.push({ id, time: 1.6, life: 1.6 });
+      burst(26, () => RIM + rnd(-8, 46), () => angle + rnd(-0.06, 0.06), (i) => (i % 3 ? GOLD : '#fff8e2'),
+        () => rnd(0.5, 1.2), 0.8, [1, 2.6]);
+      // The golden cube and the Perfect Brew announce their own rewards.
+      if (source === 'goldenLeaf') say('Kintsugi: the crack is filled with gold. The cup is stronger for it.', { color: GOLD, life: 3.6 });
+    },
+    goldenLeafAppear({ radius, angle }) {
+      goldLeaf = { radius, angle };
+      burst(20, () => radius + rnd(-6, 6), () => angle + rnd(-0.05, 0.05), (i) => (i % 2 ? GOLD : '#fff8e2'),
+        () => rnd(0.4, 0.9), 1.2);
+      say('A golden leaf! Steam it to mend the cup.', { color: GOLD, life: 3 });
+    },
+    goldenLeafCatch({ radius, angle }) {
+      goldLeaf = null;
+      burst(40, () => radius + rnd(-8, 8), () => angle + rnd(-0.06, 0.06), (i) => (i % 3 ? GOLD : '#fff8e2'),
+        () => rnd(0.5, 1.2), 2);
+    },
+    goldenLeafGone({ radius, angle, mended }) {
+      goldLeaf = null;
+      burst(8, () => radius + rnd(-5, 5), () => angle + rnd(-0.04, 0.04), '#b39a5a', () => rnd(0.3, 0.7));
+      if (!mended) say('The golden leaf sinks out of reach.', { color: '#c9b27a', life: 2.6 });
     },
     milk({ angle, cloud = angle }) {
       burst(22, () => rnd(100, 245), () => angle + rnd(-0.38, 0.38), '#dceee8', () => rnd(0.3, 0.9));
@@ -729,6 +780,17 @@ export function createEffects({ random = Math.random } = {}) {
       fx.glitch = Math.max(0, fx.glitch - dt);
       fx.upgradeGlow = Math.max(0, fx.upgradeGlow - dt * 1.2);
       if (state) fx.spoonAngle = state.angle;
+      const paused = state?.phase === PHASE.PAUSED;
+      if (!paused) {
+        fx.cupClock += dt;
+        if (fx.shatter && state?.phase === PHASE.GAME_OVER) fx.shatter.age += dt;
+        for (const list of [fx.impacts, fx.mends]) {
+          for (let i = list.length - 1; i >= 0; i--) {
+            list[i].time -= dt;
+            if (list[i].time <= 0) list.splice(i, 1);
+          }
+        }
+      }
       for (const list of [fx.glints, fx.rebounds, fx.aimPulses]) {
         for (let i = list.length - 1; i >= 0; i--) {
           list[i].time -= dt;
@@ -761,6 +823,10 @@ export function createEffects({ random = Math.random } = {}) {
       }
       if (playing && golden && random() < dt * 14) {
         burst(1, () => golden.radius + rnd(-14, 14), () => golden.angle + rnd(-0.06, 0.06), GOLD, () => rnd(0.3, 0.7), 0.5);
+      }
+      if (playing && goldLeaf && state.goldenLeaf && random() < dt * 10) {
+        const leaf = state.goldenLeaf;
+        burst(1, () => leaf.radius + rnd(-12, 12), () => leaf.angle + rnd(-0.05, 0.05), GOLD, () => rnd(0.4, 0.8), 0.35);
       }
       if (playing && prismatic && random() < dt * 24) {
         burst(1, () => prismatic.radius + rnd(-12, 12), () => prismatic.angle + rnd(-0.05, 0.05),

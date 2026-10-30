@@ -1,4 +1,4 @@
-import { validateCheckpoint } from '../core/checkpoint.js';
+import { migrateCheckpoint, validateCheckpoint } from '../core/checkpoint.js';
 
 export const RECORDS_KEY = 'steeped-in-trouble:arcade-records';
 export const POT_KEY = 'steeped-in-trouble:pot-save';
@@ -29,13 +29,14 @@ export function createLocalProgress(storage, { now = () => new Date().toISOStrin
   let records = emptyRecords(), pot = null;
   const settled = new WeakSet();
   const status = { records: '', pot: '' };
-  function read(key, validate, kind) {
+  // `load` returns the usable value (validated, and migrated if it is older), or null.
+  function read(key, load, kind) {
     try {
       if (!storage) throw new Error('Storage unavailable');
       const raw = storage.getItem(key);
       if (raw === null) return null;
-      const value = JSON.parse(raw);
-      if (!validate(value)) throw new TypeError('Invalid saved data');
+      const value = load(JSON.parse(raw));
+      if (!value) throw new TypeError('Invalid saved data');
       return value;
     } catch (error) {
       status[kind] = error instanceof SyntaxError || error instanceof TypeError
@@ -45,8 +46,10 @@ export function createLocalProgress(storage, { now = () => new Date().toISOStrin
       return null;
     }
   }
-  records = read(RECORDS_KEY, validateRecords, 'records') ?? records;
-  pot = read(POT_KEY, validateCheckpoint, 'pot');
+  records = read(RECORDS_KEY, (data) => (validateRecords(data) ? data : null), 'records') ?? records;
+  // An older pot is migrated in memory only: the stored save stays as it was
+  // until this pot's next checkpoint replaces it.
+  pot = read(POT_KEY, migrateCheckpoint, 'pot');
   function write(key, value, kind) {
     try {
       if (!storage) throw new Error('Storage unavailable');
