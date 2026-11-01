@@ -38,7 +38,7 @@ function illustrate(canvas, id) {
   }
 }
 
-export function createCollectionUI({ doc, sessions, progress, presentation, settleInput, onActivate = () => {} }) {
+export function createCollectionUI({ doc, sessions, progress, presentation, settleInput, onActivate = () => {}, onOpen = () => {} }) {
   const el = (id) => doc.getElementById(id);
   const text = (id, value) => { const element = el(id); if (element.textContent !== value) element.textContent = value; };
   const dialog = el('arcadeCollection'), confirm = el('potConfirmation');
@@ -71,6 +71,7 @@ export function createCollectionUI({ doc, sessions, progress, presentation, sett
   }
   function open() {
     presentation.closeMenu();
+    onOpen();
     settleInput(); sessions.open(); showRecords();
     if (!dialog.open) dialog.showModal();
     dialog.scrollTop = 0;
@@ -81,6 +82,7 @@ export function createCollectionUI({ doc, sessions, progress, presentation, sett
     el('game').focus({ preventScroll: true });
   }
   function ask(action, clear = false) {
+    onOpen();
     settleInput();
     confirmAction = action;
     el('confirmPotTitle').textContent = clear ? 'Clear your saved pot?' : 'Replace your saved pot?';
@@ -111,6 +113,7 @@ export function createCollectionUI({ doc, sessions, progress, presentation, sett
   return {
     open,
     get blocked() { return dialog.open || confirm.open; },
+    askNewPot() { ask(() => { if (sessions.newPot(true)) onActivate(); }); },
     primary() {
       if (this.blocked) return true;
       if (!sessions.practice && sessions.game.state.phase === 'gameover' && progress.potInfo) {
