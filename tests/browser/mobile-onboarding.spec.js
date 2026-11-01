@@ -1,12 +1,14 @@
 import { expect, openGame, test } from './fixtures.js';
 
-// The instruction overlay on a real touch screen (Pixel 7): it explains the
+// The instruction overlay with Pixel 7 touch emulation: it explains the
 // touch layout actually in use, fits the phone, and starts with a tap.
 
 const openTitle = async (page, query = '') => {
   await openGame(page, query, { onboarding: true });
   if (!/[&](noOverlay|arcade|day|cup|fortune)/.test(query)) {
+    await expect(page.locator('#titleContinueBtn')).toHaveCSS('background-color', 'rgb(14, 16, 48)');
     await page.locator('#titleContinueBtn').tap();
+    await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('background-color', 'rgb(255, 210, 63)');
   }
 };
 

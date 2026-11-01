@@ -1003,7 +1003,8 @@ body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-si
 
 .arcade-splash[hidden] { display: none; }
 
-.splash-continue {
+/* Match the global button:hover specificity so arcade palettes win. */
+button.splash-continue {
   max-width: 92vw;
   padding: 12px 16px;
   border: 2px solid #ffd23f;
@@ -1015,6 +1016,8 @@ body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-si
   box-shadow: 4px 4px 0 #2a3fa8;
 }
 .splash-continue:focus-visible { outline: 3px solid #f4efe2; outline-offset: 4px; }
+.splash-continue:hover { filter: brightness(1.1); }
+.splash-continue:active { transform: translateY(3px); box-shadow: none; }
 
 .splash-content {
   display: flex;
@@ -1278,7 +1281,7 @@ body:has(#instructionOverlay[open]) {
   cursor: pointer;
 }
 
-.arcade-start-btn {
+button.arcade-start-btn {
   min-height: 46px;
   padding: 10px 16px;
   font-size: 14px;
@@ -1288,7 +1291,7 @@ body:has(#instructionOverlay[open]) {
   box-shadow: 0 4px 0 #b8561a;
 }
 
-.arcade-secondary-btn {
+button.arcade-secondary-btn {
   min-height: 40px;
   padding: 8px 14px;
   font-size: 12px;
@@ -1368,7 +1371,7 @@ body:has(#instructionOverlay[open]) {
     padding: 0 4px;
     font-size: 11px;
   }
-  .arcade-start-btn { font-size: 13px; }
+  button.arcade-start-btn { font-size: 13px; }
 }
 
 /* Short windows (small laptops, landscape phones): tighten everything, hide nothing. */
@@ -1396,12 +1399,12 @@ body:has(#instructionOverlay[open]) {
     padding: 4px 8px;
     font-size: 11px;
   }
-  .arcade-start-btn {
+  button.arcade-start-btn {
     min-height: 40px;
     padding: 6px 12px;
     font-size: 13px;
   }
-  .arcade-secondary-btn {
+  button.arcade-secondary-btn {
     min-height: 36px;
     padding: 5px 12px;
   }

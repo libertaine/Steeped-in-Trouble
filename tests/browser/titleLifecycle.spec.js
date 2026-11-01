@@ -18,6 +18,8 @@ test('production title waits for an explicit gesture and each Enter advances one
   await expect(page.locator('#titleContinueBtn')).toBeEnabled();
   await expect(title).toBeVisible();
   await expect(instructions).toBeHidden();
+  await page.keyboard.press('Escape');
+  await expect(title).toBeVisible();
   await page.waitForTimeout(3200);
   await expect(title).toBeVisible();
   await page.keyboard.press('Tab');
@@ -32,6 +34,48 @@ test('production title waits for an explicit gesture and each Enter advances one
   await page.keyboard.press('Enter');
   await expect(instructions).toBeHidden();
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
+  expect(problems).toEqual([]);
+});
+
+test('complete welcome and Tea Break flow uses browser keyboard and pointer input', async ({ page, problems }) => {
+  await openGame(page, '&seed=42&view=full', { onboarding: true });
+  await expect(page.locator('#titleContinueBtn')).toBeEnabled();
+  await expect(page.locator('#arcadeSplash')).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#instructionOverlay')).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
+  const state = () => page.evaluate(() => {
+    const s = window.__TEACUP__.game.state;
+    return { angle: s.angle, shots: s.shots.filter((shot) => !shot.sugar).length, milk: s.milkLeft, sugar: s.sugarLeft };
+  });
+  for (const key of ['ArrowLeft', 'ArrowRight', 'a', 'd']) {
+    const before = await state();
+    await page.keyboard.down(key);
+    await expect.poll(async () => (await state()).angle).not.toBe(before.angle);
+    await page.keyboard.up(key);
+  }
+  await page.keyboard.press('Space');
+  await expect.poll(async () => (await state()).shots).toBeGreaterThan(0);
+  const supplies = await state();
+  await page.keyboard.press('m');
+  await expect.poll(async () => (await state()).milk).toBe(supplies.milk - 1);
+  await page.keyboard.press('s');
+  await expect.poll(async () => (await state()).sugar).toBe(supplies.sugar - 1);
+  await expect.poll(async () => (await state()).shots).toBe(0);
+  await page.locator('#menuBtn').click();
+  await page.locator('#breakControlsBtn').click();
+  await expect(page.locator('#instructionOverlay')).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#teaBreak')).toBeVisible();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+  await page.locator('#closeBreak').click();
+  await expect(page.locator('#game')).toBeFocused();
+  // The earlier steam expired, so a new shot demonstrates fresh input.
+  await page.keyboard.press('Space');
+  await expect.poll(async () => (await state()).shots).toBeGreaterThan(0);
+  await expect(page.locator('#teaBreak')).toBeHidden();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
   expect(problems).toEqual([]);
 });
 
