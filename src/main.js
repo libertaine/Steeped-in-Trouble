@@ -159,7 +159,7 @@ function boot() {
   overlay = createInstructionOverlay({
     doc: document,
     version: __APP_VERSION__,
-    isTouchDevice: settings.touch === 'easy' || isTouchDevice(window),
+    isTouchDevice: () => settings.touch === 'easy' || isTouchDevice(window),
     onStart: ({ fromTeaBreak, isNewPot }) => {
       controls.settle(true);
       if (fromTeaBreak) return;
@@ -168,6 +168,7 @@ function boot() {
         return;
       }
       if (!collectionUI.primary()) game.confirm();
+      document.getElementById('game')?.focus({ preventScroll: true });
     },
     onClose: ({ fromTeaBreak, escape }) => {
       controls.settle(true);
@@ -278,7 +279,13 @@ function boot() {
 
   // Draw retro arcade splash centerpiece
   const splashCanvas = document.getElementById('splashCanvas');
-  if (splashCanvas) drawArcadeCenterpiece(splashCanvas);
+  if (splashCanvas) {
+    try {
+      drawArcadeCenterpiece(splashCanvas);
+    } catch {
+      // Graceful fallback if 2D context or canvas drawing encounters an error
+    }
+  }
 
   const isDirectScenario = params.has('arcade') || params.has('day') || params.has('cup') || params.has('fortune') || params.has('noOverlay');
   if (!isDirectScenario) {

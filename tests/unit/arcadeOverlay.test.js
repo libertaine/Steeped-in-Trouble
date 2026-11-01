@@ -110,8 +110,11 @@ describe('instruction overlay controller', () => {
     const newPotBtn = createElement('overlayNewPotBtn', 'button');
     const touchSummary = createElement('overlayTouchSummary', 'div');
 
+    dialog.querySelectorAll = vi.fn(() => [primaryBtn, newPotBtn].filter((b) => !b.hidden));
+
     const doc = {
       activeElement: null,
+      defaultView: { scrollX: 0, scrollY: 0, scrollTo: vi.fn() },
       getElementById: vi.fn((id) => elements.get(id) || null),
       addEventListener: vi.fn((event, handler) => {
         if (!listeners.has(event)) listeners.set(event, []);
@@ -259,6 +262,119 @@ describe('instruction overlay controller', () => {
     });
 
     expect(onStart).toHaveBeenCalledWith({ fromTeaBreak: false, isNewPot: true });
+  });
+
+  it('Enter key on focused New Pot button triggers new pot confirmation flow', () => {
+    const { doc, newPotBtn } = makeMockDoc();
+    const onStart = vi.fn();
+    const overlay = createInstructionOverlay({ doc, onStart });
+
+    overlay.show({ hasSavedPot: true });
+    doc.activeElement = newPotBtn;
+
+    const event = {
+      type: 'keydown',
+      code: 'Enter',
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    };
+    doc.dispatchEvent(event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+    expect(onStart).toHaveBeenCalledWith({ fromTeaBreak: false, isNewPot: true });
+    expect(overlay.isOpen).toBe(false);
+  });
+
+  it('Space key on focused New Pot button triggers new pot confirmation flow', () => {
+    const { doc, newPotBtn } = makeMockDoc();
+    const onStart = vi.fn();
+    const overlay = createInstructionOverlay({ doc, onStart });
+
+    overlay.show({ hasSavedPot: true });
+    doc.activeElement = newPotBtn;
+
+    const event = {
+      type: 'keydown',
+      code: 'Space',
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    };
+    doc.dispatchEvent(event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+    expect(onStart).toHaveBeenCalledWith({ fromTeaBreak: false, isNewPot: true });
+  });
+
+  it('Space key on focused primary button does not dismiss overlay to prevent input leak', () => {
+    const { doc, primaryBtn } = makeMockDoc();
+    const onStart = vi.fn();
+    const overlay = createInstructionOverlay({ doc, onStart });
+
+    overlay.show({ hasSavedPot: false });
+    doc.activeElement = primaryBtn;
+
+    const event = {
+      type: 'keydown',
+      code: 'Space',
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    };
+    doc.dispatchEvent(event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+    expect(onStart).not.toHaveBeenCalled();
+    expect(overlay.isOpen).toBe(true);
+  });
+
+  it('Tab key traps focus within dialog buttons', () => {
+    const { doc, primaryBtn, newPotBtn } = makeMockDoc();
+    const overlay = createInstructionOverlay({ doc });
+
+    overlay.show({ hasSavedPot: true });
+    doc.activeElement = newPotBtn; // last focusable element
+
+    const tabForward = {
+      type: 'keydown',
+      code: 'Tab',
+      shiftKey: false,
+      preventDefault: vi.fn(),
+    };
+    doc.dispatchEvent(tabForward);
+    expect(tabForward.preventDefault).toHaveBeenCalled();
+    expect(primaryBtn.focus).toHaveBeenCalledWith({ preventScroll: true });
+
+    doc.activeElement = primaryBtn; // first focusable element
+    const tabBackward = {
+      type: 'keydown',
+      code: 'Tab',
+      shiftKey: true,
+      preventDefault: vi.fn(),
+    };
+    doc.dispatchEvent(tabBackward);
+    expect(tabBackward.preventDefault).toHaveBeenCalled();
+    expect(newPotBtn.focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it('supports dynamic touch getter function and refreshes on show', () => {
+    const { doc, touchSummary } = makeMockDoc();
+    let touchState = false;
+    const overlay = createInstructionOverlay({
+      doc,
+      isTouchDevice: () => touchState,
+    });
+
+    expect(touchSummary.hidden).toBe(true);
+
+    touchState = true;
+    overlay.show();
+    expect(touchSummary.hidden).toBe(false);
+
+    touchState = false;
+    overlay.show();
+    expect(touchSummary.hidden).toBe(true);
   });
 
   it('restores focus safely when closed', () => {

@@ -22,13 +22,14 @@ export function createInstructionOverlay({
   const primaryBtn = doc.getElementById('overlayPrimaryBtn');
   const newPotBtn = doc.getElementById('overlayNewPotBtn');
   const touchSummary = doc.getElementById('overlayTouchSummary');
+  const checkTouch = typeof isTouchDevice === 'function' ? isTouchDevice : () => Boolean(isTouchDevice);
 
   if (versionEl && version) {
     versionEl.textContent = `v${version}`;
   }
 
   if (touchSummary) {
-    touchSummary.hidden = !isTouchDevice;
+    touchSummary.hidden = !checkTouch();
   }
 
   let open = false;
@@ -125,7 +126,11 @@ export function createInstructionOverlay({
     if (e.code === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
-      dismissPrimary();
+      if (doc.activeElement === newPotBtn) {
+        dismissNewPot();
+      } else {
+        dismissPrimary();
+      }
       return;
     }
     if (e.code === 'Escape') {
@@ -137,6 +142,9 @@ export function createInstructionOverlay({
     if (e.code === 'Space') {
       e.preventDefault();
       e.stopPropagation();
+      if (doc.activeElement === newPotBtn) {
+        dismissNewPot();
+      }
       return;
     }
     if (e.code === 'Tab') {
@@ -162,9 +170,6 @@ export function createInstructionOverlay({
   }
 
   if (dialog) {
-    dialog.addEventListener('keydown', onKeyDown);
-    cleanups.push(() => dialog.removeEventListener('keydown', onKeyDown));
-
     dialog.addEventListener('click', onBackdropClick);
     cleanups.push(() => dialog.removeEventListener('click', onBackdropClick));
   }
@@ -191,6 +196,10 @@ export function createInstructionOverlay({
       teaBreakCallback = onReturn;
       lastFocused = doc.activeElement;
 
+      if (touchSummary) {
+        touchSummary.hidden = !checkTouch();
+      }
+
       if (primaryBtn) {
         if (fromTeaBreak) {
           primaryBtn.textContent = 'BACK TO TEA BREAK (ENTER)';
@@ -205,6 +214,10 @@ export function createInstructionOverlay({
         newPotBtn.hidden = fromTeaBreak || !hasSavedPot;
       }
 
+      const win = doc.defaultView;
+      const prevX = win ? win.scrollX : 0;
+      const prevY = win ? win.scrollY : 0;
+
       if (dialog) {
         dialog.classList.add('is-open');
         if (typeof dialog.show === 'function' && !dialog.open) {
@@ -217,6 +230,10 @@ export function createInstructionOverlay({
       // Defer focus slightly or focus immediately
       if (primaryBtn) {
         primaryBtn.focus({ preventScroll: true });
+      }
+
+      if (win && (win.scrollX !== prevX || win.scrollY !== prevY)) {
+        win.scrollTo(prevX, prevY);
       }
     },
 

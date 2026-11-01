@@ -159,9 +159,32 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
     await expect(primary).toHaveText('CONTINUE YOUR POT (ENTER)');
     await expect(newPot).toBeVisible();
 
-    // Clicking primary resumes the saved pot without data loss
-    await primary.click();
-    await expect(overlay).toBeHidden();
+    // Tab moves focus from Continue Pot to Brew A New Pot
+    await page.keyboard.press('Tab');
+    await expect(newPot).toBeFocused();
+
+    // Tab again wraps back to Continue Pot
+    await page.keyboard.press('Tab');
+    await expect(primary).toBeFocused();
+
+    // Shift-Tab wraps back to Brew A New Pot
+    await page.keyboard.press('Shift+Tab');
+    await expect(newPot).toBeFocused();
+
+    // Pressing Enter on focused Brew A New Pot opens confirmation modal without data loss
+    await page.keyboard.press('Enter');
+    const confirmModal = page.locator('#potConfirmation');
+    await expect(confirmModal).toBeVisible();
+    await expect(page.locator('#confirmPotTitle')).toHaveText('Replace your saved pot?');
+
+    // Cancelling confirmation modal keeps saved data intact
+    await page.locator('#cancelPotBtn').click();
+    await expect(confirmModal).toBeHidden();
+    expect(await page.evaluate(() => localStorage.getItem('steeped-in-trouble:pot-save'))).toBe(savedRaw);
+
+    // Sidebar button now cleanly continues the saved pot
+    await page.locator('#mainBtn').click();
+    await expect(page.locator('#hudStatus')).toHaveText('READING THE LEAVES');
 
     const currentSaved = await page.evaluate(() => localStorage.getItem('steeped-in-trouble:pot-save'));
     expect(currentSaved).toBe(savedRaw);
@@ -203,7 +226,18 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
     await expect(overlay).toBeVisible();
 
     // Initial focus on primary button
-    await expect(page.locator('#overlayPrimaryBtn')).toBeFocused();
+    const primaryBtn = page.locator('#overlayPrimaryBtn');
+    await expect(primaryBtn).toBeFocused();
+
+    // With single button, Tab traps focus to the primary button
+    await page.keyboard.press('Tab');
+    await expect(primaryBtn).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(primaryBtn).toBeFocused();
+
+    // Space key does not dismiss overlay (prevents gameplay leakage)
+    await page.keyboard.press('Space');
+    await expect(overlay).toBeVisible();
 
     // Escape closes overlay safely
     await page.keyboard.press('Escape');
