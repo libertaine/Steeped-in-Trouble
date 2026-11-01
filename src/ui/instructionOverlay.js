@@ -161,6 +161,7 @@ export function createInstructionOverlay({
     if (e.code === 'Enter' || e.code === 'NumpadEnter') {
       e.preventDefault();
       e.stopPropagation();
+      if (e.repeat) return;
       if (doc.activeElement === newPotBtn) dismissNewPot();
       else dismissPrimary();
       return;

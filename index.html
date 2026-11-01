@@ -9,16 +9,17 @@
   <link rel="stylesheet" href="/styles/main.css" />
 </head>
 <body>
-<div id="arcadeSplash" class="arcade-splash" role="region" aria-label="Title screen">
+<dialog open id="arcadeSplash" class="arcade-splash" aria-labelledby="splashTitle" aria-describedby="splashSubtitle">
   <div class="splash-content">
-    <h1 class="splash-title sr-only">STEEPED IN TROUBLE</h1>
+    <h1 id="splashTitle" class="splash-title sr-only">STEEPED IN TROUBLE</h1>
     <div class="splash-screen">
       <canvas id="splashCanvas" width="256" height="160" role="img" aria-label="Pixel-art title: a silver spoon in round glasses stands in a blue-and-white porcelain teacup and blasts steam at angry tea leaves climbing the rim"></canvas>
     </div>
-    <p class="splash-subtitle">One small spoon. An unreasonable amount of responsibility.</p>
-    <span class="splash-status">INITIALIZING...</span>
+    <p id="splashSubtitle" class="splash-subtitle">One small spoon. An unreasonable amount of responsibility.</p>
+    <span class="splash-status" role="status">INITIALIZING...</span>
+    <button id="titleContinueBtn" class="splash-continue" hidden disabled>PRESS ENTER OR CLICK TO CONTINUE</button>
   </div>
-</div>
+</dialog>
 <header>
   <div>
     <div class="kicker">An experimental vector arcade game</div>

@@ -5,6 +5,17 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-11-01 — Arcade Welcome
+
+- Interactive 80s arcade title screen: an explicit click, tap, or fresh Enter
+  opens the instruction overlay introduced after v0.17.0, before gameplay.
+- Improved keyboard input isolation across the title, instructions and dialogs;
+  held inputs must be released before they can affect gameplay.
+- Returning from Tea Break restores cup focus, so Space fires steam immediately
+  without clicking the canvas; deliberate Tab navigation retains button activation.
+- Consistent arcade button palettes on hover, with distinct keyboard focus and
+  pressed states. Gameplay mechanics and saved-game schemas are unchanged.
+
 ## [0.17.0] - 2026-10-30 — The Cup Remembers
 
 *The leaves remember what you did. The porcelain remembers what happened.*
