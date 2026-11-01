@@ -2,11 +2,12 @@
 import { CONFIG } from '../config.js';
 import { initialView, isTouchDevice, saveView } from '../input/settings.js';
 
-export function createPresentation({ doc = document, game, params, storage, resetInput }) {
+export function createPresentation({ doc = document, game, params, storage, resetInput, onShowControls, onOpenMenu = () => {} }) {
   const win = doc.defaultView;
   const body = doc.body;
   const dialog = doc.getElementById('teaBreak');
   const close = doc.getElementById('closeBreak');
+  const breakControls = doc.getElementById('breakControlsBtn');
   const menu = doc.getElementById('menuBtn');
   const viewButton = doc.getElementById('viewBtn');
   const breakView = doc.getElementById('breakViewBtn');
@@ -61,6 +62,7 @@ export function createPresentation({ doc = document, game, params, storage, rese
 
   function openMenu() {
     if (dialog.open || menu.disabled) return;
+    onOpenMenu();
     const before = game.state.phase;
     game.pause();
     resumeOnClose = before !== 'paused' && game.state.phase === 'paused';
@@ -89,8 +91,28 @@ export function createPresentation({ doc = document, game, params, storage, rese
   const backgrounded = () => { resumeOnClose = false; };
   const visibility = () => { if (doc.visibilityState === 'hidden') backgrounded(); };
   const cancel = (e) => { e.preventDefault(); closeMenu(); };
+
+  function handleBreakControls() {
+    if (!dialog.open) return;
+    const savedResume = resumeOnClose;
+    resumeOnClose = false;
+    dialog.close();
+    panels.forEach((panel) => aside.append(panel));
+    sections.forEach((section) => section.remove());
+    panels[2].append(doc.querySelector('.settings'));
+    main.append(aside);
+    resetInput();
+    onShowControls?.(() => {
+      openMenu();
+      resumeOnClose = savedResume;
+      close.textContent = resumeOnClose ? 'Resume game' : 'Back to cup';
+      breakControls?.focus({ preventScroll: true });
+    });
+  }
+
   menu.addEventListener('click', openMenu);
   close.addEventListener('click', closeMenu);
+  breakControls?.addEventListener('click', handleBreakControls);
   viewButton.addEventListener('click', switchView);
   breakView.addEventListener('click', switchView);
   dialog.addEventListener('cancel', cancel);
@@ -99,7 +121,9 @@ export function createPresentation({ doc = document, game, params, storage, rese
   applyView();
 
   return {
+    openMenu,
     closeMenu,
+    handleBreakControls,
     get blocked() { return dialog.open; },
     update() {
       const s = game.state;
@@ -117,6 +141,7 @@ export function createPresentation({ doc = document, game, params, storage, rese
       closeMenu();
       menu.removeEventListener('click', openMenu);
       close.removeEventListener('click', closeMenu);
+      breakControls?.removeEventListener('click', handleBreakControls);
       viewButton.removeEventListener('click', switchView);
       breakView.removeEventListener('click', switchView);
       dialog.removeEventListener('cancel', cancel);

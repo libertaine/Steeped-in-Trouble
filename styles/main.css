@@ -970,3 +970,426 @@ body[data-view="compact"] .job-card canvas { width: 100%; height: auto; }
 body[data-view="full"] .panel .collection-entry { padding: 0; margin-top: 8px; }
 body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-size: 12px; }
 #closeCollectionTop { display: block; margin: 0 0 14px auto; font-size: 11px; }
+
+/*
+ * The title screen and the instruction overlay. Both borrow the splash art's
+ * 16-colour palette: flat fills and hard one-colour drop shadows, no glows.
+ */
+.arcade-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #050510;
+  transition: opacity 0.32s ease-out, visibility 0.32s ease-out;
+}
+
+.arcade-splash.dismissed {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 2vh, 18px);
+  padding: 12px;
+}
+
+/* The picture is the hero: as large as the window allows, upscaled with hard pixels. */
+.splash-screen {
+  position: relative;
+  line-height: 0;
+  background: #0e1030;
+  border: 4px solid #2a3fa8;
+  box-shadow: 0 0 0 4px #050510, 0 0 0 8px #1c2156;
+}
+
+.splash-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px);
+}
+
+.splash-screen canvas {
+  display: block;
+  width: min(calc(100vw - 40px), calc((100vh - 130px) * 1.6));
+  width: min(calc(100vw - 40px), calc((100dvh - 130px) * 1.6));
+  height: auto;
+  aspect-ratio: 256 / 160;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.splash-subtitle {
+  margin: 0;
+  max-width: 92vw;
+  font: 700 clamp(11px, 1.6vw, 15px) / 1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #f4efe2;
+}
+
+.splash-status {
+  font: 700 12px ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.3em;
+  color: #ffd23f;
+  animation: splashBlink 1s steps(1) infinite;
+}
+
+@keyframes splashBlink {
+  50% { opacity: 0; }
+}
+
+/*
+ * The instruction overlay is a modal dialog in the top layer, centred in the
+ * browser window (not the canvas). The page behind it is inert and dimmed
+ * but still recognisable. The header and the buttons never scroll away: if
+ * the window is very short, only the middle (controls and notes) scrolls.
+ */
+dialog.instruction-overlay {
+  position: fixed;
+  inset: 0;
+  width: min(540px, calc(100vw - 24px));
+  height: fit-content;
+  max-width: none;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f4efe2;
+  overflow: visible;
+}
+
+dialog.instruction-overlay[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.instruction-overlay::backdrop {
+  background: rgb(5 5 16 / 0.62);
+}
+
+body:has(#instructionOverlay[open]) {
+  overflow: hidden;
+}
+
+.arcade-start-btn[hidden],
+.arcade-secondary-btn[hidden],
+.overlay-touch-summary[hidden] {
+  display: none !important;
+}
+
+.instruction-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  gap: 10px;
+  margin: 0 6px 6px 0;
+  padding: 16px 20px 14px;
+  box-sizing: border-box;
+  background: #0e1030;
+  border: 4px solid #ffd23f;
+  box-shadow: 0 0 0 3px #050510, 6px 6px 0 3px #e8344e;
+}
+
+.overlay-header,
+.overlay-actions,
+.overlay-footer {
+  flex: none;
+}
+
+.overlay-body {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  gap: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.overlay-version {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font: 700 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: #a9b4cc;
+  letter-spacing: 0.05em;
+}
+
+.overlay-header {
+  text-align: center;
+}
+
+.overlay-title {
+  margin: 0;
+  font: 900 clamp(20px, 4vw, 27px) / 1.15 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffd23f;
+  text-shadow: 2px 2px 0 #e8344e, 4px 4px 0 #050510;
+}
+
+.overlay-tagline {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #9be7ff;
+}
+
+.overlay-objective {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #f4efe2;
+}
+
+.overlay-section-title {
+  margin-bottom: 4px;
+  padding-bottom: 3px;
+  font: 800 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.22em;
+  text-align: center;
+  color: #ffd23f;
+  border-bottom: 2px solid #2a3fa8;
+}
+
+.overlay-controls-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.overlay-controls-table th {
+  width: 38%;
+  padding: 4px 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  color: #f4efe2;
+  vertical-align: middle;
+}
+
+.overlay-controls-table td {
+  padding: 4px 6px;
+  font-size: 12px;
+  text-align: right;
+  color: #a9b4cc;
+  vertical-align: middle;
+}
+
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 24px;
+  margin: 0 1px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  font: 700 12px ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: #f4efe2;
+  background: #1c2156;
+  border: 2px solid #5b7be0;
+  border-bottom-width: 4px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.key-sep {
+  margin: 0 3px;
+  font-size: 12px;
+  color: #6b7489;
+}
+
+.key-hint {
+  margin-left: 3px;
+  font-size: 11px;
+  color: #a9b4cc;
+}
+
+.overlay-notes,
+.overlay-touch-summary {
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  background: #050510;
+  border-left: 4px solid #f29a2e;
+  color: #f4efe2;
+}
+
+.overlay-touch-summary {
+  border-left-color: #49b649;
+}
+
+.overlay-notes p,
+.overlay-touch-summary p {
+  margin: 1px 0;
+}
+
+.overlay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.arcade-start-btn,
+.arcade-secondary-btn {
+  display: block;
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.arcade-start-btn {
+  min-height: 46px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #050510;
+  background: #ffd23f;
+  border: 3px solid #050510;
+  box-shadow: 0 4px 0 #b8561a;
+}
+
+.arcade-secondary-btn {
+  min-height: 40px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #f4efe2;
+  background: #2a3fa8;
+  border: 3px solid #050510;
+  box-shadow: 0 3px 0 #1c2156;
+}
+
+.arcade-start-btn:hover,
+.arcade-secondary-btn:hover {
+  filter: brightness(1.1);
+}
+
+.arcade-start-btn:active,
+.arcade-secondary-btn:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+.arcade-start-btn:focus-visible,
+.arcade-secondary-btn:focus-visible {
+  outline: 3px solid #9be7ff;
+  outline-offset: 2px;
+}
+
+/* Escape cannot skip the first screen: the start button shakes to say where to go instead. */
+.arcade-start-btn.nudge {
+  animation: startNudge 0.36s steps(6);
+}
+
+@keyframes startNudge {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.overlay-footer {
+  margin: 0;
+  font-size: 11px;
+  text-align: center;
+  color: #a9b4cc;
+}
+
+#breakControlsBtn {
+  margin-bottom: 8px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: #172554;
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+#breakControlsBtn:hover {
+  background: #1e3a8a;
+  color: #bfdbfe;
+}
+
+@media (max-width: 480px) {
+  .instruction-card {
+    padding: 14px 14px 12px;
+    gap: 8px;
+  }
+  .overlay-title { font-size: 19px; }
+  .overlay-tagline { font-size: 13px; }
+  .overlay-objective { font-size: 12px; }
+  .overlay-controls-table th,
+  .overlay-controls-table td {
+    padding: 3px 4px;
+    font-size: 12px;
+  }
+  .keycap {
+    min-width: 24px;
+    height: 22px;
+    padding: 0 4px;
+    font-size: 11px;
+  }
+  .arcade-start-btn { font-size: 13px; }
+}
+
+/* Short windows (small laptops, landscape phones): tighten everything, hide nothing. */
+@media (max-height: 640px) {
+  .instruction-card {
+    padding: 10px 16px;
+    gap: 6px;
+  }
+  .overlay-body { gap: 6px; }
+  .overlay-title { font-size: 20px; }
+  .overlay-tagline { margin-top: 3px; font-size: 12px; }
+  .overlay-objective { font-size: 12px; }
+  .overlay-controls-table th,
+  .overlay-controls-table td {
+    padding: 2px 4px;
+    font-size: 12px;
+  }
+  .keycap {
+    min-width: 22px;
+    height: 21px;
+    font-size: 11px;
+  }
+  .overlay-notes,
+  .overlay-touch-summary {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .arcade-start-btn {
+    min-height: 40px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  .arcade-secondary-btn {
+    min-height: 36px;
+    padding: 5px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcade-splash { transition: none !important; }
+  .splash-status { animation: none !important; }
+  .arcade-start-btn.nudge {
+    animation: none;
+    outline: 3px solid #9be7ff;
+    outline-offset: 2px;
+  }
+}

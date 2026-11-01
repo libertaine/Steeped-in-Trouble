@@ -9,6 +9,16 @@
   <link rel="stylesheet" href="/styles/main.css" />
 </head>
 <body>
+<div id="arcadeSplash" class="arcade-splash" role="region" aria-label="Title screen">
+  <div class="splash-content">
+    <h1 class="splash-title sr-only">STEEPED IN TROUBLE</h1>
+    <div class="splash-screen">
+      <canvas id="splashCanvas" width="256" height="160" role="img" aria-label="Pixel-art title: a silver spoon in round glasses stands in a blue-and-white porcelain teacup and blasts steam at angry tea leaves climbing the rim"></canvas>
+    </div>
+    <p class="splash-subtitle">One small spoon. An unreasonable amount of responsibility.</p>
+    <span class="splash-status">INITIALIZING...</span>
+  </div>
+</div>
 <header>
   <div>
     <div class="kicker">An experimental vector arcade game</div>
@@ -189,8 +199,60 @@
     </section>
   </aside>
 </main>
+<dialog id="instructionOverlay" class="instruction-overlay" aria-labelledby="instructionTitle" aria-describedby="instructionObjective">
+  <div class="instruction-card">
+    <span class="overlay-version" id="overlayVersion"></span>
+    <div class="overlay-header">
+      <h2 id="instructionTitle" class="overlay-title">STEEPED IN TROUBLE</h2>
+      <p id="instructionSubtitle" class="overlay-tagline"><strong>The tea is misbehaving. Contain it.</strong></p>
+      <p id="instructionObjective" class="overlay-objective">Stop the leaves before they reach the rim.</p>
+    </div>
+    <div class="overlay-body" id="overlayBody">
+      <div class="overlay-controls-section">
+        <div class="overlay-section-title">CONTROLS</div>
+        <table class="overlay-controls-table" aria-label="Controls">
+          <tbody>
+            <tr>
+              <th scope="row">Turn spoon</th>
+              <td><kbd class="keycap">←</kbd> <kbd class="keycap">→</kbd> <span class="key-sep">or</span> <kbd class="keycap">A</kbd> <kbd class="keycap">D</kbd></td>
+            </tr>
+            <tr>
+              <th scope="row">Fire steam</th>
+              <td><kbd class="keycap">SPACE</kbd> <span class="key-hint">(hold to fire)</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Pour milk</th>
+              <td><kbd class="keycap">↑</kbd> <span class="key-sep">or</span> <kbd class="keycap">Q</kbd></td>
+            </tr>
+            <tr>
+              <th scope="row">Fire sugar</th>
+              <td><kbd class="keycap">↓</kbd> <span class="key-sep">or</span> <kbd class="keycap">E</kbd></td>
+            </tr>
+            <tr>
+              <th scope="row">Pause</th>
+              <td><kbd class="keycap">P</kbd></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="overlay-notes">
+        <p>Milk pushes leaves back and slows them.</p>
+        <p>Sugar fires a three-lane burst.</p>
+      </div>
+      <div class="overlay-touch-summary" id="overlayTouchSummary" hidden>
+        <p><strong id="overlayTouchScheme"></strong> <span id="overlayTouchText"></span></p>
+      </div>
+    </div>
+    <div class="overlay-actions">
+      <button id="overlayPrimaryBtn" class="arcade-start-btn">PRESS ENTER OR CLICK TO START</button>
+      <button id="overlayNewPotBtn" class="arcade-secondary-btn" hidden>BREW A NEW POT</button>
+    </div>
+    <p class="overlay-footer">You can review controls again any time in Tea Break.</p>
+  </div>
+</dialog>
 <dialog id="teaBreak" aria-labelledby="teaBreakTitle">
   <div class="break-head"><h2 id="teaBreakTitle">The Tea Break</h2><button id="closeBreak" autofocus>Back to cup</button></div>
+  <button id="breakControlsBtn">SHOW CONTROLS</button>
   <button id="breakCollectionBtn">THE SPOON'S OTHER JOBS</button>
   <div class="save-controls">
     <p id="savedPotInfo"></p><button id="clearPotBtn" hidden>Clear saved pot</button>

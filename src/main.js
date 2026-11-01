@@ -24,6 +24,8 @@ import { crossForMe, prepareCrossingPractice } from './dev/crossing.js';
 import { prepareCheckpoint, prepareRecord } from './dev/collection.js';
 import { prepareCup, seedLegacyPot } from './dev/cup.js';
 import { POT_SCHEMA_VERSION } from './core/checkpoint.js';
+import { drawArcadeCenterpiece } from './rendering/splashArt.js';
+import { createInstructionOverlay } from './ui/instructionOverlay.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -121,7 +123,7 @@ function boot() {
     ring.classList.add(kind === 'press' ? 'charging' : kind);
   }
 
-  let presentation, collectionUI;
+  let presentation, collectionUI, overlay;
   const controls = createControls({
     doc: document,
     commands: {
@@ -152,11 +154,44 @@ function boot() {
     gestureMode: game.touchGestures,
     scheme: () => settings.touch,
     onGesture: showRing,
-    enabled: () => !presentation?.blocked && !collectionUI?.blocked && document.visibilityState !== 'hidden',
+    enabled: () => !presentation?.blocked && !collectionUI?.blocked && !overlay?.blocked && document.visibilityState !== 'hidden',
   });
-  presentation = createPresentation({ doc: document, game, params, storage, resetInput: controls.reset });
-  collectionUI = createCollectionUI({ doc: document, sessions, progress, presentation,
-    settleInput: () => controls.settle(true), onActivate: () => game.setAutoSteam(settings.autoSteam) });
+  overlay = createInstructionOverlay({
+    doc: document,
+    version: __APP_VERSION__,
+    // Explain the touch layout actually in use, on touch screens or whenever Easy Touch is chosen.
+    touch: () => (settings.touch === 'easy' || isTouchDevice(window)
+      ? { scheme: settings.touch, autoSteam: settings.autoSteam } : null),
+    onStart: ({ fromTeaBreak, isNewPot }) => {
+      controls.settle(true);
+      if (fromTeaBreak) return;
+      if (isNewPot) {
+        collectionUI.askNewPot();
+        return;
+      }
+      if (!collectionUI.primary()) game.confirm();
+      document.getElementById('game')?.focus({ preventScroll: true });
+    },
+    onClose: () => controls.settle(true),
+  });
+  presentation = createPresentation({
+    doc: document,
+    game,
+    params,
+    storage,
+    resetInput: controls.reset,
+    onShowControls: (returnToMenu) => overlay.show({ fromTeaBreak: true, onReturn: returnToMenu }),
+    onOpenMenu: () => { if (!overlay.fromTeaBreak) overlay.close(); },
+  });
+  collectionUI = createCollectionUI({
+    doc: document,
+    sessions,
+    progress,
+    presentation,
+    settleInput: () => controls.settle(true),
+    onActivate: () => game.setAutoSteam(settings.autoSteam),
+    onOpen: () => overlay.close(),
+  });
 
   const soundButton = document.getElementById('soundBtn');
   document.getElementById('mainBtn').addEventListener('click', () => {
@@ -218,7 +253,10 @@ function boot() {
     // Input can leave the runner between frames. Clear its holds before the
     // next cup advances, so the Space used to go home cannot also fire steam.
     handleEvents();
-    if (!presentation.blocked && !collectionUI.blocked) game.update(dt, controls.held, controls.walk);
+    if (overlay.isOpen && !overlay.fromTeaBreak && (game.state.phase !== 'ready' || sessions.practice)) {
+      overlay.close();
+    }
+    if (!presentation.blocked && !collectionUI.blocked && !overlay.blocked) game.update(dt, controls.held, controls.walk);
     handleEvents();
     audio.update(game.state, dt);
     renderer.draw(game.state, effects.fx, dt);
@@ -232,6 +270,41 @@ function boot() {
   collectionUI.update();
   loop.start();
 
+  // Draw retro arcade splash centerpiece
+  const splashCanvas = document.getElementById('splashCanvas');
+  if (splashCanvas) {
+    try {
+      drawArcadeCenterpiece(splashCanvas);
+    } catch {
+      // Graceful fallback if 2D context or canvas drawing encounters an error
+    }
+  }
+
+  const isDirectScenario = params.has('arcade') || params.has('day') || params.has('cup') || params.has('fortune') || params.has('noOverlay');
+  if (!isDirectScenario) {
+    overlay.show({ hasSavedPot: !!progress.pot });
+  }
+
+  const splash = document.getElementById('arcadeSplash');
+  if (splash && !params.has('holdSplash')) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      splash.classList.add('dismissed');
+      splash.hidden = true;
+      splash.style.display = 'none';
+    } else {
+      splash.classList.add('dismissed');
+      splash.addEventListener('transitionend', () => {
+        splash.hidden = true;
+        splash.style.display = 'none';
+      }, { once: true });
+      setTimeout(() => {
+        splash.hidden = true;
+        splash.style.display = 'none';
+      }, 350);
+    }
+  }
+
   const instance = {
     game,
     stop() {
@@ -239,6 +312,7 @@ function boot() {
       controls.dispose();
       presentation.dispose();
       collectionUI.dispose();
+      overlay.dispose();
       detachScaling();
       delete window[INSTANCE_KEY];
     },
@@ -247,7 +321,20 @@ function boot() {
 
   // ?debug exposes the running game for automated browser tests and tinkering.
   if (params.has('debug')) {
-    window.__TEACUP__ = { game, effects, version: __APP_VERSION__, config: CONFIG, settings: () => ({ ...settings }) };
+    window.__TEACUP__ = {
+      game,
+      effects,
+      version: __APP_VERSION__,
+      config: CONFIG,
+      settings: () => ({ ...settings }),
+      overlay: {
+        show: (opts) => overlay.show(opts),
+        close: () => overlay.close(),
+        dismissPrimary: () => overlay.dismissPrimary(),
+        get isOpen() { return overlay.isOpen; },
+        get blocked() { return overlay.blocked; },
+      },
+    };
     if (import.meta.env.DEV) {
       window.__TEACUP__.openCollection = () => collectionUI.open();
       window.__TEACUP__.launchPractice = (id, seed = 42) => {
