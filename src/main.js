@@ -159,7 +159,9 @@ function boot() {
   overlay = createInstructionOverlay({
     doc: document,
     version: __APP_VERSION__,
-    isTouchDevice: () => settings.touch === 'easy' || isTouchDevice(window),
+    // Explain the touch layout actually in use, on touch screens or whenever Easy Touch is chosen.
+    touch: () => (settings.touch === 'easy' || isTouchDevice(window)
+      ? { scheme: settings.touch, autoSteam: settings.autoSteam } : null),
     onStart: ({ fromTeaBreak, isNewPot }) => {
       controls.settle(true);
       if (fromTeaBreak) return;
@@ -170,12 +172,7 @@ function boot() {
       if (!collectionUI.primary()) game.confirm();
       document.getElementById('game')?.focus({ preventScroll: true });
     },
-    onClose: ({ fromTeaBreak, escape }) => {
-      controls.settle(true);
-      if (!fromTeaBreak && !escape) {
-        document.getElementById('game')?.focus({ preventScroll: true });
-      }
-    },
+    onClose: () => controls.settle(true),
   });
   presentation = createPresentation({
     doc: document,
@@ -198,10 +195,6 @@ function boot() {
 
   const soundButton = document.getElementById('soundBtn');
   document.getElementById('mainBtn').addEventListener('click', () => {
-    if (overlay?.isOpen && !overlay.fromTeaBreak) {
-      overlay.dismissPrimary();
-      return;
-    }
     if (!collectionUI.primary()) game.primaryAction();
   });
   soundButton.addEventListener('click', () => {

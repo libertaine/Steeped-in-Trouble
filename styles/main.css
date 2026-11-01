@@ -971,19 +971,20 @@ body[data-view="full"] .panel .collection-entry { padding: 0; margin-top: 8px; }
 body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-size: 12px; }
 #closeCollectionTop { display: block; margin: 0 0 14px auto; font-size: 11px; }
 
-/* 1980s Retro Arcade Splash Presentation */
+/*
+ * The title screen and the instruction overlay. Both borrow the splash art's
+ * 16-colour palette: flat fills and hard one-colour drop shadows, no glows.
+ */
 .arcade-splash {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: radial-gradient(circle at 50% 38%, #1d1338 0%, #0d0a1f 65%, #05040d 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 1;
-  visibility: visible;
-  transition: opacity 0.32s ease-out, visibility 0.32s ease-out;
   overflow: hidden;
+  background: #050510;
+  transition: opacity 0.32s ease-out, visibility 0.32s ease-out;
 }
 
 .arcade-splash.dismissed {
@@ -992,118 +993,97 @@ body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-si
   pointer-events: none;
 }
 
-.splash-scanlines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.28) 0px,
-    rgba(0, 0, 0, 0.28) 2px,
-    transparent 2px,
-    transparent 4px
-  );
-  opacity: 0.65;
-  z-index: 2;
-}
-
 .splash-content {
-  position: relative;
-  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 16px;
-  max-width: 90vw;
-  box-sizing: border-box;
+  gap: clamp(8px, 2vh, 18px);
+  padding: 12px;
 }
 
-.splash-header {
-  margin-bottom: 12px;
+/* The picture is the hero: as large as the window allows, upscaled with hard pixels. */
+.splash-screen {
+  position: relative;
+  line-height: 0;
+  background: #0e1030;
+  border: 4px solid #2a3fa8;
+  box-shadow: 0 0 0 4px #050510, 0 0 0 8px #1c2156;
 }
 
-.splash-title {
-  margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-size: clamp(26px, 4.5vw, 40px);
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #ffd700;
-  text-shadow: 2px 2px 0px #ff2a85, 4px 4px 0px #090518, 0 0 20px rgba(255, 215, 0, 0.5);
+.splash-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px);
+}
+
+.splash-screen canvas {
+  display: block;
+  width: min(calc(100vw - 40px), calc((100vh - 130px) * 1.6));
+  width: min(calc(100vw - 40px), calc((100dvh - 130px) * 1.6));
+  height: auto;
+  aspect-ratio: 256 / 160;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
 .splash-subtitle {
-  margin: 6px 0 0;
-  font-size: clamp(13px, 2vw, 16px);
-  font-style: italic;
-  color: #a5f3fc;
-  letter-spacing: 0.02em;
-}
-
-.splash-frame {
-  margin: 8px 0 14px;
-  border: 3px solid #ffd700;
-  border-radius: 6px;
-  box-shadow: 0 0 0 2px #ff2a85, 0 0 24px rgba(255, 42, 133, 0.35), inset 0 0 16px rgba(0, 0, 0, 0.8);
-  background: #060410;
-  display: inline-flex;
-  overflow: hidden;
-  max-width: 100%;
-}
-
-.splash-frame canvas {
-  display: block;
-  width: min(400px, 85vw);
-  height: auto;
-  aspect-ratio: 400 / 280;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-.splash-footer {
-  margin-top: 4px;
+  margin: 0;
+  max-width: 92vw;
+  font: 700 clamp(11px, 1.6vw, 15px) / 1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #f4efe2;
 }
 
 .splash-status {
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #fbbf24;
-  animation: splashPulse 1s ease-in-out infinite alternate;
+  font: 700 12px ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.3em;
+  color: #ffd23f;
+  animation: splashBlink 1s steps(1) infinite;
 }
 
-@keyframes splashPulse {
-  from { opacity: 0.45; }
-  to { opacity: 1; }
+@keyframes splashBlink {
+  50% { opacity: 0; }
 }
 
-/* 1980s Retro Arcade Instruction Overlay */
+/*
+ * The instruction overlay is a modal dialog in the top layer, centred in the
+ * browser window (not the canvas). The page behind it is inert and dimmed
+ * but still recognisable. The header and the buttons never scroll away: if
+ * the window is very short, only the middle (controls and notes) scrolls.
+ */
 dialog.instruction-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  margin: 0;
-  padding: 8px;
-  border: none;
-  background: rgba(8, 9, 24, 0.78);
-  backdrop-filter: blur(2px);
-  display: flex;
-  align-items: safe center;
-  justify-content: center;
-  z-index: 45;
-  box-sizing: border-box;
-  border-radius: inherit;
-  overflow-y: auto;
+  width: min(540px, calc(100vw - 24px));
+  height: fit-content;
+  max-width: none;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f4efe2;
+  overflow: visible;
 }
 
-dialog.instruction-overlay:not([open]),
+dialog.instruction-overlay[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.instruction-overlay::backdrop {
+  background: rgb(5 5 16 / 0.62);
+}
+
+body:has(#instructionOverlay[open]) {
+  overflow: hidden;
+}
+
 .arcade-start-btn[hidden],
 .arcade-secondary-btn[hidden],
 .overlay-touch-summary[hidden] {
@@ -1112,30 +1092,41 @@ dialog.instruction-overlay:not([open]),
 
 .instruction-card {
   position: relative;
-  margin: auto;
-  width: min(520px, calc(100% - 8px));
-  max-height: calc(100% - 8px);
-  background: #0b0d20;
-  border: 3px solid #ffd700;
-  border-radius: 8px;
-  box-shadow: 0 0 0 2px #ff2a85, 0 12px 32px rgba(0, 0, 0, 0.85), 0 0 22px rgba(255, 42, 133, 0.25);
-  padding: 16px 20px;
-  box-sizing: border-box;
-  color: #e2e8f0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  flex: 0 1 auto;
+  min-height: 0;
+  gap: 10px;
+  margin: 0 6px 6px 0;
+  padding: 16px 20px 14px;
+  box-sizing: border-box;
+  background: #0e1030;
+  border: 4px solid #ffd23f;
+  box-shadow: 0 0 0 3px #050510, 6px 6px 0 3px #e8344e;
+}
+
+.overlay-header,
+.overlay-actions,
+.overlay-footer {
+  flex: none;
+}
+
+.overlay-body {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  gap: 10px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .overlay-version {
   position: absolute;
-  top: 10px;
-  right: 14px;
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
+  top: 8px;
+  right: 10px;
+  font: 700 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: #a9b4cc;
   letter-spacing: 0.05em;
 }
 
@@ -1145,39 +1136,33 @@ dialog.instruction-overlay:not([open]),
 
 .overlay-title {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-size: clamp(20px, 3.8vw, 26px);
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font: 900 clamp(20px, 4vw, 27px) / 1.15 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #ffd700;
-  text-shadow: 2px 2px 0px #ff2a85, 4px 4px 0px #090518;
+  color: #ffd23f;
+  text-shadow: 2px 2px 0 #e8344e, 4px 4px 0 #050510;
 }
 
 .overlay-tagline {
-  margin: 3px 0 0;
+  margin: 6px 0 0;
   font-size: 14px;
-  color: #38bdf8;
-  font-weight: 700;
+  color: #9be7ff;
 }
 
 .overlay-objective {
   margin: 2px 0 0;
   font-size: 13px;
-  color: #cbd5e1;
+  color: #f4efe2;
 }
 
 .overlay-section-title {
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  color: #ff2a85;
-  text-transform: uppercase;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 42, 133, 0.35);
-  padding-bottom: 3px;
   margin-bottom: 4px;
+  padding-bottom: 3px;
+  font: 800 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.22em;
+  text-align: center;
+  color: #ffd23f;
+  border-bottom: 2px solid #2a3fa8;
 }
 
 .overlay-controls-table {
@@ -1186,20 +1171,20 @@ dialog.instruction-overlay:not([open]),
 }
 
 .overlay-controls-table th {
-  text-align: left;
-  padding: 5px 6px;
+  width: 38%;
+  padding: 4px 6px;
   font-size: 13px;
   font-weight: 700;
-  color: #f8fafc;
-  width: 34%;
+  text-align: left;
+  color: #f4efe2;
   vertical-align: middle;
 }
 
 .overlay-controls-table td {
-  text-align: right;
-  padding: 5px 6px;
+  padding: 4px 6px;
   font-size: 12px;
-  color: #94a3b8;
+  text-align: right;
+  color: #a9b4cc;
   vertical-align: middle;
 }
 
@@ -1209,136 +1194,120 @@ dialog.instruction-overlay:not([open]),
   justify-content: center;
   min-width: 26px;
   height: 24px;
-  padding: 0 5px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 12px;
-  font-weight: 700;
-  color: #f8fafc;
-  background: #1e293b;
-  border: 1px solid #475569;
-  border-bottom: 3px solid #0f172a;
-  border-radius: 4px;
-  box-shadow: 0 2px 0 #020617, inset 0 1px 0 rgba(255, 255, 255, 0.2);
   margin: 0 1px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  font: 700 12px ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: #f4efe2;
+  background: #1c2156;
+  border: 2px solid #5b7be0;
+  border-bottom-width: 4px;
+  border-radius: 2px;
   vertical-align: middle;
 }
 
 .key-sep {
-  font-size: 12px;
-  color: #64748b;
   margin: 0 3px;
+  font-size: 12px;
+  color: #6b7489;
 }
 
 .key-hint {
-  font-size: 11px;
-  color: #94a3b8;
   margin-left: 3px;
+  font-size: 11px;
+  color: #a9b4cc;
 }
 
-.overlay-notes {
-  background: rgba(15, 23, 42, 0.7);
-  border-left: 3px solid #f59e0b;
+.overlay-notes,
+.overlay-touch-summary {
   padding: 6px 10px;
-  border-radius: 0 4px 4px 0;
   font-size: 12px;
-  line-height: 1.4;
-  color: #cbd5e1;
-}
-
-.overlay-notes p {
-  margin: 2px 0;
+  line-height: 1.45;
+  background: #050510;
+  border-left: 4px solid #f29a2e;
+  color: #f4efe2;
 }
 
 .overlay-touch-summary {
-  font-size: 11px;
-  color: #38bdf8;
-  background: rgba(14, 165, 233, 0.1);
-  border-left: 3px solid #38bdf8;
-  padding: 5px 8px;
-  border-radius: 0 4px 4px 0;
+  border-left-color: #49b649;
 }
 
+.overlay-notes p,
 .overlay-touch-summary p {
-  margin: 0;
+  margin: 1px 0;
 }
 
 .overlay-actions {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 2px;
+  gap: 8px;
 }
 
-.arcade-start-btn {
-  display: block;
-  width: 100%;
-  min-height: 46px;
-  padding: 10px 16px;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #080518;
-  background: linear-gradient(180deg, #ffe066 0%, #f59e0b 100%);
-  border: 2px solid #ffd700;
-  border-radius: 6px;
-  box-shadow: 0 4px 0 #b45309, 0 6px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
-}
-
-.arcade-start-btn:hover {
-  filter: brightness(1.08);
-}
-
-.arcade-start-btn:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #b45309, 0 2px 4px rgba(0, 0, 0, 0.4);
-}
-
-.arcade-start-btn:focus-visible {
-  outline: 3px solid #00e5ff;
-  outline-offset: 2px;
-}
-
+.arcade-start-btn,
 .arcade-secondary-btn {
   display: block;
   width: 100%;
-  min-height: 40px;
-  padding: 8px 14px;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #f1dfbd;
-  background: #172554;
-  border: 2px solid #3b82f6;
-  border-radius: 6px;
-  box-shadow: 0 3px 0 #1e3a8a, 0 4px 8px rgba(0, 0, 0, 0.3);
+  border-radius: 0;
   cursor: pointer;
 }
 
+.arcade-start-btn {
+  min-height: 46px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #050510;
+  background: #ffd23f;
+  border: 3px solid #050510;
+  box-shadow: 0 4px 0 #b8561a;
+}
+
+.arcade-secondary-btn {
+  min-height: 40px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #f4efe2;
+  background: #2a3fa8;
+  border: 3px solid #050510;
+  box-shadow: 0 3px 0 #1c2156;
+}
+
+.arcade-start-btn:hover,
 .arcade-secondary-btn:hover {
   filter: brightness(1.1);
 }
 
+.arcade-start-btn:active,
 .arcade-secondary-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #1e3a8a;
+  transform: translateY(3px);
+  box-shadow: none;
 }
 
+.arcade-start-btn:focus-visible,
 .arcade-secondary-btn:focus-visible {
-  outline: 3px solid #00e5ff;
+  outline: 3px solid #9be7ff;
   outline-offset: 2px;
+}
+
+/* Escape cannot skip the first screen: the start button shakes to say where to go instead. */
+.arcade-start-btn.nudge {
+  animation: startNudge 0.36s steps(6);
+}
+
+@keyframes startNudge {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
 }
 
 .overlay-footer {
   margin: 0;
   font-size: 11px;
-  color: #64748b;
   text-align: center;
+  color: #a9b4cc;
 }
 
 #breakControlsBtn {
@@ -1357,111 +1326,70 @@ dialog.instruction-overlay:not([open]),
   color: #bfdbfe;
 }
 
-body[data-view="compact"] .instruction-card {
-  padding: 10px 14px;
-  gap: 6px;
-}
-body[data-view="compact"] .overlay-title {
-  font-size: 20px;
-}
-body[data-view="compact"] .overlay-tagline {
-  font-size: 12px;
-}
-body[data-view="compact"] .overlay-objective {
-  font-size: 11px;
-}
-body[data-view="compact"] .overlay-controls-table th,
-body[data-view="compact"] .overlay-controls-table td {
-  padding: 3px 5px;
-  font-size: 11px;
-}
-body[data-view="compact"] .arcade-start-btn {
-  min-height: 40px;
-  font-size: 12px;
-  padding: 8px 12px;
-}
-
-@media (max-width: 500px) {
+@media (max-width: 480px) {
   .instruction-card {
-    padding: 12px 14px;
+    padding: 14px 14px 12px;
     gap: 8px;
   }
-  .overlay-title {
-    font-size: 19px;
-  }
-  .overlay-tagline {
+  .overlay-title { font-size: 19px; }
+  .overlay-tagline { font-size: 13px; }
+  .overlay-objective { font-size: 12px; }
+  .overlay-controls-table th,
+  .overlay-controls-table td {
+    padding: 3px 4px;
     font-size: 12px;
   }
-  .overlay-objective {
+  .keycap {
+    min-width: 24px;
+    height: 22px;
+    padding: 0 4px;
     font-size: 11px;
   }
-  .overlay-controls-table th, .overlay-controls-table td {
-    padding: 3px 4px;
-    font-size: 11px;
+  .arcade-start-btn { font-size: 13px; }
+}
+
+/* Short windows (small laptops, landscape phones): tighten everything, hide nothing. */
+@media (max-height: 640px) {
+  .instruction-card {
+    padding: 10px 16px;
+    gap: 6px;
+  }
+  .overlay-body { gap: 6px; }
+  .overlay-title { font-size: 20px; }
+  .overlay-tagline { margin-top: 3px; font-size: 12px; }
+  .overlay-objective { font-size: 12px; }
+  .overlay-controls-table th,
+  .overlay-controls-table td {
+    padding: 2px 4px;
+    font-size: 12px;
   }
   .keycap {
     min-width: 22px;
-    height: 22px;
-    font-size: 10px;
-    padding: 0 3px;
-  }
-  .arcade-start-btn {
-    min-height: 42px;
-    font-size: 12px;
-    padding: 8px 12px;
-  }
-}
-
-@media (orientation: landscape) and (max-height: 520px) {
-  .instruction-card {
-    padding: 8px 14px;
-    gap: 5px;
-    max-height: 98vh;
-  }
-  .overlay-title {
-    font-size: 17px;
-  }
-  .overlay-tagline {
+    height: 21px;
     font-size: 11px;
   }
-  .overlay-objective {
-    display: none;
-  }
-  .overlay-section-title {
-    margin-bottom: 2px;
-    padding-bottom: 1px;
-  }
-  .overlay-controls-table th, .overlay-controls-table td {
-    padding: 2px 4px;
-    font-size: 11px;
-  }
-  .keycap {
-    height: 20px;
-    min-width: 20px;
-    font-size: 10px;
-  }
-  .overlay-notes {
+  .overlay-notes,
+  .overlay-touch-summary {
     padding: 4px 8px;
-    font-size: 10px;
+    font-size: 11px;
   }
   .arcade-start-btn {
-    min-height: 36px;
-    font-size: 12px;
-    padding: 6px 10px;
+    min-height: 40px;
+    padding: 6px 12px;
+    font-size: 13px;
   }
-  .overlay-footer {
-    display: none;
+  .arcade-secondary-btn {
+    min-height: 36px;
+    padding: 5px 12px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .arcade-splash {
-    transition: none !important;
-  }
-  .splash-status {
-    animation: none !important;
-  }
-  .arcade-start-btn {
-    transition: none !important;
+  .arcade-splash { transition: none !important; }
+  .splash-status { animation: none !important; }
+  .arcade-start-btn.nudge {
+    animation: none;
+    outline: 3px solid #9be7ff;
+    outline-offset: 2px;
   }
 }

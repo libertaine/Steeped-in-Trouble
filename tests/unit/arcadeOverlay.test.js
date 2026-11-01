@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { drawArcadeCenterpiece } from '../../src/rendering/splashArt.js';
-import { createInstructionOverlay } from '../../src/ui/instructionOverlay.js';
+import { drawArcadeCenterpiece, paintSplash, SPLASH_HEIGHT, SPLASH_PALETTE, SPLASH_WIDTH } from '../../src/rendering/splashArt.js';
+import { createInstructionOverlay, touchSummary } from '../../src/ui/instructionOverlay.js';
 
 describe('arcade splash centerpiece', () => {
   it('gracefully handles missing canvas or unsupported 2D context', () => {
@@ -10,47 +10,35 @@ describe('arcade splash centerpiece', () => {
     expect(drawArcadeCenterpiece({ getContext: () => null })).toBe(false);
   });
 
-  it('renders successfully to a 2D canvas context', () => {
-    const operations = [];
-    const gradient = { addColorStop: vi.fn() };
-    const mockCtx = {
+  it('paints a low-resolution picture in a fixed 16-colour palette', () => {
+    const { width, height, pixels } = paintSplash();
+    expect([width, height]).toEqual([SPLASH_WIDTH, SPLASH_HEIGHT]);
+    expect([width, height]).toEqual([256, 160]);
+    expect(pixels).toHaveLength(width * height);
+    expect(SPLASH_PALETTE).toHaveLength(16);
+    expect(Math.max(...pixels)).toBeLessThan(16);
+    // Every colour of the palette is put to work, and the picture is the same every time.
+    expect(new Set(pixels).size).toBe(16);
+    expect(paintSplash().pixels).toEqual(pixels);
+  });
+
+  it('puts the pixels on the canvas at native size, without smoothing', () => {
+    let image;
+    const ctx = {
       imageSmoothingEnabled: true,
-      save: vi.fn(() => operations.push('save')),
-      restore: vi.fn(() => operations.push('restore')),
-      clearRect: vi.fn(() => operations.push('clearRect')),
-      createRadialGradient: vi.fn(() => gradient),
-      createLinearGradient: vi.fn(() => gradient),
-      fillRect: vi.fn(() => operations.push('fillRect')),
-      beginPath: vi.fn(() => operations.push('beginPath')),
-      moveTo: vi.fn(() => operations.push('moveTo')),
-      lineTo: vi.fn(() => operations.push('lineTo')),
-      stroke: vi.fn(() => operations.push('stroke')),
-      fill: vi.fn(() => operations.push('fill')),
-      ellipse: vi.fn(() => operations.push('ellipse')),
-      arc: vi.fn(() => operations.push('arc')),
-      closePath: vi.fn(() => operations.push('closePath')),
-      bezierCurveTo: vi.fn(() => operations.push('bezierCurveTo')),
-      quadraticCurveTo: vi.fn(() => operations.push('quadraticCurveTo')),
-      clip: vi.fn(() => operations.push('clip')),
-      translate: vi.fn(() => operations.push('translate')),
-      rotate: vi.fn(() => operations.push('rotate')),
-      scale: vi.fn(() => operations.push('scale')),
+      createImageData: vi.fn((w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) })),
+      putImageData: vi.fn((data) => { image = data; }),
     };
+    const canvas = { width: 400, height: 280, getContext: vi.fn((type) => (type === '2d' ? ctx : null)) };
 
-    const canvas = {
-      width: 400,
-      height: 280,
-      getContext: vi.fn((type) => (type === '2d' ? mockCtx : null)),
-    };
-
-    const result = drawArcadeCenterpiece(canvas);
-    expect(result).toBe(true);
-    expect(canvas.getContext).toHaveBeenCalledWith('2d');
-    expect(mockCtx.clearRect).toHaveBeenCalledWith(0, 0, 400, 280);
-    expect(mockCtx.imageSmoothingEnabled).toBe(false);
-    expect(operations).toContain('ellipse');
-    expect(operations).toContain('stroke');
-    expect(operations).toContain('fill');
+    expect(drawArcadeCenterpiece(canvas)).toBe(true);
+    expect([canvas.width, canvas.height]).toEqual([256, 160]);
+    expect(ctx.imageSmoothingEnabled).toBe(false);
+    expect(ctx.putImageData).toHaveBeenCalledWith(image, 0, 0);
+    const { pixels } = paintSplash();
+    const hex = (i) => `#${[...image.data.slice(i * 4, i * 4 + 3)].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+    for (const i of [0, 5000, 20000, pixels.length - 1]) expect(hex(i)).toBe(SPLASH_PALETTE[pixels[i]]);
+    expect(image.data[3]).toBe(255);
   });
 });
 
@@ -76,6 +64,7 @@ describe('instruction overlay controller', () => {
         style: {},
         focus: vi.fn(),
         show: vi.fn(() => { el.open = true; }),
+        showModal: vi.fn(() => { el.open = true; }),
         close: vi.fn(() => { el.open = false; }),
         setAttribute: vi.fn((name, _val) => {
           if (name === 'open') el.open = true;
@@ -109,6 +98,8 @@ describe('instruction overlay controller', () => {
     const primaryBtn = createElement('overlayPrimaryBtn', 'button');
     const newPotBtn = createElement('overlayNewPotBtn', 'button');
     const touchSummary = createElement('overlayTouchSummary', 'div');
+    const touchScheme = createElement('overlayTouchScheme', 'strong');
+    const touchText = createElement('overlayTouchText', 'span');
 
     dialog.querySelectorAll = vi.fn(() => [primaryBtn, newPotBtn].filter((b) => !b.hidden));
 
@@ -131,19 +122,20 @@ describe('instruction overlay controller', () => {
       elements,
     };
 
-    return { doc, dialog, versionEl, primaryBtn, newPotBtn, touchSummary };
+    return { doc, dialog, versionEl, primaryBtn, newPotBtn, touchSummary, touchScheme, touchText };
   }
 
   it('initializes with metadata and touch visibility', () => {
-    const { doc, versionEl, touchSummary } = makeMockDoc();
+    const { doc, versionEl, touchSummary, touchScheme } = makeMockDoc();
     const overlay = createInstructionOverlay({
       doc,
       version: '0.17.0',
-      isTouchDevice: true,
+      touch: () => ({ scheme: 'easy', autoSteam: true }),
     });
 
     expect(versionEl.textContent).toBe('v0.17.0');
     expect(touchSummary.hidden).toBe(false);
+    expect(touchScheme.textContent).toBe('Easy Touch:');
     expect(overlay.isOpen).toBe(false);
     expect(overlay.blocked).toBe(false);
   });
@@ -158,6 +150,9 @@ describe('instruction overlay controller', () => {
     expect(primaryBtn.textContent).toBe('PRESS ENTER OR CLICK TO START');
     expect(newPotBtn.hidden).toBe(true);
     expect(dialog.open).toBe(true);
+    // Modal, so the page behind it cannot be used.
+    expect(dialog.showModal).toHaveBeenCalled();
+    expect(dialog.show).not.toHaveBeenCalled();
     expect(primaryBtn.focus).toHaveBeenCalled();
   });
 
@@ -229,24 +224,71 @@ describe('instruction overlay controller', () => {
     expect(overlay.isOpen).toBe(false);
   });
 
-  it('Escape key closes overlay cleanly', () => {
-    const { doc, dialog } = makeMockDoc();
+  it('Escape cannot skip the first screen: it nudges the start button instead', () => {
+    const { doc, dialog, primaryBtn } = makeMockDoc();
+    const onStart = vi.fn();
     const onClose = vi.fn();
-    const overlay = createInstructionOverlay({ doc, onClose });
+    const overlay = createInstructionOverlay({ doc, onStart, onClose });
 
     overlay.show({ hasSavedPot: false });
 
-    const event = {
-      type: 'keydown',
-      code: 'Escape',
-      preventDefault: vi.fn(),
-      stopPropagation: vi.fn(),
-    };
+    const event = { type: 'keydown', code: 'Escape', preventDefault: vi.fn(), stopPropagation: vi.fn() };
     doc.dispatchEvent(event);
+    doc.dispatchEvent({ ...event });
 
     expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+    expect(dialog.open).toBe(true);
+    expect(overlay.isOpen).toBe(true);
+    expect(primaryBtn.classList.add).toHaveBeenCalledWith('nudge');
+    expect(primaryBtn.focus).toHaveBeenLastCalledWith({ preventScroll: true });
+    expect(onStart).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('Escape from the Tea Break review goes back to the Tea Break', () => {
+    const { doc, dialog } = makeMockDoc();
+    const onStart = vi.fn();
+    const onClose = vi.fn();
+    const onReturn = vi.fn();
+    const overlay = createInstructionOverlay({ doc, onStart, onClose });
+
+    overlay.show({ fromTeaBreak: true, onReturn });
+    doc.dispatchEvent({ type: 'keydown', code: 'Escape', preventDefault: vi.fn(), stopPropagation: vi.fn() });
+
     expect(dialog.open).toBe(false);
-    expect(onClose).toHaveBeenCalledWith({ fromTeaBreak: false, escape: true });
+    expect(onReturn).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledWith({ fromTeaBreak: true, escape: true });
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it('refuses the dialog cancel event, and reopens the first screen if the browser closes it anyway', () => {
+    const { doc, dialog } = makeMockDoc();
+    const onStart = vi.fn();
+    const overlay = createInstructionOverlay({ doc, onStart });
+    overlay.show();
+
+    const cancel = { type: 'cancel', preventDefault: vi.fn() };
+    dialog.dispatchEvent(cancel);
+    expect(cancel.preventDefault).toHaveBeenCalled();
+
+    dialog.open = false;
+    dialog.dispatchEvent({ type: 'close' });
+    expect(dialog.showModal).toHaveBeenCalledTimes(2);
+    expect(dialog.open).toBe(true);
+    expect(overlay.isOpen).toBe(true);
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it('a click on the backdrop does not start the game', () => {
+    const { doc, dialog } = makeMockDoc();
+    const onStart = vi.fn();
+    const overlay = createInstructionOverlay({ doc, onStart });
+    overlay.show();
+
+    dialog.dispatchEvent({ type: 'click', target: dialog, preventDefault: vi.fn() });
+    expect(overlay.isOpen).toBe(true);
+    expect(onStart).not.toHaveBeenCalled();
   });
 
   it('clicking New Pot button triggers new pot confirmation flow', () => {
@@ -358,23 +400,48 @@ describe('instruction overlay controller', () => {
     expect(newPotBtn.focus).toHaveBeenCalledWith({ preventScroll: true });
   });
 
-  it('supports dynamic touch getter function and refreshes on show', () => {
-    const { doc, touchSummary } = makeMockDoc();
-    let touchState = false;
-    const overlay = createInstructionOverlay({
-      doc,
-      isTouchDevice: () => touchState,
-    });
+  it('explains the touch layout in use, refreshed each time it opens', () => {
+    const { doc, touchSummary, touchScheme, touchText } = makeMockDoc();
+    let layout = null;
+    const overlay = createInstructionOverlay({ doc, touch: () => layout });
 
     expect(touchSummary.hidden).toBe(true);
 
-    touchState = true;
+    layout = { scheme: 'easy', autoSteam: true };
     overlay.show();
     expect(touchSummary.hidden).toBe(false);
+    expect(touchScheme.textContent).toBe('Easy Touch:');
+    expect(touchText.textContent).toContain('Double-tap the cup for milk');
 
-    touchState = false;
+    overlay.close();
+    layout = { scheme: 'classic', autoSteam: false };
+    overlay.show();
+    expect(touchScheme.textContent).toBe('Classic Touch:');
+    expect(touchText.textContent).toContain('STEAM to fire');
+
+    overlay.close();
+    layout = null;
     overlay.show();
     expect(touchSummary.hidden).toBe(true);
+  });
+
+  it('describes Easy Touch and Classic Touch as they actually play', () => {
+    const easy = touchSummary({ scheme: 'easy', autoSteam: true });
+    expect(easy.label).toBe('Easy Touch:');
+    expect(easy.text).toMatch(/Steam fires by itself/);
+    expect(easy.text).toMatch(/Double-tap the cup for milk/);
+    expect(easy.text).toMatch(/hold a finger on the cup for sugar/);
+    expect(easy.text).not.toMatch(/MILK|SUGAR|STEAM/);
+
+    const classic = touchSummary({ scheme: 'classic', autoSteam: false });
+    expect(classic.label).toBe('Classic Touch:');
+    expect(classic.text).toMatch(/STEAM to fire/);
+    expect(classic.text).toMatch(/Tap MILK or SUGAR/);
+    expect(classic.text).not.toMatch(/double-tap/i);
+
+    const classicAuto = touchSummary({ scheme: 'classic', autoSteam: true });
+    expect(classicAuto.text).toMatch(/Auto Steam is on/);
+    expect(classicAuto.text).not.toMatch(/STEAM to fire/);
   });
 
   it('restores focus safely when closed', () => {

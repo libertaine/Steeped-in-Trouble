@@ -1,19 +1,45 @@
-// 1980s Arcade-style instruction overlay controller and accessibility handling.
+// The arcade instruction overlay: the controls, shown as a modal dialog over
+// the cup before the first cup of a visit, and again from the Tea Break.
+//
+// - It opens with showModal(), so it sits in the top layer, centred in the
+//   browser window, and the page behind it is inert.
+// - Enter (or a click) on the main button starts, continues, or goes back to
+//   the Tea Break. Space only presses the focused secondary button, so a
+//   held steam key cannot dismiss it by accident.
+// - Escape never skips the first screen: the start button is nudged and
+//   keeps focus. When the overlay was opened from the Tea Break, Escape goes
+//   back to the Tea Break, like its main button.
+// - A click on the dimmed backdrop does nothing.
+
+/** What the touch line says for each layout. */
+export function touchSummary({ scheme, autoSteam }) {
+  if (scheme === 'easy') {
+    return {
+      label: 'Easy Touch:',
+      text: 'hold ◀ / ▶ to steer. Steam fires by itself. Double-tap the cup for milk; hold a finger on the cup for sugar.',
+    };
+  }
+  return {
+    label: 'Classic Touch:',
+    text: autoSteam
+      ? 'hold ◀ TURN / TURN ▶ to steer. Auto Steam is on, so steam fires by itself. Tap MILK or SUGAR.'
+      : 'hold ◀ TURN / TURN ▶ to steer and STEAM to fire. Tap MILK or SUGAR.',
+  };
+}
 
 /**
- * Creates and manages the 80s arcade instruction overlay.
- *
  * @param {object} options
  * @param {Document} [options.doc]
  * @param {string} [options.version] application version string (e.g. '0.17.0')
- * @param {boolean} [options.isTouchDevice] whether running on a touch-enabled device
+ * @param {() => ({ scheme: 'easy' | 'classic', autoSteam: boolean } | null)} [options.touch]
+ *   the touch layout to explain, or null to leave touch out (a keyboard and mouse)
  * @param {(details: { fromTeaBreak: boolean, isNewPot: boolean }) => void} [options.onStart]
  * @param {(details: { fromTeaBreak: boolean, escape?: boolean }) => void} [options.onClose]
  */
 export function createInstructionOverlay({
   doc = document,
   version = '',
-  isTouchDevice = false,
+  touch = () => null,
   onStart = () => {},
   onClose = () => {},
 } = {}) {
@@ -21,23 +47,29 @@ export function createInstructionOverlay({
   const versionEl = doc.getElementById('overlayVersion');
   const primaryBtn = doc.getElementById('overlayPrimaryBtn');
   const newPotBtn = doc.getElementById('overlayNewPotBtn');
-  const touchSummary = doc.getElementById('overlayTouchSummary');
-  const checkTouch = typeof isTouchDevice === 'function' ? isTouchDevice : () => Boolean(isTouchDevice);
+  const touchBox = doc.getElementById('overlayTouchSummary');
+  const touchLabel = doc.getElementById('overlayTouchScheme');
+  const touchText = doc.getElementById('overlayTouchText');
 
-  if (versionEl && version) {
-    versionEl.textContent = `v${version}`;
-  }
-
-  if (touchSummary) {
-    touchSummary.hidden = !checkTouch();
-  }
+  if (versionEl && version) versionEl.textContent = `v${version}`;
 
   let open = false;
   let fromTeaBreakMode = false;
   let hasSavedPotMode = false;
   let teaBreakCallback = null;
   let lastFocused = null;
+  let nudgeTimer = null;
   const cleanups = [];
+
+  function describeTouch() {
+    const layout = touch();
+    if (touchBox) touchBox.hidden = !layout;
+    if (!layout) return;
+    const { label, text } = touchSummary(layout);
+    if (touchLabel) touchLabel.textContent = label;
+    if (touchText) touchText.textContent = text;
+  }
+  describeTouch();
 
   function getFocusableElements() {
     if (!dialog) return [];
@@ -46,7 +78,6 @@ export function createInstructionOverlay({
   }
 
   function trapFocus(e) {
-    if (!open || e.code !== 'Tab') return;
     const focusable = getFocusableElements();
     if (focusable.length === 0) {
       e.preventDefault();
@@ -54,28 +85,21 @@ export function createInstructionOverlay({
     }
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-    if (e.shiftKey) {
-      if (doc.activeElement === first || !dialog.contains(doc.activeElement)) {
-        e.preventDefault();
-        last.focus({ preventScroll: true });
-      }
-    } else {
-      if (doc.activeElement === last || !dialog.contains(doc.activeElement)) {
-        e.preventDefault();
-        first.focus({ preventScroll: true });
-      }
+    const outside = !dialog.contains(doc.activeElement);
+    if (e.shiftKey ? doc.activeElement === first || outside : doc.activeElement === last || outside) {
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus({ preventScroll: true });
     }
   }
 
   function closeOverlay() {
     if (!open) return;
     open = false;
+    clearTimeout(nudgeTimer);
+    primaryBtn?.classList.remove('nudge');
     if (dialog) {
-      if (typeof dialog.close === 'function' && dialog.open) {
-        dialog.close();
-      } else {
-        dialog.removeAttribute('open');
-      }
+      if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+      else dialog.removeAttribute('open');
       dialog.classList.remove('is-open');
     }
     if (lastFocused && typeof lastFocused.focus === 'function') {
@@ -84,8 +108,8 @@ export function createInstructionOverlay({
       } catch {
         // Element may no longer be attached
       }
-      lastFocused = null;
     }
+    lastFocused = null;
   }
 
   function dismissPrimary() {
@@ -109,47 +133,69 @@ export function createInstructionOverlay({
     onStart({ fromTeaBreak: false, isNewPot: true });
   }
 
-  function dismissEscape() {
+  function nudge() {
+    primaryBtn?.focus({ preventScroll: true });
+    primaryBtn?.classList.remove('nudge');
+    // Restart the animation even when Escape is pressed again mid-shake.
+    void primaryBtn?.offsetWidth;
+    primaryBtn?.classList.add('nudge');
+    clearTimeout(nudgeTimer);
+    nudgeTimer = setTimeout(() => primaryBtn?.classList.remove('nudge'), 400);
+  }
+
+  function escape() {
     if (!open) return;
-    const wasFromTeaBreak = fromTeaBreakMode;
+    if (!fromTeaBreakMode) {
+      nudge();
+      return;
+    }
     const cb = teaBreakCallback;
     teaBreakCallback = null;
     closeOverlay();
-    if (wasFromTeaBreak) {
-      cb?.();
-    }
-    onClose({ fromTeaBreak: wasFromTeaBreak, escape: true });
+    cb?.();
+    onClose({ fromTeaBreak: true, escape: true });
   }
 
   function onKeyDown(e) {
     if (!open) return;
-    if (e.code === 'Enter') {
+    if (e.code === 'Enter' || e.code === 'NumpadEnter') {
       e.preventDefault();
       e.stopPropagation();
-      if (doc.activeElement === newPotBtn) {
-        dismissNewPot();
-      } else {
-        dismissPrimary();
-      }
+      if (doc.activeElement === newPotBtn) dismissNewPot();
+      else dismissPrimary();
       return;
     }
     if (e.code === 'Escape') {
+      // Cancelling the keydown also stops the browser closing the modal itself.
       e.preventDefault();
       e.stopPropagation();
-      dismissEscape();
+      escape();
       return;
     }
     if (e.code === 'Space') {
       e.preventDefault();
       e.stopPropagation();
-      if (doc.activeElement === newPotBtn) {
-        dismissNewPot();
-      }
+      if (doc.activeElement === newPotBtn) dismissNewPot();
       return;
     }
-    if (e.code === 'Tab') {
-      trapFocus(e);
+    if (e.code === 'Tab') trapFocus(e);
+  }
+
+  // Escape is handled above; a close request that still reaches the dialog is refused.
+  function onCancel(e) {
+    e.preventDefault();
+  }
+
+  // If the browser closes the dialog anyway (some close requests cannot be
+  // cancelled), treat it as Escape: the first screen comes straight back.
+  function onBrowserClose() {
+    if (!open || dialog.open) return;
+    if (fromTeaBreakMode) {
+      escape();
+      return;
     }
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    nudge();
   }
 
   function onPrimaryClick(e) {
@@ -162,31 +208,17 @@ export function createInstructionOverlay({
     dismissNewPot();
   }
 
-  function onBackdropClick(e) {
-    if (e.target === dialog || e.target.classList.contains('overlay-backdrop')) {
-      e.preventDefault();
-      dismissPrimary();
-    }
-  }
-
-  if (dialog) {
-    dialog.addEventListener('click', onBackdropClick);
-    cleanups.push(() => dialog.removeEventListener('click', onBackdropClick));
-  }
-
-  // Also listen globally for keydown when open to catch Enter/Escape reliably
-  doc.addEventListener('keydown', onKeyDown, true);
-  cleanups.push(() => doc.removeEventListener('keydown', onKeyDown, true));
-
-  if (primaryBtn) {
-    primaryBtn.addEventListener('click', onPrimaryClick);
-    cleanups.push(() => primaryBtn.removeEventListener('click', onPrimaryClick));
-  }
-
-  if (newPotBtn) {
-    newPotBtn.addEventListener('click', onNewPotClick);
-    cleanups.push(() => newPotBtn.removeEventListener('click', onNewPotClick));
-  }
+  const listen = (target, type, handler, options) => {
+    if (!target) return;
+    target.addEventListener(type, handler, options);
+    cleanups.push(() => target.removeEventListener(type, handler, options));
+  };
+  // Capture on the document, so Enter, Space, and Escape never reach the game's own keys.
+  listen(doc, 'keydown', onKeyDown, true);
+  listen(dialog, 'cancel', onCancel);
+  listen(dialog, 'close', onBrowserClose);
+  listen(primaryBtn, 'click', onPrimaryClick);
+  listen(newPotBtn, 'click', onNewPotClick);
 
   return {
     show({ fromTeaBreak = false, hasSavedPot = false, onReturn = null } = {}) {
@@ -195,24 +227,14 @@ export function createInstructionOverlay({
       hasSavedPotMode = hasSavedPot;
       teaBreakCallback = onReturn;
       lastFocused = doc.activeElement;
-
-      if (touchSummary) {
-        touchSummary.hidden = !checkTouch();
-      }
+      describeTouch();
 
       if (primaryBtn) {
-        if (fromTeaBreak) {
-          primaryBtn.textContent = 'BACK TO TEA BREAK (ENTER)';
-        } else if (hasSavedPot) {
-          primaryBtn.textContent = 'CONTINUE YOUR POT (ENTER)';
-        } else {
-          primaryBtn.textContent = 'PRESS ENTER OR CLICK TO START';
-        }
+        if (fromTeaBreak) primaryBtn.textContent = 'BACK TO TEA BREAK (ENTER)';
+        else if (hasSavedPot) primaryBtn.textContent = 'CONTINUE YOUR POT (ENTER)';
+        else primaryBtn.textContent = 'PRESS ENTER OR CLICK TO START';
       }
-
-      if (newPotBtn) {
-        newPotBtn.hidden = fromTeaBreak || !hasSavedPot;
-      }
+      if (newPotBtn) newPotBtn.hidden = fromTeaBreak || !hasSavedPot;
 
       const win = doc.defaultView;
       const prevX = win ? win.scrollX : 0;
@@ -220,21 +242,15 @@ export function createInstructionOverlay({
 
       if (dialog) {
         dialog.classList.add('is-open');
-        if (typeof dialog.show === 'function' && !dialog.open) {
-          dialog.show();
-        } else {
-          dialog.setAttribute('open', '');
+        if (!dialog.open) {
+          if (typeof dialog.showModal === 'function') dialog.showModal();
+          else if (typeof dialog.show === 'function') dialog.show();
+          else dialog.setAttribute('open', '');
         }
       }
+      primaryBtn?.focus({ preventScroll: true });
 
-      // Defer focus slightly or focus immediately
-      if (primaryBtn) {
-        primaryBtn.focus({ preventScroll: true });
-      }
-
-      if (win && (win.scrollX !== prevX || win.scrollY !== prevY)) {
-        win.scrollTo(prevX, prevY);
-      }
+      if (win && (win.scrollX !== prevX || win.scrollY !== prevY)) win.scrollTo(prevX, prevY);
     },
 
     dismissPrimary,

@@ -21,9 +21,13 @@ export const test = base.extend({
 
 export { expect };
 
-/** Open the game with the read-only debug hook enabled. */
-export async function openGame(page, query = '') {
-  await page.goto(`./?debug${query}`);
+/**
+ * Open the game with the read-only debug hook enabled, as a player who has
+ * already read the controls: the startup instruction overlay is modal, so it
+ * is skipped unless a test asks for it with { onboarding: true }.
+ */
+export async function openGame(page, query = '', { onboarding = false } = {}) {
+  await page.goto(`./?debug${onboarding ? '' : '&noOverlay'}${query}`);
   await page.waitForFunction(() => window.__TEACUP__?.game);
 }
 
