@@ -126,6 +126,15 @@ export function createControls({
     onGesture(kind, point);
   }
 
+  // Observe physical holds before modal handlers consume the event.
+  // Holds need a fresh release before becoming gameplay after a dialog.
+  listen(win, 'keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!CAPTURED_KEYS.has(e.code) && !Object.hasOwn(WALK_KEYS, e.code)) return;
+    down.add(e.code);
+    if (!enabled()) stale.add(e.code);
+  }, true);
+
   listen(win, 'keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return; // leave browser shortcuts alone
     if (!enabled()) {

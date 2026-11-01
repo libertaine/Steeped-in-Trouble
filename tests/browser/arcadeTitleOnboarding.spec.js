@@ -4,7 +4,12 @@ import { checkpointRound } from './collection.js';
 const VERSION = '0.17.0';
 
 /** The first screen a visitor sees: the title, then the instruction overlay. */
-const openTitle = (page, query = '') => openGame(page, query, { onboarding: true });
+const openTitle = async (page, query = '') => {
+  await openGame(page, query, { onboarding: true });
+  if (!/[&](noOverlay|arcade|day|cup|fortune)/.test(query)) {
+    await page.locator('#titleContinueBtn').click();
+  }
+};
 
 // The windows the overlay has to fit, header to footer, with nothing hidden.
 const VIEWPORTS = [
@@ -98,7 +103,8 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
     await expect(page.locator('.splash-subtitle')).toHaveText('One small spoon. An unreasonable amount of responsibility.');
 
     await page.waitForFunction(() => window.__TEACUP__?.game);
-    await expect(page.locator('#arcadeSplash')).toHaveClass(/dismissed/);
+    await expect(page.locator('#arcadeSplash')).toBeVisible();
+    await page.locator('#titleContinueBtn').click();
 
     const overlay = page.locator('#instructionOverlay');
     await expect(overlay).toBeVisible();
@@ -127,7 +133,7 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
   });
 
   test('the splash is a large low-resolution pixel-art picture in a 16-colour palette', async ({ page, problems }) => {
-    await page.goto('./?debug&holdSplash&noOverlay');
+    await page.goto('./?debug');
     await page.waitForFunction(() => window.__TEACUP__?.game);
     const art = await page.evaluate(() => {
       const canvas = document.getElementById('splashCanvas');
@@ -328,6 +334,10 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
 
     await page.reload();
     await page.waitForFunction(() => window.__TEACUP__?.game);
+    expect(await page.evaluate(() => localStorage.getItem('steeped-in-trouble:pot-save'))).toBe(savedRaw);
+    await expect(page.locator('#arcadeSplash')).toBeVisible();
+    await page.locator('#titleContinueBtn').click();
+    expect(await page.evaluate(() => localStorage.getItem('steeped-in-trouble:pot-save'))).toBe(savedRaw);
 
     const overlay = page.locator('#instructionOverlay');
     await expect(overlay).toBeVisible();
@@ -371,6 +381,10 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
 
     await page.reload();
     await page.waitForFunction(() => window.__TEACUP__?.game);
+    expect(await page.evaluate(() => localStorage.getItem('steeped-in-trouble:pot-save'))).toBe(savedRaw);
+    await expect(page.locator('#arcadeSplash')).toBeVisible();
+    await page.locator('#titleContinueBtn').click();
+    expect(await page.evaluate(() => localStorage.getItem('steeped-in-trouble:pot-save'))).toBe(savedRaw);
     await expect(page.locator('#overlayPrimaryBtn')).toHaveText('CONTINUE YOUR POT (ENTER)');
     await page.keyboard.press('Enter');
     await expect(page.locator('#instructionOverlay')).toBeHidden();
@@ -468,7 +482,8 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('./?debug');
     await page.waitForFunction(() => window.__TEACUP__?.game);
-    await expect(page.locator('#arcadeSplash')).toHaveClass(/dismissed/);
+    await expect(page.locator('#arcadeSplash')).toBeVisible();
+    await page.locator('#titleContinueBtn').click();
     await expect(page.locator('#arcadeSplash')).toBeHidden();
 
     await page.setViewportSize({ width: 375, height: 667 });
@@ -492,7 +507,7 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
     if (testInfo.project.name !== 'chromium') return;
     const dir = 'docs/images/arcade-title';
     const holdSplash = async () => {
-      await page.goto('./?debug&holdSplash&noOverlay');
+      await page.goto('./?debug');
       await page.waitForFunction(() => window.__TEACUP__?.game);
       await page.evaluate(() => document.querySelector('.splash-status').style.setProperty('animation', 'none'));
     };

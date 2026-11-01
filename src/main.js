@@ -26,6 +26,7 @@ import { prepareCup, seedLegacyPot } from './dev/cup.js';
 import { POT_SCHEMA_VERSION } from './core/checkpoint.js';
 import { drawArcadeCenterpiece } from './rendering/splashArt.js';
 import { createInstructionOverlay } from './ui/instructionOverlay.js';
+import { createTitleScreen } from './ui/titleScreen.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -123,7 +124,7 @@ function boot() {
     ring.classList.add(kind === 'press' ? 'charging' : kind);
   }
 
-  let presentation, collectionUI, overlay;
+  let presentation, collectionUI, overlay, title;
   const controls = createControls({
     doc: document,
     commands: {
@@ -154,8 +155,12 @@ function boot() {
     gestureMode: game.touchGestures,
     scheme: () => settings.touch,
     onGesture: showRing,
-    enabled: () => !presentation?.blocked && !collectionUI?.blocked && !overlay?.blocked && document.visibilityState !== 'hidden',
+    enabled: () => !title?.blocked && !presentation?.blocked && !collectionUI?.blocked && !overlay?.blocked && document.visibilityState !== 'hidden',
   });
+  title = createTitleScreen({ doc: document, onContinue: () => {
+    controls.settle(true);
+    overlay.show({ hasSavedPot: !!progress.pot });
+  } });
   overlay = createInstructionOverlay({
     doc: document,
     version: __APP_VERSION__,
@@ -179,7 +184,7 @@ function boot() {
     game,
     params,
     storage,
-    resetInput: controls.reset,
+    resetInput: () => controls.settle(true),
     onShowControls: (returnToMenu) => overlay.show({ fromTeaBreak: true, onReturn: returnToMenu }),
     onOpenMenu: () => { if (!overlay.fromTeaBreak) overlay.close(); },
   });
@@ -256,7 +261,7 @@ function boot() {
     if (overlay.isOpen && !overlay.fromTeaBreak && (game.state.phase !== 'ready' || sessions.practice)) {
       overlay.close();
     }
-    if (!presentation.blocked && !collectionUI.blocked && !overlay.blocked) game.update(dt, controls.held, controls.walk);
+    if (!title.blocked && !presentation.blocked && !collectionUI.blocked && !overlay.blocked) game.update(dt, controls.held, controls.walk);
     handleEvents();
     audio.update(game.state, dt);
     renderer.draw(game.state, effects.fx, dt);
@@ -281,29 +286,7 @@ function boot() {
   }
 
   const isDirectScenario = params.has('arcade') || params.has('day') || params.has('cup') || params.has('fortune') || params.has('noOverlay');
-  if (!isDirectScenario) {
-    overlay.show({ hasSavedPot: !!progress.pot });
-  }
-
-  const splash = document.getElementById('arcadeSplash');
-  if (splash && !params.has('holdSplash')) {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
-      splash.classList.add('dismissed');
-      splash.hidden = true;
-      splash.style.display = 'none';
-    } else {
-      splash.classList.add('dismissed');
-      splash.addEventListener('transitionend', () => {
-        splash.hidden = true;
-        splash.style.display = 'none';
-      }, { once: true });
-      setTimeout(() => {
-        splash.hidden = true;
-        splash.style.display = 'none';
-      }, 350);
-    }
-  }
+  title.ready({ bypass: isDirectScenario && !params.has('holdSplash') });
 
   const instance = {
     game,
@@ -313,6 +296,7 @@ function boot() {
       presentation.dispose();
       collectionUI.dispose();
       overlay.dispose();
+      title.dispose();
       detachScaling();
       delete window[INSTANCE_KEY];
     },

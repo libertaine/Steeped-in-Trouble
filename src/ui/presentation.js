@@ -41,7 +41,7 @@ export function createPresentation({ doc = document, game, params, storage, rese
     resetInput();
     if (resumeOnClose && doc.visibilityState !== 'hidden') game.resume();
     resumeOnClose = false;
-    menu.focus({ preventScroll: true });
+    doc.getElementById('game').focus({ preventScroll: true });
   }
 
   function applyView() {
