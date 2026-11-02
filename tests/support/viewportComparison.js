@@ -26,9 +26,14 @@ try {
       const metrics = await page.evaluate(() => {
         const b = document.querySelector('#game').getBoundingClientRect();
         const s = document.querySelector('.stage').getBoundingClientRect();
+        const controls = [...document.querySelectorAll('.controls-mobile button, #actionDock button')]
+          .filter((e) => e.getClientRects().length && !e.hidden).map((e) => e.getBoundingClientRect());
         return { x: b.x, y: b.y, width: b.width, height: b.height, bottom: b.bottom,
           visiblePercent: Math.min(100, Math.max(0, Math.min(innerHeight, b.bottom) - Math.max(0, b.y)) / b.height * 100),
-          stageWidth: s.width, stageHeight: s.height, overflow: document.documentElement.scrollWidth - innerWidth };
+          stageWidth: s.width, stageHeight: s.height, overflow: document.documentElement.scrollWidth - innerWidth,
+          controlsVisible: controls.every((r) => r.top >= 0 && r.bottom <= innerHeight + 1 && r.left >= 0 && r.right <= innerWidth + 1),
+          minControlWidth: Math.min(...controls.map((r) => r.width)),
+          minControlHeight: Math.min(...controls.map((r) => r.height)) };
       });
       rows.push({ viewport: `${width}x${height}`, view, ...metrics });
       await page.screenshot({ path: `${output}/${view}-${width}x${height}.png` });

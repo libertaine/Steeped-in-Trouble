@@ -17,12 +17,29 @@ async function fits(page) {
       backingHeight: Math.abs(canvas.height - Math.round(b.height * Math.min(2, devicePixelRatio))) <= 1,
       noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth + 1,
       reachableControls: controls.every((r) => r.top >= 0 && r.bottom <= innerHeight + 1 && r.left >= 0 && r.right <= innerWidth + 1),
+      touchTargetSize: controls.every((r) => r.width >= 44 && r.height >= 44),
       unobscuredCanvas: controls.every((r) => r.right <= b.left + 1 || r.left >= b.right - 1 || r.bottom <= b.top + 1 || r.top >= b.bottom - 1),
     }).filter(([, pass]) => !pass).map(([name]) => name);
   })).toEqual([]);
 }
 
 export function viewportFitTests() {
+  for (const [width, height] of [[1920, 1080], [1280, 800], [1366, 768]]) {
+    test(`full classic controls fit at ${width}x${height}`, async ({ page, problems }) => {
+      await page.setViewportSize({ width, height });
+      await openGame(page, '&view=full&touch=classic&seed=42');
+      await fits(page);
+      await page.locator('#mainBtn').click();
+      await fits(page);
+      if (width === 1920) {
+        expect(await page.locator('#game').evaluate((e) => e.getBoundingClientRect().width)).toBeGreaterThan(990);
+      }
+      await page.locator('#menuBtn').click();
+      await expect(page.locator('#teaBreak')).toBeVisible();
+      expect(await page.evaluate(() => window.__TEACUP__.game.state.phase)).toBe('paused');
+      expect(problems).toEqual([]);
+    });
+  }
   for (const [width, height] of sizes) for (const view of ['full', 'compact']) {
     test(`${view} contains the complete arena and controls at ${width}x${height}`, async ({ page, problems }, info) => {
       await page.setViewportSize({ width, height });
@@ -32,6 +49,17 @@ export function viewportFitTests() {
       await page.evaluate(() => { const s = window.__TEACUP__.game.state; s.spawnTimer = Infinity; s.enemies = []; });
       await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
       await fits(page); // No corrective scrolling after starting the cup.
+      // During play the collection entry is hidden, so a wide desktop should
+      // recover the original arena size, subject to the remaining height.
+      if (view === 'full' && width === 1920 && height === 1080) {
+        expect(await page.locator('#game').evaluate((e) => e.getBoundingClientRect().width)).toBeGreaterThan(990);
+      }
+      await page.locator('#menuBtn').click();
+      await expect(page.locator('#teaBreak')).toBeVisible();
+      expect(await page.evaluate(() => window.__TEACUP__.game.state.phase)).toBe('paused');
+      await page.locator('#closeBreak').click();
+      await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
+      await fits(page);
       const pad = page.locator('.controls-easy [data-hold="right"]');
       const angle = await page.evaluate(() => window.__TEACUP__.game.state.angle);
       await pad.dispatchEvent('pointerdown', { pointerId: 17, pointerType: 'touch' });

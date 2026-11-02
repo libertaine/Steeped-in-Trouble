@@ -29,6 +29,10 @@ the existing HUD and controls, and fits the canvas uniformly within the
 remaining stage. Landscape uses a control rail; short landscape reduces control
 spacing while retaining 44px or larger action targets. Full View's desktop
 sidebar scrolls independently; on narrow screens it remains below the playfield.
+The desktop landscape page limit is now 1580px: the original 1390px plus the
+190px rail. This recovers arena width on larger displays while the viewport
+height budget still limits the canvas. Full View buttons have a 44px minimum
+height, including Classic Touch and pause access.
 
 The start/resume and arcade collection actions stay in the playfield in both
 views, preventing clicks from scrolling a narrow Full View to the sidebar and
@@ -36,15 +40,17 @@ leaving gameplay offscreen. Existing reading offers retain their presentation
 behavior. Compact's arena fitting and rendering camera are unchanged.
 
 The logical configuration, renderer, canvas backing-store scaler, input code,
-and simulation are unchanged. Smaller Full View canvases are intentional: the
-whole scene and its controls now share the available screen instead of extending
-below it. The existing full resource counts remain in the sidebar; the approved
+and simulation are unchanged. Full View fits the arena to the available stage:
+the whole scene and its controls share the screen instead of extending below
+it. Large landscape displays also use the extra desktop width described above.
+The existing full resource counts remain in the sidebar; the approved
 mode-aware resource redesign belongs to 018-2.
 
 ## Measured comparison
 
 Baseline: clean archived build of `d6b8e2b9aa01f3df59e84a9a205ac8937bbb9fe8`.
-Candidate: this branch. Both are production builds, measured in desktop
+Initial candidate: `810dcec` (before the required desktop revision below).
+Both are production builds, measured in desktop
 Chromium at CSS pixel dimensions, seed 42, with an empty paused first cup.
 Screenshots return to document top after starting in both builds to compare
 the same framing. Baseline narrow Full View also scrolls away from the arena
@@ -99,7 +105,7 @@ node tests/support/viewportComparison.js http://localhost:4188/Steeped-in-Troubl
 node tests/support/viewportComparison.js http://localhost:4187/Steeped-in-Trouble/ tmp/018-1/after
 ```
 
-Final local validation:
+Initial candidate local validation (superseded by the revision qualification below):
 
 - `npm run check`: lint, **849 unit tests / 42 files**, and production build passed.
 - Complete Playwright suite, **8 workers, no retries: 337 passed**, including
@@ -118,3 +124,63 @@ without timeout changes, exclusions, or assertion relaxation.
 Browser emulation does not qualify physical phone toolbar/safe-area behavior or real
 device touch arbitration. Small Full View text still needs visual review;
 the later resource HUD/readability work is not accepted by these bounds checks.
+
+## Required desktop revision (2026-11-02)
+
+The initial landscape layout subtracted a fixed 190px rail from the original
+1390px page limit. At 1920×1080 the stage was width-limited to 812px despite
+having 857px of usable height. Increasing only Full View's landscape page limit
+to 1580px gives the rail its own width. At that viewport the arena is now
+height-limited to 998.22×857.16, close to the original 1002×860; its displayed
+area grows by 51.1% over the initial PR. The existing 315px sidebar and all
+rendering, simulation, input, and viewport-height fitting code are unchanged.
+
+Fresh production Chromium captures compare the initial PR build (`810dcec`)
+with the revision, using the same paused-cup procedure above. These are displayed
+CSS dimensions rounded to the nearest pixel. The original baseline and initial
+PR evidence above are retained unchanged.
+
+| Viewport | Initial PR Full canvas | Revised Full canvas | Canvas visible before / after |
+| --- | ---: | ---: | ---: |
+| 375×667 | 297×255 | 288×247 | 100% / 100% |
+| 800×600 | 545×468 | 545×468 | 100% / 100% |
+| 1280×720 | 580×498 | 580×498 | 100% / 100% |
+| 1366×768 | 635×545 | 635×545 | 100% / 100% |
+| 1920×1080 | 812×697 | 998×857 | 100% / 100% |
+| 844×390 | 301×258 | 301×258 | 100% / 100% |
+| 800×1280 | 746×641 | 746×641 | 100% / 100% |
+| 1280×800 | 673×578 | 673×578 | 100% / 100% |
+
+Compact canvas dimensions are unchanged at all eight sizes. Both views have
+100% canvas visibility, visible controls, and zero horizontal overflow at every
+measured size. Full View's minimum measured button height rises from 36–41px to
+44px; the two-dimensional 44px target requirement is also enforced in the
+scenario matrix. The small portrait change reserves that extra button height.
+The ready screen retains its collection action row: at 1920×1080 its revised
+arena is 919×789, then expands to 998×857 during live and paused play.
+
+The [revision gallery and raw measurements](images/viewport-fit/README.md#required-desktop-revision)
+include all eight Full View captures and both views' unrounded measurements.
+The 1920×1080, 1280×800, and 1366×768 captures were visually inspected.
+
+All original eight-size Full/Compact cases remain. The matrix additionally
+opens and resumes the pause menu during live play, checks 44×44px touch targets,
+and guards against arena width dropping below 990px during 1920×1080 Full View
+play. Three new Classic Touch cases check the priority desktop sizes, live
+control visibility, and pause access in each browser project.
+
+Revision qualification:
+
+- `npm run check`: lint, **849 unit tests / 42 files**, and production build passed.
+- Complete Playwright suite: **346 passed**, eight workers, no retries, across
+  Chromium, Firefox, and mobile Chromium. This includes all **57 viewport cases**.
+- Existing regression screenshots were archived and restored with SHA-256
+  verification; only the revision gallery and measurements were added.
+- The initial sandbox run was stopped after Firefox page creation crashed.
+  A standalone launch succeeded outside the sandbox, and the complete final
+  run above used normal browser access. The first draft of the size guard also
+  targeted the ready screen; it was corrected to assert live-play size, while
+  retaining visibility checks in both states. Exploratory logs are retained in
+  ignored `tmp/018-1-revision/` separately from the passing final run.
+
+Stop at PR review. No merge, release, version bump, or deployment is authorized.

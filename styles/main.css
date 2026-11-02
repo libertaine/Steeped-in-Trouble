@@ -979,6 +979,8 @@ body[data-view="full"] #game { width: min(100cqw, calc(100cqh * 920 / 790)); hei
 body[data-view="full"] #mainBtn { margin: 0; width: auto; flex: 1; }
 body[data-view="full"] #menuBtn { flex: 0 0 auto; }
 body[data-view="full"] .action-dock { gap: 8px; }
+body[data-view="full"] .controls-mobile button,
+body[data-view="full"] .action-dock button { min-height: 44px; }
 body[data-view="full"] .collection-entry,
 body[data-view="full"] .practice-bar,
 body[data-view="full"] #potNotice { grid-column: 1 / -1; }
@@ -986,6 +988,9 @@ body[data-view="full"] #potNotice { grid-column: 1 / -1; }
   body[data-view="full"] main > aside { max-height: var(--playfield-height); overflow: auto; }
 }
 @media (orientation: landscape) {
+  /* Give the touch rail its own desktop width instead of subtracting it from
+     the original arena column. The stage still fits the viewport height. */
+  body[data-view="full"] main { max-width: 1580px; }
   body[data-view="full"] .playfield { grid-template-columns: minmax(0, 1fr) 190px;
     grid-template-rows: auto minmax(0, 1fr) auto; }
   body[data-view="full"] .hud-top { grid-column: 1 / -1; }
