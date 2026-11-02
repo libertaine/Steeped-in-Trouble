@@ -138,13 +138,16 @@ test('touchscreen laptop uses primary fine pointer; capability changes release a
   await pad.focus();
   const box = await pad.boundingBox();
   const start = (await gameState(page)).angle;
+  // Mouse pointer ids differ by browser (Chromium 1, Firefox 0): record the real one.
+  await pad.evaluate(e => e.addEventListener('pointerdown', d => { e.dataset.pointerId = d.pointerId; }, { once: true }));
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await expect.poll(async () => (await gameState(page)).angle).not.toBe(start);
-  expect(await pad.evaluate(e => e.hasPointerCapture(1))).toBe(true);
+  const captured = () => pad.evaluate(e => e.hasPointerCapture(Number(e.dataset.pointerId)));
+  expect(await captured()).toBe(true);
   await page.evaluate(() => window.__setPrimaryCoarse(false));
   await expectVisibility(page, false);
-  expect(await pad.evaluate(e => e.hasPointerCapture(1))).toBe(false);
+  expect(await captured()).toBe(false);
   await expect(page.locator('#game')).toBeFocused();
   const angle = (await gameState(page)).angle;
   await page.waitForTimeout(200);

@@ -1,4 +1,5 @@
 import { expect, openGame, test } from './fixtures.js';
+import { readingReadyAt } from '../../src/core/game.js';
 
 test.beforeEach(async ({ page }) => {
   // Freeze before navigation: setup and assertions must not consume game time.
@@ -33,11 +34,21 @@ async function finishRound(page, round) {
   await page.waitForFunction(() => window.__TEACUP__.game.state.phase === 'reading');
 }
 
-/** From a reading with The Daily Grind due: decline any upgrade and walk into the fight. */
-async function enterFight(page) {
-  await page.evaluate(() => { window.__TEACUP__.game.state.offer = null; });
+/** Decline any upgrade and press Enter once the reading ceremony is ready to continue. */
+async function continueReading(page) {
+  const reading = await page.evaluate(() => {
+    const s = window.__TEACUP__.game.state;
+    s.offer = null;
+    return { nextFortune: s.nextFortune, readingTime: s.readingTime };
+  });
+  await advanceGame(page, Math.max(0, readingReadyAt(reading) - reading.readingTime) + 1 / 60);
   await page.keyboard.press('Enter');
   await page.clock.runFor(16);
+}
+
+/** From a reading with The Daily Grind due: decline any upgrade and walk into the fight. */
+async function enterFight(page) {
+  await continueReading(page);
   await expect(page.locator('#hudStatus')).toHaveText('SOMEONE ORDERED TROUBLE');
   await page.keyboard.press('Enter'); // skip the entrance
   await page.clock.runFor(16);
@@ -77,9 +88,7 @@ test('the first Daily Grind follows round 5, and when it escapes it is back two 
   await finishRound(page);
   expect(await page.evaluate(() => window.__TEACUP__.game.state.grindDue)).toBe(false); // not after round 6…
   expect(await page.evaluate(() => window.__TEACUP__.game.state.havocDue)).toBe(true); // (the hot chocolate's turn)
-  await page.evaluate(() => { window.__TEACUP__.game.state.offer = null; });
-  await page.keyboard.press('Enter');
-  await page.clock.runFor(16);
+  await continueReading(page);
   await expect(page.locator('#hudStatus')).toHaveText('THE CHOCOLATE PROPHECY');
   await page.keyboard.press('Enter');
   await page.clock.runFor(16);

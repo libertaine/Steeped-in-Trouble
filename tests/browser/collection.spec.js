@@ -80,6 +80,8 @@ test('Continue restores the complete saved reading; New Pot and Clear require co
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
   expect(await read(page, 'pot-save')).toBeNull();
   await checkpointRound(page); await page.locator('#menuBtn').click();
+  // During a reading Tea Break opens on Tea & Fortunes; the save lives in Current Pot.
+  await page.getByText('Current Pot', { exact: true }).click();
   await expect(page.locator('#savedPotInfo')).toContainText('round 1 completed');
   await page.locator('#clearPotBtn').click(); await page.locator('#cancelPotBtn').click();
   expect(await read(page, 'pot-save')).not.toBeNull();

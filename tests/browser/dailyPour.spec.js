@@ -5,6 +5,8 @@ import {
 import { toShortage } from './errand.js';
 
 const imagePath = (name) => `docs/images/daily-pour/${name}.png`;
+// These cases qualify the visible paper pads, which desktop Auto now hides.
+const showOnScreenControls = (page) => page.addInitScript(() => localStorage.setItem('steeped-in-trouble:onscreen-controls', 'show'));
 async function shot(page, testInfo, name) {
   if (testInfo.project.name === 'chromium') await page.screenshot({ path: imagePath(name), fullPage: true, scale: 'css' });
 }
@@ -24,6 +26,7 @@ test('optional paper offer can be skipped by mouse or keyboard without losing an
 
 test('desktop route shows real misses, deliveries, the angry neighbor and a result', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
+  await showOnScreenControls(page);
   await openGame(page, '&seed=42&view=full'); await toPaperOffer(page);
   await page.keyboard.press('Digit1');
   await expectPourControls(page);
@@ -89,6 +92,7 @@ test('perfect route rewards once and returns to the pending fortune and next nor
 });
 
 test('paper keys, auto-repeat, pause, Tea Break and backgrounding cannot leak gameplay', async ({ page, problems }, testInfo) => {
+  await showOnScreenControls(page);
   await openGame(page, '&seed=42&view=compact'); await toPaperOffer(page);
   await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
   await expectPourControls(page);
