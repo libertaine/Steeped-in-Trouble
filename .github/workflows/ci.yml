@@ -30,12 +30,18 @@ jobs:
   checks:
     name: Lint, unit tests, build (${{ matrix.os }})
     needs: changes
+    if: always()
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
+      - name: Require successful change classification
+        if: needs.changes.result != 'success'
+        run: |
+          echo "Change classification did not succeed; refusing to pass required validation."
+          exit 1
       - name: Documentation-only validation
         if: needs.changes.outputs.docs_only == 'true'
         run: echo "Documentation only; runtime checks are unnecessary."
@@ -58,8 +64,14 @@ jobs:
   browser:
     name: Browser smoke tests
     needs: changes
+    if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: Require successful change classification
+        if: needs.changes.result != 'success'
+        run: |
+          echo "Change classification did not succeed; refusing to pass required validation."
+          exit 1
       - name: Documentation-only validation
         if: needs.changes.outputs.docs_only == 'true'
         run: echo "Documentation only; browser qualification is unnecessary."
