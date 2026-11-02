@@ -61,7 +61,7 @@ test('the porcelain cracks, warns, mends with gold, and finally breaks', async (
   expect(problems).toEqual([]);
 });
 
-test('a continued pot keeps its cracks and gold seams', async ({ page, problems }) => {
+test('a continued pot keeps its cracks and gold seams', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page, '&seed=7&view=full');
   await page.keyboard.press('Enter');
   await quiet(page);

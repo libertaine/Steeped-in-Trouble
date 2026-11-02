@@ -1,10 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Smoke tests run against the production build served beneath the same
+// Browser tests run against the production build served beneath the same
 // /Steeped-in-Trouble/ base path that GitHub Pages uses, so broken asset
 // references show up as 404s here rather than after deployment.
 //
-// Set BASE_URL to smoke-test an existing deployment instead, e.g.
+// Set BASE_URL to test an existing deployment instead, e.g.
 //   BASE_URL=https://libertaine.github.io/Steeped-in-Trouble/ npm run test:browser
 const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
 const BASE_URL = process.env.BASE_URL;

@@ -89,7 +89,7 @@ test('Continue restores the complete saved reading; New Pot and Clear require co
   expect(problems).toEqual([]);
 });
 
-test('storage denial and invalid saves leave the collection and cup playable', async ({ page, problems }) => {
+test('storage denial and invalid saves leave the collection and cup playable', { tag: '@smoke' }, async ({ page, problems }) => {
   await page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); });
   await openGame(page, '&view=compact'); await openCollection(page);
   await expect(page.locator('#recordNotice')).toContainText('will not be saved');

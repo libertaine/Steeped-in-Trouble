@@ -96,7 +96,7 @@ function expectFits(layout, { scrollable = false } = {}) {
 }
 
 test.describe('80s Arcade Title and Instruction Overlay', () => {
-  test('1 & 2: Splash and instruction overlay appear at startup with exact required text and version', async ({ page, problems }) => {
+  test('1 & 2: Splash and instruction overlay appear at startup with exact required text and version', { tag: '@smoke' }, async ({ page, problems }) => {
     await page.goto('./?debug');
     await expect(page.locator('#arcadeSplash')).toBeAttached();
     await expect(page.locator('.splash-title')).toHaveText('STEEPED IN TROUBLE');

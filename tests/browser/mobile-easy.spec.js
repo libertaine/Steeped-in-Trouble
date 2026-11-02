@@ -40,7 +40,7 @@ async function quietCup(page) {
   });
 }
 
-test('starts a phone on Easy Touch: two big steering pads, Auto Steam, and room to read the cup', async ({ page, problems }) => {
+test('starts a phone on Easy Touch: two big steering pads, Auto Steam, and room to read the cup', { tag: '@smoke' }, async ({ page, problems }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await openGame(page);
   expect(await page.evaluate(() => window.__TEACUP__.settings())).toEqual({ touch: 'easy', autoSteam: true });
@@ -61,7 +61,7 @@ test('starts a phone on Easy Touch: two big steering pads, Auto Steam, and room 
   expect(problems).toEqual([]);
 });
 
-test('steers with a held pad while Auto Steam clears whatever the spoon turns onto', async ({ page, problems }) => {
+test('steers with a held pad while Auto Steam clears whatever the spoon turns onto', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await quietCup(page);
   await page.evaluate(() => {
@@ -88,7 +88,7 @@ test('steers with a held pad while Auto Steam clears whatever the spoon turns on
   expect(problems).toEqual([]);
 });
 
-test('double-tapping the cup pours milk once, steering taps never do, and the page never zooms or scrolls', async ({ page, problems }) => {
+test('double-tapping the cup pours milk once, steering taps never do, and the page never zooms or scrolls', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await quietCup(page);
   const p = await cupPoint(page);
@@ -110,7 +110,7 @@ test('double-tapping the cup pours milk once, steering taps never do, and the pa
   expect(problems).toEqual([]);
 });
 
-test('a long press on the cup fires one sugar burst; a short one does nothing', async ({ page, problems }) => {
+test('a long press on the cup fires one sugar burst; a short one does nothing', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await quietCup(page);
   const p = await cupPoint(page);

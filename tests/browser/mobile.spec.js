@@ -1,6 +1,6 @@
 import { expect, gameState, openGame, test } from './fixtures.js';
 
-test('is playable with Classic Touch controls on a phone-sized screen', async ({ page, problems }) => {
+test('is playable with Classic Touch controls on a phone-sized screen', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page, '&touch=classic');
 
   const layout = await page.evaluate(() => ({
@@ -58,7 +58,7 @@ test('is playable with Classic Touch controls on a phone-sized screen', async ({
   expect(problems).toEqual([]);
 });
 
-test('Full View shows the tea on a phone without crowding the screen', async ({ page, problems }) => {
+test('Full View shows the tea on a phone without crowding the screen', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page, '&tea=earlGrey&view=full');
   await expect(page.locator('body')).toHaveAttribute('data-view', 'full');
   await page.locator('#mainBtn').tap();

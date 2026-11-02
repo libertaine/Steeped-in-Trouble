@@ -17,7 +17,7 @@ async function finishRound(page) {
   await page.waitForFunction(() => window.__TEACUP__.game.state.phase === 'reading');
 }
 
-test('the second cup brews a new tea, and the HUD and cup announce it', async ({ page, problems }) => {
+test('the second cup brews a new tea, and the HUD and cup announce it', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page, '&seed=7');
   await page.keyboard.press('Enter');
   await expect(page.locator('#roundTitle')).toHaveText('Cup 1: the storm stirs');
@@ -60,7 +60,7 @@ test('Chai warns before its current, then carries the leaves one lane', async ({
   expect(problems).toEqual([]);
 });
 
-test('the up and down arrows pour milk and fire sugar without scrolling the page', async ({ page, problems }) => {
+test('the up and down arrows pour milk and fire sugar without scrolling the page', { tag: '@smoke' }, async ({ page, problems }) => {
   await page.setViewportSize({ width: 1100, height: 600 });
   await openGame(page);
   await page.keyboard.press('Enter');
