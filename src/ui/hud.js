@@ -22,6 +22,7 @@ import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
 import { cupCondition } from '../gameplay/porcelain.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
+import { createResources } from './resources.js';
 
 const COPY = {
   status: {
@@ -476,6 +477,7 @@ export function hudText(state) {
 }
 
 export function createHud(doc = document) {
+  const resources = createResources(doc);
   const elements = {};
   const shown = {};
   const offer = doc.getElementById('upgradeOffer');
@@ -521,6 +523,7 @@ export function createHud(doc = document) {
   }
 
   return {
+    handle: resources.handle,
     update(state) {
       updateOffer(state);
       updateErrand(state);
@@ -529,6 +532,15 @@ export function createHud(doc = document) {
       const mode = pageMode(state);
       if (doc.body && doc.body.dataset.mode !== mode) doc.body.dataset.mode = mode;
       const values = hudText(state);
+      resources.update(state, values);
+      const reference = doc.getElementById('referenceResources');
+      if (reference) {
+        const special = havocInProgress(state) || runInProgress(state) || pourInProgress(state)
+          || breakoutInProgress(state) || crossingInProgress(state);
+        const label = special ? 'Normal pot resources suspended.' : grindInProgress(state)
+          ? 'Boss milk and sugar are active; normal pot protection is suspended.' : 'Active cup resources.';
+        if (reference.textContent !== label) reference.textContent = label;
+      }
       // The omen pill takes its fortune's tone (good, trouble, odd) for colour.
       const omen = (elements.hudOmen ??= doc.getElementById('hudOmen'));
       const tone = values.hudOmen && state.fortune ? FORTUNES[state.fortune].tone : '';

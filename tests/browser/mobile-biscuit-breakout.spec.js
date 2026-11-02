@@ -67,7 +67,7 @@ test('touch skipping leaves progression and resources intact', async ({ page, pr
   await openGame(page, '&seed=42&view=compact'); await toBiscuitOffer(page);
   const before = await page.evaluate(() => structuredClone(window.__TEACUP__.game.state));
   await page.locator('[data-interlude="skip"]').tap();
-  await expect(page.locator('#compactRound')).toHaveText('Cup 20');
+  await expect(page.locator('#resourceProgressLabel')).toContainText('Cup 20 · Leaves');
   const after = await page.evaluate(() => structuredClone(window.__TEACUP__.game.state));
   for (const key of ['lives', 'score', 'teaCash', 'spoon', 'progress', 'shortageAfter']) expect(after[key]).toEqual(before[key]);
   expect(after.fortune).toBe(before.nextFortune);

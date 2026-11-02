@@ -250,6 +250,7 @@ function boot() {
       else if (RESETS.has(event.type)) controls.reset();
       effects.handle(event);
       audio.handle(event);
+      hud.handle(event);
     }
     sessions.settle();
   }

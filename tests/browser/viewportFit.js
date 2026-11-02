@@ -7,6 +7,7 @@ async function fits(page) {
     const canvas = document.querySelector('#game');
     const b = canvas.getBoundingClientRect();
     const s = canvas.parentElement.getBoundingClientRect();
+    const hud = document.querySelector('#resourceStrip').getBoundingClientRect();
     const controls = [...document.querySelectorAll('.controls-mobile button, #actionDock button')]
       .filter((e) => e.getClientRects().length && !e.hidden).map((e) => e.getBoundingClientRect());
     return Object.entries({
@@ -16,6 +17,7 @@ async function fits(page) {
       backingWidth: Math.abs(canvas.width - Math.round(b.width * Math.min(2, devicePixelRatio))) <= 1,
       backingHeight: Math.abs(canvas.height - Math.round(b.height * Math.min(2, devicePixelRatio))) <= 1,
       noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth + 1,
+      visibleResources: hud.top >= 0 && hud.bottom <= b.top + 1 && hud.left >= 0 && hud.right <= innerWidth + 1,
       reachableControls: controls.every((r) => r.top >= 0 && r.bottom <= innerHeight + 1 && r.left >= 0 && r.right <= innerWidth + 1),
       touchTargetSize: controls.every((r) => r.width >= 44 && r.height >= 44),
       unobscuredCanvas: controls.every((r) => r.right <= b.left + 1 || r.left >= b.right - 1 || r.bottom <= b.top + 1 || r.top >= b.bottom - 1),

@@ -44,7 +44,7 @@ for (const [width, height] of sizes) {
     await page.setViewportSize({ width, height });
     await openGame(page, '&view=compact&seed=31');
     await quietCup(page);
-    await fits(page, ['#game', '#menuBtn', '#compactMilk', '#compactSugar', '.controls-easy']);
+    await fits(page, ['#game', '#menuBtn', '#resource0', '#resource1', '.controls-easy']);
     const boxes = await page.evaluate(() => ['#game', '.hud-top'].map((s) => document.querySelector(s).getBoundingClientRect().toJSON()));
     expect(boxes[1].bottom).toBeLessThanOrEqual(boxes[0].top);
     expect(boxes[0].width / boxes[0].height).toBeCloseTo(920 / 790, 2);
@@ -240,9 +240,9 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
       await page.locator('[data-choice="0"]').click();
       await page.locator('#mainBtn').click();
       await expect(page.locator('#hudStatus')).toContainText(phase === 'grind' ? 'THE DAILY GRIND' : 'HOT CHOCOLATE HAVOC');
-      await fits(page, ['#game', '#hudStatus', '#compactProgress', '#menuBtn', '.controls-easy']);
+      await fits(page, ['#game', '#hudStatus', '#resourceStrip', '#menuBtn', '.controls-easy']);
       if (phase === 'grind') {
-        await expect(page.locator('#compactProgress')).toContainText('Boss');
+        await expect(page.locator('#resourceProgressLabel')).toContainText('Machine health');
         // Force a genuine pressure-warning frame without changing any boss rules.
         await page.evaluate(() => {
           window.__TEACUP__.game.state.grind.attack = {
@@ -310,12 +310,21 @@ test('game over and restart stay in the viewport', async ({ page }) => {
   expect(await page.evaluate(() => window.__TEACUP__.game.state.lives)).toBe(3);
 });
 
-test('desktop Full View preserves its sidebar and canvas proportions', async ({ browser, baseURL }, info) => {
+test('desktop Full View keeps its reference panels in Tea Break and preserves canvas proportions', async ({ browser, baseURL }, info) => {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, hasTouch: false, baseURL });
   await openGame(page);
   await expect(page.locator('body')).toHaveAttribute('data-view', 'full');
-  await expect(page.locator('main > aside')).toBeVisible();
+  await expect(page.locator('main > aside')).toBeHidden();
   await quietCup(page);
+  const box = await page.locator('#game').boundingBox();
+  expect(box.width / box.height).toBeCloseTo(920 / 790, 2);
+  await page.locator('#menuBtn').click();
+  await expect(page.locator('#teaBreak aside')).toBeVisible();
+  await expect(page.locator('#teaBreak .panel')).toHaveCount(3);
+  await expect(page.locator('#teaBreak summary')).toHaveText(['Current pot', 'Tea and fortune', 'Settings and controls']);
+  await page.locator('#closeBreak').click();
+  await expect(page.locator('#game')).toBeFocused();
+  await expect(page.locator('main > aside')).toBeHidden();
   await page.screenshot({ scale: 'css', path: info.outputPath('desktop-full.png') });
   await page.close();
 });

@@ -15,7 +15,7 @@ for (const [name, viewport] of [
     await daySnapshot(page, `${name}-${choice}-transition`);
     await page.locator(`[data-day="${choice}"]`).tap();
     await expect(page.locator('#hudDay')).toHaveText(`DAY 2 · CUP 1/10 · HEAT ${choice === 'fresh' ? 0 : 10}`);
-    await expect(page.locator('#compactRound')).toHaveText('Cup 11');
+    await expect(page.locator('#resourceProgressLabel')).toContainText('Cup 11 · Leaves');
     await expect(page.locator('#dayOffer')).toBeHidden();
     await expect(page.locator('.controls-easy')).toBeVisible();
     const canvas = await page.locator('#game').boundingBox();

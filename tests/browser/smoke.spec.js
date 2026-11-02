@@ -204,7 +204,7 @@ test('The Daily Grind can be met, fought with Q and E, and escaped without endin
 
   await page.keyboard.press('Enter'); // skip the entrance
   await expect(page.locator('#hudStatus')).toHaveText(/^THE DAILY GRIND · \d+s$/);
-  await expect(page.locator('#hudStrainer')).toHaveText(/^SCALDS/);
+  await expect(page.locator('#resource2')).toContainText('Scalds');
   await page.keyboard.press('q');
   await expect(page.locator('#milkCount')).toHaveText('1');
   await page.keyboard.press('e');

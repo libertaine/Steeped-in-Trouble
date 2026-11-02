@@ -15,7 +15,7 @@ export async function frozenRunner(page) {
   if (await page.locator('body').getAttribute('data-view') === 'full') await expectRunnerHud(page);
   else {
     // Compact View deliberately places its HUD outside the canvas.
-    const pills = page.locator('#hudStatus, #hudScore, #hudLives');
+    const pills = page.locator('#resourceTitle, #resource0, #resource1, #resource2');
     for (const pill of await pills.all()) await expect(pill).toBeInViewport();
     const boxes = await pills.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
     for (let i = 0; i < boxes.length; i++) for (const b of boxes.slice(i + 1)) {

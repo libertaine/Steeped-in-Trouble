@@ -96,7 +96,7 @@ export async function expectCrossingPad(page) {
   for (const hidden of ['.controls-classic', '.controls-easy', '.controls-run', '.controls-pour', '.controls-breakout']) {
     await expect(page.locator(hidden)).toBeHidden();
   }
-  for (const id of ['hudTea', 'hudOmen', 'hudStrainer', 'hudAuto']) await expect(page.locator('#' + id)).toBeHidden();
+  for (const id of ['hudTea', 'hudOmen', 'hudAuto']) await expect(page.locator('#' + id)).toBeHidden();
   const pads = page.locator('.controls-crossing button');
   await expect(pads).toHaveCount(4);
   for (let i = 0; i < 4; i++) {

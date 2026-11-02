@@ -74,7 +74,7 @@ export async function expectBreakoutControls(page) {
   for (const hidden of ['.controls-classic', '.controls-easy', '.controls-run', '.controls-pour']) {
     await expect(page.locator(hidden)).toBeHidden();
   }
-  for (const id of ['hudTea', 'hudOmen', 'hudStrainer', 'hudAuto']) await expect(page.locator('#' + id)).toBeHidden();
+  for (const id of ['hudTea', 'hudOmen', 'hudAuto']) await expect(page.locator('#' + id)).toBeHidden();
   const pads = page.locator('.controls-breakout button');
   await expect(pads).toHaveCount(3);
   for (let i = 0; i < 3; i++) {

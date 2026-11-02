@@ -77,11 +77,11 @@ export async function runErrand(page, how) {
 /** The runner's reserved HUD row must fit the playfield and leave the canvas unobscured. */
 export async function expectRunnerHud(page) {
   await expect(page.locator('body')).toHaveAttribute('data-mode', 'run');
-  for (const id of ['hudTea', 'hudOmen', 'hudStrainer', 'hudAuto']) await expect(page.locator('#' + id)).toBeHidden();
+  for (const id of ['hudTea', 'hudOmen', 'hudAuto']) await expect(page.locator('#' + id)).toBeHidden();
   const canvas = await page.locator('#game').boundingBox();
   const field = await page.locator('.playfield').boundingBox();
   const viewport = page.viewportSize();
-  const pills = await page.locator('#hudStatus, #hudScore, #hudLives').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
+  const pills = await page.locator('#resourceTitle, #resource0, #resource1, #resource2').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
   for (let i = 0; i < pills.length; i++) {
     const a = pills[i];
     expect(a.width).toBeGreaterThan(0);
@@ -91,6 +91,6 @@ export async function expectRunnerHud(page) {
     expect(a.bottom).toBeLessThanOrEqual(Math.min(viewport.height, canvas.y));
     for (const b of pills.slice(i + 1)) expect(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top).toBe(true);
   }
-  await expect(page.locator('#hudScore')).toContainText('COINS');
-  await expect(page.locator('#hudLives')).toContainText('STUMBLES');
+  await expect(page.locator('#resource1')).toContainText('coins');
+  await expect(page.locator('#resource0')).toContainText('Stumbles left');
 }
