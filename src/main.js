@@ -201,6 +201,7 @@ function boot() {
 
   const soundButton = document.getElementById('soundBtn');
   document.getElementById('mainBtn').addEventListener('click', () => {
+    if (game.state.phase === 'reading') { game.confirm(); return; }
     if (!collectionUI.primary()) game.primaryAction();
   });
   soundButton.addEventListener('click', () => {

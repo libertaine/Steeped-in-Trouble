@@ -5,15 +5,13 @@ test('the reading remembers the round, then names the actual next fortune and it
   await openGame(page, '&seed=42&view=full');
   await page.keyboard.press('Enter');
   await milkyRound(page);
-  // The memory comes first: before the fortune is revealed it is already in the panel.
-  await expect(page.locator('#readingMemory')).toContainText('You poured milk twice. Your defensive tactics favored The Veil.');
-  // Fully shown, and still before the reveal.
-  await page.waitForFunction(() => window.__TEACUP__.game.state.readingTime >= 1.3);
-  await capture(page, info, 'desktop-memory-before-reveal');
-  expect(await page.evaluate(() => window.__TEACUP__.game.state.readingTime)).toBeLessThan(2.1);
+  // The cup has the stage until its reveal; the explanation follows it.
+  await expect(page.locator('#readingPresentation')).toBeHidden();
+  await capture(page, info, 'desktop-ceremony');
   const fortune = await revealed(page);
   if (fortune !== 'lie') await expect(page.locator('#fortuneName')).toHaveText(FORTUNE_NAMES[fortune]);
   await expect(page.locator('#upgradeOffer')).toBeVisible();
+  await expect(page.locator('#compactMemory')).toContainText('You poured milk twice. Your defensive tactics favored The Veil.');
   await capture(page, info, 'desktop-memory-revealed');
   // Brewing on, the memory is put away.
   await page.locator('[data-choice="0"]').click();
@@ -28,11 +26,13 @@ test('a continued pot shows the same memory and the same fortune, without a rero
   await page.keyboard.press('Enter');
   await milkyRound(page);
   const fortune = await revealed(page);
+  await expect(page.locator('#readingPresentation')).toBeVisible();
   const memory = await page.locator('#readingMemory').textContent();
   expect(memory).toContain('Your defensive tactics favored The Veil.');
   await page.reload();
   await expect(page.locator('#mainBtn')).toHaveText('CONTINUE YOUR POT');
   await page.locator('#mainBtn').click();
+  await expect(page.locator('#readingPresentation')).toBeVisible();
   await expect(page.locator('#readingMemory')).toHaveText(memory);
   expect(await page.evaluate(() => window.__TEACUP__.game.state.nextFortune)).toBe(fortune);
   await revealed(page);

@@ -413,6 +413,7 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
     await expect(page.locator('#teaBreak')).toBeVisible();
     await expect(page.locator('#hudStatus')).toHaveText('PAUSED');
 
+    await page.getByText('Controls & Settings', { exact: true }).click();
     await page.locator('#breakControlsBtn').click();
     await expect(page.locator('#instructionOverlay')).toBeVisible();
     await expect(page.locator('#overlayPrimaryBtn')).toHaveText('BACK TO TEA BREAK (ENTER)');

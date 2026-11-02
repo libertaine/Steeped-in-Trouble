@@ -68,6 +68,20 @@
           <button class="errand-card" data-errand="skip"><kbd>3</kbd><span><strong>Skip</strong><small></small></span></button>
         </div>
       </div>
+      <section id="readingPresentation" class="reading-presentation" aria-label="Completed cup and next fortune" hidden>
+        <div class="reading-copy" tabindex="0" aria-label="Reading explanation">
+          <h2 id="readingTitle"></h2>
+          <h3>The cup remembers</h3>
+          <p id="compactMemory"></p>
+          <p class="note">Your actions influence the draw; they do not guarantee it.</p>
+          <div class="next-fortune">
+            <h3>The next fortune</h3>
+            <strong id="compactFortune"></strong>
+            <p id="readingQuote" class="reading-quote"></p>
+            <p id="compactEffect"></p>
+          </div>
+          <p id="readingSecrets"></p>
+        </div>
       <div class="upgrade-offer" id="upgradeOffer" role="group" aria-labelledby="offerTitle" hidden>
         <div class="offer-head">
           <strong id="offerTitle">A Spoonful of Trouble</strong>
@@ -78,6 +92,7 @@
           <button class="upgrade-card" data-choice="1"><kbd>2</kbd><span><strong></strong><small></small></span></button>
         </div>
       </div>
+      </section>
     </div>
     <div class="hud-top">
       <div id="resourceStrip" class="resource-strip" role="group" aria-label="Gameplay resources">
@@ -94,7 +109,9 @@
       <span class="sr-only" id="resourceAnnouncement" role="status" aria-live="polite"></span>
     </div>
     <p id="cupStatus" class="sr-only" role="status">Cup condition: Cup stable.</p>
-    <div id="phaseChoices"><p id="compactMemory" aria-live="polite"></p><p id="compactFortune" aria-live="polite"></p><p id="compactEffect"></p></div>
+    <div id="phaseChoices"></div>
+    <p id="readingAnnouncement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+    <p id="upgradeAcknowledgment" class="upgrade-acknowledgment" role="status" hidden></p>
     <div class="controls-mobile controls-classic">
       <button data-hold="left" aria-label="Rotate counterclockwise">◀ TURN</button>
       <button data-hold="fire" aria-label="Shoot steam">STEAM ↑</button>
@@ -146,6 +163,7 @@
     <p id="potNotice" class="local-notice" role="status"></p>
   </section>
   <aside>
+    <details open><summary>Current Pot</summary>
     <section class="panel">
       <div class="eyebrow">Cup status</div>
       <h2 id="roundTitle">The kettle waits</h2>
@@ -161,23 +179,41 @@
       <div class="statrow"><span>Tea Cash</span><strong id="teaCash">0</strong></div>
       <div class="statrow"><span>Chapter</span><strong id="chapterNum">1</strong></div>
       <p id="potScore" class="note"></p>
-      <div class="spoon-kit"><span>The spoon</span><span id="spoonKit">An ordinary silver spoon.</span></div>
       <button id="mainBtn" class="action">Brew the first cup →</button>
       <p class="note" id="gameTip">Defend the rim. Where the leaves settle determines the fortune of your next cup.</p>
     </section>
+    </details>
+    <details><summary>Tea &amp; Fortunes</summary>
     <section class="panel">
-      <div class="eyebrow">The cup remembers</div>
+      <h3>Current tea</h3>
+      <p id="teaDetail"></p>
+      <h3 id="activeFortuneLabel">This cup’s fortune</h3>
+      <p id="activeFortune"></p>
+      <h3>Next cup</h3>
       <div class="fortune">
         <small id="fortuneLabel">Next cup's omen</small>
         <strong id="fortuneName">Not yet written</strong>
         <p id="fortuneDetail">Finish a round to read the leaves. Your tactics become the next round's rules.</p>
       </div>
-      <p id="readingMemory" class="memory" aria-live="polite"></p>
-      <p id="teaDetail"></p>
+      <h3>The cup remembers</h3>
+      <p id="readingMemory" class="memory"></p>
+      <p id="referenceSecrets"></p>
       <p class="note">Tea leaves from defeated foes collect in the cup. At the end of each round they form a reading that changes the next round. How you played sways the reading, but the leaves have opinions of their own.</p>
     </section>
+    </details>
+    <details><summary>The Spoon</summary>
     <section class="panel">
-      <div class="eyebrow">How to stir up trouble</div>
+      <h3>Your spoon</h3>
+      <p id="spoonKit">An ordinary silver spoon.</p>
+      <div id="spoonInventory"></div>
+      <p id="temporaryUpgrades"></p>
+      <p id="upgradeProgression" class="note"></p>
+    </section>
+    </details>
+    <details><summary>Controls &amp; Settings</summary>
+    <section class="panel">
+      <h3>How to stir up trouble</h3>
+      <button id="breakControlsBtn">SHOW CONTROLS</button>
       <p id="activeControls"></p>
       <div class="keyrow"><span>Move the silver spoon</span><span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></span></div>
       <div class="keyrow"><span>Fire steam inward</span><span><kbd>Space</kbd></span></div>
@@ -198,6 +234,7 @@
         <button id="graphicsBtn" class="toggle" aria-label="Toggle graphics quality">Graphics: high</button>
       </div>
     </section>
+    </details>
   </aside>
 </main>
 <dialog id="instructionOverlay" class="instruction-overlay" aria-labelledby="instructionTitle" aria-describedby="instructionObjective">
@@ -253,7 +290,6 @@
 </dialog>
 <dialog id="teaBreak" aria-labelledby="teaBreakTitle">
   <div class="break-head"><h2 id="teaBreakTitle">The Tea Break</h2><button id="closeBreak" autofocus>Back to cup</button></div>
-  <button id="breakControlsBtn">SHOW CONTROLS</button>
   <button id="breakCollectionBtn">THE SPOON'S OTHER JOBS</button>
   <div class="save-controls">
     <p id="savedPotInfo"></p><button id="clearPotBtn" hidden>Clear saved pot</button>

@@ -64,6 +64,7 @@ test('complete welcome and Tea Break flow uses browser keyboard and pointer inpu
   await expect.poll(async () => (await state()).sugar).toBe(supplies.sugar - 1);
   await expect.poll(async () => (await state()).shots).toBe(0);
   await page.locator('#menuBtn').click();
+  await page.getByText('Controls & Settings', { exact: true }).click();
   await page.locator('#breakControlsBtn').click();
   await expect(page.locator('#instructionOverlay')).toBeVisible();
   await page.keyboard.press('Enter');
@@ -115,13 +116,14 @@ for (const exit of ['click', 'Enter', 'Escape', 'controls', 'view']) {
     await page.evaluate(() => { window.__TEACUP__.game.state.spawnTimer = Infinity; });
     await page.locator('#menuBtn').click();
     if (exit === 'controls') {
+      await page.getByText('Controls & Settings', { exact: true }).click();
       await page.locator('#breakControlsBtn').click();
       await page.keyboard.press('Enter');
       await expect(page.locator('#teaBreak')).toBeVisible();
       await expect(page.locator('#breakControlsBtn')).toBeFocused();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
     }
-    if (exit === 'view') await page.getByText('Settings and controls', { exact: true }).click();
+    if (exit === 'view') await page.getByText('Controls & Settings', { exact: true }).click();
     await page.keyboard.down('ArrowRight');
     await page.keyboard.down('Space');
     if (exit === 'Escape') await page.keyboard.press('Escape');

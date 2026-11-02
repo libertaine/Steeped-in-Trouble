@@ -175,11 +175,13 @@ describe('the reading explains itself without changing the draw', () => {
     completeRound(game);
     Object.assign(game.state, { nextFortune: 'lie', readingTime: 2.5 });
     let text = hudText(game.state);
-    expect(text.readingMemory).toContain('No leaves spilled.');
-    expect(text.compactFortune).toBe('Next cup: Something Wonderful');
+    expect(text.readingMemory).toBe('');
+    expect(text.compactFortune).toBe('');
+    expect(text.readingAnnouncement).toBe('The leaves foretell Something Wonderful.');
     expect(text.compactEffect).toBe('');
-    game.state.readingTime = 4;
+    game.state.readingTime = 4.1;
     text = hudText(game.state);
+    expect(text.readingMemory).toContain('No leaves spilled.');
     expect(text.compactEffect).toBe(FORTUNES.lie.effect);
     game.state.offer = null;
     game.primaryAction();
