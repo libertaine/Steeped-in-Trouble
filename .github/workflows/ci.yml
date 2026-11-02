@@ -13,17 +13,10 @@ permissions:
 jobs:
   changes:
     name: Classify changes
+    if: ${{ false }}
     runs-on: ubuntu-latest
-    outputs:
-      docs_only: ${{ steps.paths.outputs.docs_only }}
     steps:
-      - id: paths
-        name: Controlled classification failure
-        shell: bash
-        run: |
-          echo "docs_only=true" >> "$GITHUB_OUTPUT"
-          echo "Controlled failure for PR 36 review verification"
-          exit 1
+      - run: echo "Controlled skipped classification for PR 36"
 
   checks:
     name: Lint, unit tests, build (${{ matrix.os }})
