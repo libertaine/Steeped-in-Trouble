@@ -13,10 +13,14 @@ permissions:
 jobs:
   changes:
     name: Classify changes
-    if: ${{ false }}
+    # This probe is triggered by pull_request, so the classifier is skipped.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.paths.outputs.docs_only }}
     steps:
-      - run: echo "Controlled skipped classification for PR 36"
+      - id: paths
+        run: echo "Controlled skipped classification for PR 36"
 
   checks:
     name: Lint, unit tests, build (${{ matrix.os }})
