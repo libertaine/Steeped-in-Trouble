@@ -74,19 +74,21 @@ export async function runErrand(page, how) {
   await page.waitForFunction(() => window.__TEACUP__.game.state.run?.stage === 'outro', null, { timeout: 70_000 });
 }
 
-/** The runner uses three DOM pills; each must fit the canvas without covering another. */
+/** The runner's reserved HUD row must fit the playfield and leave the canvas unobscured. */
 export async function expectRunnerHud(page) {
   await expect(page.locator('body')).toHaveAttribute('data-mode', 'run');
   for (const id of ['hudTea', 'hudOmen', 'hudStrainer', 'hudAuto']) await expect(page.locator('#' + id)).toBeHidden();
   const canvas = await page.locator('#game').boundingBox();
+  const field = await page.locator('.playfield').boundingBox();
+  const viewport = page.viewportSize();
   const pills = await page.locator('#hudStatus, #hudScore, #hudLives').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
   for (let i = 0; i < pills.length; i++) {
     const a = pills[i];
     expect(a.width).toBeGreaterThan(0);
-    expect(a.left).toBeGreaterThanOrEqual(canvas.x);
-    expect(a.right).toBeLessThanOrEqual(canvas.x + canvas.width);
-    const cardTop = canvas.width < 560 ? 210 : 160; // logical y of the highest intro/result card
-    expect(a.bottom).toBeLessThan(canvas.y + canvas.height * cardTop / 790);
+    expect(a.left).toBeGreaterThanOrEqual(Math.max(0, field.x));
+    expect(a.right).toBeLessThanOrEqual(Math.min(viewport.width, field.x + field.width));
+    expect(a.top).toBeGreaterThanOrEqual(0);
+    expect(a.bottom).toBeLessThanOrEqual(Math.min(viewport.height, canvas.y));
     for (const b of pills.slice(i + 1)) expect(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top).toBe(true);
   }
   await expect(page.locator('#hudScore')).toContainText('COINS');
