@@ -226,12 +226,23 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
     expect(alpha).toBeLessThan(0.85);
     await expect(page.locator('#game')).toBeVisible();
 
-    // Clicking where the page's own buttons are reaches neither them nor the game.
+    // Probe each underlying button. A relocated action may now be completely
+    // covered by the dialog's own Start button: clicking that would correctly
+    // dismiss it, so use an exposed backdrop point or prove modal interception.
+    const modalBox = await overlay.boundingBox();
+    let backdropClicks = 0;
     for (const id of ['mainBtn', 'menuBtn', 'viewBtn']) {
       const box = await page.locator(`#${id}`).boundingBox();
       if (!box) continue;
-      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      const points = [[box.x + box.width / 2, box.y + box.height / 2],
+        [box.x + 2, box.y + 2], [box.x + box.width - 2, box.y + box.height - 2]];
+      const exposed = points.find(([x, y]) => x < modalBox.x || x > modalBox.x + modalBox.width
+        || y < modalBox.y || y > modalBox.y + modalBox.height);
+      const [x, y] = exposed ?? points[0];
+      expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest('#instructionOverlay'), [x, y])).toBe(true);
+      if (exposed) { await page.mouse.click(x, y); backdropClicks++; }
     }
+    expect(backdropClicks).toBeGreaterThan(0);
     await page.mouse.click(4, 4); // the backdrop
     await expect(overlay).toBeVisible();
     await expect(page.locator('#teaBreak')).toBeHidden();

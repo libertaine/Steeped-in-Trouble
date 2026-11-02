@@ -14,7 +14,6 @@ export function createPresentation({ doc = document, game, params, storage, rese
   const aside = doc.querySelector('aside');
   const main = doc.querySelector('main');
   const primary = doc.getElementById('mainBtn');
-  const primaryHome = primary.parentElement;
   const collectionEntry = doc.getElementById('collectionEntry');
   const dock = doc.getElementById('actionDock');
   const choices = doc.getElementById('phaseChoices');
@@ -48,13 +47,12 @@ export function createPresentation({ doc = document, game, params, storage, rese
     body.dataset.view = view;
     viewButton.textContent = `View: ${view}`;
     breakView.textContent = `View: ${view}`;
+    // Starting/resuming Full View must not scroll a narrow screen to the sidebar.
+    dock.prepend(primary);
+    if (collectionEntry) doc.querySelector('.playfield').append(collectionEntry);
     if (view === 'compact') {
-      dock.prepend(primary);
-      if (collectionEntry) doc.querySelector('.playfield').append(collectionEntry);
       offers.forEach((offer) => choices.append(offer));
     } else {
-      primaryHome.insertBefore(primary, doc.getElementById('gameTip'));
-      if (collectionEntry) primaryHome.insertBefore(collectionEntry, doc.getElementById('gameTip'));
       offers.forEach((offer) => stage.append(offer));
     }
     resetInput();

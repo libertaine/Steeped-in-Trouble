@@ -966,6 +966,60 @@ body[data-view="compact"]:not([data-phase="ready"]):not([data-phase="reading"]) 
 }
 /* Full View keeps the same Tea Break entry as Compact View. */
 body[data-view="full"] .action-dock { display: flex; justify-content: flex-end; padding: 6px 12px; }
+/* Fit the entire arena, including the lower cup and side-adventure ground.
+   The existing HUD and controls occupy their own rows instead of covering it.
+   Full View's sidebar and footer remain available in the scrolling document. */
+body[data-view="full"] .playfield { height: var(--playfield-height);
+  display: grid; grid-template-rows: auto minmax(0, 1fr); }
+body[data-view="full"] .hud-top { position: static; grid-row: 1;
+  padding: 10px 12px; flex-wrap: wrap; }
+body[data-view="full"] .stage { grid-row: 2; min-height: 0; min-width: 0;
+  container-type: size; display: grid; place-items: center; }
+body[data-view="full"] #game { width: min(100cqw, calc(100cqh * 920 / 790)); height: auto; }
+body[data-view="full"] #mainBtn { margin: 0; width: auto; flex: 1; }
+body[data-view="full"] #menuBtn { flex: 0 0 auto; }
+body[data-view="full"] .action-dock { gap: 8px; }
+body[data-view="full"] .controls-mobile button,
+body[data-view="full"] .action-dock button { min-height: 44px; }
+body[data-view="full"] .collection-entry,
+body[data-view="full"] .practice-bar,
+body[data-view="full"] #potNotice { grid-column: 1 / -1; }
+@media (min-width: 981px) {
+  body[data-view="full"] main > aside { max-height: var(--playfield-height); overflow: auto; }
+}
+@media (orientation: landscape) {
+  /* Give the touch rail its own desktop width instead of subtracting it from
+     the original arena column. The stage still fits the viewport height. */
+  body[data-view="full"] main { max-width: 1580px; }
+  body[data-view="full"] .playfield { grid-template-columns: minmax(0, 1fr) 190px;
+    grid-template-rows: auto minmax(0, 1fr) auto; }
+  body[data-view="full"] .hud-top { grid-column: 1 / -1; }
+  body[data-view="full"] .hud-left { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  body[data-view="full"] .stage { grid-column: 1; grid-row: 2 / 4; }
+  body[data-view="full"] .controls-mobile { grid-column: 2; grid-row: 2;
+    align-self: end; flex-wrap: wrap; padding: 6px 8px; gap: 8px; border: 0; }
+  body[data-view="full"] .controls-classic button { flex-basis: 28%; }
+  body[data-view="full"] .easy-hint { flex-basis: 100%; order: -1; }
+  body[data-view="full"] .controls-pour { flex-direction: column; }
+  body[data-view="full"] .controls-breakout .launch-pad { flex-basis: 100%; order: -1; }
+  body[data-view="full"] .controls-crossing { grid-template-columns: repeat(3, minmax(48px, 1fr)); gap: 6px; }
+  body[data-view="full"] .controls-mobile .walk-pad { min-height: 52px; }
+  body[data-view="full"] .action-dock { grid-column: 2; grid-row: 3; flex-direction: column; }
+}
+/* Short landscape Full View also needs room for two-row touch controls. */
+@media (orientation: landscape) and (max-height: 600px) {
+  body[data-view="full"] header { padding: 6px 12px; }
+  body[data-view="full"] .kicker { display: none; }
+  body[data-view="full"] main { padding: 5px 8px 8px; }
+  body[data-view="full"] .hud-top { padding: 4px 8px; gap: 4px 8px; }
+  body[data-view="full"] .hud-left { gap: 2px; }
+  body[data-view="full"] .pill { padding: 3px 6px; }
+  body[data-view="full"] .controls-mobile .paper-pad { min-height: 52px; font-size: 14px; padding: 6px; }
+  body[data-view="full"] .action-dock { padding: 4px 8px; }
+  body[data-view="full"] .action-dock button { min-height: 44px; font-size: 13px; padding: 8px; }
+  body[data-view="full"] .practice-bar { padding: 4px 8px; }
+  body[data-view="full"] .practice-label { display: none; }
+}
 body[data-view="compact"] .job-card canvas { width: 100%; height: auto; }
 body[data-view="full"] .panel .collection-entry { padding: 0; margin-top: 8px; }
 body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-size: 12px; }

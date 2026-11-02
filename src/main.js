@@ -15,6 +15,7 @@ import { createControls } from './input/controls.js';
 import { initialSettings, isTouchDevice, normalize, saveSettings } from './input/settings.js';
 import { createAudio } from './audio/audio.js';
 import { attachCanvasScaling } from './rendering/canvas.js';
+import { attachViewportFit } from './ui/viewport.js';
 import { createEffects } from './rendering/effects.js';
 import { createRenderer } from './rendering/renderer.js';
 import { createHud } from './ui/hud.js';
@@ -224,6 +225,7 @@ function boot() {
   const version = document.getElementById('version');
   if (version) version.textContent = `VERSION ${__APP_VERSION__}`;
 
+  const detachViewport = attachViewportFit(canvas.closest('.playfield'));
   const detachScaling = attachCanvasScaling(canvas);
 
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
@@ -298,6 +300,7 @@ function boot() {
       overlay.dispose();
       title.dispose();
       detachScaling();
+      detachViewport();
       delete window[INSTANCE_KEY];
     },
   };
