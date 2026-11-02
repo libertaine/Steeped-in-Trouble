@@ -1,0 +1,200 @@
+[
+  {
+    "viewport": "1280x720",
+    "scene": "ordinary",
+    "width": 579.609375,
+    "height": 497.703125,
+    "top": 164.53125,
+    "bottom": 662.234375,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n        \n          \n          CUP STABLECup 1: the storm stirs3 spills to break\n        \n        Cup 1 · Leaves 8/16\n        Milk1/2\n        Sugar1/2\n        Leaf catches1/1\n      "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "depleted",
+    "width": 563.203125,
+    "height": 483.609375,
+    "top": 178.625,
+    "bottom": 662.234375,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n        \n          \n          CUP STABLECup 1: the storm stirs3 spills to break\n        \n        Cup 1 · Leaves 8/16\n        Milk0/2\n        Sugar0/2\n        Leaf catches0/1exhausted\n      "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "bonus",
+    "width": 563.203125,
+    "height": 483.609375,
+    "top": 178.625,
+    "bottom": 662.234375,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n        \n          \n          REINFORCEDCup 1: the storm stirs4 spills to break\n        \n        Cup 1 · Leaves 8/16\n        Milk2/2\n        Sugar3/2+ bonus\n        Leaf catches1/1\n      "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "grind",
+    "width": 579.609375,
+    "height": 497.703125,
+    "top": 164.53125,
+    "bottom": 662.234375,
+    "overflow": 0,
+    "phase": "grind",
+    "hud": "\n        \n          \n          CUP STABLEEspresso machineNormal pot suspended\n        \n        Machine health 56/56\n        Milk2/2\n        Sugar2/2\n        Scalds2/3\n      "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "chocolate",
+    "width": 579.859375,
+    "height": 497.921875,
+    "top": 164.328125,
+    "bottom": 662.25,
+    "overflow": 0,
+    "phase": "chocolate",
+    "hud": "\n        \n          \n          CUP STABLEHot Chocolate HavocNormal pot suspended\n        \n        \n        Perfect0\n        Toasted0\n        Time25s\n      "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "teaRun",
+    "width": 486.6875,
+    "height": 417.90625,
+    "top": 164.328125,
+    "bottom": 582.234375,
+    "overflow": 0,
+    "phase": "teaRun",
+    "hud": "\n        \n          \n          STUMBLES ♥ ♥ ♥Errand: The Tea RunNormal pot suspended\n        \n        Route 0/11220\n        Stumbles left3/3\n        Pickups0 coins · 0 tea\n        Distance0%\n      "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "dailyPour",
+    "width": 486.6875,
+    "height": 417.90625,
+    "top": 164.328125,
+    "bottom": 582.234375,
+    "overflow": 0,
+    "phase": "dailyPour",
+    "hud": "\n        \n          \n          PAPERS 9The Daily PourNormal pot suspended\n        \n        Route 0/30\n        Deliveries0/7\n        Papers9\n        Time / aim30s · Mailbox\n      "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "biscuitBreakout",
+    "width": 486.6875,
+    "height": 417.90625,
+    "top": 164.328125,
+    "bottom": 582.234375,
+    "overflow": 0,
+    "phase": "biscuitBreakout",
+    "hud": "\n        \n          \n          CUBES ■ ■ ■Biscuit BreakoutNormal pot suspended\n        \n        Biscuits 0/24\n        Cubes3/3\n        Biscuits0/24\n        Time45s\n      "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "crossingStreet",
+    "width": 486.6875,
+    "height": 417.90625,
+    "top": 164.328125,
+    "bottom": 582.234375,
+    "overflow": 0,
+    "phase": "crossingStreet",
+    "hud": "\n        \n          \n          ATTEMPTS ● ● ●Crossing the StreetNormal pot suspended\n        \n        Crossing 0/5\n        Attempts3/3\n        Lanes0/5\n        Time40s\n      "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "ordinary",
+    "width": 312.84375,
+    "height": 268.625,
+    "top": 233.890625,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n        \n          \n          CUP STABLECup 1: the storm stirs3 spills to break\n        \n        Cup 1 · Leaves 8/16\n        Milk1/2\n        Sugar1/2\n        Leaf catches1/1\n      "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "depleted",
+    "width": 299.453125,
+    "height": 257.125,
+    "top": 245.390625,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n        \n          \n          CUP STABLECup 1: the storm stirs3 spills to break\n        \n        Cup 1 · Leaves 8/16\n        Milk0/2\n        Sugar0/2\n        Leaf catches0/1exhausted\n      "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "bonus",
+    "width": 299.453125,
+    "height": 257.125,
+    "top": 245.390625,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n        \n          \n          REINFORCEDCup 1: the storm stirs4 spills to break\n        \n        Cup 1 · Leaves 8/16\n        Milk2/2\n        Sugar3/2+ bonus\n        Leaf catches1/1\n      "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "grind",
+    "width": 276.390625,
+    "height": 237.328125,
+    "top": 265.1875,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "grind",
+    "hud": "\n        \n          \n          CUP STABLEEspresso machineNormal pot suspended\n        \n        Machine health 56/56\n        Milk2/2\n        Sugar2/2\n        Scalds2/3\n      "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "chocolate",
+    "width": 280.546875,
+    "height": 240.890625,
+    "top": 261.625,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "chocolate",
+    "hud": "\n        \n          \n          CUP STABLEHot Chocolate HavocNormal pot suspended\n        \n        \n        Perfect0\n        Toasted0\n        Time25s\n      "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "teaRun",
+    "width": 161.609375,
+    "height": 138.765625,
+    "top": 281.125,
+    "bottom": 419.890625,
+    "overflow": 0,
+    "phase": "teaRun",
+    "hud": "\n        \n          \n          STUMBLES ♥ ♥ ♥Errand: The Tea RunNormal pot suspended\n        \n        Route 0/11220\n        Stumbles left3/3\n        Pickups0 coins · 0 tea\n        Distance0%\n      "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "dailyPour",
+    "width": 161.609375,
+    "height": 138.765625,
+    "top": 281.125,
+    "bottom": 419.890625,
+    "overflow": 0,
+    "phase": "dailyPour",
+    "hud": "\n        \n          \n          PAPERS 9The Daily PourNormal pot suspended\n        \n        Route 0/30\n        Deliveries0/7\n        Papers9\n        Time / aim30s · Mailbox\n      "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "biscuitBreakout",
+    "width": 153.3125,
+    "height": 131.640625,
+    "top": 261.625,
+    "bottom": 393.265625,
+    "overflow": 0,
+    "phase": "biscuitBreakout",
+    "hud": "\n        \n          \n          CUBES ■ ■ ■Biscuit BreakoutNormal pot suspended\n        \n        Biscuits 0/24\n        Cubes3/3\n        Biscuits0/24\n        Time45s\n      "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "crossingStreet",
+    "width": 100,
+    "height": 85.859375,
+    "top": 261.625,
+    "bottom": 347.484375,
+    "overflow": 0,
+    "phase": "crossingStreet",
+    "hud": "\n        \n          \n          ATTEMPTS ● ● ●Crossing the StreetNormal pot suspended\n        \n        Crossing 0/5\n        Attempts3/3\n        Lanes0/5\n        Time40s\n      "
+  }
+]

@@ -1,0 +1,200 @@
+[
+  {
+    "viewport": "1280x720",
+    "scene": "ordinary",
+    "width": 579.75,
+    "height": 497.828125,
+    "top": 164.421875,
+    "bottom": 662.25,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n      \n        DEFEND THE RIM\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        ☕ House Blend · house blend\n      \n      \n        SCORE 1260\n        CUP STABLE\n        STRAINER 1/1\n        \n      \n      \n        Cup 1Milk 1Sugar 18/16\n      \n    "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "depleted",
+    "width": 579.75,
+    "height": 497.828125,
+    "top": 164.421875,
+    "bottom": 662.25,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n      \n        DEFEND THE RIM\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        ☕ House Blend · house blend\n      \n      \n        SCORE 1260\n        CUP STABLE\n        STRAINER 0/1\n        \n      \n      \n        Cup 1Milk 0Sugar 08/16\n      \n    "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "bonus",
+    "width": 579.75,
+    "height": 497.828125,
+    "top": 164.421875,
+    "bottom": 662.25,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n      \n        DEFEND THE RIM\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        ☕ House Blend · house blend\n      \n      \n        SCORE 1260\n        REINFORCED\n        STRAINER 1/1\n        \n      \n      \n        Cup 1Milk 2Sugar 38/16\n      \n    "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "grind",
+    "width": 579.75,
+    "height": 497.828125,
+    "top": 164.421875,
+    "bottom": 662.25,
+    "overflow": 0,
+    "phase": "grind",
+    "hud": "\n      \n        THE DAILY GRIND · 38s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        SCORE 0000\n        CUP STABLE\n        SCALDS ● ● ○\n        \n      \n      \n        Cup 1Milk 2Sugar 2Boss 56/56\n      \n    "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "chocolate",
+    "width": 579.75,
+    "height": 497.828125,
+    "top": 164.421875,
+    "bottom": 662.25,
+    "overflow": 0,
+    "phase": "chocolate",
+    "hud": "\n      \n        HOT CHOCOLATE HAVOC · 25s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        SCORE 0000\n        CUP STABLE\n        STRAINER 1/1\n        \n      \n      \n        Cup 1Milk 2Sugar 20 perfect · 0 toasted\n      \n    "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "teaRun",
+    "width": 486.578125,
+    "height": 417.8125,
+    "top": 164.421875,
+    "bottom": 582.234375,
+    "overflow": 0,
+    "phase": "teaRun",
+    "hud": "\n      \n        THE TEA RUN · 45s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        COINS 0 · TEA 0\n        STUMBLES ♥ ♥ ♥\n        \n        \n      \n      \n        Cup 1Milk 2Sugar 20%\n      \n    "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "dailyPour",
+    "width": 486.578125,
+    "height": 417.8125,
+    "top": 164.421875,
+    "bottom": 582.234375,
+    "overflow": 0,
+    "phase": "dailyPour",
+    "hud": "\n      \n        THE DAILY POUR · 30s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        DELIVERED 0/7\n        PAPERS 9\n        \n        \n      \n      \n        Cup 1Milk 2Sugar 2Route 0%\n      \n    "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "biscuitBreakout",
+    "width": 486.578125,
+    "height": 417.8125,
+    "top": 164.421875,
+    "bottom": 582.234375,
+    "overflow": 0,
+    "phase": "biscuitBreakout",
+    "hud": "\n      \n        BISCUIT BREAKOUT · 45s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        BISCUITS 0/24\n        CUBES ■ ■ ■\n        \n        \n      \n      \n        Cup 1Milk 2Sugar 2Biscuits 0/24\n      \n    "
+  },
+  {
+    "viewport": "1280x720",
+    "scene": "crossingStreet",
+    "width": 486.578125,
+    "height": 417.8125,
+    "top": 164.421875,
+    "bottom": 582.234375,
+    "overflow": 0,
+    "phase": "crossingStreet",
+    "hud": "\n      \n        CROSSING THE STREET · 40s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        POINTS 0\n        ATTEMPTS ● ● ●\n        \n        \n      \n      \n        Cup 1Milk 2Sugar 2Lanes 0/5 · 0 pts\n      \n    "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "ordinary",
+    "width": 287.796875,
+    "height": 247.125,
+    "top": 255.390625,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n      \n        DEFEND THE RIM\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        ☕ House Blend · house blend\n      \n      \n        SCORE 1260\n        CUP STABLE\n        STRAINER 1/1\n        \n      \n      \n        Cup 1Milk 1Sugar 18/16\n      \n    "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "depleted",
+    "width": 287.796875,
+    "height": 247.125,
+    "top": 255.390625,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n      \n        DEFEND THE RIM\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        ☕ House Blend · house blend\n      \n      \n        SCORE 1260\n        CUP STABLE\n        STRAINER 0/1\n        \n      \n      \n        Cup 1Milk 0Sugar 08/16\n      \n    "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "bonus",
+    "width": 287.796875,
+    "height": 247.125,
+    "top": 255.390625,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "playing",
+    "hud": "\n      \n        DEFEND THE RIM\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        ☕ House Blend · house blend\n      \n      \n        SCORE 1260\n        REINFORCED\n        STRAINER 1/1\n        \n      \n      \n        Cup 1Milk 2Sugar 38/16\n      \n    "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "grind",
+    "width": 319.015625,
+    "height": 273.921875,
+    "top": 228.59375,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "grind",
+    "hud": "\n      \n        THE DAILY GRIND · 38s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        SCORE 0000\n        CUP STABLE\n        SCALDS ● ● ○\n        \n      \n      \n        Cup 1Milk 2Sugar 2Boss 56/56\n      \n    "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "chocolate",
+    "width": 319.015625,
+    "height": 273.921875,
+    "top": 228.59375,
+    "bottom": 502.515625,
+    "overflow": 0,
+    "phase": "chocolate",
+    "hud": "\n      \n        HOT CHOCOLATE HAVOC · 25s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        SCORE 0000\n        CUP STABLE\n        STRAINER 1/1\n        \n      \n      \n        Cup 1Milk 2Sugar 20 perfect · 0 toasted\n      \n    "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "teaRun",
+    "width": 229.78125,
+    "height": 197.296875,
+    "top": 222.59375,
+    "bottom": 419.890625,
+    "overflow": 0,
+    "phase": "teaRun",
+    "hud": "\n      \n        THE TEA RUN · 45s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        COINS 0 · TEA 0\n        STUMBLES ♥ ♥ ♥\n        \n        \n      \n      \n        Cup 1Milk 2Sugar 20%\n      \n    "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "dailyPour",
+    "width": 222.78125,
+    "height": 191.296875,
+    "top": 228.59375,
+    "bottom": 419.890625,
+    "overflow": 0,
+    "phase": "dailyPour",
+    "hud": "\n      \n        THE DAILY POUR · 30s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        DELIVERED 0/7\n        PAPERS 9\n        \n        \n      \n      \n        Cup 1Milk 2Sugar 2Route 0%\n      \n    "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "biscuitBreakout",
+    "width": 191.78125,
+    "height": 164.671875,
+    "top": 228.59375,
+    "bottom": 393.265625,
+    "overflow": 0,
+    "phase": "biscuitBreakout",
+    "hud": "\n      \n        BISCUIT BREAKOUT · 45s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        BISCUITS 0/24\n        CUBES ■ ■ ■\n        \n        \n      \n      \n        Cup 1Milk 2Sugar 2Biscuits 0/24\n      \n    "
+  },
+  {
+    "viewport": "375x667",
+    "scene": "crossingStreet",
+    "width": 138.46875,
+    "height": 118.890625,
+    "top": 228.59375,
+    "bottom": 347.484375,
+    "overflow": 0,
+    "phase": "crossingStreet",
+    "hud": "\n      \n        CROSSING THE STREET · 40s\n        DAY 1 · CUP 1/10 · HEAT 0\n        \n        \n      \n      \n        POINTS 0\n        ATTEMPTS ● ● ●\n        \n        \n      \n      \n        Cup 1Milk 2Sugar 2Lanes 0/5 · 0 pts\n      \n    "
+  }
+]

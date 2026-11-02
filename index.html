@@ -80,21 +80,18 @@
       </div>
     </div>
     <div class="hud-top">
-      <div class="hud-left">
-        <span class="hudlabel pill" id="hudStatus">READY TO BREW</span>
-        <span class="hudlabel pill" id="hudDay">DAY 1 · CUP 1/10 · HEAT 0</span>
-        <span class="hudlabel pill omen" id="hudOmen" aria-live="polite"></span>
-        <span class="hudlabel pill omen tea" id="hudTea" aria-live="polite"></span>
+      <div id="resourceStrip" class="resource-strip" role="group" aria-label="Gameplay resources">
+        <div class="resource-condition">
+          <span id="resourceCupIcon" aria-hidden="true"></span>
+          <div><span class="hudlabel" id="hudLives" data-condition="stable">CUP STABLE</span><strong id="resourceTitle"></strong><small id="spillMargin"></small></div>
+        </div>
+        <div class="resource-progress"><span id="resourceProgressLabel"></span><progress id="resourceProgress" max="1" value="0"></progress></div>
+        <div class="resource-item" id="resource0" role="group"></div>
+        <div class="resource-item" id="resource1" role="group"></div>
+        <div class="resource-item" id="resource2" role="group"></div>
       </div>
-      <div class="pills">
-        <span class="hudlabel pill" id="hudScore">SCORE 0000</span>
-        <span class="hudlabel pill" id="hudLives" data-condition="stable">CUP STABLE</span>
-        <span class="hudlabel pill strainer" id="hudStrainer">STRAINER 1/1</span>
-        <span class="hudlabel pill auto" id="hudAuto"></span>
-      </div>
-      <div class="compact-stats" aria-label="Cup resources">
-        <span id="compactRound"></span><span id="compactMilk"></span><span id="compactSugar"></span><span id="compactProgress"></span>
-      </div>
+      <div class="resource-secondary"><span id="hudTea"></span><span id="hudStatus">READY TO BREW</span><span id="resourceGuidance"></span><span id="hudOmen"></span><span id="hudAuto"></span><span id="resourceScore"></span></div>
+      <span class="sr-only" id="resourceAnnouncement" role="status" aria-live="polite"></span>
     </div>
     <p id="cupStatus" class="sr-only" role="status">Cup condition: Cup stable.</p>
     <div id="phaseChoices"><p id="compactMemory" aria-live="polite"></p><p id="compactFortune" aria-live="polite"></p><p id="compactEffect"></p></div>
@@ -152,6 +149,9 @@
     <section class="panel">
       <div class="eyebrow">Cup status</div>
       <h2 id="roundTitle">The kettle waits</h2>
+      <p id="hudDay">DAY 1 · CUP 1/10 · HEAT 0</p>
+      <p id="hudScore">SCORE 0000</p>
+      <p id="referenceResources"></p>
       <div class="statrow"><span>Round</span><strong id="roundNum">01</strong></div>
       <div class="statrow"><span>The tea</span><strong id="teaName">House Blend</strong></div>
       <div class="statrow"><span id="killLabel">Leaves cleared</span><strong id="killCount">0 / 16</strong></div>

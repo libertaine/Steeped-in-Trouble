@@ -83,7 +83,7 @@ test('desktop Compact View keeps Day choices and global progression readable', a
   await toDayReading(page); await expectDayButtons(page);
   if (info.project.name === 'chromium') await daySnapshot(page, 'desktop-compact-transition');
   await page.locator('[data-day="keep"]').click();
-  await expect(page.locator('#compactRound')).toHaveText('Cup 11');
+  await expect(page.locator('#resourceProgressLabel')).toContainText('Cup 11 · Leaves');
   await expect(page.locator('#hudDay')).toContainText('DAY 2');
   expect(problems).toEqual([]);
 });

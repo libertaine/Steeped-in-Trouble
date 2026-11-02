@@ -50,7 +50,7 @@ export async function expectPourControls(page) {
   await expect(page.locator('.controls-classic')).toBeHidden();
   await expect(page.locator('.controls-easy')).toBeHidden();
   await expect(page.locator('.controls-run')).toBeHidden();
-  for (const id of ['hudTea', 'hudOmen', 'hudStrainer', 'hudAuto']) await expect(page.locator('#' + id)).toBeHidden();
+  for (const id of ['hudTea', 'hudOmen', 'hudAuto']) await expect(page.locator('#' + id)).toBeHidden();
   for (const action of ['aimPaper', 'throwPaper']) {
     const button = page.locator(`[data-paper="${action}"]`);
     await expect(button).toBeVisible();
