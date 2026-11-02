@@ -13,14 +13,19 @@ permissions:
 jobs:
   changes:
     name: Classify changes
-    # This probe is triggered by pull_request, so the classifier is skipped.
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       docs_only: ${{ steps.paths.outputs.docs_only }}
     steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - id: paths
-        run: echo "Controlled skipped classification for PR 36"
+        name: Identify documentation-only changes
+        env:
+          CHANGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node .github/scripts/ci-changes.js
 
   checks:
     name: Lint, unit tests, build (${{ matrix.os }})
