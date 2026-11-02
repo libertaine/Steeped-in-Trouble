@@ -1559,3 +1559,67 @@ body[data-view="full"] main { padding-top: 7px; }
   .resource-secondary { gap: 4px; }
   #resourceGuidance { flex-basis: auto; }
 }
+
+/* The cup gets the entire stage until the existing reveal has finished.
+   Only reading uses this split; the normal arena's budget is unchanged. */
+.reading-presentation[hidden], #upgradeAcknowledgment[hidden] { display: none; }
+.reading-presentation { min-width: 0; min-height: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; padding: 12px; gap: 10px; }
+.reading-copy { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain;
+  padding: 2px 8px 4px 2px; scrollbar-gutter: stable; }
+.reading-copy:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.reading-presentation h2 { margin: 0 0 10px; font: bold 23px/1.2 Georgia,serif; color: #f1dfbd; }
+.reading-presentation h3 { margin: 8px 0 4px; font-size: 14px; color: var(--gold); }
+.reading-presentation p { margin: 4px 0 8px; }
+.next-fortune { padding: 5px 12px; border-left: 3px solid var(--gold); background: #1a293a; }
+.reading-quote { font-style: italic; color: #d4ddcf; }
+body[data-view] .reading-presentation #compactMemory,
+body[data-view] .reading-presentation #compactFortune,
+body[data-view] .reading-presentation #compactEffect { display: block; padding: 0; font-size: 14px; color: var(--ink); }
+body[data-view] .reading-presentation #upgradeOffer { position: static; transform: none;
+  width: 100%; margin: 0; padding: 10px; flex: 0 0 auto; background: #132520; animation: none; }
+body[data-view] .reading-presentation #upgradeOffer[hidden] { display: none; }
+body[data-view] .reading-presentation .offer-head em { display: none; }
+body[data-view] .reading-presentation .offer-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+body[data-view] .reading-presentation .upgrade-card { min-width: 0; min-height: 64px; padding: 10px; gap: 6px;
+  background: #1a293a; border-color: #899bb2; }
+body[data-view] .reading-presentation .upgrade-card strong { font-size: 16px; overflow-wrap: anywhere; }
+body[data-view] .reading-presentation .upgrade-card small { font-size: 13px; line-height: 1.35; }
+body[data-view] .reading-presentation .upgrade-card:focus-visible { outline: 3px solid #ffe5a5; outline-offset: -3px; }
+body[data-view][data-phase="reading"] .controls-mobile,
+body[data-view][data-phase="reading"] #phaseChoices,
+body[data-view][data-phase="reading"] #mainBtn:disabled { display: none; }
+body[data-view][data-phase="reading"] .playfield { grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto; }
+body[data-view][data-phase="reading"] .stage { grid-column: 1; grid-row: 2; }
+body[data-view][data-phase="reading"] .action-dock { grid-column: 1; grid-row: 3; flex-direction: row; }
+body[data-view][data-phase="reading"] #potNotice { display: none; }
+body[data-view][data-reading-ready="true"] .stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr); align-items: center; }
+body[data-view][data-reading-ready="true"] #game { grid-column: 1; grid-row: 1;
+  width: min(50cqw, calc(100cqh * 920 / 790)); }
+body[data-view][data-reading-ready="true"] #readingPresentation { grid-column: 2; grid-row: 1; }
+.upgrade-acknowledgment { position: absolute; z-index: 4; bottom: 64px; left: 12px; right: 12px;
+  margin: 0; padding: 8px 12px; background: #1a293a; border: 1px solid #c9d6e7; border-radius: 8px;
+  text-align: center; pointer-events: none; }
+#teaBreak h3 { color: #f1dfbd; margin-bottom: 6px; }
+#teaBreak .settings { flex-wrap: wrap; }
+#teaBreak button { min-width: 44px; }
+@media (orientation: portrait) {
+  body[data-view][data-reading-ready="true"] .stage { grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 28fr) minmax(0, 72fr); }
+  body[data-view][data-reading-ready="true"] #game { width: min(100cqw, calc(28cqh * 920 / 790)); }
+  body[data-view][data-reading-ready="true"] #readingPresentation { grid-column: 1; grid-row: 2; padding: 4px 10px; }
+}
+@media (max-width: 600px), (max-height: 500px) {
+  body[data-view][data-phase="reading"] header { padding: 4px 10px; }
+  body[data-view][data-phase="reading"] .kicker,
+  body[data-view][data-phase="reading"] .version { display: none; }
+  body[data-view][data-phase="reading"] .brand { font-size: 21px; }
+  .reading-presentation { padding: 4px 8px; gap: 4px; }
+  .reading-presentation h2 { font-size: 19px; margin-bottom: 4px; }
+  body[data-view] .reading-presentation #upgradeOffer { padding: 6px; }
+  body[data-view] .reading-presentation .upgrade-card { padding: 7px; }
+  body[data-view] .reading-presentation .upgrade-card strong { font-size: 14px; }
+  body[data-view] .reading-presentation .offer-head strong { font-size: 14px; }
+}

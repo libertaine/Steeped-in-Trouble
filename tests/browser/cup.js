@@ -3,10 +3,9 @@
 // collision or escape in the simulation.
 import { expect } from './fixtures.js';
 
-/** A screenshot: Chromium runs keep theirs in docs/images/cup-remembers (see its README), others in test results. */
+/** Reading regression captures belong to this test run; retain historical release images. */
 export function capture(page, info, name) {
-  const docs = ['chromium', 'mobile-chromium'].includes(info.project.name);
-  return page.screenshot({ path: docs ? `docs/images/cup-remembers/${name}.png` : info.outputPath(`${name}.png`), scale: 'css' });
+  return page.screenshot({ path: info.outputPath(`${name}.png`), scale: 'css' });
 }
 
 /** In a quiet cup (no new leaves), pour milk twice with the keyboard, then finish the cup with a real steam kill. */

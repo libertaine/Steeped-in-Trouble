@@ -111,7 +111,7 @@ test('three stumbles end the errand without costing a cup', async ({ page, probl
 test('Auto Steam can be switched on with a keyboard, and says so', async ({ page, problems }) => {
   await openGame(page);
   await page.locator('#menuBtn').click();
-  await page.locator('#teaBreak summary').nth(2).click();
+  await page.locator('#teaBreak summary').nth(3).click();
   await expect(page.locator('#autoSteamBtn')).toHaveText('Auto Steam: off');
   await page.locator('#autoSteamBtn').focus();
   await page.keyboard.press('Space');
@@ -130,7 +130,7 @@ test('Auto Steam can be switched on with a keyboard, and says so', async ({ page
   await page.reload();
   await page.waitForFunction(() => window.__TEACUP__?.game);
   await page.locator('#menuBtn').click();
-  await page.locator('#teaBreak summary').nth(2).click();
+  await page.locator('#teaBreak summary').nth(3).click();
   await expect(page.locator('#autoSteamBtn')).toBeVisible();
   await expect(page.locator('#autoSteamBtn')).toHaveText('Auto Steam: on');
   expect(problems).toEqual([]);

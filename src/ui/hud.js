@@ -7,11 +7,12 @@
 
 import { CONFIG } from '../config.js';
 import { DAY_CAPTIONS, MAX_HEAT, cupOfDay, dayOf } from '../gameplay/days.js';
-import { OFFER_AT } from '../core/game.js';
+import { readingReadyAt } from '../core/game.js';
 import { PHASE } from '../core/state.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
 import { readingMemory } from '../gameplay/memory.js';
+import { SECRETS } from '../gameplay/secrets.js';
 import { grindInProgress } from '../gameplay/grind.js';
 import { canBuyTea } from '../gameplay/shortage.js';
 import { runInProgress } from '../gameplay/teaRun.js';
@@ -220,7 +221,7 @@ export function spoonKitText(state) {
  * level the upgrade would reach.
  */
 export function offerCards(state) {
-  if (state.phase !== PHASE.READING || !state.offer || state.readingTime < OFFER_AT) return null;
+  if (state.phase !== PHASE.READING || !state.offer || state.readingTime < readingReadyAt(state)) return null;
   return state.offer.map((id) => {
     const u = UPGRADES[id];
     return { id, title: `${u.name} ${pips(state.spoon[id] + 1, u.max)}`, info: u.info };
@@ -365,6 +366,29 @@ export function hudText(state) {
     compactProgress: `${state.kills}/${state.target}`,
     easyHint: havoc ? 'Hold cup: flames' : 'Double-tap: milk\nHold: sugar',
   };
+  const reading = state.phase === PHASE.READING;
+  const ready = reading && state.readingTime >= readingReadyAt(state);
+  const unrevealed = reading && state.readingTime < CONFIG.fortunes.revealAt;
+  if (unrevealed) {
+    values.fortuneName = 'The leaves are settling…';
+    values.fortuneDetail = 'Let the cup have its moment.';
+  }
+  if (!between) {
+    values.fortuneLabel = 'Fortune for the next cup';
+    values.fortuneName = 'Not yet written';
+    values.fortuneDetail = 'Finish this cup to read its leaves. The next fortune has not been drawn.';
+  }
+  const active = state.fortune ? FORTUNES[state.fortune] : null;
+  values.activeFortuneLabel = between ? 'Completed cup’s fortune' : 'This cup’s fortune';
+  values.activeFortune = active ? `${active.name}: ${active.effect}` : 'No fortune is active in this cup.';
+  values.readingTitle = ready ? `Cup ${state.round} complete` : '';
+  values.readingQuote = ready ? `“${FORTUNES[state.nextFortune].quote}”` : '';
+  values.readingSecrets = ready ? state.secrets.map((id) => `${SECRETS[id].words} ${SECRETS[id].reward}.`).join(' ') : '';
+  values.referenceSecrets = values.readingSecrets;
+  values.temporaryUpgrades = [state.goldenSpoon > 0 ? `Golden Spoon: ${Math.ceil(state.goldenSpoon)} seconds remaining in play.` : '',
+    state.extraSugar > 0 ? `Earned sugar for the next cup: +${state.extraSugar}.` : ''].filter(Boolean).join(' ')
+    || 'No temporary spoon effect is active.';
+  values.upgradeProgression = `The cupboard offers help after cup ${CONFIG.upgrades.firstOffer}, then every ${CONFIG.upgrades.offerEvery} cups, while any upgrade can still improve. Upgrades stack for this pot.`;
   if (state.phase === PHASE.SHORTAGE) values.roundNum = `${pad(state.round, 2)}½`;
   if (state.phase === PHASE.ARCADE_OFFER) {
     const offer = ARCADE_OFFERS[state.interlude?.id] ?? ARCADE_OFFERS.dailyPour;
@@ -466,13 +490,15 @@ export function hudText(state) {
     });
     if (state.phase === PHASE.GRIND) values.mainBtn = GRIND.button[grind.stage];
   }
-  // What the cup remembers: in full in the panel, and its reasons in a line under the compact cup.
-  const memory = readingMemory(state);
+  // One reading explanation, with the same complete account in Tea Break.
+  const memory = ready ? readingMemory(state) : null;
   values.readingMemory = memory ? memory.observations.map((o) => `${o.fact} ${o.influence}`).join(' ') : '';
-  values.compactMemory = memory ? memory.observations.map((o) => o.influence).join(' ') : '';
-  const revealed = state.phase === PHASE.READING && state.readingTime >= CONFIG.fortunes.revealAt;
-  values.compactFortune = revealed ? `Next cup: ${values.fortuneName}` : '';
-  values.compactEffect = revealed && !stillLying(state) ? FORTUNES[state.nextFortune].effect : '';
+  values.compactMemory = values.readingMemory;
+  values.compactFortune = ready ? `Next cup: ${values.fortuneName}` : '';
+  values.compactEffect = ready ? FORTUNES[state.nextFortune].effect : '';
+  values.readingAnnouncement = ready ? `${values.compactFortune}. ${values.compactEffect}`
+    : reading && !unrevealed ? stillLying(state) ? 'The leaves foretell Something Wonderful.'
+      : state.nextFortune === 'lie' ? 'The leaves reconsider…' : `The leaves foretell ${values.fortuneName}.` : '';
   return values;
 }
 
@@ -483,6 +509,8 @@ export function createHud(doc = document) {
   const offer = doc.getElementById('upgradeOffer');
   const cards = offer ? [...offer.querySelectorAll('[data-choice]')] : [];
   let shownOffer = null;
+  let inventoryKey = '';
+  let acknowledgmentTimer;
 
   /** Show, fill, or hide the upgrade offer. */
   function updateOffer(state) {
@@ -523,7 +551,16 @@ export function createHud(doc = document) {
   }
 
   return {
-    handle: resources.handle,
+    handle(event) {
+      resources.handle(event);
+      if (event.type !== 'upgrade') return;
+      const acknowledgment = doc.getElementById('upgradeAcknowledgment');
+      if (!acknowledgment) return;
+      doc.defaultView.clearTimeout(acknowledgmentTimer);
+      acknowledgment.textContent = `${event.name} acquired · level ${event.level}`;
+      acknowledgment.hidden = false;
+      acknowledgmentTimer = doc.defaultView.setTimeout(() => { acknowledgment.hidden = true; }, 2400);
+    },
     update(state) {
       updateOffer(state);
       updateErrand(state);
@@ -532,6 +569,22 @@ export function createHud(doc = document) {
       const mode = pageMode(state);
       if (doc.body && doc.body.dataset.mode !== mode) doc.body.dataset.mode = mode;
       const values = hudText(state);
+      const ready = state.phase === PHASE.READING && state.readingTime >= readingReadyAt(state);
+      const presentation = doc.getElementById('readingPresentation');
+      if (presentation) presentation.hidden = !ready;
+      if (doc.body) doc.body.dataset.readingReady = String(ready);
+      const primary = doc.getElementById('mainBtn');
+      if (primary) primary.disabled = state.phase === PHASE.READING && (!ready || !!state.offer);
+      const key = JSON.stringify(state.spoon);
+      const inventory = doc.getElementById('spoonInventory');
+      if (inventory && inventoryKey !== key) {
+        inventoryKey = key;
+        inventory.replaceChildren(...Object.values(UPGRADES).filter((u) => state.spoon[u.id] > 0).map((u) => {
+          const item = doc.createElement('p');
+          item.textContent = `${u.name} · level ${state.spoon[u.id]}/${u.max}. ${u.info} (per level)`;
+          return item;
+        }));
+      }
       resources.update(state, values);
       const reference = doc.getElementById('referenceResources');
       if (reference) {

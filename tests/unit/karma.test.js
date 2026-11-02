@@ -93,8 +93,9 @@ describe('Karma: the fortune', () => {
     const game = karmaCup();
     const hud = hudText(game.state);
     expect(hud.hudOmen).toContain('Karma · rim rebounds');
-    expect(hud.fortuneName).toBe('Karma');
-    expect(hud.fortuneDetail).toContain('cannot cost you a cup');
+    expect(hud.activeFortune).toContain('Karma');
+    expect(hud.activeFortune).toContain(FORTUNES.karma.effect);
+    expect(hud.fortuneName).toBe('Not yet written');
   });
 });
 

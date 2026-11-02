@@ -141,6 +141,7 @@ describe('HUD text', () => {
     const game = playingGame();
     completeRound(game);
     game.state.nextFortune = 'lie';
+    game.state.readingTime = 2.5;
     expect(hudText(game.state).fortuneName).toBe('Something Wonderful');
     game.state.readingTime = 10;
     expect(hudText(game.state).fortuneName).toBe('The Leaves Lie');

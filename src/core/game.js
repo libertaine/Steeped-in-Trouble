@@ -71,6 +71,11 @@ const { revealAt, lieRetractAt } = CONFIG.fortunes;
 /** Reading seconds before an upgrade offer appears and can be taken. */
 export const OFFER_AT = revealAt + 0.6;
 
+// The Lie must finish its existing 0.7-second Crown-to-question-mark change
+// before any choice can take the player out of the reading. Other offers
+// retain their established timing.
+export const readingReadyAt = (state) => state.nextFortune === 'lie' ? lieRetractAt + 0.7 : OFFER_AT;
+
 const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
 
 /**
@@ -127,7 +132,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
   const pouring = (stage) => state.phase === PHASE.DAILY_POUR && (!stage || state.dailyPour.stage === stage);
   const breaking = (stage) => state.phase === PHASE.BISCUIT_BREAKOUT && (!stage || state.biscuitBreakout.stage === stage);
   const crossing = (stage) => state.phase === PHASE.CROSSING_STREET && (!stage || state.crossingStreet.stage === stage);
-  const offerOpen = () => state.phase === PHASE.READING && !!state.offer && state.readingTime >= OFFER_AT;
+  const offerOpen = () => state.phase === PHASE.READING && !!state.offer && state.readingTime >= readingReadyAt(state);
   const errandOpen = () => state.phase === PHASE.SHORTAGE && state.shortage.time >= CONFIG.shortage.chooseAt;
 
   function clearField() {
@@ -818,6 +823,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
      * upgrade card can take it as a click.
      */
     confirm() {
+      if (state.phase === PHASE.READING
+        && state.readingTime < readingReadyAt(state)) return true;
       if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.TEA_RUN, PHASE.DAILY_POUR,
         PHASE.BISCUIT_BREAKOUT, PHASE.CROSSING_STREET].includes(state.phase)) return false;
       if (pouring('play') || breaking('play') || crossing('play')) return false;

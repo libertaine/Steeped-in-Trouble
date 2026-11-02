@@ -58,7 +58,7 @@ for (const [width, height] of sizes) {
     await page.waitForTimeout(60);
     await page.screenshot({ scale: 'css', path: info.outputPath(`gameplay-${width}x${height}.png`) });
     await finishCup(page);
-    await expect(page.locator('#menuBtn')).toBeDisabled();
+    await expect(page.locator('#menuBtn')).toBeEnabled();
     await page.waitForFunction(() => {
       const { game, config } = window.__TEACUP__;
       return game.state.readingTime >= config.fortunes.revealAt;
@@ -134,7 +134,7 @@ test('Tea Break pauses time, traps focus, changes settings, and dismisses withou
   }
   await page.waitForTimeout(600);
   expect(await page.evaluate(() => JSON.stringify(window.__TEACUP__.game.state))).toBe(snapshot);
-  await page.getByText('Settings and controls', { exact: true }).click();
+  await page.getByText('Controls & Settings', { exact: true }).click();
   await page.locator('#touchBtn').click();
   await page.locator('#autoSteamBtn').click();
   await page.locator('#graphicsBtn').click();
@@ -320,8 +320,8 @@ test('desktop Full View keeps its reference panels in Tea Break and preserves ca
   expect(box.width / box.height).toBeCloseTo(920 / 790, 2);
   await page.locator('#menuBtn').click();
   await expect(page.locator('#teaBreak aside')).toBeVisible();
-  await expect(page.locator('#teaBreak .panel')).toHaveCount(3);
-  await expect(page.locator('#teaBreak summary')).toHaveText(['Current pot', 'Tea and fortune', 'Settings and controls']);
+  await expect(page.locator('#teaBreak .panel')).toHaveCount(4);
+  await expect(page.locator('#teaBreak summary')).toHaveText(['Current Pot', 'Tea & Fortunes', 'The Spoon', 'Controls & Settings']);
   await page.locator('#closeBreak').click();
   await expect(page.locator('#game')).toBeFocused();
   await expect(page.locator('main > aside')).toBeHidden();

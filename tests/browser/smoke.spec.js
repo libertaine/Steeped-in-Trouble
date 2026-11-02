@@ -1,4 +1,5 @@
 import { autoplayUntilReading, expect, gameState, openGame, test } from './fixtures.js';
+import { FORTUNES } from '../../src/gameplay/fortunes.js';
 
 // Every fortune, plus the name The Leaves Lie hides behind until it confesses.
 const FORTUNE_NAMES = /^(The (Crown|Veil|Spiral|Star|Leaves Lie)|Sugar Rush|Double Trouble|Tempestuous Tea|Golden Opportunity|Something Wonderful)$/;
@@ -129,9 +130,11 @@ test('completes a round, reads the leaves, picks a spoon upgrade, and brews the 
   await expect(page.locator('#spoonKit')).not.toHaveText('An ordinary silver spoon.');
   await expect(page.locator('#roundNum')).toHaveText('02');
   await expect(page.locator('#killCount')).toHaveText('0 / 18');
-  await expect(page.locator('#fortuneLabel')).toHaveText('This cup’s omen');
+  await expect(page.locator('#fortuneLabel')).toHaveText('Fortune for the next cup');
   expect((await gameState(page)).fortune).toBe(nextFortune);
-  await expect(page.locator('#fortuneName')).toHaveText(FORTUNE_NAMES);
+  await expect(page.locator('#fortuneName')).toHaveText('Not yet written');
+  await expect(page.locator('#activeFortuneLabel')).toHaveText('This cup’s fortune');
+  await expect(page.locator('#activeFortune')).toHaveText(`${FORTUNES[nextFortune].name}: ${FORTUNES[nextFortune].effect}`);
   await expect(page.locator('#hudOmen')).toHaveText(/^✦ /);
   expect(problems).toEqual([]);
 });
@@ -198,6 +201,7 @@ test('The Daily Grind can be met, fought with Q and E, and escaped without endin
     s.havocDue = false;
     s.grindDue = true;
   });
+  await expect(page.locator('#mainBtn')).toBeEnabled();
   await page.keyboard.press('Enter');
   await expect(page.locator('#hudStatus')).toHaveText('SOMEONE ORDERED TROUBLE');
   await expect(page.locator('#roundNum')).toHaveText('01½');

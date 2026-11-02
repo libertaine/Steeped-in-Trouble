@@ -1,5 +1,4 @@
 // Reuse the existing panels and choices: one set of buttons, one phase authority.
-import { CONFIG } from '../config.js';
 import { initialView, isTouchDevice, saveView } from '../input/settings.js';
 
 export function createPresentation({ doc = document, game, params, storage, resetInput, onShowControls, onOpenMenu = () => {} }) {
@@ -18,24 +17,17 @@ export function createPresentation({ doc = document, game, params, storage, rese
   const dock = doc.getElementById('actionDock');
   const choices = doc.getElementById('phaseChoices');
   const stage = doc.querySelector('.stage');
-  const offers = ['upgradeOffer', 'errandOffer', 'arcadeOffer', 'dayOffer'].map((id) => doc.getElementById(id)).filter(Boolean);
-  const panels = [...aside.children];
-  const sections = panels.map((panel, index) => {
-    const details = doc.createElement('details');
-    const summary = doc.createElement('summary');
-    summary.textContent = ['Current pot', 'Tea and fortune', 'Settings and controls'][index];
-    details.append(summary);
-    return details;
-  });
+  const offers = ['errandOffer', 'arcadeOffer', 'dayOffer'].map((id) => doc.getElementById(id)).filter(Boolean);
+  const sections = [...aside.querySelectorAll('details')];
+  sections[3].querySelector('.panel').prepend(doc.querySelector('.settings'));
+  sections[0].querySelector('.panel').append(doc.querySelector('.save-controls'));
   let view = initialView({ params, storage, touchDevice: isTouchDevice(win) });
   let resumeOnClose = false;
+  let resumeAfterControls = false;
 
   function closeMenu() {
     if (!dialog.open) return;
     dialog.close();
-    panels.forEach((panel) => aside.append(panel));
-    sections.forEach((section) => section.remove());
-    panels[2].append(doc.querySelector('.settings'));
     main.append(aside);
     resetInput();
     if (resumeOnClose && doc.visibilityState !== 'hidden') game.resume();
@@ -69,11 +61,7 @@ export function createPresentation({ doc = document, game, params, storage, rese
     doc.getElementById('breakContent').append(aside);
     sections.forEach((section, index) => {
       section.open = index === (game.state.phase === 'reading' ? 1 : 0);
-      section.append(panels[index]);
-      aside.append(section);
     });
-    // Put settings first in their section, before the longer keyboard reference.
-    panels[2].prepend(doc.querySelector('.settings'));
     dialog.showModal();
     dialog.scrollTop = 0;
   }
@@ -86,24 +74,23 @@ export function createPresentation({ doc = document, game, params, storage, rese
   }
 
   // A backgrounded app must stay paused when the sheet is later dismissed.
-  const backgrounded = () => { resumeOnClose = false; };
+  const backgrounded = () => { resumeOnClose = false; resumeAfterControls = false; };
   const visibility = () => { if (doc.visibilityState === 'hidden') backgrounded(); };
   const cancel = (e) => { e.preventDefault(); closeMenu(); };
 
   function handleBreakControls() {
     if (!dialog.open) return;
-    const savedResume = resumeOnClose;
+    resumeAfterControls = resumeOnClose;
     resumeOnClose = false;
     dialog.close();
-    panels.forEach((panel) => aside.append(panel));
-    sections.forEach((section) => section.remove());
-    panels[2].append(doc.querySelector('.settings'));
     main.append(aside);
     resetInput();
     onShowControls?.(() => {
       openMenu();
-      resumeOnClose = savedResume;
+      resumeOnClose = resumeAfterControls && doc.visibilityState !== 'hidden';
+      resumeAfterControls = false;
       close.textContent = resumeOnClose ? 'Resume game' : 'Back to cup';
+      sections[3].open = true;
       breakControls?.focus({ preventScroll: true });
     });
   }
@@ -130,9 +117,8 @@ export function createPresentation({ doc = document, game, params, storage, rese
         || (s.phase === 'dailyPour' && s.dailyPour.stage === 'play')
         || (s.phase === 'biscuitBreakout' && s.biscuitBreakout.stage === 'play')
         || (s.phase === 'crossingStreet' && s.crossingStreet.stage === 'play'));
-      // Keep the animation and reveal unobscured, and required choices directly reachable.
-      menu.disabled = s.phase === 'shortage' || (s.phase === 'reading'
-        && s.readingTime < CONFIG.fortunes.revealAt);
+      // The modal can suspend a reading at any point without advancing its clock.
+      menu.disabled = s.phase === 'shortage';
       menu.textContent = ['playing', 'chocolate', 'grind', 'teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet'].includes(s.phase) ? 'Pause / Menu' : 'Tea Break';
     },
     dispose() {

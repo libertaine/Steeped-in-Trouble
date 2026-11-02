@@ -20,13 +20,12 @@ for (const [width, height] of [[390, 844], [360, 740], [844, 390], [915, 412]]) 
     await openGame(page, '&seed=42&view=compact');
     await page.locator('#mainBtn').click();
     await milkyRound(page);
-    await expect(page.locator('#compactMemory')).toHaveText(/Your defensive tactics favored The Veil\./);
-    await inView(page, ['#game', '#compactMemory']);
-    await capture(page, info, `compact-memory-${width}x${height}`);
+    await expect(page.locator('#readingPresentation')).toBeHidden();
     const fortune = await revealed(page);
+    await expect(page.locator('#upgradeOffer')).toBeVisible();
+    await expect(page.locator('#compactMemory')).toContainText('Your defensive tactics favored The Veil.');
     await expect(page.locator('#compactFortune')).toContainText('Next cup:');
     if (fortune !== 'lie') await expect(page.locator('#compactEffect')).not.toBeEmpty();
-    await expect(page.locator('#upgradeOffer')).toBeVisible();
     await inView(page, ['#game', '#upgradeOffer', '[data-choice="0"]', '[data-choice="1"]']);
     await capture(page, info, `compact-upgrade-${width}x${height}`);
     expect(problems).toEqual([]);
