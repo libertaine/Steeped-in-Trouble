@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../../src/config.js';
-import { OFFER_AT } from '../../src/core/game.js';
+import { OFFER_AT, readingReadyAt } from '../../src/core/game.js';
 import { createRandom } from '../../src/core/random.js';
 import { laneAngle, normalizeAngle } from '../../src/gameplay/arena.js';
 import { fortuneWeights } from '../../src/gameplay/fortunes.js';
@@ -394,6 +394,7 @@ describe('spoon upgrades', () => {
     game.chooseUpgrade(0);
     completeRound(game);
     expect(game.state.offer).toBeNull();
+    step(game, readingReadyAt(game.state));
     expect(game.confirm()).toBe(true);
     expect(game.state.round).toBe(3);
   });

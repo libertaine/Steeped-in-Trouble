@@ -41,15 +41,21 @@ describe('ceremony and reading choices share the existing game authority', () =>
     expect(game.state.fortune).toBe('lie');
   });
 
-  it('consumes early Enter on a Lie without an offer, then continues normally', () => {
+  it.each(['veil', 'lie'])('consumes early Enter for %s without an offer until its readiness boundary', (fortune) => {
     const game = playingGame();
     completeRound(game);
-    Object.assign(game.state, { nextFortune: 'lie', offer: null, readingTime: OFFER_AT });
+    Object.assign(game.state, { nextFortune: fortune, offer: null, readingTime: 0 });
+    const readyAt = fortune === 'lie' ? 4.1 : OFFER_AT;
+    expect(readingReadyAt(game.state)).toBe(readyAt);
+    for (const time of [0, CONFIG.fortunes.revealAt, readyAt - 0.001]) {
+      game.state.readingTime = time;
+      const before = structuredClone(game.state);
+      expect(game.confirm()).toBe(true);
+      expect(game.state).toEqual(before);
+    }
+    game.state.readingTime = readyAt;
     expect(game.confirm()).toBe(true);
-    expect(game.state.phase).toBe('reading');
-    game.state.readingTime = readingReadyAt(game.state);
-    expect(game.confirm()).toBe(true);
-    expect(game.state).toMatchObject({ phase: 'playing', fortune: 'lie' });
+    expect(game.state).toMatchObject({ phase: 'playing', round: 2, fortune });
   });
 
   it('keeps the completed cup separate from its pending fortune and includes earned secrets', () => {

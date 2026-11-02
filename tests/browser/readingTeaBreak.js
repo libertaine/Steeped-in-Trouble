@@ -101,11 +101,18 @@ export function readingTeaBreakTests() {
     await freeze(page);
     await reading(page, 'veil', false);
     await expect(page.locator('#readingPresentation')).toBeHidden();
+    await expect(page.locator('#mainBtn')).toBeDisabled();
+    await page.locator('#game').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'reading');
     await time(page, 2.2);
     await expect(page.locator('#readingPresentation')).toBeHidden();
     await expect(page.locator('#readingAnnouncement')).toContainText('The Veil');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'reading');
     await time(page, 2.8);
     await expect(page.locator('#readingPresentation')).toBeVisible();
+    await expect(page.locator('#mainBtn')).toBeEnabled();
     await expect(page.locator('#compactMemory')).toContainText('You poured milk twice.');
     await expect(page.locator('#compactEffect')).toContainText('Milk clouds last');
     await expect(page.locator('#upgradeOffer')).toBeHidden();
@@ -115,6 +122,27 @@ export function readingTeaBreakTests() {
     await page.clock.runFor(32);
     expect(await page.evaluate(() => window.__TEACUP__.game.state.fortune)).toBe('veil');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
+    expect(problems).toEqual([]);
+  });
+
+  test('The Leaves Lie without an offer holds Enter until its 4.1-second reading is ready', async ({ page, problems }) => {
+    await freeze(page);
+    await reading(page, 'lie', false);
+    await page.locator('#game').focus();
+    for (const value of [2.8, 3.5, 4.05]) {
+      await time(page, value);
+      await expect(page.locator('#mainBtn')).toBeDisabled();
+      await page.keyboard.press('Enter');
+      await expect(page.locator('body')).toHaveAttribute('data-phase', 'reading');
+    }
+    await time(page, 4.1);
+    await expect(page.locator('#readingPresentation')).toBeVisible();
+    await expect(page.locator('#mainBtn')).toBeEnabled();
+    await expect(page.locator('#compactFortune')).toHaveText('Next cup: The Leaves Lie');
+    await page.keyboard.press('Enter');
+    await page.clock.runFor(32);
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
+    expect(await page.evaluate(() => window.__TEACUP__.game.state.fortune)).toBe('lie');
     expect(problems).toEqual([]);
   });
 

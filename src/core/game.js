@@ -823,7 +823,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
      * upgrade card can take it as a click.
      */
     confirm() {
-      if (state.phase === PHASE.READING && state.nextFortune === 'lie'
+      if (state.phase === PHASE.READING
         && state.readingTime < readingReadyAt(state)) return true;
       if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.TEA_RUN, PHASE.DAILY_POUR,
         PHASE.BISCUIT_BREAKOUT, PHASE.CROSSING_STREET].includes(state.phase)) return false;
