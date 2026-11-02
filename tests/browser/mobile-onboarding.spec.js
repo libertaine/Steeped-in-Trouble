@@ -22,7 +22,7 @@ async function expectOnScreen(page, selector) {
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5);
 }
 
-test('a phone starts on Easy Touch, and the overlay says so: pads to steer, gestures on the cup', async ({ page, problems }) => {
+test('a phone starts on Easy Touch, and the overlay says so: pads to steer, gestures on the cup', { tag: '@smoke' }, async ({ page, problems }) => {
   await openTitle(page);
   const touch = page.locator('#overlayTouchSummary');
   await expect(touch).toBeVisible();
@@ -40,7 +40,7 @@ test('a phone starts on Easy Touch, and the overlay says so: pads to steer, gest
   expect(problems).toEqual([]);
 });
 
-test('with Classic Touch the overlay names the TURN, STEAM, MILK, and SUGAR buttons instead', async ({ page, problems }) => {
+test('with Classic Touch the overlay names the TURN, STEAM, MILK, and SUGAR buttons instead', { tag: '@smoke' }, async ({ page, problems }) => {
   await openTitle(page, '&touch=classic');
   const touch = page.locator('#overlayTouchSummary');
   await expect(touch).toContainText('Classic Touch:');
@@ -53,7 +53,7 @@ test('with Classic Touch the overlay names the TURN, STEAM, MILK, and SUGAR butt
   expect(problems).toEqual([]);
 });
 
-test('taps on the cup and the touch pads behind the overlay do nothing', async ({ page, problems }) => {
+test('taps on the cup and the touch pads behind the overlay do nothing', { tag: '@smoke' }, async ({ page, problems }) => {
   await openTitle(page);
   await expect(page.locator('#instructionOverlay')).toBeVisible();
   const before = await page.evaluate(() => {

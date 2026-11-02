@@ -23,7 +23,7 @@ test('the reading remembers the round, then names the actual next fortune and it
   expect(problems).toEqual([]);
 });
 
-test('a continued pot shows the same memory and the same fortune, without a reroll', async ({ page, problems }) => {
+test('a continued pot shows the same memory and the same fortune, without a reroll', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page, '&seed=9&view=full');
   await page.keyboard.press('Enter');
   await milkyRound(page);

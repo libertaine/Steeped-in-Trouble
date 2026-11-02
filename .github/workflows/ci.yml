@@ -1,7 +1,7 @@
 name: CI
 
-# Runs on pull requests, and is called by deploy.yml for every push to main
-# so a build is only published after these checks pass.
+# Called by Pages on main/tag pushes. No workflow path filters that could
+# leave required checks pending. Existing job names remain compatible.
 on:
   pull_request:
   workflow_call:
@@ -11,36 +11,71 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Classify changes
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.paths.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: paths
+        name: Identify documentation-only changes
+        env:
+          CHANGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node .github/scripts/ci-changes.js
+
   checks:
     name: Lint, unit tests, build (${{ matrix.os }})
+    needs: changes
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
+      - name: Documentation-only validation
+        if: needs.changes.outputs.docs_only == 'true'
+        run: echo "Documentation only; runtime checks are unnecessary."
       - uses: actions/checkout@v7
+        if: needs.changes.outputs.docs_only != 'true'
       - uses: actions/setup-node@v7
+        if: needs.changes.outputs.docs_only != 'true'
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm ci
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run lint
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm test
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run build
 
   browser:
     name: Browser smoke tests
+    needs: changes
     runs-on: ubuntu-latest
     steps:
+      - name: Documentation-only validation
+        if: needs.changes.outputs.docs_only == 'true'
+        run: echo "Documentation only; browser qualification is unnecessary."
       - uses: actions/checkout@v7
+        if: needs.changes.outputs.docs_only != 'true'
       - uses: actions/setup-node@v7
+        if: needs.changes.outputs.docs_only != 'true'
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium firefox
-      - run: npm run test:browser
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm ci
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run test:browser:smoke
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v7

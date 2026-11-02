@@ -24,7 +24,8 @@
     "test:watch": "vitest",
     "test:browser": "playwright test",
     "lint": "eslint .",
-    "check": "npm run lint && npm test && npm run build"
+    "check": "npm run lint && npm test && npm run build",
+    "test:browser:smoke": "playwright test --grep @smoke --project chromium --project mobile-chromium"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

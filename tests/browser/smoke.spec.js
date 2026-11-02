@@ -3,7 +3,7 @@ import { autoplayUntilReading, expect, gameState, openGame, test } from './fixtu
 // Every fortune, plus the name The Leaves Lie hides behind until it confesses.
 const FORTUNE_NAMES = /^(The (Crown|Veil|Spiral|Star|Leaves Lie)|Sugar Rush|Double Trouble|Tempestuous Tea|Golden Opportunity|Something Wonderful)$/;
 
-test('loads the game without errors or missing files', async ({ page, problems }) => {
+test('loads the game without errors or missing files', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await expect(page).toHaveTitle(/Steeped in Trouble/);
   await expect(page.locator('#hudStatus')).toHaveText('READY TO BREW');
@@ -24,7 +24,7 @@ test('loads the game without errors or missing files', async ({ page, problems }
   expect(problems).toEqual([]);
 });
 
-test('starts, steers, fires, pauses, and resumes from the keyboard', async ({ page, problems }) => {
+test('starts, steers, fires, pauses, and resumes from the keyboard', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await page.keyboard.press('Enter');
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
@@ -67,7 +67,7 @@ test('starts, steers, fires, pauses, and resumes from the keyboard', async ({ pa
   expect(problems).toEqual([]);
 });
 
-test('the main button starts and pauses the game', async ({ page, problems }) => {
+test('the main button starts and pauses the game', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await page.locator('#mainBtn').click();
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
@@ -78,7 +78,7 @@ test('the main button starts and pauses the game', async ({ page, problems }) =>
   expect(problems).toEqual([]);
 });
 
-test('Enter on a focused main button acts once, not twice', async ({ page, problems }) => {
+test('Enter on a focused main button acts once, not twice', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await page.locator('#mainBtn').focus();
   // The Enter shortcut starts the game; the button must not also receive a
@@ -89,7 +89,7 @@ test('Enter on a focused main button acts once, not twice', async ({ page, probl
   expect(problems).toEqual([]);
 });
 
-test('reaches game over and restarts a fresh match', async ({ page, problems }) => {
+test('reaches game over and restarts a fresh match', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await page.keyboard.press('Enter');
   // Without defending, the strainer catches one leaf and three more escape.
@@ -105,7 +105,7 @@ test('reaches game over and restarts a fresh match', async ({ page, problems }) 
   expect(problems).toEqual([]);
 });
 
-test('completes a round, reads the leaves, picks a spoon upgrade, and brews the next cup', async ({ page, problems }) => {
+test('completes a round, reads the leaves, picks a spoon upgrade, and brews the next cup', { tag: '@smoke' }, async ({ page, problems }) => {
   test.setTimeout(120_000);
   await openGame(page, '&seed=20261027');
   await page.keyboard.press('Enter');
@@ -136,7 +136,7 @@ test('completes a round, reads the leaves, picks a spoon upgrade, and brews the 
   expect(problems).toEqual([]);
 });
 
-test('a Hot Chocolate Havoc bonus round plays through and returns to the tea', async ({ page, problems }) => {
+test('a Hot Chocolate Havoc bonus round plays through and returns to the tea', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page, '&seed=7');
   await page.keyboard.press('Enter');
   // Finish round 1 at once, and make a bonus round due.
@@ -177,7 +177,7 @@ test('a Hot Chocolate Havoc bonus round plays through and returns to the tea', a
   expect(problems).toEqual([]);
 });
 
-test('The Daily Grind can be met, fought with Q and E, and escaped without ending the pot', async ({ page, problems }) => {
+test('The Daily Grind can be met, fought with Q and E, and escaped without ending the pot', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page, '&seed=7');
   await page.keyboard.press('Enter');
   // Finish round 1 at once, and make the coffee boss due.

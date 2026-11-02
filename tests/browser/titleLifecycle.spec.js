@@ -1,6 +1,6 @@
 import { expect, openGame, test } from './fixtures.js';
 
-test('D1 reproduction: Pause Menu, resume, Space fires instead of reopening Tea Break', async ({ page, problems }) => {
+test('D1 reproduction: Pause Menu, resume, Space fires instead of reopening Tea Break', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await page.keyboard.press('Enter');
   await page.locator('#menuBtn').click();
@@ -11,7 +11,7 @@ test('D1 reproduction: Pause Menu, resume, Space fires instead of reopening Tea 
   expect(problems).toEqual([]);
 });
 
-test('production title waits for an explicit gesture and each Enter advances one screen', async ({ page, problems }) => {
+test('production title waits for an explicit gesture and each Enter advances one screen', { tag: '@smoke' }, async ({ page, problems }) => {
   await page.goto('./');
   const title = page.locator('#arcadeSplash');
   const instructions = page.locator('#instructionOverlay');
@@ -37,7 +37,7 @@ test('production title waits for an explicit gesture and each Enter advances one
   expect(problems).toEqual([]);
 });
 
-test('complete welcome and Tea Break flow uses browser keyboard and pointer input', async ({ page, problems }) => {
+test('complete welcome and Tea Break flow uses browser keyboard and pointer input', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page, '&seed=42&view=full', { onboarding: true });
   await expect(page.locator('#titleContinueBtn')).toBeEnabled();
   await expect(page.locator('#arcadeSplash')).toBeVisible();
@@ -79,7 +79,7 @@ test('complete welcome and Tea Break flow uses browser keyboard and pointer inpu
   expect(problems).toEqual([]);
 });
 
-test('title and instructions isolate held steam and steering until release', async ({ page, problems }) => {
+test('title and instructions isolate held steam and steering until release', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page, '', { onboarding: true });
   const snapshot = () => page.evaluate(() => {
     const s = window.__TEACUP__.game.state;

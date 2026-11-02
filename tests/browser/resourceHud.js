@@ -65,7 +65,7 @@ export function resourceHudTests() {
   }
 
   for (const view of ['full', 'compact']) {
-    test(`${view} resource illustrations follow real use, catches, spills and repairs`, async ({ page, problems }, info) => {
+    test(`${view} resource illustrations follow real use, catches, spills and repairs`, { tag: '@smoke' }, async ({ page, problems }, info) => {
       await start(page, `&view=${view}&touch=classic`);
       await expect(page.locator('#resource0 b')).toHaveText('2/2');
       await expect(page.locator('#resource0')).toHaveAccessibleName('Milk: 2 available, 2 normal capacity');
@@ -124,7 +124,7 @@ export function resourceHudTests() {
     expect(problems).toEqual([]);
   });
 
-  test('boss and Havoc substitute their own fight status through pause, resume and return', async ({ page, problems }, info) => {
+  test('boss and Havoc substitute their own fight status through pause, resume and return', { tag: '@smoke' }, async ({ page, problems }, info) => {
     await start(page, '&view=full');
     for (const mode of ['grind', 'chocolate']) {
       await page.evaluate((mode) => {
