@@ -26,6 +26,11 @@ async function fits(page) {
 }
 
 export function viewportFitTests() {
+  // This suite qualifies visible touch layouts. Desktop Auto now hides them;
+  // explicitly request Show rather than dispatching input to hidden pads.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('steeped-in-trouble:onscreen-controls', 'show'));
+  });
   for (const [width, height] of [[1920, 1080], [1280, 800], [1366, 768]]) {
     test(`full classic controls fit at ${width}x${height}`, async ({ page, problems }) => {
       await page.setViewportSize({ width, height });

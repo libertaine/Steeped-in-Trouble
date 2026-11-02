@@ -1611,6 +1611,29 @@ body[data-view][data-reading-ready="true"] #readingPresentation { grid-column: 2
   body[data-view][data-reading-ready="true"] #game { width: min(100cqw, calc(28cqh * 920 / 790)); }
   body[data-view][data-reading-ready="true"] #readingPresentation { grid-column: 1; grid-row: 2; padding: 4px 10px; }
 }
+
+/* 018-4: keep gameplay buttons and their reserved rail out of keyboard play.
+   The menu moves to the existing header; phase choices retain their own row. */
+body[data-view][data-onscreen-controls="hidden"] .controls-mobile { display: none; }
+body[data-view][data-onscreen-controls="hidden"]:not([data-phase="reading"]) .playfield {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;
+}
+body[data-view][data-onscreen-controls="hidden"]:not([data-phase="reading"]) .stage { grid-column: 1; grid-row: 2; }
+body[data-view][data-onscreen-controls="hidden"] #phaseChoices { grid-column: 1; grid-row: 3; }
+body[data-view][data-onscreen-controls="hidden"]:not([data-phase="reading"]) .action-dock { grid-column: 1; grid-row: 4; flex-direction: row; }
+body[data-view][data-onscreen-controls="hidden"][data-active="true"] .action-dock { display: none; }
+body[data-view][data-onscreen-controls="hidden"] .collection-entry,
+body[data-view][data-onscreen-controls="hidden"] .practice-bar { grid-column: 1; grid-row: 5; }
+body[data-view][data-onscreen-controls="hidden"] #potNotice { grid-column: 1; grid-row: 6; }
+body[data-onscreen-controls="hidden"] header { flex-wrap: wrap; }
+body[data-onscreen-controls="hidden"] .header-actions { flex-wrap: wrap; justify-content: flex-end; }
+.header-actions #menuBtn { min-width: 44px; min-height: 44px; }
+.control-visibility { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 0 10px; border: 1px solid #6c927e; border-radius: 8px; background: #24483a; }
+.control-visibility select { min-height: 44px; padding: 6px; border: 0;
+  background: #24483a; color: #e9efdf; font: inherit; }
+.control-visibility select:focus-visible { outline: 3px solid #ffe5a5; outline-offset: -3px; }
 @media (max-width: 600px), (max-height: 500px) {
   body[data-view][data-phase="reading"] header { padding: 4px 10px; }
   body[data-view][data-phase="reading"] .kicker,

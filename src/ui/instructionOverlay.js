@@ -12,7 +12,11 @@
 // - A click on the dimmed backdrop does nothing.
 
 /** What the touch line says for each layout. */
-export function touchSummary({ scheme, autoSteam }) {
+export function touchSummary({ scheme, autoSteam, visible = true }) {
+  if (!visible) return {
+    label: 'On-screen controls hidden:',
+    text: `Use the keyboard controls above to steer and play adventures.${autoSteam ? ' Auto Steam is on.' : ''}${scheme === 'easy' ? ' Easy Touch cup gestures still work: double-tap for milk; hold for sugar or hot-chocolate flames.' : ''} On a touch-only device, choose Show in Tea Break → Controls & Settings to restore gameplay buttons.`,
+  };
   if (scheme === 'easy') {
     return {
       label: 'Easy Touch:',
@@ -31,7 +35,7 @@ export function touchSummary({ scheme, autoSteam }) {
  * @param {object} options
  * @param {Document} [options.doc]
  * @param {string} [options.version] application version string (e.g. '0.17.0')
- * @param {() => ({ scheme: 'easy' | 'classic', autoSteam: boolean } | null)} [options.touch]
+ * @param {() => ({ scheme: 'easy' | 'classic', autoSteam: boolean, visible?: boolean } | null)} [options.touch]
  *   the touch layout to explain, or null to leave touch out (a keyboard and mouse)
  * @param {(details: { fromTeaBreak: boolean, isNewPot: boolean }) => void} [options.onStart]
  * @param {(details: { fromTeaBreak: boolean, escape?: boolean }) => void} [options.onClose]

@@ -68,13 +68,17 @@ test('starts, steers, fires, pauses, and resumes from the keyboard', { tag: '@sm
   expect(problems).toEqual([]);
 });
 
-test('the main button starts and pauses the game', { tag: '@smoke' }, async ({ page, problems }) => {
+test('the main button starts and Pause / Menu pauses the game', { tag: '@smoke' }, async ({ page, problems }) => {
   await openGame(page);
   await page.locator('#mainBtn').click();
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
   await expect(page.locator('#mainBtn')).toHaveText('Pause / resume (P)');
-  await page.locator('#mainBtn').click();
+  await page.locator('#menuBtn').click();
   await expect(page.locator('#hudStatus')).toHaveText('PAUSED');
+  await expect(page.locator('#teaBreak')).toBeVisible();
+  await page.locator('#closeBreak').click();
+  await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
+  await page.keyboard.press('p');
   await expect(page.locator('#mainBtn')).toHaveText('Resume cup →');
   expect(problems).toEqual([]);
 });
