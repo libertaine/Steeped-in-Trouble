@@ -28,8 +28,18 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.17.0 — The Cup Remembers](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.17.0)**
+Version **[0.17.1 — Arcade Welcome](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.17.1)**
 is the current release.
+
+### Arcade Welcome
+
+*The spoon now has a proper entrance.*
+
+An interactive 80s arcade title screen leads into the controls screen before
+you start or continue your pot, with fresh-keypress protection so holding
+<kbd>Enter</kbd> cannot skip past both screens, immediate keyboard focus
+restoration when returning from Tea Break, and consistent arcade button
+palettes across hover, focus, and pressed states.
 
 ### The Cup Remembers
 
