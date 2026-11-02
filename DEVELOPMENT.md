@@ -94,9 +94,9 @@ test workflows have only `contents: read`. No PR can deploy through these events
 Check names `Browser smoke tests` and `Lint, unit tests, build (ubuntu-latest)` /
 `(windows-latest)` are retained for existing protection settings. The browser
 name now accurately describes its scope. Do not require the optional full jobs
-on every PR: require the three fast check names if configuring branch protection.
-At implementation time the API reported no classic protection on `main`; this
-change does not modify repository rules/settings.
+on every PR. The effective repository ruleset on `main` already requires exactly
+these three fast check names, so no settings changes are needed. (The separate
+classic-protection endpoint reports none.) This change does not modify rules.
 
 When a run fails, open the failing step first. An assertion failure has a test
 name and expected/actual output; failed browsers upload a seven-day HTML report
@@ -114,6 +114,13 @@ OS. Ubuntu lint/unit/build took 50s; Windows took 83s. Successful main deploymen
 [41462846657](https://github.com/libertaine/Steeped-in-Trouble/actions/runs/41462846657)
 took 22m 49s including Pages. Compare optimized Actions runs with these actual
 times; local timings are not equivalent to hosted-runner savings.
+
+Optimized PR run [41491426680](https://github.com/libertaine/Steeped-in-Trouble/actions/runs/41491426680)
+on implementation commit `4c3fd525a5f32202604cdf3184d3e8c7391b12ae` passed in
+**3m 17s** including classification and runner startup: **89.3% less elapsed time**
+than the baseline PR. Its 33 browser executions passed in 1m 31s (2m 5s browser
+job). Ubuntu and Windows each passed 860 unit tests; their lint/unit/build jobs
+took 49s and 73s. These are individual measured runs, not a long-term average.
 
 ## 0.16.0 local progress
 
