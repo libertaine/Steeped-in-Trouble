@@ -5,6 +5,63 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-02 — Room for Tea
+
+*The cup has finally found some room to breathe.*
+
+### The Cup Takes Center Stage
+
+- Full View fits the whole cup inside the browser window, with the HUD,
+  controls and Pause / Menu still visible. Previously the bottom of the cup
+  could be cut off on common laptop screens (at 1366×768 under four-fifths
+  of it was visible).
+- Large desktop windows use their extra space: at 1920×1080 the cup grows
+  back to nearly its original size. Full View buttons have a 44px minimum
+  height; Compact View keeps its existing layout.
+- No horizontal scrolling or overlapping controls at any of the measured
+  desktop and phone sizes.
+
+### A More Useful HUD
+
+- An illustrated strip above the cup shows the porcelain's spill margin,
+  the milk jug, sugar cubes, leaf catches and the current objective, with
+  exact counts for bonus resources.
+- Special modes (The Daily Grind, Havoc and all four adventures, Tea
+  Shortages and Days) show their own resources and status instead of
+  suspended pot resources, and hide the irrelevant pot score.
+- Resource use and catches are announced politely to screen readers;
+  decorative icons are hidden from them, and reduced motion is respected.
+
+### The Reading Ceremony
+
+- The animated leaf reading takes the stage first, then one explanation of
+  how the completed cup influenced the next fortune, with the cup still in
+  view.
+- The current fortune and the pending one are labelled separately.
+- The Leaves Lie keeps its reveal and retraction; Continue (and Enter) wait
+  for the ceremony to finish. Picking an upgrade still continues at once.
+- Both upgrade choices stay reachable, with a brief acknowledgement.
+- Tea Break has four sections: Current Pot, Tea & Fortunes, The Spoon
+  (owned upgrades and their effects), and Controls & Settings.
+
+### Controls That Know When to Leave
+
+- New **On-screen controls: Auto / Show / Hide** setting in Tea Break →
+  Controls & Settings, remembered between visits.
+- Auto follows your primary pointer: desktop keyboards and mice no longer
+  get touch buttons, while phones and tablets keep them. A secondary
+  touchscreen or a narrow desktop window doesn't switch them on.
+- Hiding the buttons removes the 190px control rail and gives the cup the
+  recovered width. Keyboard shortcuts and Easy Touch cup gestures keep
+  working.
+- The instructions and Tea Break describe the controls actually in effect;
+  hidden buttons can't be reached with Tab.
+
+Gameplay balance, fortune probabilities and saved-game formats were not
+intentionally changed; saved 0.17.x pots continue. Mobile behavior was
+checked in browser emulation; this release makes no physical-device or
+screen-reader certification.
+
 ## [0.17.1] - 2026-11-01 — Arcade Welcome
 
 - Interactive 80s arcade title screen: an explicit click, tap, or fresh Enter
@@ -521,7 +578,9 @@ with the same gameplay.
 See [docs/reference/README.md](docs/reference/README.md) for the complete
 list of differences.
 
-[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.17.0...main
+[Unreleased]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.18.0...main
+[0.18.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.17.1...v0.18.0
+[0.17.1]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.17.0...v0.17.1
 [0.17.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/libertaine/Steeped-in-Trouble/compare/v0.14.0...v0.15.0

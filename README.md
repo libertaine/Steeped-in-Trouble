@@ -28,18 +28,21 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.17.1 — Arcade Welcome](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.17.1)**
+Version **[0.18.0 — Room for Tea](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.18.0)**
 is the current release.
 
-### Arcade Welcome
+### Room for Tea
 
-*The spoon now has a proper entrance.*
+*The cup has finally found some room to breathe.*
 
-An interactive 80s arcade title screen leads into the controls screen before
-you start or continue your pot, with fresh-keypress protection so holding
-<kbd>Enter</kbd> cannot skip past both screens, immediate keyboard focus
-restoration when returning from Tea Break, and consistent arcade button
-palettes across hover, focus, and pressed states.
+The whole cup now fits your browser window, and big screens get a bigger
+cup. An illustrated strip above the arena shows your porcelain, milk, sugar
+and progress at a glance (and whatever matters in the side adventures). The
+leaf reading gets the stage before explaining what your cup did to the next
+fortune, and Tea Break is tidied into four sections. Desktop players no
+longer share the screen with touch buttons they never use: **On-screen
+controls** defaults to Auto, and Show or Hide is one setting away. The
+spoon remains deeply underqualified. Saved pots continue.
 
 ### The Cup Remembers
 
@@ -218,6 +221,11 @@ earns no points.
   with Classic Touch or a keyboard, and is always enabled with Easy Touch.
   Both choices are remembered. URL overrides for one visit are
   `?touch=easy|classic` and `?autosteam=on|off` (Easy Touch keeps Auto Steam on).
+- **On-screen controls** (Tea Break → Controls & Settings) is Auto by
+  default: touch buttons appear on phones and tablets and stay out of the way
+  with a keyboard and mouse. **Show** or **Hide** overrides it and is
+  remembered; hiding them gives the cup the extra width. Keyboard shortcuts
+  and Easy Touch cup gestures always work.
 - **Sound** is off by default. Turn it on for synthesized sound effects and
   the adaptive soundtrack.
 - **Graphics** switches between high quality (full-resolution tea with
