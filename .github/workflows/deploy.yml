@@ -49,6 +49,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       pages: write
