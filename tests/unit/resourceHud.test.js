@@ -17,6 +17,7 @@ describe('live resource projection', () => {
   it('reads the initial cup and real milk/sugar consumption and jackpot refill', () => {
     const g = playingGame();
     expect(counts(g)).toEqual(['2/2', '2/2', '1/1']);
+    expect(view(g).score).toBe('Score 0');
     g.pourMilk(); g.sugarBurst();
     expect(counts(g)).toEqual(['1/2', '1/2', '1/1']);
     g.pourMilk(); g.sugarBurst();
@@ -84,7 +85,9 @@ describe('live resource projection', () => {
     expect(view(g)).toMatchObject({ normal: false, progress: [7, CONFIG.grind.health], progressLabel: 'Machine health' });
     expect(counts(g)).toEqual(['1/2', '0/2', `2/${CONFIG.grind.scalds}`]);
     expect(view(g).cue).toContain('Valve open: shoot');
+    expect(view(g).score).toBe('');
     g.pause();
+    expect(view(g).score).toBe('');
     expect(counts(g)).toEqual(['1/2', '0/2', `2/${CONFIG.grind.scalds}`]);
     expect(view(g).items.some((i) => i.kind === 'strainer')).toBe(false);
     g.resume();
@@ -97,12 +100,15 @@ describe('live resource projection', () => {
       g.primaryAction();
       const before = counts(g);
       expect(view(g).normal).toBe(false);
+      expect(view(g).score).toBe('');
       expect(view(g).items.every((item) => !item.kind)).toBe(true);
       g.pause(); expect(counts(g)).toEqual(before);
+      expect(view(g).score).toBe('');
       g.resume(); expect(counts(g)).toEqual(before);
       // Presentation follows phase authority immediately; no remembered UI mode.
       Object.assign(g.state, { phase: 'playing', pausedFrom: null });
       expect(view(g).normal).toBe(true);
+      expect(view(g).score).toBe(`Score ${g.state.score}`);
       expect(view(g).items.map((item) => item.kind)).toEqual(['milk', 'sugar', 'strainer']);
     });
   }
@@ -113,8 +119,10 @@ describe('live resource projection', () => {
     Object.assign(g.state.chocolate.tally, { perfect: 2, toasted: 3 });
     expect(counts(g)).toEqual(['2', '3', `${CONFIG.chocolate.duration}s`]);
     expect(view(g).cue).toContain('flames');
+    expect(view(g).score).toBe('');
     expect(view(g).items.every((item) => !item.kind)).toBe(true);
     g.state.chocolate.stage = 'play'; g.pause();
+    expect(view(g).score).toBe('');
     expect(counts(g)).toEqual(['2', '3', `${CONFIG.chocolate.duration}s`]);
   });
 

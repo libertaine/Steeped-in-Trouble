@@ -24,7 +24,7 @@ save-schema or timing code changes.
 | Milk | `state.milkLeft / CONFIG.milk.perRound`; jug fill clamps only its drawing. Successful `milk` triggers local feedback. Refill reads state immediately. |
 | Sugar | `state.sugarLeft / sugarCapacity(state)`; 0 is hollow, 1–4 are discrete cubes, above 4 uses one cube and `×N`. Counts such as `3/2` remain exact and marked bonus. Regeneration shows its actual countdown; Sugar Scoop and fortune capacity use the existing helper. |
 | Leaf catches | `state.strainerLeft / strainerCapacity(state.spoon)`; one mesh pip per catch, zero pips plus exhausted at zero. Successful `strain` triggers local feedback. The actual cup's mesh is unchanged. |
-| Secondary line | Existing current-tea, current-fortune/tag/countdown, Auto Steam and recovery/Golden Spoon/Golden Leaf status; quiet actual score. Pending fortunes are never read as active effects. |
+| Secondary line | Existing current-tea, current-fortune/tag/countdown, Auto Steam and recovery/Golden Spoon/Golden Leaf status; quiet normal-pot score, omitted during special modes. Pending fortunes are never read as active effects. |
 
 Numbers and labels are ordinary accessible text; SVGs and mesh pips are
 decorative. Native progress has a mode-specific accessible name. Existing
@@ -107,7 +107,7 @@ are the retained constraint, rather than hiding resources or shrinking touch
 targets. All measured arenas/controls fit, controls are at least 44×44, and
 horizontal overflow is zero. Height bounds remain the existing 018-1 mechanism.
 
-## Qualification
+## Original PR qualification
 
 - `npm run check`: lint, **860 unit tests / 43 files**, and production build pass.
 - 11 new unit tests exercise live resource projections with real consumption,
@@ -139,5 +139,39 @@ display, with separate DPR backing-size coverage. Native browser-chrome zoom,
 physical mobile devices and a human screen-reader session are not independently
 qualified. The screenshots are presentation fixtures, not evidence of naturally
 played encounters, human comprehension or changed game balance.
+
+## PR #35 review amendment
+
+Two bounded corrections follow review of `f10b07e`:
+
+- Successful Milk, Sugar and Strainer messages bypass the cached text writer.
+  A presentation-only FIFO clears the polite live region, inserts each message
+  in a later task, and spaces notifications so identical same-frame events
+  receive distinct live-region updates. Reduced motion still suppresses visual
+  animation, while retaining every notification. No gameplay clock or resource
+  state is changed.
+- Special modes omit the secondary normal-pot score. Their existing primary
+  mode indicators remain authoritative. Pause retains the omission; returning
+  to the normal pot restores its current score.
+
+Regression coverage observes actual live-region mutations from two successive
+successful Milk uses, Sugar uses and engine catches, including both events in
+one frame. It requires all six messages with normal and reduced motion, and
+no extra messages for failed empty-resource input. Existing mode tests now
+check score omission during adventures, boss/Havoc and pause, plus restoration
+on return. Unit projections check the same score policy.
+
+Focused qualification: **11 unit tests and 24 browser tests passed** across
+Chromium, Firefox and mobile Chromium. Lint, **860 unit tests / 43 files**, and
+the production build passed. Full browser regression: **370 passed**, eight
+workers, no retries, across Chromium, Firefox and mobile Chromium (7.4 minutes).
+The focused tests overlap the full qualification totals.
+
+All **16** measured Full/Compact cases exactly match the retained viewport data
+for canvas dimensions/position, visibility, overflow and control bounds. The
+1920×1080 Full arena remains **998.09px** wide. The accepted measurements and
+original screenshot gallery are retained unchanged; those screenshots document
+the original PR before this score-visibility correction. No CSS, layout, game
+state, input, reading or Tea Break redesign accompanies these fixes.
 
 Stop at PR review. No version bump, merge, tag, release or publication.

@@ -60,7 +60,7 @@ export function resourceView(s, text) {
   }
   return { normal, title: g ? 'Espresso machine' : c ? 'Hot Chocolate Havoc' : text.roundTitle,
     condition: cupCondition(s.lives), margin: s.lives === 1 ? 'Next spill breaks' : `${s.lives} spills to break`,
-    items, progress, progressLabel, cue, tea: normal ? text.teaName : '', score: `Score ${s.score}` };
+    items, progress, progressLabel, cue, tea: normal ? text.teaName : '', score: normal ? `Score ${s.score}` : '' };
 }
 
 function illustration(item) {
@@ -77,6 +77,20 @@ export function createResources(doc) {
   const root = doc.getElementById('resourceStrip');
   if (!root) return { update() {}, handle() {} };
   const cache = new Map();
+  const announcements = [];
+  function announceNext() {
+    const region = doc.getElementById('resourceAnnouncement');
+    // Clear in a separate task so repeated identical messages are new live-
+    // region updates. Queue same-frame events instead of collapsing them.
+    region.textContent = '';
+    doc.defaultView.setTimeout(() => {
+      region.textContent = announcements[0];
+      doc.defaultView.setTimeout(() => {
+        announcements.shift();
+        if (announcements.length) announceNext();
+      }, 600);
+    }, 100);
+  }
   const write = (id, value, html = false) => {
     if (cache.get(id) === value) return;
     cache.set(id, value);
@@ -116,7 +130,8 @@ export function createResources(doc) {
         el.getAnimations?.().forEach((animation) => animation.cancel());
         el.animate?.([{ backgroundColor: '#587064' }, { backgroundColor: 'transparent' }], { duration: 220 });
       }
-      write('resourceAnnouncement', feedback[1]);
+      announcements.push(feedback[1]);
+      if (announcements.length === 1) announceNext();
     },
   };
 }

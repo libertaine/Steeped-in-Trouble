@@ -21,6 +21,49 @@ async function visibleStrip(page) {
 }
 
 export function resourceHudTests() {
+  for (const reducedMotion of ['no-preference', 'reduce']) {
+    test(`consecutive Milk, Sugar and Strainer events each notify with motion ${reducedMotion}`, async ({ page, problems }) => {
+      await page.emulateMedia({ reducedMotion });
+      await start(page, '&view=compact&touch=classic');
+      await expect(page.locator('#resourceAnnouncement')).toHaveAttribute('role', 'status');
+      await expect(page.locator('#resourceAnnouncement')).toHaveAttribute('aria-live', 'polite');
+      await page.evaluate(() => {
+        const region = document.querySelector('#resourceAnnouncement');
+        window.__resourceNotifications = [];
+        new MutationObserver(() => {
+          if (region.textContent) window.__resourceNotifications.push(region.textContent);
+        }).observe(region, { subtree: true, childList: true, characterData: true });
+        const g = window.__TEACUP__.game;
+        // Both successful uses enter the real event queue before the next frame.
+        g.pourMilk(); g.pourMilk();
+      });
+      await expect(page.locator('#resource0 b')).toHaveText('0/2');
+      await expect.poll(() => page.evaluate(() => window.__resourceNotifications)).toEqual(['Milk used', 'Milk used']);
+      await page.evaluate(() => { const g = window.__TEACUP__.game; g.sugarBurst(); g.sugarBurst(); });
+      await expect(page.locator('#resource1 b')).toHaveText('0/2');
+      await expect.poll(() => page.evaluate(() => window.__resourceNotifications)).toEqual(['Milk used', 'Milk used', 'Sugar used', 'Sugar used']);
+      await page.evaluate(() => {
+        const { game: g, config } = window.__TEACUP__;
+        g.state.spoon.strainer = 1; g.state.strainerLeft = 2;
+        for (const angle of [g.state.angle + Math.PI / 2, g.state.angle + Math.PI]) {
+          g.state.enemies.push({ angle, radius: config.arena.rimRadius - 1, speed: 100, wiggle: 0, shifted: false, size: 10, alpha: 1 });
+        }
+      });
+      await expect(page.locator('#resource2 b')).toHaveText('0/2');
+      const notifications = ['Milk used', 'Milk used', 'Sugar used', 'Sugar used', 'Leaf caught', 'Leaf caught'];
+      await expect.poll(() => page.evaluate(() => window.__resourceNotifications)).toEqual(notifications);
+      // Empty-resource input must not create a notification, including after
+      // the pending announcement's display interval has finished.
+      expect(await page.evaluate(() => {
+        const g = window.__TEACUP__.game;
+        return [g.pourMilk(), g.sugarBurst()];
+      })).toEqual([false, false]);
+      await page.clock.runFor(1000);
+      expect(await page.evaluate(() => window.__resourceNotifications)).toEqual(notifications);
+      expect(problems).toEqual([]);
+    });
+  }
+
   for (const view of ['full', 'compact']) {
     test(`${view} resource illustrations follow real use, catches, spills and repairs`, async ({ page, problems }, info) => {
       await start(page, `&view=${view}&touch=classic`);
@@ -90,6 +133,7 @@ export function resourceHudTests() {
         g.primaryAction(); g.primaryAction();
       }, mode);
       await expect(page.locator('#resourceStrip')).toHaveAttribute('data-normal', 'false');
+      await expect(page.locator('#resourceScore')).toBeHidden();
       await expect(page.locator('.resource-strainer')).toHaveCount(0);
       if (mode === 'grind') {
         await page.evaluate(() => { window.__TEACUP__.game.state.grind.scalds = 2; });
@@ -103,6 +147,7 @@ export function resourceHudTests() {
       }
       await page.locator('#menuBtn').click();
       expect(await page.evaluate(() => window.__TEACUP__.game.state.pausedFrom)).toBe(mode);
+      await expect(page.locator('#resourceScore')).toBeHidden();
       await expect(page.locator('#referenceResources')).toContainText('suspended');
       await page.locator('#closeBreak').click();
       await expect(page.locator('#game')).toBeFocused();
@@ -114,6 +159,8 @@ export function resourceHudTests() {
         g.primaryAction();
       });
       await expect(page.locator('#resourceStrip')).toHaveAttribute('data-normal', 'true');
+      await expect(page.locator('#resourceScore')).toHaveText(/^Score \d+$/);
+      await expect(page.locator('#resourceScore')).toBeVisible();
       await expect(page.locator('.resource-strainer')).toHaveCount(1);
       await page.screenshot({ path: info.outputPath(`returned-from-${mode}.png`) });
     }
@@ -128,13 +175,17 @@ export function resourceHudTests() {
       await page.locator(`[data-job="${mode}"]`).click();
       await expect(page.locator('#resourceStrip')).toHaveAttribute('data-normal', 'false');
       await expect(page.locator('#resource0')).toContainText(label);
+      await expect(page.locator('#resourceScore')).toBeHidden();
       await expect(page.locator('#resourceStrip svg')).toHaveCount(0);
       await page.evaluate(() => { const g = window.__TEACUP__.game; g.primaryAction(); g.pause(); });
+      await expect(page.locator('#resourceScore')).toBeHidden();
       await expect(page.locator('#resource0')).toContainText(label);
       await visibleStrip(page);
       await page.screenshot({ path: info.outputPath(`${mode}.png`) });
       await page.locator('#backPotBtn').click();
       await expect(page.locator('#resourceStrip')).toHaveAttribute('data-normal', 'true');
+      await expect(page.locator('#resourceScore')).toHaveText(/^Score \d+$/);
+      await expect(page.locator('#resourceScore')).toBeVisible();
       await expect(page.locator('#resource2')).toContainText('Leaf catches');
     }
     expect(problems).toEqual([]);
