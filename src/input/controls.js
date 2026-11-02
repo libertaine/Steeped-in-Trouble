@@ -80,6 +80,7 @@ export function createControls({
   const down = new Set(); // key codes physically held
   const stale = new Set(); // keys held over from an arcade adventure: their auto-repeat is ignored until released
   const cleanups = [];
+  const captured = new Map();
   let mode = null; // the gesture mode last seen
   let flamePointer = null; // the finger holding the flame in the hot chocolate
   let point = null; // where the gesture finger last landed
@@ -103,6 +104,10 @@ export function createControls({
     held.fire = false;
     for (const dir in walk) walk[dir] = false;
     forgetGestures();
+    for (const [id, element] of captured) {
+      try { element.releasePointerCapture?.(id); } catch { /* It may already have ended. */ }
+    }
+    captured.clear();
   }
 
   function release() {
@@ -226,10 +231,13 @@ export function createControls({
   function capture(element, e) {
     try {
       element.setPointerCapture?.(e.pointerId);
+      captured.set(e.pointerId, element);
     } catch {
       // The pointer may already be gone (e.g. a very quick tap).
     }
   }
+
+  listen(doc, 'lostpointercapture', (e) => captured.delete(e.pointerId));
 
   // On-screen buttons that act while held (both touch layouts' steering pads, and STEAM).
   for (const button of doc.querySelectorAll('[data-hold]')) {

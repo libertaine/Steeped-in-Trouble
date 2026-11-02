@@ -20,6 +20,7 @@ import { createEffects } from './rendering/effects.js';
 import { createRenderer } from './rendering/renderer.js';
 import { createHud } from './ui/hud.js';
 import { createPresentation } from './ui/presentation.js';
+import { createOnScreenControls } from './ui/onScreenControls.js';
 import { prepareDayPractice } from './dev/days.js';
 import { crossForMe, prepareCrossingPractice } from './dev/crossing.js';
 import { prepareCheckpoint, prepareRecord } from './dev/collection.js';
@@ -78,6 +79,9 @@ function boot() {
   const sessions = createSessions(mainPot, progress);
   const game = sessions.game;
   let settings = initialSettings({ params, storage, touchDevice: isTouchDevice(window) });
+  let controls;
+  const onScreen = createOnScreenControls({ doc: document, storage,
+    resetInput: () => controls?.settle(true), onChange: describeControls });
   const touchButton = document.getElementById('touchBtn');
   const autoButton = document.getElementById('autoSteamBtn');
   function applySettings(next, { save = false } = {}) {
@@ -90,7 +94,12 @@ function boot() {
       autoButton.disabled = settings.touch === 'easy';
     }
     if (save) saveSettings(storage, settings);
-    document.getElementById('activeControls').textContent = settings.touch === 'easy'
+    describeControls();
+  }
+  function describeControls() {
+    document.getElementById('activeControls').textContent = !onScreen.visible
+      ? `On-screen gameplay buttons are hidden. Use a keyboard to steer and play adventures; Space fires steam, and milk and sugar shortcuts still work. ${settings.autoSteam ? 'Auto Steam is on. ' : ''}${settings.touch === 'easy' ? 'Easy Touch cup gestures still work: double-tap for milk, hold for sugar or hot-chocolate flames. ' : ''}Choose Show to restore the buttons on a touch-only device.`
+      : settings.touch === 'easy'
       ? 'Easy Touch: hold ◀ / ▶ to steer; double-tap the cup for milk; hold the cup for sugar. In hot chocolate, hold the cup for flames. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH; crossing the street, tap the arrow pad. Keyboard controls work too.'
       : 'Classic Touch: hold Turn to steer and Steam to fire; tap Milk or Sugar. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH; crossing the street, tap the arrow pad. Keyboard controls work too.';
   }
@@ -126,7 +135,7 @@ function boot() {
   }
 
   let presentation, collectionUI, overlay, title;
-  const controls = createControls({
+  controls = createControls({
     doc: document,
     commands: {
       fire: game.fireSteam,
@@ -165,9 +174,7 @@ function boot() {
   overlay = createInstructionOverlay({
     doc: document,
     version: __APP_VERSION__,
-    // Explain the touch layout actually in use, on touch screens or whenever Easy Touch is chosen.
-    touch: () => (settings.touch === 'easy' || isTouchDevice(window)
-      ? { scheme: settings.touch, autoSteam: settings.autoSteam } : null),
+    touch: () => ({ scheme: settings.touch, autoSteam: settings.autoSteam, visible: onScreen.visible }),
     onStart: ({ fromTeaBreak, isNewPot }) => {
       controls.settle(true);
       if (fromTeaBreak) return;
@@ -297,6 +304,7 @@ function boot() {
     stop() {
       loop.stop();
       controls.dispose();
+      onScreen.dispose();
       presentation.dispose();
       collectionUI.dispose();
       overlay.dispose();

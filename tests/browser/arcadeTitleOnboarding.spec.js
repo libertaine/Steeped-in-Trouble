@@ -475,17 +475,19 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
     expect(problems).toEqual([]);
   });
 
-  test('the touch line explains the chosen layout, and stays out of the way with a mouse', async ({ page, problems }) => {
+  test('the controls summary explains hidden buttons and the selected touch scheme', async ({ page, problems }) => {
     const touch = page.locator('#overlayTouchSummary');
 
     await openTitle(page);
-    await expect(touch).toBeHidden();
+    await expect(touch).toBeVisible();
+    await expect(touch).toContainText('On-screen controls hidden:');
+    await expect(touch).toContainText('Use the keyboard');
 
     await openTitle(page, '&touch=easy');
     await expect(touch).toBeVisible();
-    await expect(touch).toContainText('Easy Touch:');
-    await expect(touch).toContainText('Steam fires by itself');
-    await expect(touch).toContainText('Double-tap the cup for milk');
+    await expect(touch).toContainText('On-screen controls hidden:');
+    await expect(touch).toContainText('Auto Steam is on');
+    await expect(touch).toContainText('double-tap for milk');
     await expect(touch).not.toContainText('Tap MILK');
     expect(problems).toEqual([]);
   });

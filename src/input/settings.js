@@ -28,6 +28,36 @@ export function isTouchDevice(win = globalThis.window) {
 // Presentation is stored separately so changing controls never resets the view.
 export const VIEW_KEY = 'steeped-in-trouble:view';
 
+// Visibility is independent of both the touch scheme and View. Older control
+// preferences keep their exact shape; neither saves nor checkpoints change.
+export const ONSCREEN_KEY = 'steeped-in-trouble:onscreen-controls';
+const validVisibility = (value) => ['auto', 'show', 'hide'].includes(value);
+
+export function initialOnScreenControls(storage) {
+  try {
+    const saved = storage?.getItem(ONSCREEN_KEY);
+    if (validVisibility(saved)) return saved;
+  } catch { /* Auto still works when storage is unavailable. */ }
+  return 'auto';
+}
+
+export function saveOnScreenControls(storage, value) {
+  try {
+    if (validVisibility(value)) storage?.setItem(ONSCREEN_KEY, value);
+  } catch { /* Apply the choice for this visit even when it cannot be saved. */ }
+}
+
+/** A secondary touchscreen must not make a mouse-primary laptop show pads. */
+export function hasPrimaryTouch(win = globalThis.window) {
+  try {
+    if (win?.matchMedia?.('(pointer: coarse)').matches) return true;
+    if (win?.matchMedia?.('(pointer: fine)').matches
+      || win?.matchMedia?.('(pointer: none)').matches
+      || win?.matchMedia?.('(any-pointer: fine)').matches) return false;
+  } catch { /* Older browsers can fall back to touch capability. */ }
+  return (win?.navigator?.maxTouchPoints ?? 0) > 0;
+}
+
 export function initialView({ params = new URLSearchParams(), storage, touchDevice = false } = {}) {
   const valid = (value) => value === 'compact' || value === 'full';
   const override = params.get('view');

@@ -228,11 +228,19 @@
       <p class="note">On a touch screen, <b>Easy Touch</b> gives you two big steering pads and Auto Steam: double-tap the cup to pour milk, and hold a finger on it to fire sugar. <b>Classic Touch</b> keeps a button for everything, and works with Auto Steam too.</p>
       <div class="settings">
         <button id="breakViewBtn" class="toggle" aria-label="Choose Compact or Full View">View: full</button>
+        <div class="control-visibility"><label for="onScreenControls">On-screen controls</label>
+          <select id="onScreenControls" aria-describedby="onScreenControlsHelp">
+            <option value="auto">Auto</option>
+            <option value="show">Show</option>
+            <option value="hide">Hide</option>
+          </select>
+        </div>
         <button id="touchBtn" class="toggle" aria-label="Choose the touch controls">Touch: classic</button>
         <button id="autoSteamBtn" class="toggle" aria-label="Toggle Auto Steam">Auto Steam: off</button>
         <button id="soundBtn" class="toggle" aria-label="Toggle sound">Sound: off</button>
         <button id="graphicsBtn" class="toggle" aria-label="Toggle graphics quality">Graphics: high</button>
       </div>
+      <p class="note" id="onScreenControlsHelp">Auto shows gameplay buttons when the primary pointer is touch. Hide removes the buttons; steering and adventure actions then need a keyboard. Easy Touch cup gestures remain available. View, Touch, and Auto Steam keep their own settings.</p>
     </section>
     </details>
   </aside>
