@@ -17,15 +17,13 @@ jobs:
     outputs:
       docs_only: ${{ steps.paths.outputs.docs_only }}
     steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
       - id: paths
-        name: Identify documentation-only changes
-        env:
-          CHANGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: node .github/scripts/ci-changes.js
+        name: Controlled classification failure
+        shell: bash
+        run: |
+          echo "docs_only=true" >> "$GITHUB_OUTPUT"
+          echo "Controlled failure for PR 36 review verification"
+          exit 1
 
   checks:
     name: Lint, unit tests, build (${{ matrix.os }})
