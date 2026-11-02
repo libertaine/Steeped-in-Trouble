@@ -313,3 +313,5 @@ can [support development via PayPal](https://www.paypal.com/donate/?hosted_butto
 
 Contributions are entirely optional. Playing the game, sharing it with others,
 and reporting bugs or suggestions are just as appreciated.
+
+<!-- Documentation-only CI verification for PR #36. -->
