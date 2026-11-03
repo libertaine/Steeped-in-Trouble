@@ -21,7 +21,17 @@ describe('reading the leaves', () => {
   });
 
   it('handles an empty cup', () => {
-    expect(readLeafPattern([])).toMatchObject({ total: 0, maxCluster: 0, clusterShare: 0, occupiedLanes: 0 });
+    expect(readLeafPattern([])).toMatchObject({ total: 0, buried: 0, maxCluster: 0, clusterShare: 0, occupiedLanes: 0 });
+  });
+
+  it('reads only the top layer: the last leaves to settle', () => {
+    const buried = lanesEach([8, 9, 10], 4); // twelve older leaves in a tight cluster
+    const top = lanesEach([0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 0, 4, 12]);
+    expect(top).toHaveLength(CONFIG.fortunes.topLayer);
+    const reading = readLeafPattern([...buried, ...top]);
+    expect(reading).toMatchObject({ total: 16, buried: 12, occupiedLanes: 13 });
+    expect(reading.bins.slice(8, 11)).toEqual([0, 0, 0]); // the old cluster is not read
+    expect(selectFortune({ milkKills: 0, leafLanes: [...buried, ...top] })).toBe('spiral');
   });
 });
 
@@ -40,8 +50,15 @@ describe('fortune selection', () => {
     expect(selectFortune({ milkKills: 0, leafLanes: [0, 1, 5, 8, 11] })).toBe('crown');
   });
 
-  it('chooses The Spiral when leaves cover ten or more lanes without a cluster', () => {
+  it('chooses The Spiral when leaves cover eleven or more lanes without a cluster', () => {
     expect(selectFortune({ milkKills: 0, leafLanes: scattered })).toBe('spiral');
+    expect(selectFortune({ milkKills: 0, leafLanes: scattered.slice(0, 10) })).toBe('star'); // ten lanes
+  });
+
+  it('lets The Crown win when a cluster and a scatter form together', () => {
+    const both = [...lanesEach([3, 4, 5], 3), 0, 7, 8, 9, 10, 11, 12]; // 9 of 16 clustered, 10 lanes
+    expect(readLeafPattern(both).occupiedLanes).toBeGreaterThanOrEqual(10);
+    expect(selectFortune({ milkKills: 0, leafLanes: [...both, 14, 15] })).toBe('crown'); // 12 lanes too
   });
 
   it('falls back to The Star', () => {

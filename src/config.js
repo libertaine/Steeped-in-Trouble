@@ -154,9 +154,14 @@ export const CONFIG = deepFreeze({
 
   fortunes: {
     veilMilkKills: 3, // milk kills needed for The Veil
+    // The pattern is read from the top layer: the last leaves to settle. A
+    // fixed sample keeps each pattern about as likely at the 32-leaf cap as in
+    // the 16-leaf first cup (issue #15); with every leaf counted, more kills
+    // meant more lanes covered, and The Spiral crowded out The Star.
+    topLayer: 16,
     crownClusterWidth: 3, // adjacent lanes examined for The Crown
-    crownClusterShare: 0.4, // share of leaves that must sit in that cluster
-    spiralOccupiedLanes: 10, // distinct lanes holding leaves for The Spiral
+    crownClusterShare: 0.4, // share of the top layer that must sit in that cluster
+    spiralOccupiedLanes: 11, // distinct lanes the top layer covers for The Spiral
     crownBonusSugar: 1,
     veilMilkBonus: 2.5,
     spiralScoreMultiplier: 1.25,

@@ -66,13 +66,14 @@ When a round ends, the leaves are read. They glide into the shape of the
 fortune, and the fortune applies to the **next** round only.
 
 The leaf pattern points at one of four classic fortunes, checked in this
-order:
+order. Only the top layer is read: the last 16 leaves to settle (or every
+leaf, in a sparser cup), so a 32-leaf cup reads much like a 16-leaf one.
 
 | Fortune | Read when… | Effect next round |
 | --- | --- | --- |
 | **The Veil** | 3+ kills made in or beside a milk cloud | Milk clouds last 2.5 s longer |
-| **The Crown** | ≥ 40% of leaves lie in three adjacent lanes | +1 sugar burst |
-| **The Spiral** | Leaves occupy 10+ different lanes | Leaves drift one lane sideways mid-flight; kills score 25% more |
+| **The Crown** | ≥ 40% of the top layer lies in three adjacent lanes | +1 sugar burst |
+| **The Spiral** | The top layer occupies 11+ different lanes | Leaves drift one lane sideways mid-flight; kills score 25% more |
 | **The Star** | Otherwise (a clear cup) | Steam darts travel 35% faster |
 
 So fighting in one area tends to bring abundance, spreading out invites

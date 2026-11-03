@@ -352,8 +352,9 @@ it never steers or spends milk/sugar, and never toasts automatically.
 At the end of a round, `game.js` builds a round record
 (`{ milkKills, milkUses, sugarUses, escapes, leafLanes }`) and calls
 `drawFortune(record, rng)`. First `selectFortune()` finds the pattern the
-leaves point at: `readLeafPattern()` summarizes them (densest three-lane
-cluster, occupied lanes), and the first fortune in `FORTUNE_PRIORITY` whose
+leaves point at: `readLeafPattern()` summarizes the top layer, the last
+`CONFIG.fortunes.topLayer` leaves (densest three-lane cluster, occupied
+lanes), so pattern odds do not drift as leaf targets grow, and the first fortune in `FORTUNE_PRIORITY` whose
 `matches(reading)` accepts wins. Then every fortune's `weight(record)` is
 added up, with `CONFIG.fortunes.patternWeight` extra for the pattern's
 fortune, and one fortune is drawn with the gameplay generator. The pattern is
