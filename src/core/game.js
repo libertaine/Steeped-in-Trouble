@@ -15,7 +15,8 @@
 // valveTurn, valveOpen, barrage, beans, beanCrack, beanSplat, pressureBuild,
 // pressureWarn, pressureBurst, sputter, clank, grindHit, grindRage, scald,
 // grindDefeat, grindEscape; and in Strange Brews: dartWarn, dart, wanderWarn,
-// wander, currentWarn, currentFlow, currentEnd (roundStart also names the tea,
+// wander, currentWarn, currentFlow, currentEnd, and Mushroom Tea's puffWarn, spores,
+// sprout (roundStart also names the tea,
 // whether it has just come on tap, and the chapter, and whether this cup opens it);
 // and for The Tea Shortage: shortage, teaBought, shortageSkipped, and in the
 // Tea Run: runStart, runGo, runJump, runSlide, runLand, runHit, runPickup,
@@ -60,6 +61,7 @@ import {
   CROSSING_SALT, createCrossing, pressHop, startCrossing, updateCrossing,
 } from '../gameplay/crossingStreet.js';
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
+import { releaseSpores, sproutPuffball, updateSpores } from '../gameplay/mushroom.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import {
   findStrikingShot, fireSteam, isNearCloud, killScore, milkPulse, pourMilk, spendDart, sugarBurst, sugarCapacity,
@@ -150,6 +152,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state.wake = null;
     state.current = null;
     state.pulse = 0;
+    state.spores = [];
   }
 
   /** Steep this cup's tea. The tea generator always advances by the same two draws. */
@@ -592,7 +595,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
 
   function killEnemy(enemy, shot, inMilk) {
     const R = CONFIG.residue;
-    emit('kill', { radius: enemy.radius, angle: enemy.angle, sugar: shot.sugar, by: shot.by });
+    const giggling = enemy.giggle > 0;
+    emit('kill', { radius: enemy.radius, angle: enemy.angle, sugar: shot.sugar, by: shot.by, kind: enemy.kind, giggling });
     state.residue.push({
       lane: laneOf(enemy.angle),
       radius: rng.range(R.radiusMin, R.radiusMax),
@@ -603,7 +607,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     if (state.residue.length > R.maxLeaves) state.residue.shift();
     if (inMilk) state.roundStats.milkKills++;
     if (shot.volley) state.roundStats.steamKills++;
-    state.score += killScore(shot, state.modifiers);
+    state.score += killScore(shot, state.modifiers, giggling ? CONFIG.spores.scoreBonus : 1);
+    if (enemy.kind === 'puffball') releaseSpores(sim, enemy);
     clearLeaf();
   }
 
@@ -617,6 +622,12 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     for (let i = enemies.length - 1; i >= 0; i--) {
       const enemy = enemies[i];
       advanceEnemy(enemy, sim, dt);
+      if (enemy.puff?.stage === 'burst') {
+        // Mushroom Tea: a ripe puffball splits. Its sprouts join the end of the list, so they move from the next frame.
+        enemies.splice(i, 1);
+        sproutPuffball(sim, enemy);
+        continue;
+      }
       if (state.wake && inWake(state.wake, enemy)) {
         enemies.splice(i, 1);
         killEnemy(enemy, WAKE, false);
@@ -720,6 +731,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     updateSpawning(sim, dt);
     updateCurrent(sim, dt);
     updateClouds(state, dt);
+    updateSpores(state, dt);
     updateShots(state, dt);
     updateGolden(sim, dt);
     updatePrismatic(sim, dt);

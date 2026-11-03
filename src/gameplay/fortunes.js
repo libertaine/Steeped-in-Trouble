@@ -41,6 +41,7 @@ export const BASE_MODIFIERS = Object.freeze({
   dartChance: 0, // share of new leaves that dart (Green Tea)
   wanderChance: 0, // share of new leaves that wander (Earl Grey)
   spiceCurrents: false, // currents sweep the leaves sideways (Chai)
+  puffballChance: 0, // share of new leaves that are puffballs (Mushroom Tea)
 });
 
 /** Follow a polyline: t ∈ [0, 1] moves evenly from point to point. */

@@ -7,6 +7,8 @@
 //   - 'darter' (Green Tea): crouches and flickers, then dashes a fixed
 //     distance further than an ordinary leaf would go in that time.
 //   - 'wanderer' (Earl Grey): leans one way, then glides into that lane.
+//   - 'puffball' (Mushroom Tea): swells past its ripening radius, then splits
+//     into 'sprout's; popped first, it leaves a spore cloud (gameplay/mushroom.js).
 // Each takes its warning time (and a darter its dash distance) from the age
 // of the round's tea; see gameplay/strength.js. A leaf's speed, and how often
 // new ones arrive, use the chapter baseline plus normal-cup Heat (gameplay/days.js).
@@ -20,6 +22,7 @@
 import { CONFIG } from '../config.js';
 import { LANES, LANE_STEP, TAU, laneAngle } from './arena.js';
 import { currentChapter } from './progress.js';
+import { advancePuff, giggleSlow } from './mushroom.js';
 import { byStage } from './strength.js';
 import { isNearCloud } from './weapons.js';
 
@@ -27,16 +30,18 @@ const E = CONFIG.enemies;
 const S = CONFIG.spawning;
 const D = CONFIG.darting;
 const WANDER = CONFIG.wandering;
+const PUFF = CONFIG.puffballs;
 
 const ease = (u) => u * u * (3 - 2 * u);
 
 /** Which kind a new leaf is, under the round's modifiers. Draws only when a behaviour is possible. */
 function pickKind(modifiers, rng) {
-  const { dartChance, wanderChance } = modifiers;
-  if (!dartChance && !wanderChance) return 'leaf';
+  const { dartChance, wanderChance, puffballChance } = modifiers;
+  if (!dartChance && !wanderChance && !puffballChance) return 'leaf';
   const roll = rng.next();
   if (roll < dartChance) return 'darter';
   if (roll < dartChance + wanderChance) return 'wanderer';
+  if (roll < dartChance + wanderChance + puffballChance) return 'puffball';
   return 'leaf';
 }
 
@@ -69,6 +74,11 @@ export function spawnEnemy({ state, rng }) {
       stage: 'waiting', at: rng.range(WANDER.atMin, WANDER.atMax), dir: rng.next() < 0.5 ? -1 : 1, time: 0,
       warn: byStage(WANDER.warnTime, state.teaAge),
     };
+  } else if (kind === 'puffball') {
+    enemy.kind = kind;
+    enemy.speed *= PUFF.speed;
+    enemy.size = PUFF.size;
+    enemy.puff = { stage: 'waiting', at: rng.range(PUFF.ripeMin, PUFF.ripeMax), time: 0, warn: byStage(PUFF.warnTime, state.teaAge) };
   }
   state.enemies.push(enemy);
   return enemy;
@@ -204,9 +214,10 @@ export function milkSlow(state, angle) {
  */
 export function advanceEnemy(enemy, { state, rng, emit }, dt) {
   enemy.alpha = Math.min(1, enemy.alpha + dt * E.fadeInRate);
-  const { pace, dash } = advanceDart(enemy, emit, dt);
+  const { pace, dash } = enemy.puff ? { pace: advancePuff(enemy, emit, dt), dash: 0 } : advanceDart(enemy, emit, dt);
   const rise = enemy.speed * state.modifiers.enemySpeedMultiplier * pace + (enemy.backwash > 0 ? 0 : dash);
-  enemy.radius += rise * milkSlow(state, enemy.angle);
+  // Milk and Mushroom Tea's spores each hold a leaf back; only the stronger applies.
+  enemy.radius += rise * Math.min(milkSlow(state, enemy.angle), giggleSlow(enemy, state, dt));
   if (enemy.backwash > 0) {
     // The push eases out: quick at first, then settling.
     const move = enemy.backwash * (1 - Math.exp(-dt * CONFIG.milk.backwashRate));

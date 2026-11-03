@@ -104,6 +104,20 @@ export const TEAS = Object.freeze({
     // After an herbal round The Leaves Lie is more likely (never certain).
     fortuneNudges: { lie: T.herbal.lieWeight },
   },
+  // A prototype: on no chapter's shelf, so it is brewed only with ?tea=mushroom.
+  mushroom: {
+    id: 'mushroom',
+    name: 'Mushroom Tea',
+    quip: 'The Cup Has Gone Fungal',
+    title: 'Mushroom Tea',
+    info: 'Puffballs float up. Pop one and its spores leave nearby leaves giggling in place, '
+      + 'worth more. Leave it and it swells, then splits in two.',
+    tag: 'puffballs',
+    color: '#c9a2e8',
+    pinnedOnly: true,
+    modifiers: {},
+    strength: (age) => ({ puffballChance: byStage(CONFIG.puffballs.chance, age) }),
+  },
 });
 
 /** How each modifier a tea may set combines with the fortune's value. */
@@ -115,6 +129,7 @@ export const COMBINE = Object.freeze({
   dartChance: 'max',
   wanderChance: 'max',
   spiceCurrents: 'or',
+  puffballChance: 'max',
 });
 
 const RULES = {

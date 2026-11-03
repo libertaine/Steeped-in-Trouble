@@ -416,6 +416,35 @@ export const CONFIG = deepFreeze({
     glideTime: 0.35,
   },
 
+  // Mushroom Tea's puffballs (gameplay/mushroom.js). Prototype tuning; the tea
+  // is brewed only with ?tea=mushroom. A puffball rises slowly; popped, it
+  // leaves a spore cloud; left alone past its ripening radius, it swells,
+  // then splits into sprouts in the lanes either side, never beyond the
+  // cup's leaf limit.
+  puffballs: {
+    chance: [0.12, 0.18, 0.24], // by stage: share of new leaves that are puffballs
+    speed: 0.85, // a puffball rises at this share of an ordinary leaf's speed
+    size: 13,
+    ripeMin: 125, // swelling starts once a puffball passes a radius between these
+    ripeMax: 150,
+    warnTime: [1.1, 0.95, 0.8], // by stage: seconds of visible swelling before it splits…
+    warnPace: 0.4, // …rising at this share of its speed
+    sprouts: 2, // little leaves it splits into, one lane either side (fewer if the cup is full)
+    sproutSize: 7,
+    sproutSpeed: 1.2, // share of the puffball's speed (about an ordinary leaf's)
+    sproutGlide: 0.3, // seconds a sprout takes to slide out into its own lane
+  },
+  // The cloud a popped puffball leaves where it was: leaves inside giggle,
+  // hardly rising, and score more if destroyed while giggling.
+  spores: {
+    duration: 2.5,
+    radius: 58, // units from where the puffball popped (about a lane either side, mid-cup)
+    hold: 0.1, // giggling leaves rise at this share of their speed (milk's slowdown never stacks with it)
+    linger: 0.4, // seconds a leaf keeps giggling after leaving a cloud
+    scoreBonus: 1.5,
+    max: 4, // clouds at once; the oldest clears first
+  },
+
   // Chai's spice currents: on a fixed clock, every leaf in the cup is carried one lane sideways.
   currents: {
     firstAt: [6.5, 5.5, 5], // by stage: seconds into the round before the first warning

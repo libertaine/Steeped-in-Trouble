@@ -14,6 +14,8 @@ const G = CONFIG.grind;
 const D = CONFIG.darting;
 const [ONE, TWO] = CONFIG.chapters;
 const FIRST_TEAS = ['house', 'herbal', 'earlGrey'];
+// Every tea but a prototype brewed only with ?tea= (gameplay/teas.js).
+const SHELVED = Object.keys(TEAS).filter((id) => !TEAS[id].pinnedOnly);
 
 /** A fresh pot (the real tea draw, nothing pinned) in round 1. */
 function pot(seed = 1) {
@@ -90,8 +92,10 @@ describe('the chapters', () => {
     expect(currentChapter(p)).toBe(ONE);
     expect(teasOnTap(p, 1)).toEqual(FIRST_TEAS);
     expect(teasOnTap(p, 40)).toEqual(FIRST_TEAS);
-    // Between them, the two chapters bring every tea, once.
-    expect([...Object.keys(ONE.teas), ...Object.keys(TWO.teas)].sort()).toEqual(Object.keys(TEAS).sort());
+    // Between them, the two chapters bring every tea on a shelf, once.
+    expect([...Object.keys(ONE.teas), ...Object.keys(TWO.teas)].sort()).toEqual(SHELVED.sort());
+    // A prototype tea is on no shelf at all: only ?tea= brews it.
+    expect(Object.keys(TEAS).filter((id) => TEAS[id].pinnedOnly)).toEqual(['mushroom']);
   });
 
   it('advances once per call, and not past the last chapter', () => {
@@ -342,7 +346,7 @@ describe('Chapter 2: Things Heat Up', () => {
       expect(teas.slice(0, 4)).not.toContain('black');
       for (let i = 1; i < teas.length; i++) expect(teas[i]).not.toBe(teas[i - 1]);
       // Once on tap, every tea keeps turning up.
-      for (const id of Object.keys(TEAS)) expect(teas.slice(5)).toContain(id);
+      for (const id of SHELVED) expect(teas.slice(5)).toContain(id);
     }
   });
 
