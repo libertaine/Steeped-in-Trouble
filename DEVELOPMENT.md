@@ -31,8 +31,8 @@ For commands and code structure, see the [README](README.md) and
 Ordinary PRs and merges to `main` run ESLint, all unit tests and a production
 build on Ubuntu and Windows. Browser smoke runs on Ubuntu against the production
 build at the Pages base path: `npm run test:browser:smoke`. It selects existing
-`@smoke` tests on Chromium and mobile Chromium, currently **34 executions**
-(22 desktop, 12 mobile), rather than the complete 432-execution matrix.
+`@smoke` tests on Chromium and mobile Chromium, currently **35 executions**
+(23 desktop, 12 mobile), rather than the complete 444-execution matrix.
 
 The selection covers startup/assets, title/instructions, keyboard gameplay,
 Classic and Easy Touch, Milk/Sugar/Strainer depletion, cracks/repairs and loss,

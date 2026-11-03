@@ -1397,3 +1397,34 @@ evaluated; it is on no shelf in a normal pot.
   its lanes for a bigger, riskier payoff.
 
 All numbers are first-pass tuning in `CONFIG.puffballs` and `CONFIG.spores`.
+
+### Strange Happenings (spoilers)
+
+Now and then a Mushroom Tea cup misbehaves: about once every two or three
+cups, never in the first, never the same thing twice running, at a moment
+nobody can quite predict. Each feels different:
+
+- **Time Rewind**, *"Wait, did the game just reverse?"* Play catches, the
+  picture takes on a tape tint, and the last three seconds run backwards:
+  leaves sink back, the one you just steamed reappears, steam flies back
+  into the spoon, the spoon retraces its steps and the score winds down.
+  Then it fast-forwards to now and carries on. It is only a picture of the
+  past: time stood still meanwhile, so nothing is lost and no leaf got
+  closer. Steam, milk and sugar wait while it plays (about two seconds); P
+  still pauses, which ends it.
+- **The Cup Is Breathing**, *"Why is my tea alive?"* For about twelve
+  seconds the broth slowly swells and settles, rings run out to the
+  porcelain on each breath, the little rim caps swell with it, and the band
+  sounds muffled and dreamy. Leaves, aim and the spoon stay exactly put.
+- **The Impostor Spoon**, *"Why is something else playing with me?"* A
+  translucent violet spoon with googly eyes follows yours a second behind,
+  copying your steam with harmless rings, then shows off (a lap of the cup,
+  or walking the wrong way) and leaves. It cannot hit, score or spend
+  anything, and politely steps aside rather than sit on your spoon.
+
+Sometimes the game remarks on it ("That wasn't in the patch notes.",
+"Please don't feed the porcelain.", "Management denies the second spoon."):
+always the first time, often not afterwards. With reduced motion the rewind
+steps through still frames, the cup glows instead of swelling, and the
+impostor bows instead of running laps. All tuning is first-pass, in
+`CONFIG.strange`.

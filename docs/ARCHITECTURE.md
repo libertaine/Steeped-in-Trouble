@@ -49,6 +49,7 @@ src/
 │   ├── canvas.js        device-pixel-ratio-aware canvas sizing
 │   ├── renderer.js      draws state onto the canvas
 │   ├── effects.js       cosmetic particles and the spill flash
+│   ├── strange.js       Mushroom Tea's Strange Happenings: schedule, visual history, view data (no drawing)
 │   ├── grind.js         draws the espresso machine and its attacks
 │   ├── dailyPour.js     draws the paper route
 │   ├── biscuitBreakout.js draws the tray, biscuits, spoon paddle, cube and the talking biscuit
@@ -512,6 +513,93 @@ simultaneous contacts cannot finish a cup twice.
    and button in `input/controls.js` / `main.js`.
 3. Give its event a sound in `audio.js` and particles in `effects.js` if
    wanted, and draw any new shot type in `renderer.js`.
+
+## Strange Happenings (0.19.0 prototype)
+
+`rendering/strange.js` makes Mushroom Tea misbehave now and then: **Time
+Rewind**, **The Cup Is Breathing** and **The Impostor Spoon**. It is
+presentation, like `effects.js`: it reads state and game events, never
+writes state, and never draws from a gameplay generator. Checkpoints are
+unchanged (schema 3) because nothing about it needs saving.
+
+**Scheduling.** `strangeSchedule(seed, cups)` is pure. Each cup's numbers
+come from `cupRandom(seed, cup)`, a Mulberry32 salted with `STRANGE_SALT`
+and the cup number, and every cup draws the same five numbers whether or not
+it has a happening; cup 0 picks the first cup. So the same seed gives the
+same happenings in the same cups, a restart starts the plan again from cup 1,
+and a restored pot picks up from its round, all without a stored cursor.
+Rules (`CONFIG.strange`): never cup 1; the first in cup 2 or 3, then gaps of
+2, 3 or 4 cups (weights 0.45/0.4/0.15, about one in 2.7); never the same kind
+twice running; at most one a cup, one at a time; it starts 5–14 s of play
+into the cup, only while no leaf is within 50 units of the rim. A rewind also
+waits up to 5 s for a leaf to fall, so one can come back. A cup that ends
+before its moment simply misses it. The plan counts rounds; only Mushroom
+Tea cups (`state.tea === 'mushroom'`) in `playing` take part, which under the
+pinned-only prototype is every cup.
+
+**The clock.** The controller's clock is the cup's play time. It advances
+only in `playing`, never while paused or `blocked` (menus, Tea Break, the
+title), and resets on `matchStart`/`roundStart`. `reading`, `gameover`,
+leaving `playing` for any phase but `paused`, or a different state object (a
+restored pot, a practice session) end whatever is happening, silently.
+
+**Visual history.** During Mushroom Tea play it samples, at 20 Hz of play
+time, what is drawn: spoon angle, score, kills, a steam counter (from
+`steam` events), and copies of leaves, darts and spore clouds into pooled
+objects (capped at 24/48/4), plus references to the residue. A ring of 72
+slots holds 3.5 s; nothing grows with the cup's length.
+
+**Time Rewind.** While `holding` is true, `main.js` skips `game.update()`
+and `effects.update()`, and the fire/milk/sugar commands return without
+acting: the simulation is exactly as if paused, so nothing is lost, gained
+or reordered, and a twin cup that skips the same frames ends identically
+(`tests/unit/strange.test.js`). `shown(state)` returns a recorded moment, an
+`Object.create(state)` overlay of the recorded fields, so the renderer and
+HUD draw the past (the score included) while everything not recorded (milk,
+cubes, porcelain) shows its live value, held still. The timeline: hiccup
+0.12 s, then 3 s of history in reverse over 1 s, a 0.3 s hold, forward to
+now over 0.55 s, then settle (play resumes at once while the tint clears).
+That is about 2 s without control. With reduced motion it steps through
+still frames 1, 2 and 3 s back (0.35 s each) and returns, about 1.2 s. A
+`paused` event (P, the main button, blur or hidden, Tea Break) ends a rewind
+at once. Held keys keep their state, so a held direction or Space carries on
+afterwards. The real simulation is never rewound: a mid-cup restore would
+need a new checkpoint contract, would rewind stream cursors, and would take
+kills away.
+
+**Breathing and the impostor** run while play continues. They only fill
+`view`: `breathing = { intensity, breath, rings }` and `impostor = { angle,
+opacity, scale, look, puffs }`. The tea painter draws the liquid's offscreen
+layer at `1 + swell` about the cup's centre (0.035 High, 0.02 Low, 0 with
+reduced motion; never below its own size, and clipped to the rim), adds the
+breath's colour, exhaled rings (two in High, one in Low, none with reduced
+motion) and a brighter meniscus. The renderer swells the rim caps and lights
+the porcelain. No leaf, dart, hitbox or the aim is touched. The impostor
+follows `angleAt(clock - 1 s)` from the history, with two gestures (a lap, a
+mirrored walk, or with reduced motion a bow), steps aside when within 0.16
+rad of the real spoon (keeping to the side it is on), and is drawn under the
+real spoon with no aim beam. Its pretend steam (hollow rings over 60 units)
+comes from the recorded steam counter. It has no collision code at all.
+
+**Words and sound.** `createLineBook()` holds the rules: each kind's first
+appearance in a page session always speaks (the first rewind says "That
+wasn't in the patch notes."), later ones are silent 35% of the time, and no
+line repeats until the others have been heard. Lines belong to a moment
+(`appear`, `during`, `vanish`, `after`), are dropped if a gameplay whisper
+is showing, and use the whisper under the cup, never the play area. The
+controller's events (`strangeStart`, `rewindReverse`, `rewindForward`,
+`strangeBreath`, `impostorAppear`, `impostorPuff`, `impostorVanish`,
+`strangeQuip`, `strangeEnd`) go to `effects` and `audio` only. `audio.js`
+plays reversed (swelling) chirps and a tape whirr, filtered-noise breaths
+and a ghostly woo. `music.update(..., strange)` falls silent while a rewind
+holds and low-passes on each breath.
+
+**Testing hooks.** `?debug` exposes `window.__TEACUP__.strange`
+(`force(kind)`, `schedule(cups)`, `active`, `holding`, `recorded`, `view`).
+With `?debug`, `?strange=rewind|breathing|impostor` brings that one in the
+next Mushroom Tea cup (cup 1 included), `?strange=often` one every cup in
+turn, and `?strange=off` none. See
+[the testing guide](STRANGE_HAPPENINGS_TESTING.md).
 
 ## Testing
 
