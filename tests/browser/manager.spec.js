@@ -113,3 +113,24 @@ for (const [name, query, motion] of [['Low graphics', '&graphics=low', 'no-prefe
     expect(problems).toEqual([]);
   });
 }
+
+test('beating the Manager opens Chapter 3 with a cup of Mushroom Tea', async ({ page, problems }) => {
+  await openGame(page, '&seed=7');
+  await toManager(page);
+  await page.keyboard.press('Enter');
+  await page.evaluate(() => {
+    const { game, config } = window.__TEACUP__;
+    const m = game.state.manager;
+    Object.assign(m, { health: config.manager.memoDamage, rootTimer: 1e6, memoTimer: 1e6, meetingTimer: 1e6 });
+    m.memos = [{ id: 99, lane: 0, angle: -Math.PI / 2, radius: 170, speed: 0 }];
+  });
+  await page.keyboard.press('Space');
+  await expect(page.locator('#hudStatus')).toHaveText('MEETING ADJOURNED');
+  await expect(page.locator('#gameTip')).toContainText('Chapter 3 begins with a cup of Mushroom Tea');
+  await page.waitForFunction(() => window.__TEACUP__.game.state.manager?.time >= 1.65);
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#teaName')).toHaveText('Mushroom Tea');
+  await expect(page.locator('#chapterNum')).toHaveText('3');
+  expect(await page.evaluate(() => window.__TEACUP__.game.state.progress.chapter)).toBe(3);
+  expect(problems).toEqual([]);
+});

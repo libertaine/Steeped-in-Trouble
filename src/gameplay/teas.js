@@ -104,7 +104,7 @@ export const TEAS = Object.freeze({
     // After an herbal round The Leaves Lie is more likely (never certain).
     fortuneNudges: { lie: T.herbal.lieWeight },
   },
-  // A prototype: on no chapter's shelf, so it is brewed only with ?tea=mushroom.
+  // Chapter 3's tea, from its first cup (and, pinned with ?tea=mushroom, every cup).
   mushroom: {
     id: 'mushroom',
     name: 'Mushroom Tea',
@@ -114,7 +114,6 @@ export const TEAS = Object.freeze({
       + 'worth more. Leave it and it swells, then splits in two.',
     tag: 'puffballs',
     color: '#c9a2e8',
-    pinnedOnly: true,
     modifiers: {},
     strength: (age) => ({ puffballChance: byStage(CONFIG.puffballs.chance, age) }),
   },

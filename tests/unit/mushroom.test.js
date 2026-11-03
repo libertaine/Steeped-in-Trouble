@@ -11,7 +11,7 @@ import { IDLE, placeEnemy, playingGame, step } from './helpers.js';
 
 const P = CONFIG.puffballs;
 const SP = CONFIG.spores;
-const SHELVED = Object.keys(TEAS).filter((id) => !TEAS[id].pinnedOnly);
+const OTHERS = Object.keys(TEAS).filter((id) => id !== 'mushroom');
 
 /** A Mushroom Tea cup in progress, with spawning off. */
 const mushroomGame = (seed = 1) => playingGame({ seed, tea: 'mushroom' });
@@ -37,9 +37,10 @@ function steamLane(game, lane, seconds = 0.4) {
 const types = (events) => events.map((e) => e.type);
 
 describe('Mushroom Tea', () => {
-  it('is a prototype: on no shelf, brewed only when pinned', () => {
-    expect(TEAS.mushroom.pinnedOnly).toBe(true);
-    for (const chapter of CONFIG.chapters) expect(Object.keys(chapter.teas)).not.toContain('mushroom');
+  it('is Chapter 3’s tea, never brewed before it unless pinned', () => {
+    const shelves = CONFIG.chapters.map((chapter) => Object.keys(chapter.teas));
+    expect(shelves.slice(0, 2).flat()).not.toContain('mushroom');
+    expect(CONFIG.chapters[2].teas.mushroom).toBe(0);
     for (let seed = 1; seed <= 20; seed++) {
       const game = createGame({ seed });
       game.primaryAction();
@@ -55,7 +56,7 @@ describe('Mushroom Tea', () => {
   });
 
   it('leaves every other tea, under every fortune, without puffballs', () => {
-    for (const tea of SHELVED) for (const fortune of [null, ...Object.keys(FORTUNES)]) {
+    for (const tea of OTHERS) for (const fortune of [null, ...Object.keys(FORTUNES)]) {
       for (const age of [1, 5, 9]) expect(roundModifiers(fortune, tea, age).puffballChance).toBe(0);
     }
   });
@@ -79,7 +80,7 @@ describe('Mushroom Tea', () => {
   });
 
   it('draws no extra random numbers for teas without puffballs', () => {
-    for (const tea of SHELVED) {
+    for (const tea of OTHERS) {
       const a = playingGame({ seed: 5, tea });
       const b = playingGame({ seed: 5, tea });
       b.state.modifiers.puffballChance = 0; // already zero: nothing changes

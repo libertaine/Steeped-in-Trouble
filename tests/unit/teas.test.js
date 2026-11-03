@@ -122,7 +122,8 @@ describe('choosing the tea', () => {
     for (let seed = 1; seed <= 100; seed++) {
       const teas = teaSequence(seed, 30);
       for (const tea of teas.slice(0, 5)) expect(['house', 'herbal', 'earlGrey']).toContain(tea); // Chapter 1
-      expect(new Set(teas.slice(5, 5 + 5 + CONFIG.teas.maxAbsence)).size).toBe(6);
+      expect(new Set(teas.slice(5, 5 + 5 + CONFIG.teas.maxAbsence)).size).toBe(7); // Chapter 2's three, and Mushroom Tea from cup 11
+      expect(teas[10]).toBe('mushroom'); // the first cup of Chapter 3
       for (const id of Object.keys(TEAS)) {
         const served = teas.flatMap((t, i) => (t === id && i >= 5 ? [i + 1] : []));
         for (let k = 1; k < served.length; k++) {

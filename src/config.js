@@ -139,6 +139,14 @@ export const CONFIG = deepFreeze({
       spawnInterval: 1,
       teas: { chai: 0, green: 2, black: 4 },
     },
+    {
+      // Opened by beating The Mycelium Manager. Mushroom Tea comes on tap at
+      // once, so the chapter's first cup is always Mushroom Tea (debutTea()).
+      name: 'The Cup Has Gone Fungal',
+      enemySpeed: 1.15,
+      spawnInterval: 1,
+      teas: { mushroom: 0 },
+    },
   ],
 
   residue: {
@@ -478,11 +486,10 @@ export const CONFIG = deepFreeze({
     glideTime: 0.35,
   },
 
-  // Mushroom Tea's puffballs (gameplay/mushroom.js). Prototype tuning; the tea
-  // is brewed only with ?tea=mushroom. A puffball rises slowly; popped, it
-  // leaves a spore cloud; left alone past its ripening radius, it swells,
-  // then splits into sprouts in the lanes either side, never beyond the
-  // cup's leaf limit.
+  // Mushroom Tea's puffballs (gameplay/mushroom.js), brewed from Chapter 3 (or
+  // pinned with ?tea=mushroom). A puffball rises slowly; popped, it leaves a
+  // spore cloud; left alone past its ripening radius, it swells, then splits
+  // into sprouts in the lanes either side, never beyond the cup's leaf limit.
   puffballs: {
     chance: [0.12, 0.18, 0.24], // by stage: share of new leaves that are puffballs
     speed: 0.85, // a puffball rises at this share of an ordinary leaf's speed

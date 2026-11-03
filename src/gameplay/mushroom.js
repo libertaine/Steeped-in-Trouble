@@ -1,4 +1,4 @@
-// Mushroom Tea (prototype): puffballs, their spore clouds, and their sprouts.
+// Mushroom Tea (Chapter 3): puffballs, their spore clouds, and their sprouts.
 // Functions receive `sim` = { state, rng, emit } where they need it.
 //
 // A puffball is a leaf kind (spawned in enemies.js, with `puff: { stage, at,
