@@ -166,6 +166,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state.current = null;
     state.pulse = 0;
     state.spores = [];
+    state.rush = null;
   }
 
   /** Steep this cup's tea. The tea generator always advances by the same two draws. */

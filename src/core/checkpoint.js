@@ -13,7 +13,8 @@
 // Schema 5 (0.19.0): adds the Mycelium Manager's stream and its schedule
 //   (state.managerAfter, lastManager, managerVisits, managerDue, and the
 //   always empty state.manager), and Mushroom Tea's cup count for the Strange
-//   Happenings (state.mushroomCups, strangeFirst). Schemas 3 and 4 were only
+//   Happenings (state.mushroomCups, strangeFirst), and Rush Hour's (always
+//   empty here) state.rush. Schemas 3 and 4 were only
 //   ever saved by development builds of 0.19.0; they migrate like the rest.
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
@@ -40,7 +41,7 @@ const V3_STATE = Object.freeze(['spores']);
 const V3_MODIFIERS = Object.freeze(['puffballChance']);
 const V4_STATE = Object.freeze(['tray']);
 const V5_STATE = Object.freeze(['managerAfter', 'lastManager', 'managerVisits', 'managerDue', 'manager',
-  'mushroomCups', 'strangeFirst']);
+  'mushroomCups', 'strangeFirst', 'rush']);
 const LATER_STATE = Object.freeze([...V2_STATE, ...V3_STATE, ...V4_STATE, ...V5_STATE]);
 const without = (later) => Object.keys(createInitialState()).filter((key) => !later.includes(key));
 const own = (o, k) => Object.hasOwn(o, k);
@@ -140,6 +141,7 @@ function fromVersion4(data) {
       manager: null,
       mushroomCups: data.pinnedTea === 'mushroom' ? s.round : 0,
       strangeFirst: 0,
+      rush: null,
     },
     random: { ...structuredClone(data.random), manager: createRandom(toSeed(data.random.normal.seed) ^ MANAGER_SALT).exportState() },
     pinnedTea: data.pinnedTea,

@@ -143,6 +143,7 @@ export function createInitialState() {
     clouds: [], // { angle, time, duration, spread, drift }
     pulse: 0, // seconds left of milk's recovery pulse, which slows every leaf in a normal round
     spores: [], // Mushroom Tea's spore clouds: { angle, radius, time, duration } (gameplay/mushroom.js)
+    rush: null, // Chapter 3's Rush Hour: { left, center, step, gap, quiet } under way, or { left: 0, cooldown } after one
     residue: [], // { lane, radius, angle, spin, size }
     roundStats: createRoundStats(),
   };

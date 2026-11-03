@@ -26,10 +26,10 @@ describe('Continue Pot: 0.16.0 saves', () => {
     expect(migrated.schemaVersion).toBe(POT_SCHEMA_VERSION);
     expect(validateCheckpoint(migrated)).toBe(true);
     const { porcelain, goldenLeaf, goldenLeafTimer, spores, tray, modifiers,
-      managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, ...kept } = migrated.state;
+      managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, rush, ...kept } = migrated.state;
     // Schema 5: a Chapter 1 pot has no Manager scheduled yet, and has never brewed Mushroom Tea.
-    expect({ managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst }).toEqual({
-      managerAfter: null, lastManager: 0, managerVisits: 0, managerDue: false, manager: null, mushroomCups: 0, strangeFirst: 0 });
+    expect({ managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, rush }).toEqual({
+      managerAfter: null, lastManager: 0, managerVisits: 0, managerDue: false, manager: null, mushroomCups: 0, strangeFirst: 0, rush: null });
     const { modifiers: heldModifiers, ...held } = original.state;
     expect(kept).toEqual(held);
     expect(modifiers).toEqual({ ...heldModifiers, puffballChance: 0 }); // schema 3: the neutral puffball chance

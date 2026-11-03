@@ -59,7 +59,7 @@ export function withoutTray(reading) {
 
 /** The schema 5 (0.19.0) state: the Manager's schedule and Mushroom Tea's cup count. */
 export const V5_KEYS = Object.freeze(['managerAfter', 'lastManager', 'managerVisits', 'managerDue', 'manager',
-  'mushroomCups', 'strangeFirst']);
+  'mushroomCups', 'strangeFirst', 'rush']);
 
 /** A copy of an object without some keys. */
 export const omit = (o, keys) => Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k)));

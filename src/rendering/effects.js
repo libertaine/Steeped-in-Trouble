@@ -836,6 +836,12 @@ export function createEffects({ random = Math.random } = {}) {
       say('“You’ll be hearing from my manager.”', { color: CREMA, life: 3.2 });
     },
 
+    // Chapter 3's Rush Hour: a flicker down the lanes the next few leaves will use.
+    rush({ lanes }) {
+      pulseLanes(lanes, 'steam', 0.5);
+      explainOnce('rush', 'Rush hour! A few leaves at once, all round the cup.', '#d4ecff');
+    },
+
     // The Mycelium Manager. The first encounter points each thing out once,
     // in a few words, as it first turns up; after that the Manager talks.
     managerStart() {

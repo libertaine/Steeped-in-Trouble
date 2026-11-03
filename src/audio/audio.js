@@ -154,6 +154,8 @@ const TUNES = {
   // Wah, wah, wah, wahhh.
   grindEscape: [[392, 0.3, 'sawtooth', 0.016], [370, 0.3, 'sawtooth', 0.016, 0.32], [349, 0.3, 'sawtooth', 0.016, 0.64],
     [330, 0.9, 'sawtooth', 0.016, 0.96, 0.92]],
+  // Chapter 3's Rush Hour: three quick ticks.
+  rush: [[1047, 0.04, 'square', 0.006], [1047, 0.04, 'square', 0.006, 0.09], [1319, 0.05, 'square', 0.006, 0.18]],
   // The Mycelium Manager: a soft thud from below, paper, and a meeting chime.
   managerStart: [[73, 0.7, 'sine', 0.04, 0, 1.3], [110, 0.6, 'triangle', 0.02, 0.4, 1.2], [988, 0.08, 'sine', 0.01, 0.9]],
   managerFight: [[523, 0.12, 'triangle', 0.016], [659, 0.2, 'triangle', 0.016, 0.14]],

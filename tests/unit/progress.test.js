@@ -323,8 +323,9 @@ describe('Chapter 2: Things Heat Up', () => {
     const b = spawnEnemy({ state: two.state, rng: createRandom(9) });
     expect(TWO.enemySpeed).toBeCloseTo(1.15);
     expect(b.speed / a.speed).toBeCloseTo(TWO.enemySpeed, 9);
-    playPot(two, 30, { winAt: 0 }); // rematches beaten along the way
-    expect(spawnEnemy({ state: two.state, rng: createRandom(9) }).speed).toBeCloseTo(b.speed, 9);
+    playPot(two, 30, { winAt: 0 }); // rematches beaten along the way, and the Manager, which opens Chapter 3
+    expect(two.state.progress.chapter).toBe(3);
+    expect(spawnEnemy({ state: two.state, rng: createRandom(9) }).speed / a.speed).toBeCloseTo(THREE.enemySpeed, 9);
   });
 
   it('brings leaves no more often than Chapter 1, and steadily', () => {

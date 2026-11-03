@@ -12,6 +12,9 @@
 // Each takes its warning time (and a darter its dash distance) from the age
 // of the round's tea; see gameplay/strength.js. A leaf's speed, and how often
 // new ones arrive, use the chapter baseline plus normal-cup Heat (gameplay/days.js).
+// Chapter 3's Rush Hour (updateSpawning) bunches a few arrivals together in
+// time, spread round the cup, and then waits, without changing how many
+// leaves arrive on average.
 // A glide ({ shift, length, time, done }) moves a leaf sideways smoothly;
 // wanderers and Chai's spice currents both use it, and it adds to (rather
 // than overwrites) any other change of angle, such as The Spiral's drift.
@@ -20,7 +23,7 @@
 // advanceEnemy() (movement) and in the renderer's drawEnemy() (appearance).
 
 import { CONFIG } from '../config.js';
-import { LANES, LANE_STEP, TAU, laneAngle } from './arena.js';
+import { LANES, LANE_STEP, TAU, laneAngle, wrapLane } from './arena.js';
 import { currentChapter } from './progress.js';
 import { advancePuff, giggleSlow } from './mushroom.js';
 import { byStage } from './strength.js';
@@ -31,6 +34,7 @@ const S = CONFIG.spawning;
 const D = CONFIG.darting;
 const WANDER = CONFIG.wandering;
 const PUFF = CONFIG.puffballs;
+const RUSH = CONFIG.rushHour;
 
 const ease = (u) => u * u * (3 - 2 * u);
 
@@ -45,8 +49,9 @@ function pickKind(modifiers, rng) {
   return 'leaf';
 }
 
-export function spawnEnemy({ state, rng }) {
-  const lane = rng.int(LANES);
+/** A new leaf in a random lane, or in `lane`. */
+export function spawnEnemy({ state, rng }, { lane: chosen = null } = {}) {
+  const lane = chosen ?? rng.int(LANES);
   const radius = rng.range(E.spawnRadiusMin, E.spawnRadiusMax);
   const enemy = {
     kind: 'leaf',
@@ -89,15 +94,44 @@ export function nextSpawnDelay(interval, rng, intervalMultiplier = 1) {
   return interval * intervalMultiplier * rng.range(S.jitterMin, S.jitterMax);
 }
 
+/** Could a Rush Hour start now? Chapter 3, a few leaves in, and never over another tea's bursts. */
+function rushAllowed(state, chapter) {
+  return chapter.rushHour === true && !state.rush && state.kills >= RUSH.afterKills
+    && state.modifiers.puffballChance === 0 && !state.modifiers.spiceCurrents;
+}
+
 export function updateSpawning(sim, dt) {
-  const { state, rng } = sim;
+  const { state, rng, emit } = sim;
   state.spawnTimer -= dt;
-  if (state.spawnTimer <= 0 && state.enemies.length < E.maxActive) {
-    const { spawnInterval } = currentChapter(state.progress);
-    state.spawnTimer = Math.max(CONFIG.days.minSpawnInterval,
-      nextSpawnDelay(spawnInterval, rng, state.modifiers.spawnIntervalMultiplier));
-    spawnEnemy(sim);
+  if (state.spawnTimer > 0 || state.enemies.length >= E.maxActive) return;
+  const chapter = currentChapter(state.progress);
+  const floor = CONFIG.days.minSpawnInterval;
+  const rush = state.rush;
+  if (rush?.left > 0) {
+    // The rest arrive a third of the way round, one each way.
+    const k = RUSH.leaves - rush.left;
+    spawnEnemy(sim, { lane: wrapLane(rush.center + rush.step * (k % 2 ? 1 : -1) * Math.ceil(k / 2)) });
+    rush.left--;
+    state.spawnTimer = rush.left > 0 ? rush.gap : rush.quiet;
+    if (rush.left === 0) state.rush = { left: 0, cooldown: RUSH.cooldown };
+    return;
   }
+  if (rush && --rush.cooldown <= 0) state.rush = null;
+  if (rushAllowed(state, chapter) && rng.next() < RUSH.chance) {
+    // The ordinary gaps these arrivals would have taken, on average, less the rush's own: the quiet after it.
+    const mean = chapter.spawnInterval * state.modifiers.spawnIntervalMultiplier * (S.jitterMin + S.jitterMax) / 2;
+    const gap = Math.max(floor, RUSH.gap);
+    const center = rng.int(LANES);
+    const [near, far] = RUSH.apart;
+    const step = (near + rng.int(far - near + 1)) * (rng.next() < 0.5 ? -1 : 1);
+    state.rush = { left: RUSH.leaves - 1, center, step, gap, quiet: Math.max(floor, RUSH.leaves * mean - (RUSH.leaves - 1) * gap) };
+    emit('rush', { lane: center, lanes: [center, wrapLane(center + step), wrapLane(center - step)].slice(0, RUSH.leaves) });
+    spawnEnemy(sim, { lane: center });
+    state.spawnTimer = gap;
+    return;
+  }
+  state.spawnTimer = Math.max(floor, nextSpawnDelay(chapter.spawnInterval, rng, state.modifiers.spawnIntervalMultiplier));
+  spawnEnemy(sim);
 }
 
 /** Start washing a leaf back towards the centre (milk, or the recovering cup). */

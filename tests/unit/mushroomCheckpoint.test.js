@@ -26,13 +26,13 @@ describe('Continue Pot: 0.18.0 saves', () => {
       expect(migrated.schemaVersion).toBe(POT_SCHEMA_VERSION);
       expect(validateCheckpoint(migrated)).toBe(true);
       const { spores, tray, modifiers, managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups,
-        strangeFirst, ...kept } = migrated.state;
+        strangeFirst, rush, ...kept } = migrated.state;
       const { modifiers: heldModifiers, ...held } = original.state;
       expect(kept).toEqual(held);
       expect(spores).toEqual([]);
       expect(tray).toBeNull();
-      expect({ lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst })
-        .toEqual({ lastManager: 0, managerVisits: 0, managerDue: false, manager: null, mushroomCups: 0, strangeFirst: 0 });
+      expect({ lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, rush })
+        .toEqual({ lastManager: 0, managerVisits: 0, managerDue: false, manager: null, mushroomCups: 0, strangeFirst: 0, rush: null });
       // A Chapter 2 pot meets the Manager at Chapter 2's fifth cup, or after its next cup if that has passed.
       const { chapter, starts } = original.state.progress;
       expect(managerAfter).toBe(chapter === 2 ? Math.max(starts[1] + 4, original.state.round + 1) : null);

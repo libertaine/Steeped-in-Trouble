@@ -89,6 +89,21 @@ export const CONFIG = deepFreeze({
     escapeInset: 3, // escapes when within this distance of the rim
   },
 
+  // Rush Hour (Chapter 3): now and then three leaves arrive close together in
+  // time but spread round the cup, about a third of the way apart, then a
+  // quiet spell makes up the time, so the average arrival rate is unchanged.
+  // (Bunched in neighbouring lanes, the bot sweeps measured no difference.)
+  // Never in Mushroom Tea or Chai cups, whose puffballs and currents have
+  // bursts of their own.
+  rushHour: {
+    chance: 0.1, // per ordinary arrival, once allowed
+    leaves: 3,
+    gap: 0.45, // seconds between a rush's arrivals (never below days.minSpawnInterval)
+    apart: [5, 6], // lanes between a rush's arrivals, either way round (one of these, at random)
+    afterKills: 3, // not before this many leaves of the cup have gone
+    cooldown: 5, // ordinary arrivals before another rush can start
+  },
+
   spawning: {
     firstDelay: 0.95,
     jitterMin: 0.72, // each gap is the chapter's interval (CONFIG.chapters) times a random factor between these
@@ -143,9 +158,10 @@ export const CONFIG = deepFreeze({
       // Opened by beating The Mycelium Manager. Mushroom Tea comes on tap at
       // once, so the chapter's first cup is always Mushroom Tea (debutTea()).
       name: 'The Cup Has Gone Fungal',
-      enemySpeed: 1.15,
-      spawnInterval: 1,
+      enemySpeed: 1.25, // a step up just where Keep the Kettle On's Heat is gentlest (cups 11–20)
+      spawnInterval: 0.95,
       teas: { mushroom: 0 },
+      rushHour: true, // CONFIG.rushHour
     },
   ],
 
