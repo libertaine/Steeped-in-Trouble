@@ -379,6 +379,57 @@ export const CONFIG = deepFreeze({
     fullCupPoints: 150, // instead of a cup the player has no room for
   },
 
+  // The Mycelium Manager: Chapter 2's milestone boss (gameplay/mycelium.js).
+  // A fight over territory: roots claim lanes, memos are the only way to hurt
+  // it, and all-hands meetings scald the lanes it has claimed. Scalds, their
+  // safe window and hit width, the clock and the rewards are The Daily
+  // Grind's (CONFIG.grind), so both bosses play by the same rules.
+  manager: {
+    milestoneCup: 5, // the first encounter follows Chapter 2's fifth cup…
+    retryAfter: 2, // …and, if it gets away, comes back this many normal rounds later, until beaten
+    minGap: 4, // once beaten, rematches: at least this many normal rounds apart…
+    chance: 0.25, // …then this chance after each round (never alongside another boss or the hot chocolate)
+    introTime: 4.6,
+    health: 56,
+    bodyRadius: 84, // steam stops here, with a papery thump
+    memoDamage: 5, // a popped memo's spores, blown back into the Manager: twelve to win
+
+    // Roots: one per lane, growing out from the Manager's base.
+    rootSprout: 1, // seconds the base of a new root glows before it grows
+    rootSpeed: [17, 23], // units per second [calm, furious]
+    rootGap: [2.2, 1.6], // seconds between new roots
+    meetingLine: 0.5, // share of the way from the body to the rim past which a root's lane is invited
+    cutBack: 55, // units each steam dart cuts a root back (sugar clears it)
+    maxRoots: 9,
+
+    // Memos: puffballs that drift out to the rim and file themselves there.
+    memoSpeed: [48, 62],
+    memoGap: [2, 1.5],
+    memoReach: [3, 6], // lanes from the spoon a memo sets out along…
+    memoAlongRoots: 0.7, // …and this often along a root there, if there is one
+    memoSize: 13,
+    maxMemos: 6,
+    puffSpeed: 520, // the spores of a popped memo, back down the lane
+
+    // All-hands meetings.
+    meetingGap: [7, 5.5], // seconds from the end of one meeting to the next
+    warn: [2, 1.6], // the invitation, never shorter than minWarn
+    minWarn: 1.4,
+    ringSpeed: 760, // the meeting's ring, from the body out to the rim
+    maxInvited: 11, // never more lanes than this…
+    pocketReach: 4, // …and always two adjacent safe lanes within this many lanes of the spoon,
+    pocketWalk: 2.5, // preferring, when lanes must be let off, a pair about this far away
+    secondWave: { delay: 1.2, halfWidth: 2 }, // Back-to-Back Meetings: lanes this far either side of the spoon
+
+    // When things start, seconds into the fight. The first encounter brings
+    // one thing at a time; rematches get on with it.
+    lesson: { root: 0.8, memo: 6, meeting: 13 },
+    rematch: { root: 0.6, memo: 2, meeting: 8 },
+
+    memoPoints: 5,
+    rootPoints: 2,
+  },
+
   // Strange Brews: the tea variety brewed for each normal round (gameplay/teas.js).
   teas: {
     weightCap: 4, // a variety's draw weight grows by 1 per round since it was last served, up to this

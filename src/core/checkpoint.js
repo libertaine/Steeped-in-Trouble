@@ -10,6 +10,11 @@
 // Schema 4 (0.19.0): adds the Tea Tray's state.tray (always null here: a treat
 //   is taken after the reading is saved and served when the next cup starts),
 //   and lets an offer hold Tea Tray cards beside upgrades.
+// Schema 5 (0.19.0): adds the Mycelium Manager's stream and its schedule
+//   (state.managerAfter, lastManager, managerVisits, managerDue, and the
+//   always empty state.manager), and Mushroom Tea's cup count for the Strange
+//   Happenings (state.mushroomCups, strangeFirst). Schemas 3 and 4 were only
+//   ever saved by development builds of 0.19.0; they migrate like the rest.
 import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
 import { createInitialState, PHASE } from './state.js';
@@ -23,16 +28,21 @@ import { MAX_HEAT, endsDay } from '../gameplay/days.js';
 import { INTERLUDES, eligibleInterlude } from '../gameplay/arcadeInterludes.js';
 import { FRACTURE_KINDS, cracksFor, porcelainForLives } from '../gameplay/porcelain.js';
 import { GOLDEN_LEAF_SALT } from '../gameplay/goldenLeaf.js';
+import { MANAGER_SALT } from '../gameplay/mycelium.js';
 
-export const POT_SCHEMA_VERSION = 4;
+export const POT_SCHEMA_VERSION = 5;
 const V1_STREAMS = Object.freeze(['normal', 'chocolate', 'boss', 'tea',
   'teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet']);
-export const RANDOM_STREAMS = Object.freeze([...V1_STREAMS, 'goldenLeaf']);
+const V2_STREAMS = Object.freeze([...V1_STREAMS, 'goldenLeaf']);
+export const RANDOM_STREAMS = Object.freeze([...V2_STREAMS, 'manager']);
 const V2_STATE = Object.freeze(['porcelain', 'goldenLeaf', 'goldenLeafTimer']);
 const V3_STATE = Object.freeze(['spores']);
 const V3_MODIFIERS = Object.freeze(['puffballChance']);
 const V4_STATE = Object.freeze(['tray']);
-const LATER_STATE = Object.freeze([...V2_STATE, ...V3_STATE, ...V4_STATE]);
+const V5_STATE = Object.freeze(['managerAfter', 'lastManager', 'managerVisits', 'managerDue', 'manager',
+  'mushroomCups', 'strangeFirst']);
+const LATER_STATE = Object.freeze([...V2_STATE, ...V3_STATE, ...V4_STATE, ...V5_STATE]);
+const without = (later) => Object.keys(createInitialState()).filter((key) => !later.includes(key));
 const own = (o, k) => Object.hasOwn(o, k);
 const object = (o) => o !== null && typeof o === 'object' && !Array.isArray(o)
   && Object.getPrototypeOf(o) === Object.prototype;
@@ -45,7 +55,7 @@ const ids = (a, registry) => Array.isArray(a) && a.length <= Object.keys(registr
 const optionalRound = (n) => n === null || integer(n, 1);
 
 /**
- * Schema 1 to 2 (checked, with everything else, after the step to 4). Everything a 0.16.0 save holds is kept exactly, its eight
+ * Schema 1 to 2 (checked, with everything else, after the step to 5). Everything a 0.16.0 save holds is kept exactly, its eight
  * random cursors included; the pending reading, offer, Day choice and
  * encounters come along untouched, so nothing is rerolled. The Golden Leaf's
  * stream starts where a fresh pot's would, from the pot's own seed. A 0.16.0
@@ -55,8 +65,7 @@ const optionalRound = (n) => n === null || integer(n, 1);
  */
 function fromVersion1(data) {
   if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || !keys(data.random, V1_STREAMS)) return null;
-  const template = Object.keys(createInitialState()).filter((key) => !LATER_STATE.includes(key));
-  if (!keys(data.state, template) || !integer(data.state.lives) || !integer(data.random.normal?.seed, 0, 0xffffffff)) return null;
+  if (!keys(data.state, without(LATER_STATE)) || !integer(data.state.lives) || !integer(data.random.normal?.seed, 0, 0xffffffff)) return null;
   const leaf = createRandom(toSeed(data.random.normal.seed) ^ GOLDEN_LEAF_SALT).exportState();
   const migrated = {
     schemaVersion: 2,
@@ -68,16 +77,16 @@ function fromVersion1(data) {
 }
 
 /**
- * Schema 2 to 3 (checked, with everything else, after the step to 4). Nothing a 0.17.0 or 0.18.0 save holds changes, its nine
+ * Schema 2 to 3 (checked, with everything else, after the step to 5). Nothing a 0.17.0 or 0.18.0 save holds changes, its nine
  * random cursors included. At a reading the field is clear, so Mushroom
  * Tea's spore clouds are empty; the finished cup's modifiers gain the neutral
  * puffball chance (they are recomputed when the next cup starts anyway).
  * @returns {object|null} a schema 3 checkpoint, or null if `data` is not a sound schema 2 save
  */
 function fromVersion2(data) {
-  if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || !keys(data.random, RANDOM_STREAMS)) return null;
+  if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || !keys(data.random, V2_STREAMS)) return null;
   const template = createInitialState();
-  const stateKeys = Object.keys(template).filter((key) => !V3_STATE.includes(key) && !V4_STATE.includes(key));
+  const stateKeys = without([...V3_STATE, ...V4_STATE, ...V5_STATE]);
   const modifierKeys = Object.keys(template.modifiers).filter((key) => !V3_MODIFIERS.includes(key));
   if (!keys(data.state, stateKeys) || !keys(data.state.modifiers, modifierKeys)) return null;
   const state = structuredClone(data.state);
@@ -90,19 +99,49 @@ function fromVersion2(data) {
 }
 
 /**
- * Schema 3 to 4. Nothing a schema 3 save holds changes: no treat can be
- * waiting at a saved reading, so the Tea Tray's slot starts empty, and a
- * pending offer (upgrades only, in schema 3) is kept exactly as it was.
- * @returns {object|null} a valid schema 4 checkpoint, or null if `data` is not a sound schema 3 save
+ * Schema 3 to 4 (checked, with everything else, after the step to 5). No
+ * treat can be waiting at a saved reading, so the Tea Tray's slot starts
+ * empty, and a pending offer (upgrades only, in schema 3) is kept as it was.
+ * @returns {object|null} a schema 4 checkpoint, or null if `data` is not a sound schema 3 save
  */
 function fromVersion3(data) {
   if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea'])) return null;
-  const stateKeys = Object.keys(createInitialState()).filter((key) => !V4_STATE.includes(key));
-  if (!keys(data.state, stateKeys)) return null;
-  const migrated = {
-    schemaVersion: POT_SCHEMA_VERSION,
+  if (!keys(data.state, without([...V4_STATE, ...V5_STATE]))) return null;
+  return {
+    schemaVersion: 4,
     state: { ...structuredClone(data.state), tray: null },
     random: structuredClone(data.random),
+    pinnedTea: data.pinnedTea,
+  };
+}
+
+/**
+ * Schema 4 to 5. Nothing a schema 4 save holds changes, its nine random
+ * cursors included; the Manager's stream starts where a fresh pot's would,
+ * from the pot's own seed. A pot already in Chapter 2 meets the Manager at
+ * its fifth Chapter 2 cup, or after the next cup if that has passed. Until
+ * 0.19.0 Mushroom Tea was brewed only when pinned, so a pinned pot has
+ * brewed it every cup and any other none; no Strange Happening is assumed.
+ * @returns {object|null} a valid schema 5 checkpoint, or null if `data` is not a sound schema 4 save
+ */
+function fromVersion4(data) {
+  if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || !keys(data.random, V2_STREAMS)) return null;
+  if (!keys(data.state, without(V5_STATE)) || !integer(data.random.normal?.seed, 0, 0xffffffff)) return null;
+  const s = data.state;
+  const chapter2 = s.progress?.chapter === 2 && integer(s.progress.starts?.[1], 1);
+  const migrated = {
+    schemaVersion: POT_SCHEMA_VERSION,
+    state: {
+      ...structuredClone(s),
+      managerAfter: chapter2 ? Math.max(s.progress.starts[1] + CONFIG.manager.milestoneCup - 1, s.round + 1) : null,
+      lastManager: 0,
+      managerVisits: 0,
+      managerDue: false,
+      manager: null,
+      mushroomCups: data.pinnedTea === 'mushroom' ? s.round : 0,
+      strangeFirst: 0,
+    },
+    random: { ...structuredClone(data.random), manager: createRandom(toSeed(data.random.normal.seed) ^ MANAGER_SALT).exportState() },
     pinnedTea: data.pinnedTea,
   };
   return validateCheckpoint(migrated) ? migrated : null;
@@ -116,17 +155,12 @@ function fromVersion3(data) {
 export function migrateCheckpoint(data) {
   try {
     if (data?.schemaVersion === POT_SCHEMA_VERSION) return validateCheckpoint(data) ? data : null;
-    if (data?.schemaVersion === 3) return fromVersion3(data);
-    if (data?.schemaVersion === 2) {
-      const v3 = fromVersion2(data);
-      return v3 && fromVersion3(v3);
-    }
-    if (data?.schemaVersion === 1) {
-      const v2 = fromVersion1(data);
-      const v3 = v2 && fromVersion2(v2);
-      return v3 && fromVersion3(v3);
-    }
-    return null;
+    // Each step checks the layout it reads; only the last validates everything.
+    const steps = [fromVersion1, fromVersion2, fromVersion3, fromVersion4];
+    if (!Number.isSafeInteger(data?.schemaVersion) || data.schemaVersion < 1 || data.schemaVersion >= POT_SCHEMA_VERSION) return null;
+    let at = data;
+    for (let v = data.schemaVersion; v < POT_SCHEMA_VERSION && at; v++) at = steps[v - 1](at);
+    return at ?? null;
   } catch {
     return null;
   }
@@ -164,7 +198,8 @@ export function validateCheckpoint(data) {
     const nested = ['progress', 'spoon', 'offer', 'modifiers', 'teaServed', 'secrets', 'discovered',
       'stir', 'volleys', 'aerialDiscoveries', 'arcade', 'residue', 'roundStats', 'porcelain'];
     for (const [key, value] of Object.entries(template)) {
-      if (nested.includes(key) || ['fortune', 'nextFortune', 'arcadeDue', 'havocAfter', 'grindAfter', 'shortageAfter'].includes(key)) continue;
+      if (nested.includes(key) || ['fortune', 'nextFortune', 'arcadeDue', 'havocAfter', 'grindAfter', 'shortageAfter',
+        'managerAfter'].includes(key)) continue;
       if (value === null) { if (s[key] !== null) return false; }
       else if (Array.isArray(value)) { if (!Array.isArray(s[key]) || s[key].length) return false; }
       else if (typeof value === 'number') { if (!finite(s[key])) return false; }
@@ -175,9 +210,13 @@ export function validateCheckpoint(data) {
       || !integer(s.kills, 1) || !integer(s.target, CONFIG.rounds.baseTarget, CONFIG.rounds.maxTarget)
       || s.kills !== s.target || s.readingTime < 0 || s.goldenSpoon < 0
       || s.dayPending !== endsDay(s.round)) return false;
-    for (const k of ['milkLeft', 'sugarLeft', 'strainerLeft', 'extraSugar', 'lastHavoc', 'lastGrind']) {
+    for (const k of ['milkLeft', 'sugarLeft', 'strainerLeft', 'extraSugar', 'lastHavoc', 'lastGrind', 'lastManager',
+      'managerVisits', 'mushroomCups', 'strangeFirst']) {
       if (!integer(s[k])) return false;
     }
+    // The Manager is scheduled only during Chapter 2, met again only after Chapter 3 opens.
+    if (s.lastManager > s.round || !optionalRound(s.managerAfter) || (s.managerAfter !== null && s.progress?.chapter !== 2)
+      || (s.managerVisits > 0 && s.progress.chapter < 3) || s.mushroomCups > s.round || s.strangeFirst > s.mushroomCups) return false;
     if (s.lastHavoc > s.round || s.lastGrind > s.round || !optionalRound(s.havocAfter)
       || !optionalRound(s.grindAfter) || !optionalRound(s.shortageAfter)) return false;
     if ((s.fortune !== null && !known(s.fortune, FORTUNES)) || !known(s.nextFortune, FORTUNES)
@@ -201,7 +240,7 @@ export function validateCheckpoint(data) {
       || !Object.values(s.arcade.after).every((r) => integer(r, 1))
       || !(s.arcade.offeredAt === null || integer(s.arcade.offeredAt, 1, s.round))
       || !(s.arcadeDue === null || known(s.arcadeDue, INTERLUDES))) return false;
-    if (s.arcadeDue !== eligibleInterlude(s) || (s.havocDue && s.grindDue)) return false;
+    if (s.arcadeDue !== eligibleInterlude(s) || [s.havocDue, s.grindDue, s.managerDue].filter(Boolean).length > 1) return false;
     if (!Array.isArray(s.residue) || s.residue.length > CONFIG.residue.maxLeaves || !s.residue.every((leaf) =>
       keys(leaf, ['lane', 'radius', 'angle', 'spin', 'size']) && integer(leaf.lane, 0, CONFIG.arena.lanes - 1)
         && ['radius', 'angle', 'spin', 'size'].every((k) => finite(leaf[k])) && leaf.size > 0 && leaf.radius >= 0)) return false;

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createGame } from '../../src/core/game.js';
 import { POT_SCHEMA_VERSION, RANDOM_STREAMS, migrateCheckpoint, validateCheckpoint } from '../../src/core/checkpoint.js';
 import { POT_KEY, createLocalProgress } from '../../src/storage/localProgress.js';
-import { continueFrom, killLast, leave, signature, undefended, withoutTray } from '../support/legacyPlay.js';
+import { continueFrom, killLast, leave, signature, undefended, withoutManager, withoutTray } from '../support/legacyPlay.js';
 import release from '../fixtures/pot-0.18.0.json' with { type: 'json' };
 import oldest from '../fixtures/pot-0.16.0.json' with { type: 'json' };
 
@@ -25,13 +25,20 @@ describe('Continue Pot: 0.18.0 saves', () => {
       expect(JSON.stringify(original)).toBe(before); // never changed in place
       expect(migrated.schemaVersion).toBe(POT_SCHEMA_VERSION);
       expect(validateCheckpoint(migrated)).toBe(true);
-      const { spores, tray, modifiers, ...kept } = migrated.state;
+      const { spores, tray, modifiers, managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups,
+        strangeFirst, ...kept } = migrated.state;
       const { modifiers: heldModifiers, ...held } = original.state;
       expect(kept).toEqual(held);
       expect(spores).toEqual([]);
       expect(tray).toBeNull();
+      expect({ lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst })
+        .toEqual({ lastManager: 0, managerVisits: 0, managerDue: false, manager: null, mushroomCups: 0, strangeFirst: 0 });
+      // A Chapter 2 pot meets the Manager at Chapter 2's fifth cup, or after its next cup if that has passed.
+      const { chapter, starts } = original.state.progress;
+      expect(managerAfter).toBe(chapter === 2 ? Math.max(starts[1] + 4, original.state.round + 1) : null);
       expect(modifiers).toEqual({ ...heldModifiers, puffballChance: 0 });
-      for (const id of RANDOM_STREAMS) expect(migrated.random[id]).toEqual(original.random[id]);
+      for (const id of RANDOM_STREAMS.filter((s) => s !== 'manager')) expect(migrated.random[id]).toEqual(original.random[id]);
+      expect(migrated.random.manager.seed).not.toBe(original.random.normal.seed); // its own, salted stream
       expect(migrated.pinnedTea).toBe(original.pinnedTea);
       expect(migrateCheckpoint(v2(name))).toEqual(migrated); // deterministic
     }
@@ -47,7 +54,8 @@ describe('Continue Pot: 0.18.0 saves', () => {
 
   it('continues reading for reading as 0.18.0 did', () => {
     for (const name of ['critical', 'dayEnd']) {
-      const { readings } = continueFrom(createGame, release.checkpoints[name], release.continuations[name].length);
+      const recorded = release.continuations[name];
+      const { readings } = continueFrom(createGame, release.checkpoints[name], recorded.length, Object.keys(recorded[0].random));
       expect(readings).toEqual(release.continuations[name]);
     }
   });
@@ -96,12 +104,13 @@ describe('Continue Pot: 0.18.0 saves', () => {
 });
 
 describe('0.18.0 seeded pots', () => {
-  it('play out reading for reading as they did in 0.18.0', () => {
+  it('play out reading for reading as they did in 0.18.0, with the Manager out of the way', () => {
     for (const [seed, readings] of Object.entries(release.readings)) {
       const game = createGame({ seed: Number(seed) });
       game.primaryAction();
       const now = [];
       for (let round = 1; round <= readings.length; round++) {
+        withoutManager(game);
         killLast(game);
         now.push(signature(game, Object.keys(readings[0].random)));
         leave(game);
@@ -109,6 +118,22 @@ describe('0.18.0 seeded pots', () => {
       expect(now.map(withoutTray)).toEqual(readings); // the Tea Tray only fills gaps (#14)
       // …and every offer is now a real choice, where 0.18.0 had one card or none.
       for (const r of now) if (r.round % 2) expect(r.offer).toHaveLength(2);
+    }
+  });
+
+  it('play exactly as in 0.18.0 until the Mycelium Manager arrives after cup 10', () => {
+    for (const [seed, readings] of Object.entries(release.readings)) {
+      const game = createGame({ seed: Number(seed) });
+      game.primaryAction();
+      let round = 1;
+      for (; round <= readings.length; round++) {
+        killLast(game);
+        if (game.state.managerDue) break;
+        expect(withoutTray(signature(game, Object.keys(readings[0].random)))).toEqual(readings[round - 1]);
+        leave(game);
+      }
+      expect(round).toBe(10); // the Grind fell after cup 5, so Chapter 2's fifth cup is cup 10
+      expect(game.state.managerAfter).toBe(10);
     }
   });
 

@@ -9,6 +9,7 @@ import { UPGRADES, createSpoon, strainerCapacity } from '../../src/gameplay/upgr
 import { sugarCapacity } from '../../src/gameplay/weapons.js';
 import { offerCards } from '../../src/ui/hud.js';
 import { answerShortage, completeRound, finishGrind, playingGame, playTo } from './helpers.js';
+import { V5_KEYS, omit } from '../support/legacyPlay.js';
 
 const FULL = Object.freeze(Object.fromEntries(Object.entries(UPGRADES).map(([id, u]) => [id, u.max])));
 const reading = (round, extra = {}) => ({ round, nextFortune: 'star', grindDue: false, ...extra });
@@ -192,11 +193,15 @@ describe('saving a reading with the Tea Tray on offer', () => {
 
   it('migrates a schema 3 save, upgrades-only offer and all, with an empty tray', () => {
     const game = offerReading({ spoon: createSpoon() });
-    const { tray, ...state } = game.exportCheckpoint().state;
-    expect(tray).toBeNull();
-    const v3 = { ...game.exportCheckpoint(), schemaVersion: 3, state };
+    const saved = game.exportCheckpoint();
+    expect(saved.state.tray).toBeNull();
+    const state = omit(saved.state, ['tray', ...V5_KEYS]);
+    const random = omit(saved.random, ['manager']);
+    const stream = saved.random.manager;
+    const v3 = { ...saved, schemaVersion: 3, state, random };
     const migrated = migrateCheckpoint(v3);
-    expect(migrated.state).toEqual({ ...state, tray: null });
+    expect(migrated.state).toEqual(saved.state);
+    expect(migrated.random).toEqual({ ...random, manager: stream });
     expect(migrateCheckpoint({ ...v3, state: { ...state, tray: null } })).toBeNull(); // schema 3 never had it
   });
 });

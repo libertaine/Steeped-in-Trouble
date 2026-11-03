@@ -14,7 +14,10 @@
 // catastrophe, giantGone, havocEnd; and in The Daily Grind: grindStart, grindFight,
 // valveTurn, valveOpen, barrage, beans, beanCrack, beanSplat, pressureBuild,
 // pressureWarn, pressureBurst, sputter, clank, grindHit, grindRage, scald,
-// grindDefeat, grindEscape; and in Strange Brews: dartWarn, dart, wanderWarn,
+// grindDefeat, grindEscape; and with The Mycelium Manager: managerStart, managerFight,
+// rootSprout, rootCut, memo, memoPop, memoFiled, thump, meetingCall, uninvited,
+// meetingBurst, scald, managerHit, managerRage, managerSay, managerDefeat,
+// managerEscape; and in Strange Brews: dartWarn, dart, wanderWarn,
 // wander, currentWarn, currentFlow, currentEnd, and Mushroom Tea's puffWarn, spores,
 // sprout (roundStart also names the tea,
 // whether it has just come on tap, and the chapter, and whether this cup opens it);
@@ -49,7 +52,10 @@ import {
   createHavoc, finishHavoc, fireFlame, firstHavocRound, havocDue, spawnMarshmallow, updateHavoc,
 } from '../gameplay/chocolate.js';
 import { createGrind, grindDue, milestoneDue, milkTheMachine, updateGrind } from '../gameplay/grind.js';
-import { autoSteamWanted, autoSteamWantedInGrind } from '../gameplay/autoSteam.js';
+import {
+  MANAGER_SALT, createManager, managerMilestoneDue, managerRematchDue, updateManager,
+} from '../gameplay/mycelium.js';
+import { autoSteamWanted, autoSteamWantedInGrind, autoSteamWantedInManager } from '../gameplay/autoSteam.js';
 import { ERRANDS, buyTea, earnTeaCash, scheduleNextShortage, shortageDue } from '../gameplay/shortage.js';
 import { createRun, press, startRunning, updateRun } from '../gameplay/teaRun.js';
 import { consumeInterlude, createArcadeSchedule, eligibleInterlude } from '../gameplay/arcadeInterludes.js';
@@ -123,14 +129,20 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
   // And the Golden Leaf, so a chance to mend the cup never moves anything else.
   const gilt = restoreRandom('goldenLeaf', () => createRandom(toSeed(rng.seed ?? 0) ^ GOLDEN_LEAF_SALT));
   const leafSim = { state, rng: gilt, emit };
+  // And the Mycelium Manager, which arrives only once Chapter 2 is under way.
+  const office = restoreRandom('manager', () => createRandom(toSeed(rng.seed ?? 0) ^ MANAGER_SALT));
+  const managerSim = { state, rng: office, emit };
   const pinnedTea = checkpoint ? checkpoint.pinnedTea
     : typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
   const randomStreams = { normal: rng, chocolate: treats, boss: brew, tea: steep,
-    teaRun: errand, dailyPour: papers, biscuitBreakout: crumbs, crossingStreet: traffic, goldenLeaf: gilt };
+    teaRun: errand, dailyPour: papers, biscuitBreakout: crumbs, crossingStreet: traffic, goldenLeaf: gilt, manager: office };
   const exportCheckpoint = () => practice ? null : captureCheckpoint(state, randomStreams, pinnedTea);
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
   const grinding = (stage) => state.phase === PHASE.GRIND && (!stage || state.grind.stage === stage);
+  const managing = (stage) => state.phase === PHASE.MANAGER && (!stage || state.manager.stage === stage);
+  const bossFight = () => grinding('fight') || managing('fight');
+  const bossSim = () => (managing() ? managerSim : grindSim);
   const running = (stage) => state.phase === PHASE.TEA_RUN && (!stage || state.run.stage === stage);
   const pouring = (stage) => state.phase === PHASE.DAILY_POUR && (!stage || state.dailyPour.stage === stage);
   const breaking = (stage) => state.phase === PHASE.BISCUIT_BREAKOUT && (!stage || state.biscuitBreakout.stage === stage);
@@ -163,6 +175,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state.tea = pinnedTea ?? chosen;
     state.teaAge = pinnedTea ? state.round : teaAge(state.progress, state.tea, state.round);
     state.teaServed[state.tea] = state.round;
+    if (state.tea === 'mushroom') state.mushroomCups++;
     return lean;
   }
 
@@ -222,6 +235,13 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state.grindDue = false;
     state.lastGrind = 0;
     state.grindAfter = CONFIG.grind.milestoneAfter;
+    state.manager = null;
+    state.managerDue = false;
+    state.lastManager = 0;
+    state.managerAfter = null;
+    state.managerVisits = 0;
+    state.mushroomCups = 0;
+    state.strangeFirst = 0;
     state.teaCash = 0;
     state.shortageAfter = CONFIG.shortage.firstAfter;
     state.aerialDiscoveries = [];
@@ -248,12 +268,15 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     const offering = offerDue(state.round);
     const upgrades = offering ? drawOffer(state.spoon, rng) ?? [] : null;
     state.havocDue = havocDue(state, treats);
-    if (state.havocDue && milestoneDue(state)) {
+    const managerMilestone = managerMilestoneDue(state);
+    if (state.havocDue && (milestoneDue(state) || managerMilestone)) {
       // The milestone never waits: the hot chocolate comes after the next reading instead.
       state.havocDue = false;
       state.havocAfter = state.round + 1;
     }
-    state.grindDue = grindDue(state, brew); // never alongside the hot chocolate
+    // One boss a reading: the Manager's milestone first, then The Daily Grind, then a Manager rematch.
+    state.grindDue = grindDue(state, brew) && !managerMilestone; // never alongside the hot chocolate
+    state.managerDue = managerMilestone || managerRematchDue(state, office);
     // Upgrades running short? The Tea Tray fills the gaps, knowing what follows this reading.
     state.offer = offering ? fillFromTray(state, upgrades) : null;
     state.shortageDue = shortageDue(state); // never alongside a milestone boss
@@ -286,6 +309,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     if (state.shortageDue) startShortage();
     else if (state.havocDue) startHavoc();
     else if (state.grindDue) startGrind();
+    else if (state.managerDue) startManager();
     else if (state.arcadeDue) {
       const id = state.arcadeDue;
       consumeInterlude(state, id);
@@ -508,10 +532,75 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     if (milestone && result === 'victory') {
       state.grindAfter = null;
       advanceChapter(state.progress, state.round + 1);
+      // Chapter 2 has a milestone of its own: the Manager follows its fifth cup.
+      if (opensChapter(state.progress, state.round + 1) && state.progress.chapter === 2) {
+        state.managerAfter = state.progress.starts[1] + CONFIG.manager.milestoneCup - 1;
+      }
     } else if (milestone) {
       state.grindAfter = state.round + CONFIG.grind.retryAfter;
     }
     continueFromReading();
+  }
+
+  /**
+   * The Mycelium Manager, set up exactly as The Daily Grind is: its own milk
+   * and sugar, no fortune, and the next cup follows however it ends. Until it
+   * is first beaten it is Chapter 2's milestone: see leaveManager().
+   */
+  function startManager() {
+    const milestone = managerMilestoneDue(state);
+    if (!milestone) state.managerVisits++;
+    state.phase = PHASE.MANAGER;
+    clearField();
+    state.residue = [];
+    state.graceTime = 0;
+    state.shotCooldown = 0;
+    state.angle = CONFIG.player.startAngle;
+    state.managerDue = false;
+    state.lastManager = state.round;
+    state.modifiers = modifiersFor(null);
+    state.milkLeft = CONFIG.milk.perRound;
+    state.sugarLeft = sugarCapacity(state);
+    state.roundStats = createRoundStats();
+    state.manager = createManager({ milestone, appearance: milestone ? 1 : state.managerVisits + 1 });
+    emit('managerStart', { round: state.round, milestone, appearance: state.manager.appearance, twists: [...state.manager.twists] });
+  }
+
+  function beginManagerFight() {
+    const m = state.manager;
+    m.stage = 'fight';
+    m.time = 0;
+    emit('managerFight', {});
+  }
+
+  /** Back to the tea. Beating the milestone opens Chapter 3 with the coming cup; an escape brings it back later. */
+  function leaveManager() {
+    const { milestone, result } = state.manager;
+    state.manager = null;
+    if (milestone && result === 'victory') {
+      state.managerAfter = null;
+      advanceChapter(state.progress, state.round + 1);
+    } else if (milestone) {
+      state.managerAfter = state.round + CONFIG.manager.retryAfter;
+    }
+    continueFromReading();
+  }
+
+  function updateManagerPhase(dt, input) {
+    const m = state.manager;
+    m.time += dt;
+    if (m.stage === 'intro') {
+      if (m.time >= CONFIG.manager.introTime) beginManagerFight();
+      return;
+    }
+    if (m.stage !== 'fight') return;
+    // As in The Daily Grind, the Golden Spoon's time stands still.
+    moveSpoon(state, input, dt);
+    state.shotCooldown -= dt;
+    if (input.fire || (state.autoSteam && autoSteamWantedInManager(state))) fireSteam(managerSim);
+    updateClouds(state, dt);
+    updateShots(state, dt);
+    updateManager(managerSim, dt);
   }
 
   function updateGrindPhase(dt, input) {
@@ -702,6 +791,10 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
       updateGrindPhase(dt, input);
       return;
     }
+    if (state.phase === PHASE.MANAGER) {
+      updateManagerPhase(dt, input);
+      return;
+    }
     if (state.phase === PHASE.SHORTAGE) {
       state.shortage.time += dt;
       return;
@@ -747,7 +840,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
 
   function pause() {
     if (!playing() && !chocolate('intro') && !chocolate('play') && !grinding('intro') && !grinding('fight')
-      && !running('intro') && !running('run') && !pouring() && !breaking() && !crossing()) return;
+      && !managing('intro') && !managing('fight') && !running('intro') && !running('run') && !pouring() && !breaking() && !crossing()) return;
     // A press waiting for the spoon to land is forgotten: resuming never hops by itself.
     if (crossing()) state.crossingStreet.pressed = null;
     state.pausedFrom = state.phase;
@@ -783,6 +876,11 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
         if (grinding('intro')) beginFight(); // skip the entrance
         else if (grinding('fight')) pause();
         else if (state.grind.time >= CONFIG.grind.outroMin) leaveGrind();
+        break;
+      case PHASE.MANAGER:
+        if (managing('intro')) beginManagerFight(); // skip the entrance
+        else if (managing('fight')) pause();
+        else if (state.manager.time >= CONFIG.grind.outroMin) leaveManager();
         break;
       case PHASE.TEA_RUN:
         if (running('intro')) beginRunning(); // skip the announcement
@@ -843,10 +941,10 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     confirm() {
       if (state.phase === PHASE.READING
         && state.readingTime < readingReadyAt(state)) return true;
-      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.TEA_RUN, PHASE.DAILY_POUR,
+      if (![PHASE.READY, PHASE.READING, PHASE.GAME_OVER, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.MANAGER, PHASE.TEA_RUN, PHASE.DAILY_POUR,
         PHASE.BISCUIT_BREAKOUT, PHASE.CROSSING_STREET].includes(state.phase)) return false;
       if (pouring('play') || breaking('play') || crossing('play')) return false;
-      if (state.offer || chocolate('play') || grinding('fight') || running('run') || running('finish')) return false;
+      if (state.offer || chocolate('play') || bossFight() || running('run') || running('finish')) return false;
       primaryAction();
       return true;
     },
@@ -920,7 +1018,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
      * in the hot chocolate, or null.
      */
     touchGestures() {
-      if (playing() || grinding('fight')) return 'cup';
+      if (playing() || bossFight()) return 'cup';
       if (chocolate('play')) return 'flame';
       return null;
     },
@@ -947,7 +1045,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
         pause();
         return true;
       }
-      if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED && !chocolate('play') && !grinding('fight')
+      if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED && !chocolate('play') && !bossFight()
         && !running('run')) return false;
       primaryAction();
       return true;
@@ -963,7 +1061,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     /** Space: steam, or in the hot chocolate a little flame. */
     fireSteam: () => {
       if (chocolate('play')) return fireFlame(havoc);
-      if (grinding('fight')) return fireSteam(grindSim);
+      if (bossFight()) return fireSteam(bossSim());
       return playing() && fireSteam(sim);
     },
     /** Down / M: pour milk. In a normal round the whole cup gets a recovery pulse as well. */
@@ -973,11 +1071,22 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
         if (poured) milkTheMachine(grindSim);
         return poured;
       }
+      if (managing('fight')) return pourMilk(managerSim); // the cloud itself stops roots and slows memos
       if (!playing() || !pourMilk(sim)) return false;
       milkPulse(sim);
       return true;
     },
-    sugarBurst: () => (grinding('fight') ? sugarBurst(grindSim) : playing() && sugarBurst(sim)),
+    sugarBurst: () => (bossFight() ? sugarBurst(bossSim()) : playing() && sugarBurst(sim)),
+    /**
+     * Presentation reports that Mushroom Tea's first Strange Happening of the
+     * pot has begun (rendering/strange.js plans the rest from that cup). Only
+     * during play; it changes nothing about how the cup plays.
+     */
+    noteStrange() {
+      if (!playing() || state.tea !== 'mushroom' || state.strangeFirst) return false;
+      state.strangeFirst = state.mushroomCups;
+      return true;
+    },
     /** Remove and return all events queued since the last call. */
     drainEvents() {
       return events.splice(0, events.length);

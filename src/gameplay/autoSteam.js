@@ -61,3 +61,16 @@ export function autoSteamWantedInGrind(state) {
   }
   return uncovered(g.beans.filter((b) => inLane(b.angle, lane)), state.shots, lane);
 }
+
+/**
+ * With The Mycelium Manager: a memo, or a root's tip, in the spoon's lane.
+ * The player still chooses where the spoon goes, and so which comes first.
+ */
+export function autoSteamWantedInManager(state) {
+  const m = state.manager;
+  const lane = spoonLane(state);
+  const targets = m.memos.filter((memo) => memo.lane === lane);
+  const root = m.roots.find((r) => r.lane === lane);
+  if (root) targets.push({ radius: root.tip, angle: laneAngle(lane) });
+  return uncovered(targets, state.shots, lane);
+}

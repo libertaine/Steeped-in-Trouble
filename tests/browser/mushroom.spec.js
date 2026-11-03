@@ -88,7 +88,7 @@ test('Mushroom Tea stays readable in Low graphics and with reduced motion', asyn
   expect(problems).toEqual([]);
 });
 
-test('a pinned Mushroom Tea pot saves under schema 4, keeping its pinned tea', async ({ page, problems }) => {
+test('a pinned Mushroom Tea pot saves under schema 5, keeping its pinned tea', async ({ page, problems }) => {
   await openGame(page, '&seed=7&tea=mushroom');
   await page.keyboard.press('Enter');
   await page.evaluate(() => {
@@ -103,6 +103,6 @@ test('a pinned Mushroom Tea pot saves under schema 4, keeping its pinned tea', a
   });
   await page.waitForFunction(() => localStorage.getItem('steeped-in-trouble:pot-save'));
   const saved = JSON.parse(await page.evaluate(() => localStorage.getItem('steeped-in-trouble:pot-save')));
-  expect(saved).toMatchObject({ schemaVersion: 4, pinnedTea: 'mushroom', state: { tea: 'mushroom', spores: [], tray: null } });
+  expect(saved).toMatchObject({ schemaVersion: 5, pinnedTea: 'mushroom', state: { tea: 'mushroom', spores: [], tray: null, manager: null } });
   expect(problems).toEqual([]);
 });

@@ -6,7 +6,7 @@
 //     always has CONFIG.upgrades.choices cards and never fewer than two.
 //   - A tray card is never offered when it could not help: no spare strainer
 //     before Karma (escaping leaves never reach it), and no golden moment
-//     before The Daily Grind (beating it gilds the spoon for longer anyway).
+//     before a boss (beating one gilds the spoon for longer anyway).
 //   - Taking one sets state.tray. It is spent when the next normal cup
 //     starts (never in a bonus round or adventure in between), and whatever
 //     is left of it is gone when the cup after that starts. One slot, one
@@ -46,7 +46,7 @@ export const TRAY = Object.freeze({
     name: 'A Golden Moment',
     info: `The spoon starts the next cup golden, for ${T.goldenSpoon} seconds.`,
     words: 'Polished to a suspicious shine.',
-    usable: (state) => !state.grindDue,
+    usable: (state) => !state.grindDue && !state.managerDue,
   },
 });
 

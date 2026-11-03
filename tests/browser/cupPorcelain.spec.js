@@ -72,7 +72,7 @@ test('a continued pot keeps its cracks and gold seams', { tag: '@smoke' }, async
   await finishCup(page);
   await page.waitForFunction(() => localStorage.getItem('steeped-in-trouble:pot-save'));
   const saved = JSON.parse(await read(page));
-  expect(saved.schemaVersion).toBe(4);
+  expect(saved.schemaVersion).toBe(5);
   expect(saved.state.porcelain.fractures.map((f) => f.kind)).toEqual(['crack', 'seam']);
   await page.reload();
   await page.locator('#mainBtn').click();
@@ -119,7 +119,7 @@ test('an authentic 0.16.0 save continues, cracked, with its reading and upgrade 
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
   await quiet(page);
   await finishCup(page);
-  await page.waitForFunction(() => JSON.parse(localStorage.getItem('steeped-in-trouble:pot-save')).schemaVersion === 4);
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('steeped-in-trouble:pot-save')).schemaVersion === 5);
   expect(problems).toEqual([]);
 });
 

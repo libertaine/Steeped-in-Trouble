@@ -22,7 +22,7 @@ export function createArcadeSchedule() {
  * a postponed adventure is never starved by one listed before it.
  */
 export function eligibleInterlude(state) {
-  if (state.shortageDue || state.grindDue || state.havocDue) return null;
+  if (state.shortageDue || state.grindDue || state.managerDue || state.havocDue) return null;
   if (state.arcade.offeredAt === state.round) return null;
   let best = null;
   for (const id of Object.keys(INTERLUDES)) {

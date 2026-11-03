@@ -121,6 +121,7 @@ describe('when the tea runs out', () => {
     const game = playingGame({ seed: 6 });
     playTo(game, 9, { win: true });
     game.state.grindAfter = 9;
+    game.state.managerAfter = null; // this is about the Grind (see mycelium.test.js for the Manager)
     finishRound(game);
     game.state.offer = null; game.primaryAction();
     expect(game.state.phase).toBe('grind');
