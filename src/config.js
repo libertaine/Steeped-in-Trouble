@@ -444,6 +444,58 @@ export const CONFIG = deepFreeze({
     scoreBonus: 1.5,
     max: 4, // clouds at once; the oldest clears first
   },
+  // Mushroom Tea's Strange Happenings (rendering/strange.js): presentation
+  // only. The simulation never sees them; a rewind only holds its clock still,
+  // like a pause. Prototype tuning, meant to be playtested.
+  strange: {
+    firstCups: [2, 3], // the first can come in either of these cups (never the first)…
+    gaps: [[2, 0.45], [3, 0.4], [4, 0.15]], // …then this many cups later: [cups, weight]
+    weights: { rewind: 0.4, breathing: 0.3, impostor: 0.3 }, // never the same one twice running
+    startMin: 5, // seconds of play into the cup, before any wait for a quiet moment
+    startMax: 14,
+    rimClearance: 50, // no happening starts while a leaf is this close to the rim
+    silence: 0.35, // share of later happenings that pass without a word
+    rewind: {
+      sampleRate: 20, // history samples per second of play
+      history: 3.5, // seconds kept
+      back: 3, // seconds shown in reverse
+      hiccup: 0.12, // the moment it catches, before anything moves
+      reverse: 1, // seconds to wind back…
+      hold: 0.3, // …a beat at the far end…
+      forward: 0.55, // …and back to now
+      settle: 0.3, // the tint clears while play resumes
+      waitForKill: 5, // seconds it waits for a leaf to fall (so one can come back), then goes anyway
+      stills: [1, 2, 3], // reduced motion: seconds back of each still frame…
+      still: 0.35, // …each shown this long
+      maxEnemies: 24,
+      maxShots: 48,
+      maxSpores: 4,
+      maxResidue: 40,
+    },
+    breathing: {
+      duration: 12.5,
+      breath: 4.2, // seconds per breath (in, then out)
+      fadeIn: 2,
+      fadeOut: 2.5,
+      swell: { high: 0.035, low: 0.02 }, // how far the broth expands (never with reduced motion)
+      ringTime: 2, // seconds an exhaled ring takes to reach the rim
+    },
+    impostor: {
+      duration: 10,
+      delay: 1, // seconds behind the real spoon
+      appear: 0.9,
+      vanish: 1,
+      opacity: 0.5,
+      gestures: [3.2, 6], // seconds in when its two gestures begin
+      lap: 1.6, // a flourish: one full lap of the cup in this long
+      mirror: 2.2, // seconds walking the other way
+      bow: 1.2, // reduced motion's gesture instead
+      personalSpace: 0.16, // radians: closer than this to the real spoon and it steps aside…
+      sidestep: 0.26, // …to this far
+      puffs: 10, // harmless rings of pretend steam on screen at once
+      puffLife: 0.5,
+    },
+  },
 
   // Chai's spice currents: on a fixed clock, every leaf in the cup is carried one lane sideways.
   currents: {
