@@ -12,8 +12,9 @@ import { answerShortage, completeRound, finishBonus, placeEnemy, playTo, playing
 
 const G = CONFIG.grind;
 const D = CONFIG.darting;
-const [ONE, TWO] = CONFIG.chapters;
+const [ONE, TWO, THREE] = CONFIG.chapters;
 const FIRST_TEAS = ['house', 'herbal', 'earlGrey'];
+const SHELVED = Object.keys(TEAS);
 
 /** A fresh pot (the real tea draw, nothing pinned) in round 1. */
 function pot(seed = 1) {
@@ -90,8 +91,9 @@ describe('the chapters', () => {
     expect(currentChapter(p)).toBe(ONE);
     expect(teasOnTap(p, 1)).toEqual(FIRST_TEAS);
     expect(teasOnTap(p, 40)).toEqual(FIRST_TEAS);
-    // Between them, the two chapters bring every tea, once.
-    expect([...Object.keys(ONE.teas), ...Object.keys(TWO.teas)].sort()).toEqual(Object.keys(TEAS).sort());
+    // Between them, the three chapters bring every tea, once; Chapter 3 brings Mushroom Tea from its first cup.
+    expect([...Object.keys(ONE.teas), ...Object.keys(TWO.teas), ...Object.keys(THREE.teas)].sort()).toEqual(SHELVED.sort());
+    expect(THREE.teas).toEqual({ mushroom: 0 });
   });
 
   it('advances once per call, and not past the last chapter', () => {
@@ -100,8 +102,12 @@ describe('the chapters', () => {
     expect(p).toEqual({ chapter: 2, starts: [1, 6] });
     expect(currentChapter(p)).toBe(TWO);
     advanceChapter(p, 12);
-    expect(p).toEqual({ chapter: 2, starts: [1, 6] });
-    expect(opensChapter(p, 6)).toBe(true);
+    expect(p).toEqual({ chapter: 3, starts: [1, 6, 12] });
+    expect(currentChapter(p)).toBe(THREE);
+    advanceChapter(p, 20);
+    expect(p).toEqual({ chapter: 3, starts: [1, 6, 12] });
+    expect(opensChapter(p, 12)).toBe(true);
+    expect(opensChapter(p, 6)).toBe(false); // only the latest chapter's first cup opens one
     expect(opensChapter(p, 7)).toBe(false);
     expect(opensChapter(createProgress(), 1)).toBe(false);
   });
@@ -291,13 +297,15 @@ describe('the milestone: The Daily Grind after round 5', () => {
     expect(game.state.grindAfter).toBeNull();
     expect(game.drainEvents().find((e) => e.type === 'roundStart'))
       .toMatchObject({ round: 6, chapter: 2, opens: true, tea: 'chai', debut: true });
-    // Later rematches come and go, beaten every time, without opening another chapter.
+    // Later rematches come and go, beaten every time, without opening another chapter:
+    // only the Mycelium Manager, after Chapter 2's fifth cup, opens the next.
     const { readings } = playPot(game, 40, { winAt: 0 });
     const rematches = readings.filter((r) => r.grind);
     expect(rematches.length).toBeGreaterThan(1);
     expect(rematches.every((r) => !r.milestone)).toBe(true);
-    expect(game.state.progress).toEqual({ chapter: 2, starts: [1, 6] });
-    expect(game.drainEvents().filter((e) => e.type === 'roundStart' && e.opens)).toEqual([]);
+    expect(game.state.progress).toEqual({ chapter: 3, starts: [1, 6, 11] });
+    expect(game.drainEvents().filter((e) => e.type === 'roundStart' && e.opens))
+      .toMatchObject([{ round: 11, chapter: 3, tea: 'mushroom', debut: true }]);
   });
 
   it('opens Chapter 2 whenever the machine is finally beaten', () => {
@@ -315,8 +323,9 @@ describe('Chapter 2: Things Heat Up', () => {
     const b = spawnEnemy({ state: two.state, rng: createRandom(9) });
     expect(TWO.enemySpeed).toBeCloseTo(1.15);
     expect(b.speed / a.speed).toBeCloseTo(TWO.enemySpeed, 9);
-    playPot(two, 30, { winAt: 0 }); // rematches beaten along the way
-    expect(spawnEnemy({ state: two.state, rng: createRandom(9) }).speed).toBeCloseTo(b.speed, 9);
+    playPot(two, 30, { winAt: 0 }); // rematches beaten along the way, and the Manager, which opens Chapter 3
+    expect(two.state.progress.chapter).toBe(3);
+    expect(spawnEnemy({ state: two.state, rng: createRandom(9) }).speed / a.speed).toBeCloseTo(THREE.enemySpeed, 9);
   });
 
   it('brings leaves no more often than Chapter 1, and steadily', () => {
@@ -342,7 +351,7 @@ describe('Chapter 2: Things Heat Up', () => {
       expect(teas.slice(0, 4)).not.toContain('black');
       for (let i = 1; i < teas.length; i++) expect(teas[i]).not.toBe(teas[i - 1]);
       // Once on tap, every tea keeps turning up.
-      for (const id of Object.keys(TEAS)) expect(teas.slice(5)).toContain(id);
+      for (const id of SHELVED) expect(teas.slice(5)).toContain(id);
     }
   });
 

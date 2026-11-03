@@ -142,7 +142,9 @@ identically. Fortune weights and the draw are untouched.
 Observations, strongest first; at most two are shown:
 
 1. The pattern that received the +6 pattern weight: The Veil (3+ milk kills),
-   The Crown (40% of leaves in three adjacent lanes) or The Spiral (10+ lanes).
+   The Crown (40% of the top 16 leaves in three adjacent lanes) or The Spiral
+   (the top 16 leaves across 11+ lanes). A fuller cup says so: "9 of the last
+   16 leaves settled close together."
 2. Tactics: spills (Tempestuous Tea, +1.6 each); two or more milk pours (The
    Veil, +0.6 each), unless The Veil's pattern already said so; two or more
    sugar bursts (Sugar Rush, +1.2 each).

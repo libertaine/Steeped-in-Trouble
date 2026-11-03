@@ -15,7 +15,8 @@ async function reading(page, fortune = 'veil', offer = true) {
       s.shots.push({ angle, radius: 180, speed: 0, sugar: false, veer: 0, golden: false });
       g.update(1 / 60);
     }
-    Object.assign(s, { nextFortune: fortune, readingTime: 0, offer: offer ? ['polished', 'strainer'] : null,
+    const cards = Array.isArray(offer) ? offer : offer ? ['polished', 'strainer'] : null;
+    Object.assign(s, { nextFortune: fortune, readingTime: 0, offer: cards,
       fortune: 'star', havocDue: false, grindDue: false, shortageDue: false, arcadeDue: null });
   }, { fortune, offer });
   await page.clock.runFor(32);
@@ -206,6 +207,32 @@ export function readingTeaBreakTests() {
     await page.keyboard.press('1');
     await page.clock.runFor(32);
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
+    expect(problems).toEqual([]);
+  });
+
+  test('a Tea Tray offer reads as one-cup treats, fits every view, and serves the next cup', async ({ page, problems }) => {
+    await freeze(page);
+    await reading(page, 'veil', ['trayMilk', 'traySugar']);
+    await page.evaluate(() => Object.assign(window.__TEACUP__.game.state.spoon, { polished: 3, quickStir: 3, sugarScoop: 2, strainer: 2 }));
+    await time(page, 3);
+    await expect(page.locator('#upgradeOffer .offer-head em')).toHaveText('The Tea Tray comes round.');
+    await expect(page.locator('[data-choice="0"] strong')).toHaveText('A Spare Jug');
+    await expect(page.locator('[data-choice="1"] small')).toHaveText('One more sugar burst, next cup only.');
+    for (const [width, height] of [[1280, 720], [375, 667], [844, 390]]) {
+      await page.setViewportSize({ width, height });
+      await page.clock.runFor(64);
+      for (const view of ['full', 'compact']) {
+        if (await page.locator('body').getAttribute('data-view') !== view) await page.locator('#viewBtn').click();
+        await page.clock.runFor(64);
+        await fits(page);
+      }
+    }
+    await page.locator('#game').focus();
+    await page.keyboard.press('1');
+    await page.clock.runFor(32);
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
+    await expect(page.locator('#upgradeAcknowledgment')).toHaveText('A Spare Jug · next cup only');
+    expect(await page.evaluate(() => window.__TEACUP__.game.state.milkLeft)).toBe(3);
     expect(problems).toEqual([]);
   });
 

@@ -52,6 +52,12 @@ const SOUNDS = {
   dart: [700, 0.1, 'sawtooth', 0.005, 0, 1.8], // zip
   wanderWarn: [880, 0.16, 'sine', 0.008, 0, 0.85],
   wander: [660, 0.2, 'sine', 0.008, 0, 1.25], // a soft swoosh sideways
+  puffWarn: [300, 0.5, 'triangle', 0.012, 0, 1.6], // a swelling wobble
+  spores: [520, 0.22, 'sine', 0.016, 0, 0.6], // pff
+  sprout: [760, 0.12, 'square', 0.009, 0, 1.4], // pop-pop
+  // Strange Happenings: a tape catching, and the impostor's pretend steam (an echo, quieter than the real thing).
+  strangeStart: [140, 0.06, 'square', 0.008, 0, 0.8],
+  impostorPuff: [880, 0.07, 'sine', 0.004, 0, 0.6],
   // The Tea Run.
   runJump: [420, 0.16, 'triangle', 0.016, 0, 1.8], // boing
   runAerialJump: [640, 0.18, 'triangle', 0.014, 0, 2.1],
@@ -148,6 +154,23 @@ const TUNES = {
   // Wah, wah, wah, wahhh.
   grindEscape: [[392, 0.3, 'sawtooth', 0.016], [370, 0.3, 'sawtooth', 0.016, 0.32], [349, 0.3, 'sawtooth', 0.016, 0.64],
     [330, 0.9, 'sawtooth', 0.016, 0.96, 0.92]],
+  // Chapter 3's Rush Hour: three quick ticks.
+  rush: [[1047, 0.04, 'square', 0.006], [1047, 0.04, 'square', 0.006, 0.09], [1319, 0.05, 'square', 0.006, 0.18]],
+  // The Mycelium Manager: a soft thud from below, paper, and a meeting chime.
+  managerStart: [[73, 0.7, 'sine', 0.04, 0, 1.3], [110, 0.6, 'triangle', 0.02, 0.4, 1.2], [988, 0.08, 'sine', 0.01, 0.9]],
+  managerFight: [[523, 0.12, 'triangle', 0.016], [659, 0.2, 'triangle', 0.016, 0.14]],
+  rootSprout: [[180, 0.18, 'sine', 0.012, 0, 1.6]],
+  rootCut: [[900, 0.05, 'triangle', 0.008, 0, 0.7]],
+  memo: [[700, 0.08, 'sine', 0.008, 0, 1.3]],
+  memoPop: [[620, 0.1, 'triangle', 0.016, 0, 0.6], [1240, 0.08, 'sine', 0.008, 0.04]],
+  memoFiled: [[300, 0.05, 'square', 0.008], [300, 0.05, 'square', 0.008, 0.08]], // a stapler
+  meetingCall: [[784, 0.35, 'sine', 0.02], [622, 0.6, 'sine', 0.02, 0.32]], // ding-dong
+  meetingBurst: [[200, 0.4, 'sine', 0.03, 0, 0.5], [400, 0.3, 'triangle', 0.012, 0.02, 0.5]],
+  managerHit: [[440, 0.08, 'triangle', 0.016, 0, 0.7]],
+  managerRage: [[147, 0.25, 'triangle', 0.026], [156, 0.25, 'triangle', 0.026, 0.22], [165, 0.5, 'triangle', 0.026, 0.44]],
+  managerDefeat: [[784, 0.12, 'triangle', 0.016], [659, 0.12, 'triangle', 0.016, 0.12], [523, 0.12, 'triangle', 0.016, 0.24],
+    [392, 0.6, 'sine', 0.024, 0.36, 0.5], [1568, 0.4, 'sine', 0.02, 0.9]],
+  managerEscape: [[392, 0.3, 'triangle', 0.016], [349, 0.3, 'triangle', 0.016, 0.32], [330, 0.9, 'triangle', 0.016, 0.64, 0.92]],
   // Chai: a spicy shimmer as the current gathers, then the whoosh as it sweeps.
   currentWarn: [[392, 0.5, 'triangle', 0.014, 0, 1.3], [494, 0.5, 'triangle', 0.01, 0.12, 1.3], [587, 0.6, 'sine', 0.01, 0.24, 1.3]],
   currentFlow: [[180, 0.7, 'sawtooth', 0.014, 0, 1.6], [360, 0.5, 'sine', 0.01, 0.05, 1.4]],
@@ -211,6 +234,65 @@ export function createAudio() {
     }
   }
 
+  /**
+   * A sound played backwards: it swells from nothing and stops dead, the
+   * way a reversed recording does. Same arguments as beep().
+   */
+  function swell([hz, duration, shape, gain, delay = 0, bend = 0.6]) {
+    if (!audioContext()) return;
+    try {
+      const now = context.currentTime + delay;
+      const osc = context.createOscillator();
+      const amp = context.createGain();
+      osc.type = shape;
+      osc.frequency.setValueAtTime(hz, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(hz * bend, 30), now + duration);
+      amp.gain.setValueAtTime(0.0001, now);
+      amp.gain.exponentialRampToValueAtTime(gain, now + duration * 0.92);
+      amp.gain.linearRampToValueAtTime(0, now + duration);
+      osc.connect(amp);
+      amp.connect(context.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+    } catch {
+      // Audio is optional.
+    }
+  }
+
+  let hiss = null; // a second of soft noise, for the cup's breathing
+  /** A breath: soft filtered noise swelling in, or sighing out. */
+  function breathe(inhale, intensity) {
+    if (!audioContext()) return;
+    try {
+      if (!hiss || hiss.sampleRate !== context.sampleRate) {
+        hiss = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+        const data = hiss.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      }
+      const now = context.currentTime;
+      const length = inhale ? 1.6 : 1.9;
+      const source = context.createBufferSource();
+      source.buffer = hiss;
+      const band = context.createBiquadFilter();
+      band.type = 'bandpass';
+      band.Q.value = 1.4;
+      band.frequency.setValueAtTime(inhale ? 500 : 900, now);
+      band.frequency.exponentialRampToValueAtTime(inhale ? 900 : 420, now + length);
+      const amp = context.createGain();
+      const peak = 0.0001 + 0.03 * intensity;
+      amp.gain.setValueAtTime(0.0001, now);
+      amp.gain.exponentialRampToValueAtTime(peak, now + length * (inhale ? 0.8 : 0.25));
+      amp.gain.exponentialRampToValueAtTime(0.0001, now + length);
+      source.connect(band);
+      band.connect(amp);
+      amp.connect(context.destination);
+      source.start(now);
+      source.stop(now + length);
+    } catch {
+      // Audio is optional.
+    }
+  }
+
   function beep([hz, duration, shape, gain, delay = 0, bend = 0.6]) {
     if (!audioContext()) return;
     try {
@@ -245,10 +327,12 @@ export function createAudio() {
      * Keep the soundtrack going: call every frame.
      * @param {object} state simulation state (read only)
      * @param {number} dt seconds since the previous frame
+     * @param {object} [strange] the Strange Happenings' view: the band falls silent through a rewind
+     *   and breathes along with the cup
      */
-    update(state, dt) {
+    update(state, dt, strange = null) {
       try {
-        music.update(audioContext(), state, dt);
+        music.update(audioContext(), state, dt, strange);
       } catch {
         // Audio is optional.
       }
@@ -269,6 +353,17 @@ export function createAudio() {
         if (event.how === 'rim') beep([event.points ? 360 : 240, 0.1, 'sine', 0.02]); // plop
       }
       else if (event.type === 'roundStart' && event.opens) TUNES.chapter.forEach(beep);
+      // Time Rewind: the sounds of the last few seconds, backwards, then the tape catching up.
+      else if (event.type === 'rewindReverse') {
+        [[1320, 0.16], [990, 0.14], [1480, 0.12], [740, 0.12], [1175, 0.1], [880, 0.1]]
+          .forEach(([hz, length], i) => swell([hz, length, 'triangle', 0.012, i * 0.15, 0.7]));
+        swell([260, 1, 'sawtooth', 0.006, 0, 3.2]);
+      }
+      else if (event.type === 'rewindForward') beep([220, 0.5, 'sawtooth', 0.007, 0, 5]);
+      else if (event.type === 'strangeBreath') breathe(event.inhale, event.intensity);
+      // The impostor arrives (and leaves) with a ghostly woo.
+      else if (event.type === 'impostorAppear') swell([520, 0.6, 'sine', 0.012, 0, 1.5]);
+      else if (event.type === 'impostorVanish') beep([780, 0.7, 'sine', 0.012, 0, 0.4]);
       // A spill: the usual splash, then the porcelain's own voice: a chip's tink, or under the last cup a creak.
       else if (event.type === 'escape') {
         beep(SOUNDS.escape);

@@ -6,7 +6,7 @@ import { fortuneRecord, readingMemory, rememberRound } from '../../src/gameplay/
 import { teaFortuneNudges } from '../../src/gameplay/teas.js';
 import { hudText } from '../../src/ui/hud.js';
 import { completeRound, playingGame } from './helpers.js';
-import { killLast, leave, signature } from '../support/legacyPlay.js';
+import { killLast, leave, signature, withoutManager, withoutTray } from '../support/legacyPlay.js';
 import legacy from '../fixtures/pot-0.16.0.json' with { type: 'json' };
 
 const lanesEach = (lanes, perLane = 1) => lanes.flatMap((lane) => new Array(perLane).fill(lane));
@@ -53,6 +53,16 @@ describe('what the cup remembers', () => {
       id: 'crownPattern', fact: '9 of 11 leaves settled close together.', influence: 'The concentrated pattern favored The Crown.' });
     expect(rememberRound(record({ leafLanes: scattered }), 'spiral').observations[0]).toMatchObject({
       id: 'spiralPattern', fact: 'Leaves settled across 11 of 16 lanes.', influence: 'The scattered pattern favored The Spiral.' });
+  });
+
+  it('says when only the top layer of a fuller cup was read', () => {
+    const buried = lanesEach([7, 9, 11, 13], 2); // older leaves, under the top layer
+    const crown = [...buried, ...lanesEach([3, 4, 5], 3), ...lanesEach([0, 8, 10, 12, 14, 15, 1])];
+    expect(rememberRound(record({ leafLanes: crown }), 'crown').observations[0].fact)
+      .toBe('9 of the last 16 leaves settled close together.');
+    const spiral = [...buried, ...lanesEach([0, 2, 4, 6, 8, 10, 12, 14, 1, 9, 5]), 0, 2, 4, 6, 8];
+    expect(rememberRound(record({ leafLanes: spiral }), 'spiral').observations[0].fact)
+      .toBe('The last 16 leaves settled across 11 of 16 lanes.');
   });
 
   it('credits a clean cup beside a stronger memory', () => {
@@ -153,8 +163,9 @@ describe('the reading explains itself without changing the draw', () => {
       const game = createGame({ seed: Number(seed) });
       game.primaryAction();
       for (const expected of readings) {
+        withoutManager(game); // added in 0.19.0, with its own stream
         killLast(game);
-        expect(signature(game, Object.keys(expected.random))).toEqual(expected);
+        expect(withoutTray(signature(game, Object.keys(expected.random)))).toEqual(expected);
         leave(game);
       }
     }

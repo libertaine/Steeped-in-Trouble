@@ -5,6 +5,7 @@ import { cupCondition } from '../gameplay/porcelain.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
 import { strainerCapacity } from '../gameplay/upgrades.js';
 import { grindInProgress } from '../gameplay/grind.js';
+import { managerInProgress } from '../gameplay/mycelium.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { runInProgress } from '../gameplay/teaRun.js';
 import { pourInProgress } from '../gameplay/dailyPour.js';
@@ -22,20 +23,25 @@ const inventory = (kind, label, current, capacity, note = '') => ({ kind, label,
 
 /** A fresh projection, never a second inventory. Existing helpers include pause. */
 export function resourceView(s, text) {
-  const g = grindInProgress(s), c = havocInProgress(s), r = runInProgress(s);
+  const g = grindInProgress(s), c = havocInProgress(s), r = runInProgress(s), m = managerInProgress(s);
   const p = pourInProgress(s), b = breakoutInProgress(s), x = crossingInProgress(s);
   const phase = s.phase === PHASE.PAUSED ? s.pausedFrom : s.phase;
-  const milk = inventory('milk', 'Milk', s.milkLeft, CONFIG.milk.perRound);
+  const milk = inventory('milk', 'Milk', s.milkLeft, CONFIG.milk.perRound, s.milkLeft > CONFIG.milk.perRound ? '+ bonus' : '');
   const cap = sugarCapacity(s);
   const sugar = inventory('sugar', 'Sugar', s.sugarLeft, cap, s.sugarLeft > cap ? '+ bonus'
     : s.modifiers.sugarRegenInterval && s.sugarLeft < cap ? `Next ${seconds(s.sugarRegenTimer)}` : '');
-  const normal = !g && !c && !r && !p && !b && !x;
+  const normal = !g && !m && !c && !r && !p && !b && !x;
   let items, progress = [s.kills, s.target], progressLabel = `Cup ${s.round} · Leaves`;
   let cue = [text.hudStatus, text.hudOmen, text.hudTea, text.hudAuto].filter(Boolean).join(' · ');
   if (g) {
     items = [milk, sugar, stat('Scalds', `${g.scalds}/${CONFIG.grind.scalds}`)];
     progress = [g.health, CONFIG.grind.health]; progressLabel = 'Machine health';
     cue = `${text.hudStatus} · ${g.stage === 'fight' ? `${s.phase === PHASE.PAUSED ? `${seconds(g.left)} · ` : ''}${g.valve.stage === 'open' ? 'Valve open: shoot' : 'Wait for open valve'}${g.attack?.stage === 'warn' ? ' · Dodge glowing lanes' : ''}` : text.roundTitle}`;
+  } else if (m) {
+    items = [milk, sugar, stat('Scalds', `${m.scalds}/${CONFIG.grind.scalds}`)];
+    progress = [m.health, CONFIG.manager.health]; progressLabel = 'Manager patience';
+    const invited = m.meeting?.stage === 'warn' && m.meeting.lanes.length;
+    cue = `${text.hudStatus} · ${m.stage === 'fight' ? invited ? 'Leave invited lanes' : 'Pop memos · cut roots' : text.roundTitle}`;
   } else if (c) {
     items = [stat('Perfect', c.tally.perfect), stat('Toasted', c.tally.toasted), stat('Time', seconds(c.left))];
     progress = null; cue = `${text.hudStatus} · Space / hold cup: flames · Use short bursts; avoid burning`;
@@ -52,7 +58,8 @@ export function resourceView(s, text) {
     items = [stat('Attempts', `${x.attempts}/${CONFIG.crossingStreet.attempts}`), stat('Lanes', `${x.credited.length}/${TRAFFIC_ROWS.length}`), stat('Time', seconds(CONFIG.crossingStreet.duration - x.clock))];
     progress = [x.credited.length, TRAFFIC_ROWS.length]; progressLabel = 'Crossing'; cue = `${text.hudStatus} · Arrow keys hop; median is safe`;
   } else {
-    items = [milk, sugar, inventory('strainer', 'Leaf catches', s.strainerLeft, strainerCapacity(s.spoon), s.strainerLeft === 0 ? 'exhausted' : '')];
+    items = [milk, sugar, inventory('strainer', 'Leaf catches', s.strainerLeft, strainerCapacity(s.spoon),
+      s.strainerLeft === 0 ? 'exhausted' : s.strainerLeft > strainerCapacity(s.spoon) ? '+ bonus' : '')];
     if ([PHASE.SHORTAGE, PHASE.DAY, PHASE.ARCADE_OFFER].includes(phase)) {
       items = [stat('Tea Cash', s.teaCash), stat('Status', text.roundTitle), stat('Choice', phase === PHASE.SHORTAGE ? `Tin ${CONFIG.shortage.teaPrice} · run / skip free` : 'See choices below')];
       progress = null; cue = text.hudStatus;

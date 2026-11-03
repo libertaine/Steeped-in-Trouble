@@ -14,6 +14,7 @@ import { FORTUNES } from '../gameplay/fortunes.js';
 import { readingMemory } from '../gameplay/memory.js';
 import { SECRETS } from '../gameplay/secrets.js';
 import { grindInProgress } from '../gameplay/grind.js';
+import { managerInProgress } from '../gameplay/mycelium.js';
 import { canBuyTea } from '../gameplay/shortage.js';
 import { runInProgress } from '../gameplay/teaRun.js';
 import { pourInProgress } from '../gameplay/dailyPour.js';
@@ -21,6 +22,7 @@ import { breakoutInProgress } from '../gameplay/biscuitBreakout.js';
 import { TRAFFIC_ROWS, crossingInProgress } from '../gameplay/crossingStreet.js';
 import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
+import { TRAY } from '../gameplay/teaTray.js';
 import { cupCondition } from '../gameplay/porcelain.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
 import { createResources } from './resources.js';
@@ -34,6 +36,7 @@ const COPY = {
     [PHASE.DAY]: 'TOMORROW IS YOURS',
     [PHASE.CHOCOLATE]: 'HOT CHOCOLATE HAVOC',
     [PHASE.GRIND]: 'THE DAILY GRIND',
+    [PHASE.MANAGER]: 'THE MYCELIUM MANAGER',
     [PHASE.SHORTAGE]: 'THE TEA SHORTAGE',
     [PHASE.TEA_RUN]: 'THE TEA RUN',
     [PHASE.ARCADE_OFFER]: 'EXTRA! EXTRA!',
@@ -50,6 +53,7 @@ const COPY = {
     [PHASE.DAY]: () => 'Another day, another brew',
     [PHASE.CHOCOLATE]: () => HAVOC.title.play,
     [PHASE.GRIND]: () => GRIND.title.fight,
+    [PHASE.MANAGER]: () => MANAGER.title.fight,
     [PHASE.SHORTAGE]: () => 'The tea tin is empty!',
     [PHASE.TEA_RUN]: () => RUN.title.run,
     [PHASE.ARCADE_OFFER]: () => 'A spoon with a second job',
@@ -66,6 +70,7 @@ const COPY = {
     [PHASE.DAY]: 'Choose tomorrow (1 / 2)',
     [PHASE.CHOCOLATE]: 'Pause / resume (P)',
     [PHASE.GRIND]: 'Pause / resume (P)',
+    [PHASE.MANAGER]: 'Pause / resume (P)',
     [PHASE.SHORTAGE]: 'Buy, run, or skip (1 / 2 / 3)',
     [PHASE.TEA_RUN]: 'Pause / resume (P)',
     [PHASE.ARCADE_OFFER]: 'Deliver or skip (1 / 2)',
@@ -81,6 +86,7 @@ const COPY = {
     [PHASE.PAUSED]: 'The kettle is on hold.',
     [PHASE.CHOCOLATE]: '',
     [PHASE.GRIND]: '',
+    [PHASE.MANAGER]: '',
     [PHASE.SHORTAGE]: `Buy a tin with Tea Cash, run to the shop for one, or carry on without. A restock means ${CONFIG.shortage.restockSugar} extra sugar burst next cup; skipping costs nothing. Your cups, spoon, and next fortune wait for you either way.`,
     [PHASE.TEA_RUN]: '',
     [PHASE.ARCADE_OFFER]: 'The Daily Pour needs a delivery spoon. Deliver papers, or carry on brewing. Skipping costs nothing.',
@@ -173,6 +179,26 @@ const GRIND = {
   },
 };
 
+// The Mycelium Manager, stage by stage, likewise.
+const MANAGER = {
+  status: {
+    intro: () => 'A MEETING HAS BEEN SCHEDULED',
+    fight: (m) => `THE MYCELIUM MANAGER · ${Math.ceil(m.left)}s`,
+    outro: (m) => (m.result === 'victory' ? 'MEETING ADJOURNED' : 'TAKEN OFFLINE'),
+  },
+  title: { intro: 'Quick sync?', fight: 'Boss: The Mycelium Manager', outro: 'Back to the tea' },
+  button: { intro: 'Skip the entrance →', fight: 'Pause / resume (P)', outro: 'Back to the tea →' },
+  tip: {
+    intro: 'Middle management has arrived.',
+    fight: 'Pop the memos: their spores are the only thing that hurts it. Steam root tips to cut them back (sugar clears three lanes; milk stops them growing). At an all-hands meeting, leave the invited lanes or cut their roots. Three scalds and it gets away, but it can’t cost you a cup.',
+    outro: 'Your cups, your spoon, and the next fortune are exactly as you left them.',
+  },
+  milestone: {
+    victory: 'The cup has gone fungal: Chapter 3 begins with a cup of Mushroom Tea, and the leaves are livelier still. Your spoon comes too.',
+    escaped: `It will be back after ${CONFIG.manager.retryAfter} more cups. Until then the tea stays as you know it, and your cups, spoon, and fortune are safe.`,
+  },
+};
+
 // The Tea Run, stage by stage.
 const RUN = {
   status: {
@@ -198,6 +224,7 @@ const pips = (level, max) => '●'.repeat(level) + '○'.repeat(max - level);
 function statusText(state) {
   if (state.phase === PHASE.CHOCOLATE) return HAVOC.status[state.chocolate.stage](state.chocolate);
   if (state.phase === PHASE.GRIND) return GRIND.status[state.grind.stage](state.grind);
+  if (state.phase === PHASE.MANAGER) return MANAGER.status[state.manager.stage](state.manager);
   if (state.phase === PHASE.TEA_RUN) return RUN.status[state.run.stage](state.run);
   if (state.phase === PHASE.PLAYING) {
     if (state.goldenSpoon > 0) return `✦ GOLDEN SPOON ${Math.ceil(state.goldenSpoon)}s`;
@@ -216,13 +243,16 @@ export function spoonKitText(state) {
   return parts.length ? parts.join(' · ') : 'An ordinary silver spoon.';
 }
 
+const OFFER_NOTES = Object.freeze({ cupboard: 'The cupboard offers assistance.', tray: 'The Tea Tray comes round.' });
+
 /**
  * The upgrade cards to show, or null while no offer is open. Each shows the
- * level the upgrade would reach.
+ * level the upgrade would reach; a Tea Tray treat shows only its name.
  */
 export function offerCards(state) {
   if (state.phase !== PHASE.READING || !state.offer || state.readingTime < readingReadyAt(state)) return null;
   return state.offer.map((id) => {
+    if (Object.hasOwn(TRAY, id)) return { id, title: TRAY[id].name, info: TRAY[id].info, tray: true };
     const u = UPGRADES[id];
     return { id, title: `${u.name} ${pips(state.spoon[id] + 1, u.max)}`, info: u.info };
   });
@@ -243,7 +273,7 @@ function omenStatus(state) {
 
 /** The small in-play indicator of the fortune shaping this round. */
 function omenText(state, fortune) {
-  if (!fortune || havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)
+  if (!fortune || havocInProgress(state) || grindInProgress(state) || managerInProgress(state) || runInProgress(state) || pourInProgress(state)
     || breakoutInProgress(state) || crossingInProgress(state)) return '';
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
   return `✦ ${fortune.name} · ${fortune.tag} · ${omenStatus(state)}`;
@@ -252,7 +282,7 @@ function omenText(state, fortune) {
 /** The small in-play indicator of the tea brewed for this round. */
 function teaText(state) {
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.PAUSED) return '';
-  if (havocInProgress(state) || grindInProgress(state) || runInProgress(state) || pourInProgress(state)
+  if (havocInProgress(state) || grindInProgress(state) || managerInProgress(state) || runInProgress(state) || pourInProgress(state)
     || breakoutInProgress(state) || crossingInProgress(state)) return '';
   const tea = TEAS[state.tea];
   return `☕ ${tea.name} · ${tea.tag}`;
@@ -262,6 +292,7 @@ function teaText(state) {
 function teaName(state) {
   if (havocInProgress(state)) return 'Hot chocolate';
   if (grindInProgress(state)) return 'Espresso, apparently';
+  if (managerInProgress(state)) return 'Tea, under new management';
   return TEAS[state.tea].name;
 }
 
@@ -273,7 +304,7 @@ const stillLying = (state) => state.phase === PHASE.READING && state.nextFortune
 function autoText(state) {
   if (!state.autoSteam) return '';
   const from = state.phase === PHASE.PAUSED ? state.pausedFrom : state.phase;
-  return from === PHASE.PLAYING || from === PHASE.GRIND ? 'AUTO STEAM' : '';
+  return from === PHASE.PLAYING || from === PHASE.GRIND || from === PHASE.MANAGER ? 'AUTO STEAM' : '';
 }
 
 /** What the page is showing, for the touch controls: the cup, the shortage's choice, or the errand. */
@@ -307,13 +338,14 @@ export function errandView(state) {
 export function hudText(state) {
   const havoc = havocInProgress(state);
   const grind = grindInProgress(state);
+  const manager = managerInProgress(state);
   const run = runInProgress(state);
   const pour = pourInProgress(state);
   const breakout = breakoutInProgress(state);
   const street = crossingInProgress(state);
   // Between rounds (a reading, the bonus, the boss, or an errand) the panel looks ahead to the next cup.
   const between = state.phase === PHASE.DAY || state.phase === PHASE.READING || state.phase === PHASE.SHORTAGE || state.phase === PHASE.ARCADE_OFFER
-    || !!havoc || !!grind || !!run || !!pour || !!breakout || !!street;
+    || !!havoc || !!grind || !!manager || !!run || !!pour || !!breakout || !!street;
   const shown = between ? state.nextFortune : state.fortune;
   const fortune = shown ? FORTUNES[shown] : null;
   const offering = state.phase === PHASE.READING && !!state.offer;
@@ -386,9 +418,10 @@ export function hudText(state) {
   values.readingSecrets = ready ? state.secrets.map((id) => `${SECRETS[id].words} ${SECRETS[id].reward}.`).join(' ') : '';
   values.referenceSecrets = values.readingSecrets;
   values.temporaryUpgrades = [state.goldenSpoon > 0 ? `Golden Spoon: ${Math.ceil(state.goldenSpoon)} seconds remaining in play.` : '',
-    state.extraSugar > 0 ? `Earned sugar for the next cup: +${state.extraSugar}.` : ''].filter(Boolean).join(' ')
+    state.extraSugar > 0 ? `Earned sugar for the next cup: +${state.extraSugar}.` : '',
+    state.tray ? `From the Tea Tray, for the next cup: ${TRAY[state.tray].name}.` : ''].filter(Boolean).join(' ')
     || 'No temporary spoon effect is active.';
-  values.upgradeProgression = `The cupboard offers help after cup ${CONFIG.upgrades.firstOffer}, then every ${CONFIG.upgrades.offerEvery} cups, while any upgrade can still improve. Upgrades stack for this pot.`;
+  values.upgradeProgression = `The cupboard offers help after cup ${CONFIG.upgrades.firstOffer}, then every ${CONFIG.upgrades.offerEvery} cups, Upgrades stack for this pot; once they run short, the Tea Tray fills the gaps with treats for the next cup only.`;
   if (state.phase === PHASE.SHORTAGE) values.roundNum = `${pad(state.round, 2)}½`;
   if (state.phase === PHASE.ARCADE_OFFER) {
     const offer = ARCADE_OFFERS[state.interlude?.id] ?? ARCADE_OFFERS.dailyPour;
@@ -490,6 +523,19 @@ export function hudText(state) {
     });
     if (state.phase === PHASE.GRIND) values.mainBtn = GRIND.button[grind.stage];
   }
+  if (manager) {
+    const left = CONFIG.grind.scalds - manager.scalds;
+    Object.assign(values, {
+      roundTitle: MANAGER.title[manager.stage],
+      roundNum: `${pad(state.round, 2)}½`,
+      killLabel: 'Manager patience',
+      killCount: `${manager.health} / ${CONFIG.manager.health}`,
+      hudStrainer: `SCALDS ${'● '.repeat(manager.scalds)}${'○ '.repeat(Math.max(0, left))}`.trim(),
+      gameTip: manager.stage === 'outro' && manager.milestone ? MANAGER.milestone[manager.result] : MANAGER.tip[manager.stage],
+      compactProgress: `Boss ${manager.health}/${CONFIG.manager.health}`,
+    });
+    if (state.phase === PHASE.MANAGER) values.mainBtn = MANAGER.button[manager.stage];
+  }
   // One reading explanation, with the same complete account in Tea Break.
   const memory = ready ? readingMemory(state) : null;
   values.readingMemory = memory ? memory.observations.map((o) => `${o.fact} ${o.influence}`).join(' ') : '';
@@ -519,6 +565,8 @@ export function createHud(doc = document) {
     if (!offer || key === shownOffer) return;
     shownOffer = key;
     offer.hidden = !view;
+    const note = offer.querySelector('.offer-head em');
+    if (note) note.textContent = view?.some((card) => card.tray) ? OFFER_NOTES.tray : OFFER_NOTES.cupboard;
     cards.forEach((card, i) => {
       const choice = view?.[i];
       card.hidden = !choice;
@@ -557,7 +605,7 @@ export function createHud(doc = document) {
       const acknowledgment = doc.getElementById('upgradeAcknowledgment');
       if (!acknowledgment) return;
       doc.defaultView.clearTimeout(acknowledgmentTimer);
-      acknowledgment.textContent = `${event.name} acquired · level ${event.level}`;
+      acknowledgment.textContent = event.tray ? `${event.name} · next cup only` : `${event.name} acquired · level ${event.level}`;
       acknowledgment.hidden = false;
       acknowledgmentTimer = doc.defaultView.setTimeout(() => { acknowledgment.hidden = true; }, 2400);
     },
@@ -590,7 +638,7 @@ export function createHud(doc = document) {
       if (reference) {
         const special = havocInProgress(state) || runInProgress(state) || pourInProgress(state)
           || breakoutInProgress(state) || crossingInProgress(state);
-        const label = special ? 'Normal pot resources suspended.' : grindInProgress(state)
+        const label = special ? 'Normal pot resources suspended.' : grindInProgress(state) || managerInProgress(state)
           ? 'Boss milk and sugar are active; normal pot protection is suspended.' : 'Active cup resources.';
         if (reference.textContent !== label) reference.textContent = label;
       }

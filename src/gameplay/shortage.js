@@ -20,6 +20,7 @@
 
 import { CONFIG } from '../config.js';
 import { milestoneDue } from './grind.js';
+import { managerMilestoneDue } from './mycelium.js';
 
 const S = CONFIG.shortage;
 
@@ -31,7 +32,7 @@ export function shortageDue(state) {
   return state.shortageAfter !== null
     && state.round >= state.shortageAfter
     && state.progress.chapter >= S.minChapter
-    && !milestoneDue(state);
+    && !milestoneDue(state) && !managerMilestoneDue(state);
 }
 
 /** When the next shortage may come, once this one has started. */

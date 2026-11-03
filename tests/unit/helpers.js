@@ -72,9 +72,40 @@ export function finishGrind(game, { win = false } = {}) {
   game.primaryAction();
 }
 
-/** Hurry through a Hot Chocolate Havoc bonus round or The Daily Grind, if one is under way, to the next cup. */
+/** In the fight: land the last hit on the Mycelium Manager with a real popped memo. */
+export function beatManager(game) {
+  const { state } = game;
+  const m = state.manager;
+  Object.assign(m, { health: 1, meeting: null, meetingTimer: Infinity, memoTimer: Infinity, roots: [] });
+  m.memos = [{ id: m.nextId++, lane: spoonLane(state), angle: laneAngle(spoonLane(state)), radius: 200, speed: 0 }];
+  state.shotCooldown = 0;
+  game.fireSteam();
+  for (let i = 0; i < 120 && m.stage === 'fight'; i++) game.update(1 / 60);
+}
+
+/**
+ * Hurry through The Mycelium Manager, if it is under way, to the next cup: by
+ * default it gets away; with `win` it is beaten.
+ */
+export function finishManager(game, { win = false } = {}) {
+  if (game.state.phase !== 'manager') return;
+  if (game.state.manager.stage === 'intro') game.primaryAction();
+  if (game.state.manager.stage === 'fight') {
+    if (win) {
+      beatManager(game);
+    } else {
+      game.state.manager.left = 0;
+      game.update(1 / 60);
+    }
+  }
+  game.state.manager.time = Math.max(game.state.manager.time, 5);
+  game.primaryAction();
+}
+
+/** Hurry through a Hot Chocolate Havoc bonus round or a boss, if one is under way, to the next cup. */
 export function finishBonus(game, { win = false } = {}) {
   finishGrind(game, { win });
+  finishManager(game, { win });
   if (game.state.phase !== 'chocolate') return;
   if (game.state.chocolate.stage === 'intro') game.primaryAction();
   if (game.state.chocolate.stage === 'play') {

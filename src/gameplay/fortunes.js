@@ -5,7 +5,8 @@
 //   1. When a round ends, the game builds a round record
 //      ({ milkKills, milkUses, sugarUses, escapes, nearMisses, leafLanes }).
 //   2. selectFortune(record) finds the pattern the leaves point at: the first
-//      fortune in FORTUNE_PRIORITY whose matches() accepts the reading.
+//      fortune in FORTUNE_PRIORITY whose matches() accepts the reading of the
+//      top layer (the last CONFIG.fortunes.topLayer leaves to settle).
 //   3. drawFortune(record, rng) makes the actual choice: a weighted draw in
 //      which that pattern is a strong favourite and each fortune's weight()
 //      leans on how the round was played. Tendencies, never guarantees.
@@ -41,6 +42,7 @@ export const BASE_MODIFIERS = Object.freeze({
   dartChance: 0, // share of new leaves that dart (Green Tea)
   wanderChance: 0, // share of new leaves that wander (Earl Grey)
   spiceCurrents: false, // currents sweep the leaves sideways (Chai)
+  puffballChance: 0, // share of new leaves that are puffballs (Mushroom Tea)
 });
 
 /** Follow a polyline: t ∈ [0, 1] moves evenly from point to point. */
@@ -134,7 +136,7 @@ export const FORTUNES = Object.freeze({
     color: '#b7dcbe',
     weight: () => 0.5,
     modifiers: { laneDrift: true, scoreMultiplier: F.spiralScoreMultiplier },
-    matches: (reading) => reading.occupiedLanes >= F.spiralOccupiedLanes,
+    matches: (reading) => reading.occupiedLanes >= F.spiralOccupiedLanes, // checked only when no Crown formed
     glyph(t) {
       const r = 17 + 120 * t;
       const a = t * 3.6 * Math.PI - Math.PI / 2;
@@ -285,12 +287,14 @@ export const FIBS = Object.freeze([
 export const FORTUNE_PRIORITY = Object.freeze(['veil', 'crown', 'spiral', 'star']);
 
 /**
- * Summarize where the leaves settled.
- * @param {number[]} leafLanes lane index of every leaf in the cup
+ * Summarize where the top layer of leaves settled: the last
+ * CONFIG.fortunes.topLayer of them, or every leaf in a sparser cup.
+ * @param {number[]} leafLanes lane index of every leaf in the cup, oldest first
  */
 export function readLeafPattern(leafLanes) {
+  const top = leafLanes.slice(-F.topLayer);
   const bins = new Array(LANES).fill(0);
-  for (const lane of leafLanes) bins[wrapLane(lane)]++;
+  for (const lane of top) bins[wrapLane(lane)]++;
   let maxCluster = 0;
   for (let i = 0; i < LANES; i++) {
     let sum = 0;
@@ -299,9 +303,10 @@ export function readLeafPattern(leafLanes) {
   }
   return {
     bins,
-    total: leafLanes.length,
+    total: top.length,
+    buried: leafLanes.length - top.length, // older leaves under the top layer, not read
     maxCluster,
-    clusterShare: maxCluster / Math.max(1, leafLanes.length),
+    clusterShare: maxCluster / Math.max(1, top.length),
     occupiedLanes: bins.filter((count) => count > 0).length,
   };
 }

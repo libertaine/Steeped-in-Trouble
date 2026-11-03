@@ -9,7 +9,7 @@ import { POT_KEY, createLocalProgress } from '../../src/storage/localProgress.js
 import { continueFrom, killLast, leave, spill } from '../support/legacyPlay.js';
 import legacy from '../fixtures/pot-0.16.0.json' with { type: 'json' };
 
-const V1_STREAMS = RANDOM_STREAMS.filter((id) => id !== 'goldenLeaf');
+const V1_STREAMS = RANDOM_STREAMS.filter((id) => id !== 'goldenLeaf' && id !== 'manager');
 const v1 = () => structuredClone(legacy.checkpoints.critical);
 const memoryStorage = (entries = {}) => {
   const data = new Map(Object.entries(entries));
@@ -25,8 +25,16 @@ describe('Continue Pot: 0.16.0 saves', () => {
     expect(JSON.stringify(original)).toBe(before); // never changed in place
     expect(migrated.schemaVersion).toBe(POT_SCHEMA_VERSION);
     expect(validateCheckpoint(migrated)).toBe(true);
-    const { porcelain, goldenLeaf, goldenLeafTimer, ...kept } = migrated.state;
-    expect(kept).toEqual(original.state);
+    const { porcelain, goldenLeaf, goldenLeafTimer, spores, tray, modifiers,
+      managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, rush, ...kept } = migrated.state;
+    // Schema 5: a Chapter 1 pot has no Manager scheduled yet, and has never brewed Mushroom Tea.
+    expect({ managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, rush }).toEqual({
+      managerAfter: null, lastManager: 0, managerVisits: 0, managerDue: false, manager: null, mushroomCups: 0, strangeFirst: 0, rush: null });
+    const { modifiers: heldModifiers, ...held } = original.state;
+    expect(kept).toEqual(held);
+    expect(modifiers).toEqual({ ...heldModifiers, puffballChance: 0 }); // schema 3: the neutral puffball chance
+    expect(spores).toEqual([]);
+    expect(tray).toBeNull(); // schema 4: no Tea Tray treat waits at a saved reading
     expect({ goldenLeaf, goldenLeafTimer }).toEqual({ goldenLeaf: null, goldenLeafTimer: null });
     for (const id of V1_STREAMS) expect(migrated.random[id]).toEqual(original.random[id]);
     const seed = toSeed(original.random.normal.seed) ^ GOLDEN_LEAF_SALT;
@@ -76,7 +84,7 @@ describe('Continue Pot: 0.16.0 saves', () => {
     const migrated = createGame({ checkpoint: v1() });
     for (let i = 0; i < 2; i++) { leave(migrated); killLast(migrated); }
     const saved = JSON.parse(JSON.stringify(migrated.exportCheckpoint()));
-    expect(saved.schemaVersion).toBe(2);
+    expect(saved.schemaVersion).toBe(POT_SCHEMA_VERSION);
     expect(validateCheckpoint(saved)).toBe(true);
     const resumed = createGame({ checkpoint: saved });
     for (let i = 0; i < 4; i++) {
@@ -90,13 +98,13 @@ describe('Continue Pot: 0.16.0 saves', () => {
     const raw = JSON.stringify(v1());
     const storage = memoryStorage({ [POT_KEY]: raw });
     const progress = createLocalProgress(storage);
-    expect(progress.pot.schemaVersion).toBe(2);
+    expect(progress.pot.schemaVersion).toBe(POT_SCHEMA_VERSION);
     expect(progress.status.pot).toBe('');
     expect(storage.data.get(POT_KEY)).toBe(raw);
     const game = createGame({ checkpoint: progress.pot });
     leave(game); killLast(game);
     expect(progress.saveCheckpoint(game.exportCheckpoint())).toBe(true);
-    expect(JSON.parse(storage.data.get(POT_KEY)).schemaVersion).toBe(2);
+    expect(JSON.parse(storage.data.get(POT_KEY)).schemaVersion).toBe(POT_SCHEMA_VERSION);
   });
 
   it('refuses a damaged 0.16.0 save without deleting it', () => {
@@ -123,7 +131,7 @@ describe('Continue Pot: 0.16.0 saves', () => {
   });
 });
 
-describe('schema 2 checkpoints', () => {
+describe('current-schema checkpoints', () => {
   function crackedCheckpoint() {
     const game = createGame({ seed: 31 });
     game.primaryAction();
@@ -169,7 +177,7 @@ describe('schema 2 checkpoints', () => {
       (c) => { c.state.goldenLeaf = { angle: 1, radius: 100 }; },
       (c) => { c.state.goldenLeafTimer = 3; },
       (c) => { delete c.random.goldenLeaf; },
-      (c) => { c.schemaVersion = 3; },
+      (c) => { c.schemaVersion = POT_SCHEMA_VERSION + 1; },
     ];
     for (const change of bad) {
       const c = structuredClone(good);

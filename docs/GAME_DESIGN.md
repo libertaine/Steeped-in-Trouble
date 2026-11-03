@@ -66,13 +66,14 @@ When a round ends, the leaves are read. They glide into the shape of the
 fortune, and the fortune applies to the **next** round only.
 
 The leaf pattern points at one of four classic fortunes, checked in this
-order:
+order. Only the top layer is read: the last 16 leaves to settle (or every
+leaf, in a sparser cup), so a 32-leaf cup reads much like a 16-leaf one.
 
 | Fortune | Read when… | Effect next round |
 | --- | --- | --- |
 | **The Veil** | 3+ kills made in or beside a milk cloud | Milk clouds last 2.5 s longer |
-| **The Crown** | ≥ 40% of leaves lie in three adjacent lanes | +1 sugar burst |
-| **The Spiral** | Leaves occupy 10+ different lanes | Leaves drift one lane sideways mid-flight; kills score 25% more |
+| **The Crown** | ≥ 40% of the top layer lies in three adjacent lanes | +1 sugar burst |
+| **The Spiral** | The top layer occupies 11+ different lanes | Leaves drift one lane sideways mid-flight; kills score 25% more |
 | **The Star** | Otherwise (a clear cup) | Steam darts travel 35% faster |
 
 So fighting in one area tends to bring abundance, spreading out invites
@@ -124,6 +125,24 @@ until the pot runs dry.
 | **Strainer Attachment** | +1 strainer catch per round | 2 (3 catches) |
 
 With three or more upgrades the spoon grows a filigree handle.
+
+**The Tea Tray.** The four upgrades run out after ten picks (usually by cup
+19), so once fewer upgrades can improve than an offer has cards, the Tea Tray
+fills the empty slots. Every offer stays a choice of two. Its treats last one
+cup and never stack:
+
+| Treat | Next cup only |
+| --- | --- |
+| **A Spare Jug** | +1 milk pour |
+| **A Spare Strainer** | +1 strainer catch (not offered before Karma, which needs no strainer) |
+| **A Sugar Lump** | +1 sugar burst |
+| **A Golden Moment** | The spoon starts the cup golden, for 9 s (not offered before The Daily Grind, whose win gilds the spoon for longer) |
+
+A treat is served when the next normal cup starts, never during a bonus round
+or adventure in between, and whatever is left of it is gone when the cup after
+that starts. The cards rotate offer by offer and use no random numbers, so a
+seeded pot plays exactly as before. Tea Cash is not on the tray: by the late
+game every pot has more than enough of it.
 
 ### The Golden Spoon
 
@@ -382,8 +401,8 @@ round. What changes from cup to cup is the tea, the fortune, and the spoon.
   own tea card follows.
 - Chapters and their teas live in `CONFIG.chapters`; the progress through
   them is a small piece of state (`state.progress`, see
-  `gameplay/progress.js`). 0.9.0 has exactly two chapters. A later release
-  can add a third with its own milestone.
+  `gameplay/progress.js`). 0.9.0 had exactly two chapters; 0.19.0 adds a
+  third, opened by The Mycelium Manager (see below).
 
 ### The milestone: The Daily Grind after round 5
 
@@ -1375,3 +1394,121 @@ pot is one key away, and brings a whole cup.
 Cracked lanes that slow or speed anything, bonuses for gold seams, and any
 other effect of damage on play are deferred until players have tried this.
 See [CUP_REMEMBERS_TESTING.md](CUP_REMEMBERS_TESTING.md).
+
+## 0.19.0 — Mushroom Tea (spoilers)
+
+*"The Cup Has Gone Fungal."* Chapter 3's tea: the first cup of Chapter 3 is
+always Mushroom Tea, and after that it joins the ordinary rotation.
+`?tea=mushroom` still brews it every cup, from the first.
+
+- **Puffballs** are 12%, 18% and 24% of new leaves as the tea ages (learn,
+  adapt, full). They rise at 85% of a leaf's speed.
+- **Pop one** with anything that destroys a leaf and it counts as a kill and
+  leaves a **spore cloud** (58 units, 2.5 seconds) where it popped. Leaves
+  inside **giggle**: they rise at 10% of their speed, keep giggling 0.4
+  seconds after leaving, and score 50% more if destroyed while giggling.
+  Milk's slowdown and the spores' hold never stack.
+- **Leave one** and past a ripening radius (125–150) it swells for 1.1,
+  0.95 or 0.8 seconds, amber and shivering, with marks in the lanes either
+  side; then it **splits into two sprouts** that slide into those lanes,
+  near the rim. Only one sprout appears if the cup holds 17 other leaves.
+  Splitting is not a kill; each sprout is.
+- The decision: pop a puffball early and safely, or wait until leaves crowd
+  its lanes for a bigger, riskier payoff.
+
+All numbers are first-pass tuning in `CONFIG.puffballs` and `CONFIG.spores`.
+
+### Strange Happenings (spoilers)
+
+Now and then a Mushroom Tea cup misbehaves. They are counted in Mushroom
+Tea cups, whatever else is brewed in between: never in a pot's first
+Mushroom Tea cup, the first always due in its second (if that cup never
+has a safe, quiet moment, the next Mushroom Tea cup instead), then one
+every two to four, never the same thing twice running, at a moment nobody
+can quite predict. Each feels different:
+
+- **Time Rewind**, *"Wait, did the game just reverse?"* Play catches, the
+  picture takes on a tape tint, and the last three seconds run backwards:
+  leaves sink back, the one you just steamed reappears, steam flies back
+  into the spoon, the spoon retraces its steps and the score winds down.
+  Then it fast-forwards to now and carries on. It is only a picture of the
+  past: time stood still meanwhile, so nothing is lost and no leaf got
+  closer. Steam, milk and sugar wait while it plays (about two seconds); P
+  still pauses, which ends it.
+- **The Cup Is Breathing**, *"Why is my tea alive?"* For about twelve
+  seconds the broth slowly swells and settles, rings run out to the
+  porcelain on each breath, the little rim caps swell with it, and the band
+  sounds muffled and dreamy. Leaves, aim and the spoon stay exactly put.
+- **The Impostor Spoon**, *"Why is something else playing with me?"* A
+  translucent violet spoon with googly eyes follows yours a second behind,
+  copying your steam with harmless rings, then shows off (a lap of the cup,
+  or walking the wrong way) and leaves. It cannot hit, score or spend
+  anything, and politely steps aside rather than sit on your spoon.
+
+Sometimes the game remarks on it ("That wasn't in the patch notes.",
+"Please don't feed the porcelain.", "Management denies the second spoon."):
+always the first time, often not afterwards. With reduced motion the rewind
+steps through still frames, the cup glows instead of swelling, and the
+impostor bows instead of running laps. All tuning is first-pass, in
+`CONFIG.strange`.
+
+## 0.19.0 — The Mycelium Manager and Chapter 3 (spoilers)
+
+### The Mycelium Manager
+
+Chapter 2's milestone boss: a mushroom in a lanyard, with a clipboard. Where
+The Daily Grind tests timing, the Manager tests territory and priorities.
+It uses the same controls, the same three-scald rule (scalds never cost a
+cup), the same 38 s clock, and the same rewards.
+
+- **Roots** grow out from the Manager along the lanes, one a lane, after a
+  short glow at their base. Each steam dart that reaches a root's glowing
+  tip cuts it back a little way; a long root takes several. **Sugar**
+  clears all three of its lanes; **milk** stops every root under the cloud
+  growing while it lasts. A root also shields any memo behind its tip.
+- **Memos**, paper puffballs, drift out to the rim, usually along a root.
+  **Popping a memo is the only way to hurt the Manager**: its spores fly
+  back down the lane. A memo left alone files itself on the rim as a
+  **sticky note**.
+- **All-hands meetings**: the Manager raises its clipboard and every lane
+  with a root past the dashed meeting line, or a sticky note, is
+  **invited** (hatched violet, with a calendar mark at the rim). After about
+  two seconds a ring sweeps out and scalds the spoon if it sits in an
+  invited lane. Move out, or cut a root back past the line to let its lane
+  off. Invitations are fixed when they go out (never added to), at most 11
+  lanes are invited, and two neighbouring safe lanes are always within four
+  lanes of the spoon. The meeting clears the sticky notes.
+- **The first encounter** brings one thing at a time: roots, then memos
+  (about 6 s in), then the first meeting (about 13 s in), each pointed out
+  once in a few words. It says each of its lines at most once a fight
+  ("Quick sync?", "Per my last spore…", "Let's circle back.", "Who approved
+  this?", "Let's take this offline.", "I'll put a pin in it.").
+
+It follows Chapter 2's fifth cup (cup 10 when the Grind fell after cup 5),
+and if it gets away it is back two cups later, as the same first
+encounter, until beaten. It never shares a reading with The Daily Grind,
+Hot Chocolate Havoc, a Tea Shortage or an interlude.
+
+**Rematches** (Chapter 3, at least four cups apart, then a 25% chance a
+reading) bring a twist each, with the same health and clock:
+
+| Appearance | Twist |
+| --- | --- |
+| 2 | **The Reorg**: roots sprout in neighbouring pairs; memos come cc'd in pairs, half as often |
+| 3 | **Back-to-Back Meetings**: each meeting is followed at once by a second, around wherever the spoon hid |
+| 4 | **Synergy**: cutting a root clear drops a memo from its base; ordinary memos come less often |
+| 5 on | Two twists at once, in turn |
+
+### Chapter 3 — The Cup Has Gone Fungal
+
+Beating the Manager opens Chapter 3 with the next cup, which is always
+Mushroom Tea. Leaves move at 1.25 times Chapter 1's speed and arrive every
+0.95 of its interval, inside every existing safety limit. That step lands
+on cups 11–20, where Keep the Kettle On's Heat adds least; Fresh Brew
+resets Heat, never the chapter.
+
+**Rush Hour** (Chapter 3 only): now and then three leaves arrive 0.45 s
+apart, about a third of the way round the cup from each other, then a
+quiet spell makes up the time, so the average arrival rate is unchanged.
+A flicker down their lanes and three ticks announce it. Never in Mushroom
+Tea or Chai cups, never in a cup's first three leaves.

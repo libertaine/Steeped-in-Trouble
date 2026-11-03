@@ -1,7 +1,7 @@
 import { expect, openGame, test } from './fixtures.js';
 import { checkpointRound } from './collection.js';
 
-const VERSION = '0.18.0';
+const VERSION = '0.19.0';
 
 /** The first screen a visitor sees: the title, then the instruction overlay. */
 const openTitle = async (page, query = '') => {

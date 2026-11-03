@@ -226,7 +226,7 @@ for (const scheme of ['easy', 'classic']) {
 }
 
 for (const [width, height] of [[390, 844], [844, 390]]) {
-  for (const phase of ['grind', 'chocolate']) {
+  for (const phase of ['grind', 'manager', 'chocolate']) {
     test(`${phase} stays readable and pauses at ${width} x ${height}`, async ({ page, problems }, info) => {
       await page.setViewportSize({ width, height });
       await openGame(page, '&seed=7');
@@ -236,10 +236,12 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
         const s = window.__TEACUP__.game.state;
         s.havocDue = phase === 'chocolate';
         s.grindDue = phase === 'grind';
+        s.managerDue = phase === 'manager';
       }, phase);
       await page.locator('[data-choice="0"]').click();
       await page.locator('#mainBtn').click();
-      await expect(page.locator('#hudStatus')).toContainText(phase === 'grind' ? 'THE DAILY GRIND' : 'HOT CHOCOLATE HAVOC');
+      const status = { grind: 'THE DAILY GRIND', manager: 'THE MYCELIUM MANAGER', chocolate: 'HOT CHOCOLATE HAVOC' };
+      await expect(page.locator('#hudStatus')).toContainText(status[phase]);
       await fits(page, ['#game', '#hudStatus', '#resourceStrip', '#menuBtn', '.controls-easy']);
       if (phase === 'grind') {
         await expect(page.locator('#resourceProgressLabel')).toContainText('Machine health');
@@ -250,6 +252,19 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
             lanes: [0, 1, 2], pattern: 'wedge', milked: false, reach: 0,
           };
         });
+      } else if (phase === 'manager') {
+        await expect(page.locator('#resourceProgressLabel')).toContainText('Manager patience');
+        // A busy, genuine moment: roots, a memo, a sticky note, and a meeting warning.
+        await page.evaluate(() => {
+          const m = window.__TEACUP__.game.state.manager;
+          const at = (lane) => -Math.PI / 2 + lane * Math.PI / 8;
+          Object.assign(m, { rootTimer: 1e6, memoTimer: 1e6, meetingTimer: 1e6 });
+          m.roots = [2, 6, 11].map((lane) => ({ lane, stage: 'grow', time: 0, tip: 230, frozen: false }));
+          m.memos = [{ id: 99, lane: 4, angle: at(4), radius: 170, speed: 0 }];
+          m.notes = [9];
+          m.meeting = { stage: 'warn', wave: 1, time: 0, length: 1e6, lanes: [2, 6, 9, 11], reach: 84, struck: false };
+        });
+        await expect(page.locator('#resourceGuidance')).toHaveText('Leave invited lanes');
       } else {
         await expect(page.locator('#easyHint')).toHaveText('Hold cup: flames');
         const box = await page.locator('#game').boundingBox();

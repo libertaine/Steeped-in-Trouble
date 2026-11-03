@@ -49,6 +49,7 @@ src/
 │   ├── canvas.js        device-pixel-ratio-aware canvas sizing
 │   ├── renderer.js      draws state onto the canvas
 │   ├── effects.js       cosmetic particles and the spill flash
+│   ├── strange.js       Mushroom Tea's Strange Happenings: schedule, visual history, view data (no drawing)
 │   ├── grind.js         draws the espresso machine and its attacks
 │   ├── dailyPour.js     draws the paper route
 │   ├── biscuitBreakout.js draws the tray, biscuits, spoon paddle, cube and the talking biscuit
@@ -351,8 +352,9 @@ it never steers or spends milk/sugar, and never toasts automatically.
 At the end of a round, `game.js` builds a round record
 (`{ milkKills, milkUses, sugarUses, escapes, leafLanes }`) and calls
 `drawFortune(record, rng)`. First `selectFortune()` finds the pattern the
-leaves point at: `readLeafPattern()` summarizes them (densest three-lane
-cluster, occupied lanes), and the first fortune in `FORTUNE_PRIORITY` whose
+leaves point at: `readLeafPattern()` summarizes the top layer, the last
+`CONFIG.fortunes.topLayer` leaves (densest three-lane cluster, occupied
+lanes), so pattern odds do not drift as leaf targets grow, and the first fortune in `FORTUNE_PRIORITY` whose
 `matches(reading)` accepts wins. Then every fortune's `weight(record)` is
 added up, with `CONFIG.fortunes.patternWeight` extra for the pattern's
 fortune, and one fortune is drawn with the gameplay generator. The pattern is
@@ -380,6 +382,16 @@ its rule lives (`steamSpeed()` and `steamCooldown()` in `weapons.js`,
 `turnSpeed()` in `player.js`, `sugarCapacity()`, and `strainerCapacity()` at
 round start), and every bonus multiplies the others, so a temporary effect
 never replaces a lasting one. A new match resets both.
+
+The Tea Tray (`gameplay/teaTray.js`) keeps late offers a choice (#14).
+`readLeaves()` draws upgrade cards exactly as before, then, once the
+encounter schedule is final, `fillFromTray()` fills any empty slots with
+`TRAY` treats that would help (`usable(state)`: no strainer before Karma, no
+Golden Moment before The Daily Grind), rotating by offer index without
+drawing. `chooseUpgrade()` stores a chosen treat in `state.tray`;
+`startRound()` calls `serveTray()` after setting the cup's supplies, so a
+treat skips every detour and expires with its cup. The `upgrade` event
+carries `tray: true` for treats.
 
 The Prismatic Sugar Cube is not a fortune. `startRound()` rolls for it with
 `rollPrismatic()` from round 2 on, whatever the fortune, and
@@ -512,6 +524,98 @@ simultaneous contacts cannot finish a cup twice.
    and button in `input/controls.js` / `main.js`.
 3. Give its event a sound in `audio.js` and particles in `effects.js` if
    wanted, and draw any new shot type in `renderer.js`.
+
+## Strange Happenings (0.19.0)
+
+`rendering/strange.js` makes Mushroom Tea misbehave now and then: **Time
+Rewind**, **The Cup Is Breathing** and **The Impostor Spoon**. It is
+presentation, like `effects.js`: it reads state and game events, never
+writes state, and never draws from a gameplay generator. Checkpoints are
+unchanged by it because nothing about it needs saving.
+
+**Scheduling.** Cups are counted in Mushroom Tea cups: `steepTea()` keeps
+`state.mushroomCups`, so in Chapter 3's rotation the plan follows the tea,
+not the round. `strangeSchedule(seed, cups, first)` is pure. Each Mushroom
+Tea cup's numbers come from `cupRandom(seed, cup)`, a Mulberry32 salted with
+`STRANGE_SALT` and that count, and every cup draws the same five numbers
+whether or not it has a happening. Rules (`CONFIG.strange`): never the first
+Mushroom Tea cup; the first due in the second (`firstCup`), then gaps of
+2, 3 or 4 Mushroom Tea cups (weights 0.45/0.4/0.15, about one in 2.7); never
+the same kind twice running; at most one a cup, one at a time; it starts
+5–14 s of play into the cup, only while no leaf is within 50 units of the
+rim. A rewind also waits up to 5 s for a leaf to fall, so one can come back.
+Until the pot's first happening has played, every Mushroom Tea cup from the
+second is its chance (`planFor()` plans with `first` = this cup), so one that
+never finds a safe moment waits rather than forcing itself in. When one
+begins, main.js passes the controller's `strangeStart` to
+`game.noteStrange()`, which records the cup in `state.strangeFirst` (saved,
+read by nothing that plays); the rest of the plan runs from there, so a
+restored pot carries on exactly. A later happening whose moment never comes
+is missed, as before. Under `?tea=mushroom` every cup is a Mushroom Tea cup.
+
+**The clock.** The controller's clock is the cup's play time. It advances
+only in `playing`, never while paused or `blocked` (menus, Tea Break, the
+title), and resets on `matchStart`/`roundStart`. `reading`, `gameover`,
+leaving `playing` for any phase but `paused`, or a different state object (a
+restored pot, a practice session) end whatever is happening, silently.
+
+**Visual history.** During Mushroom Tea play it samples, at 20 Hz of play
+time, what is drawn: spoon angle, score, kills, a steam counter (from
+`steam` events), and copies of leaves, darts and spore clouds into pooled
+objects (capped at 24/48/4), plus references to the residue. A ring of 72
+slots holds 3.5 s; nothing grows with the cup's length.
+
+**Time Rewind.** While `holding` is true, `main.js` skips `game.update()`
+and `effects.update()`, and the fire/milk/sugar commands return without
+acting: the simulation is exactly as if paused, so nothing is lost, gained
+or reordered, and a twin cup that skips the same frames ends identically
+(`tests/unit/strange.test.js`). `shown(state)` returns a recorded moment, an
+`Object.create(state)` overlay of the recorded fields, so the renderer and
+HUD draw the past (the score included) while everything not recorded (milk,
+cubes, porcelain) shows its live value, held still. The timeline: hiccup
+0.12 s, then 3 s of history in reverse over 1 s, a 0.3 s hold, forward to
+now over 0.55 s, then settle (play resumes at once while the tint clears).
+That is about 2 s without control. With reduced motion it steps through
+still frames 1, 2 and 3 s back (0.35 s each) and returns, about 1.2 s. A
+`paused` event (P, the main button, blur or hidden, Tea Break) ends a rewind
+at once. Held keys keep their state, so a held direction or Space carries on
+afterwards. The real simulation is never rewound: a mid-cup restore would
+need a new checkpoint contract, would rewind stream cursors, and would take
+kills away.
+
+**Breathing and the impostor** run while play continues. They only fill
+`view`: `breathing = { intensity, breath, rings }` and `impostor = { angle,
+opacity, scale, look, puffs }`. The tea painter draws the liquid's offscreen
+layer at `1 + swell` about the cup's centre (0.035 High, 0.02 Low, 0 with
+reduced motion; never below its own size, and clipped to the rim), adds the
+breath's colour, exhaled rings (two in High, one in Low, none with reduced
+motion) and a brighter meniscus. The renderer swells the rim caps and lights
+the porcelain. No leaf, dart, hitbox or the aim is touched. The impostor
+follows `angleAt(clock - 1 s)` from the history, with two gestures (a lap, a
+mirrored walk, or with reduced motion a bow), steps aside when within 0.16
+rad of the real spoon (keeping to the side it is on), and is drawn under the
+real spoon with no aim beam. Its pretend steam (hollow rings over 60 units)
+comes from the recorded steam counter. It has no collision code at all.
+
+**Words and sound.** `createLineBook()` holds the rules: each kind's first
+appearance in a page session always speaks (the first rewind says "That
+wasn't in the patch notes."), later ones are silent 35% of the time, and no
+line repeats until the others have been heard. Lines belong to a moment
+(`appear`, `during`, `vanish`, `after`), are dropped if a gameplay whisper
+is showing, and use the whisper under the cup, never the play area. The
+controller's events (`strangeStart`, `rewindReverse`, `rewindForward`,
+`strangeBreath`, `impostorAppear`, `impostorPuff`, `impostorVanish`,
+`strangeQuip`, `strangeEnd`) go to `effects` and `audio` only. `audio.js`
+plays reversed (swelling) chirps and a tape whirr, filtered-noise breaths
+and a ghostly woo. `music.update(..., strange)` falls silent while a rewind
+holds and low-passes on each breath.
+
+**Testing hooks.** `?debug` exposes `window.__TEACUP__.strange`
+(`force(kind)`, `schedule(cups)`, `active`, `holding`, `recorded`, `view`).
+With `?debug`, `?strange=rewind|breathing|impostor` brings that one in the
+next Mushroom Tea cup (cup 1 included), `?strange=often` one every cup in
+turn, and `?strange=off` none. See
+[the testing guide](STRANGE_HAPPENINGS_TESTING.md).
 
 ## Testing
 
@@ -879,3 +983,96 @@ kept, a fresh salted Golden Leaf stream, `porcelainForLives()` cracks at
 current schema. `createGame({ checkpoint })` and `createLocalProgress()` both
 migrate first; storage keeps the old save until the next checkpoint write.
 The 0.16.0 fixture and its generator live in `tests/fixtures/`.
+
+## Mushroom Tea (0.19.0)
+
+`TEAS.mushroom` is Chapter 3's tea (`teas: { mushroom: 0 }`), so
+`debutTea()` serves it as the chapter's first cup; `?tea=mushroom`
+(`createGame({ tea })`) still brews it every cup. Before Chapter 3, normal tea draws and every
+seeded sequence are unchanged. Its `strength(age)` sets `puffballChance`
+(a `BASE_MODIFIERS` key, combined with `max`). `pickKind()` treats it like
+the dart and wander chances: no draw unless some chance is non-zero, then
+one draw, plus one for the puffball's ripening radius.
+
+`gameplay/mushroom.js` owns the rest, without random numbers. A puffball's
+`puff = { stage: waiting → swelling → burst, at, time, warn }` advances in
+`advanceEnemy()` like a darter's crouch. At `burst`, `updateEnemies()`
+removes it and `sproutPuffball()` appends up to `CONFIG.puffballs.sprouts`
+`sprout` leaves (never beyond `CONFIG.enemies.maxActive`), each gliding one
+lane out. `killEnemy()` releases a spore cloud for any destroyed puffball
+(steam, sugar, Steam Nova, Silver Tornado, Double Gilt) into `state.spores`
+(`{ angle, radius, time, duration }`, capped, cleared by `clearField()`).
+`giggleSlow()` gives a leaf in or just out of a cloud a `giggle` timer; its
+rise is scaled by the smaller of that hold and `milkSlow()`, so the two never
+stack, and `killScore()` takes the giggling bonus.
+
+The renderer draws spores under the leaves, puffballs and sprouts in
+`drawEnemy()`, and the rim caps; `rendering/tea.js` adds the sheen. Motion
+is cosmetic only and stops with Low graphics or reduced motion.
+
+Schema 3 adds `state.spores` and `modifiers.puffballChance`. Schema 4 adds
+`state.tray` (always `null` at a reading, because a treat is chosen after the
+save) and allows Tea Tray ids in `state.offer`, after any upgrades.
+`migrateCheckpoint()` takes schema 2 to 3 to 4 additively (and schema 1
+through 2); `tests/fixtures/pot-0.18.0.json` is an authentic v0.18.0 save, with
+seeded readings and undefended leaf paths, generated by
+`generate-0.18.0.js` from a v0.18.0 worktree.
+
+## The Mycelium Manager and Chapter 3 (0.19.0)
+
+`gameplay/mycelium.js` is the Manager, shaped like `gameplay/grind.js`: its
+own phase (`PHASE.MANAGER`), state (`state.manager`, see `createManager()`),
+salted random stream (`manager`, `MANAGER_SALT`), and functions of `sim`. It
+reuses `CONFIG.grind`'s scalds, safe window, hit width, clock and rewards.
+`game.js` mirrors the Grind's hand-off (`startManager()`,
+`beginManagerFight()`, `leaveManager()`, `updateManagerPhase()`), and steam,
+milk, sugar, pause, Enter, Easy Touch and Auto Steam
+(`autoSteamWantedInManager()`: a memo or root tip in the spoon's lane) all
+route to it while it fights.
+
+- Roots: `{ lane, stage: sprout → grow, time, tip, frozen }`, one a lane;
+  growth stops under a milk cloud (`isNearCloud()`). A dart meets the first
+  thing on its way in (`resolveShots()`): a memo beyond the tip, the tip
+  (cut back `cutBack`; sugar clears it), or the body (a thump).
+- Memos: `{ id, lane, angle, radius, speed }`, mostly sent along a root;
+  popped, a puff flies back and `damage()`s; at the rim, a note in
+  `state.manager.notes`.
+- Meetings: `claimedLanes()` (roots past `MEETING_LINE`, notes) feed the pure
+  `inviteList(claimed, spoonLane)`, which keeps two adjacent safe lanes
+  within `pocketReach` (preferring a short walk) and caps the list at
+  `maxInvited`. While a warning runs, its lanes only shrink. The ring scalds
+  once, at the rim; Back-to-Back Meetings then call a second wave.
+- `twistsFor(appearance)` gives each appearance its twists; the milestone
+  (and retries) is appearance 1, `state.managerVisits` counts rematches.
+  `CONFIG.manager.twistMemoGap` keeps the memo supply steady across them.
+- Schedule: `leaveGrind()` sets `state.managerAfter` to Chapter 2's fifth
+  cup when the Grind opens Chapter 2; `managerMilestoneDue()` needs no
+  random numbers; `managerRematchDue()` draws from the Manager's stream,
+  only in Chapter 3. `readLeaves()` settles one boss a reading: the
+  Manager's milestone, else the Grind, else a Manager rematch. The
+  milestone also holds off the hot chocolate, shortages and interludes.
+- `rendering/mycelium.js` draws it (`createManagerPainter()`), and
+  `effects.js`, `hud.js`, `resources.js`, `audio.js` and `music.js` follow
+  the Grind's patterns. `src/dev/manager.js` provides the dev-only entry
+  points `?debug&boss=manager&visit=N` and `?debug&progress=manager`.
+
+Chapter 3 is `CONFIG.chapters[2]` (`enemySpeed` 1.25, `spawnInterval` 0.95,
+`teas: { mushroom: 0 }`, `rushHour: true`); `leaveManager()` opens it with
+`advanceChapter()`. Rush Hour lives in `updateSpawning()`: where
+`rushAllowed()` (Chapter 3, three kills in, no puffballs or spice currents,
+no cooldown), one extra `rng.next()` per ordinary arrival rolls
+`CONFIG.rushHour.chance`; a rush (`state.rush`) spawns its leaves `gap`
+apart at `step` lanes either way, then waits `quiet` so the block takes as
+long as the ordinary arrivals it replaces. `clearField()` clears it.
+
+**Checkpoints.** Schema 5 adds the `manager` stream and the state fields
+`managerAfter`, `lastManager`, `managerVisits`, `managerDue`, `manager`
+(always null at a reading), `mushroomCups`, `strangeFirst` and `rush` (always
+null). `fromVersion4()` keeps everything a schema 4 save holds, seeds the
+new stream from the pot's seed, schedules the Manager for a pot already in
+Chapter 2 (its fifth Chapter 2 cup, or after the next cup if that has
+passed), and counts a pinned Mushroom Tea pot's cups. Each migration step
+checks the layout it reads; only the last validates. The 0.16.0 and 0.18.0
+fixtures replay identically with the Manager out of the way
+(`withoutManager()` in `tests/support/legacyPlay.js`), and match their
+recordings until it arrives after cup 10.

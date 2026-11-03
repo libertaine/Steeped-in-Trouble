@@ -14,6 +14,7 @@ export const PHASE = Object.freeze({
   DAY: 'day', // deliberate choice after all activities from the tenth reading
   CHOCOLATE: 'chocolate', // Hot Chocolate Havoc, between a reading and the next cup
   GRIND: 'grind', // The Daily Grind, the coffee boss, likewise between rounds
+  MANAGER: 'manager', // The Mycelium Manager, Chapter 2's boss, likewise between rounds
   SHORTAGE: 'shortage', // The Tea Shortage: buy, run, or skip, after a reading
   TEA_RUN: 'teaRun', // The Tea Run, the side-scrolling errand to the shop
   ARCADE_OFFER: 'arcadeOffer',
@@ -88,6 +89,7 @@ export function createInitialState() {
     goldenLeafTimer: null, // seconds until this cup's Golden Leaf appears, or null (gameplay/goldenLeaf.js)
     goldenLeaf: null, // the Golden Leaf on the field: { home, depth, phase, angle, radius, time, life }
     extraSugar: 0, // sugar bursts promised for the next cup on top of the usual
+    tray: null, // a Tea Tray treat waiting for the next normal cup (gameplay/teaTray.js), or null
     secrets: [], // secret ids the leaves noticed at the latest reading
     discovered: [], // unexpected brews (gameplay/combos.js) already announced this pot
     stir: { dir: 0, time: 0 }, // which way the spoon is turning (-1, 0, 1), and for how long
@@ -106,6 +108,17 @@ export function createInitialState() {
     lastGrind: 0, // the round after which the latest encounter came
     grindDue: false, // decided at each reading: the coffee boss before the next cup?
     grind: null, // the encounter in progress; see createGrind()
+
+    // The Mycelium Manager (gameplay/mycelium.js).
+    managerAfter: null, // the round the milestone encounter follows, once Chapter 2 is under way, until it is beaten
+    lastManager: 0, // the round after which the latest encounter came
+    managerVisits: 0, // rematches so far (each brings a new twist)
+    managerDue: false, // decided at each reading: the Manager before the next cup?
+    manager: null, // the encounter in progress; see createManager()
+
+    // Mushroom Tea's Strange Happenings are planned by Mushroom Tea cup, not by round.
+    mushroomCups: 0, // Mushroom Tea cups brewed this pot
+    strangeFirst: 0, // the Mushroom Tea cup (1-based) whose Strange Happening was the pot's first, or 0
 
     // The Tea Shortage and the Tea Run (gameplay/shortage.js, gameplay/teaRun.js).
     teaCash: 0, // pocket money for this pot; never part of the score
@@ -129,6 +142,8 @@ export function createInitialState() {
     enemies: [],
     clouds: [], // { angle, time, duration, spread, drift }
     pulse: 0, // seconds left of milk's recovery pulse, which slows every leaf in a normal round
+    spores: [], // Mushroom Tea's spore clouds: { angle, radius, time, duration } (gameplay/mushroom.js)
+    rush: null, // Chapter 3's Rush Hour: { left, center, step, gap, quiet } under way, or { left: 0, cooldown } after one
     residue: [], // { lane, radius, angle, spin, size }
     roundStats: createRoundStats(),
   };

@@ -46,12 +46,44 @@ export function signature(game, streams = Object.keys(game.exportRandom())) {
     heat: s.heat, chapter: s.progress.chapter, random: Object.fromEntries(streams.map((id) => [id, random[id]])) };
 }
 
-/** Restore a checkpoint and play `rounds` more cups, recording each reading. */
-export function continueFrom(createGame, checkpoint, rounds, streams) {
+/**
+ * A reading as a release before the Tea Tray (0.19.0) would have recorded it:
+ * the tray's cards dropped from the offer, and an offer left empty is none.
+ * The tray draws no random numbers, so everything else must already match.
+ */
+export function withoutTray(reading) {
+  if (!reading.offer) return reading;
+  const offer = reading.offer.filter((id) => !id.startsWith('tray'));
+  return { ...reading, offer: offer.length ? offer : null };
+}
+
+/** The schema 5 (0.19.0) state: the Manager's schedule and Mushroom Tea's cup count. */
+export const V5_KEYS = Object.freeze(['managerAfter', 'lastManager', 'managerVisits', 'managerDue', 'manager',
+  'mushroomCups', 'strangeFirst', 'rush']);
+
+/** A copy of an object without some keys. */
+export const omit = (o, keys) => Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k)));
+
+/**
+ * Keep The Mycelium Manager (0.19.0) out of a pot recorded before it existed,
+ * so everything else can be checked against the recording for every cup.
+ * It draws only from its own stream, so this changes nothing else.
+ */
+export function withoutManager(game) {
+  game.state.managerAfter = null;
+}
+
+/**
+ * Restore a checkpoint and play `rounds` more cups, recording each reading,
+ * with the Manager kept out of the way unless `manager` is set.
+ */
+export function continueFrom(createGame, checkpoint, rounds, streams, { manager = false } = {}) {
   const game = createGame({ checkpoint: structuredClone(checkpoint) });
   const out = [];
   for (let i = 0; i < rounds; i++) {
+    if (!manager) withoutManager(game);
     leave(game);
+    if (!manager) withoutManager(game);
     killLast(game);
     out.push(signature(game, streams));
   }

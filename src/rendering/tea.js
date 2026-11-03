@@ -12,6 +12,7 @@ import { LANE_STEP, TAU, angleDifference, toCanvasPoint as polar } from '../game
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
 import { grindInProgress } from '../gameplay/grind.js';
+import { managerInProgress } from '../gameplay/mycelium.js';
 
 const { centerX: CX, centerY: CY, rimRadius: RIM } = CONFIG.arena;
 
@@ -54,9 +55,25 @@ const TEA_LIQUIDS = {
     base: ['#8e5a5e', '#734552', '#45283c', '#22121e'],
     light: ['#f2a2ba', '#e6c070', '#cfe0a0', '#f6c6d6'], dark: '#140810', spin: 0.6, calm: 0.55,
   },
+  // A mushroom broth with an oily sheen: violet, teal and rose over umber.
+  mushroom: {
+    base: ['#6a4a3c', '#523646', '#30203a', '#160c1b'],
+    light: ['#c9a2e8', '#8fdcc6', '#e7b0cf', '#d7c08e'], dark: '#0d0611', spin: 0.8, calm: 0.9,
+  },
 };
 
+// Mushroom Tea's sheen: broad soft colours that drift slowly round the cup,
+// beneath every leaf. Only the liquid's colour moves; nothing in play does.
+const SHEEN = [
+  { color: '#b07ae0', r: 120, angle: 0.4, size: 150 },
+  { color: '#62d6b8', r: 150, angle: 2.5, size: 130 },
+  { color: '#e38ab8', r: 95, angle: 4.4, size: 120 },
+];
+
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+// The Cup Is Breathing (rendering/strange.js): how far the broth swells, by quality.
+const BREATH_SWELL = CONFIG.strange.breathing.swell;
 
 const rgbCache = new Map();
 function rgb(hex) {
@@ -578,6 +595,14 @@ export function createTea({ random = Math.random } = {}) {
       for (let i = 0; i < 70; i++) crystal(p.x, p.y, 170, rnd(0.5, 1.4), '#fff8ee');
     },
 
+    // The Mycelium Manager: the tea stays tea, but something stirs underneath.
+    managerStart() {
+      liquid.wisps = [];
+      kick(0.5);
+      ripple(CX, CY, { size: RIM * 1.05, life: 3, strength: 1.1, rings: 2, tone: '#9be8c0' });
+      glow(CX, CY, 180, '#5a8a6a', 2.6, 0.7);
+    },
+
     // The Daily Grind.
     grindStart() {
       // The tea goes dark and bitter, from the middle outward.
@@ -683,7 +708,9 @@ export function createTea({ random = Math.random } = {}) {
       const reading = phase === PHASE.READING;
       const havoc = havocInProgress(state);
       const grind = grindInProgress(state);
-      const toasting = (phase === PHASE.CHOCOLATE && havoc.stage === 'play') || (phase === PHASE.GRIND && grind.stage === 'fight');
+      const manager = managerInProgress(state);
+      const toasting = (phase === PHASE.CHOCOLATE && havoc.stage === 'play') || (phase === PHASE.GRIND && grind.stage === 'fight')
+        || (phase === PHASE.MANAGER && manager.stage === 'fight');
       const stormy = playing && state.fortune === 'tempest'; // Tempestuous Tea
 
       // Pausing lets the tea settle to a standstill rather than freezing mid-slosh.
@@ -877,6 +904,7 @@ export function createTeaPainter(main) {
   const xs = new Float64Array(MAX_POINTS);
   const ys = new Float64Array(MAX_POINTS);
   const ws = new Float64Array(MAX_POINTS);
+  let breathGlow = 0; // while the cup breathes, the meniscus brightens with each breath
 
   function layer(res) {
     const g = offscreen(Math.ceil(BOX * res)).getContext('2d');
@@ -1064,6 +1092,24 @@ export function createTeaPainter(main) {
     ctx.globalAlpha = 1;
   }
 
+  /** Mushroom Tea's sheen. High quality drifts and breathes; low quality and reduced motion hold still. */
+  function drawSheen(liquid) {
+    const { from, to, blend } = liquid.variety;
+    const share = (to === 'mushroom' ? blend : 0) + (from === 'mushroom' ? 1 - blend : 0);
+    const amount = share * (1 - liquid.choco);
+    if (amount < 0.01) return;
+    const moving = detail.bloom && !liquid.reduced;
+    const t = moving ? liquid.time : 0;
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [i, s] of SHEEN.entries()) {
+      const p = polar(s.r + 18 * Math.sin(t * 0.21 + i), s.angle + t * 0.06 * (i % 2 ? -1 : 1));
+      ctx.globalAlpha = amount * (0.13 + 0.05 * Math.sin(t * 0.4 + i * 2));
+      blot(s.color, p.x, p.y, s.size);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
   function drawGlows(liquid) {
     ctx.globalCompositeOperation = 'lighter';
     for (const g of liquid.glows) {
@@ -1082,7 +1128,8 @@ export function createTeaPainter(main) {
     ctx.strokeStyle = '#f3d9a4';
     ctx.lineWidth = 1.1;
     const havoc = havocInProgress(state);
-    const beans = grindInProgress(state)?.beans.map((b) => ({ ...b, size: CONFIG.grind.beanSize, alpha: 0.7 }));
+    const beans = grindInProgress(state)?.beans.map((b) => ({ ...b, size: CONFIG.grind.beanSize, alpha: 0.7 }))
+      ?? managerInProgress(state)?.memos.map((memo) => ({ ...memo, size: CONFIG.manager.memoSize, alpha: 0.6 }));
     const floaters = havoc && havoc.stage !== 'outro' ? havoc.marshmallows.map((m) => ({ ...m, alpha: 0.55 })) : beans ?? state.enemies;
     for (const e of floaters) {
       const ux = Math.cos(e.angle);
@@ -1429,7 +1476,7 @@ export function createTeaPainter(main) {
       const n = 0.5 + 0.5 * Math.sin(a * 3 + t * 0.5 + Math.sin(a * 2 - t * 0.3)) * Math.sin(a * 5 - t * 0.8);
       const lit = Math.max(0, Math.cos(a + 2.25));
       const near = angleDifference(a, spoon.angle);
-      const alpha = 0.05 + 0.16 * n * n + 0.12 * lit + stirGlow * Math.exp(-(near * near) / 0.03);
+      const alpha = (0.05 + 0.16 * n * n + 0.12 * lit + stirGlow * Math.exp(-(near * near) / 0.03)) * (1 + breathGlow);
       levels[Math.min(STEPS - 1, Math.floor(alpha * STEPS * 1.6))].push(a);
     }
     ctx.globalCompositeOperation = 'lighter';
@@ -1449,13 +1496,47 @@ export function createTeaPainter(main) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  /** The breath's colour, welling up from the middle of the broth: violet on the way in, rose on the way out. */
+  function drawBreathColor(breathing) {
+    const b = breathing.intensity * breathing.breath;
+    if (b < 0.01) return;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.16 * b;
+    blot(mixHex('#b07ae0', '#e38ab8', breathing.breath), CX, CY, 150 + 90 * breathing.breath);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** Exhaled rings, running out from the middle to the porcelain. */
+  function drawBreathRings(breathing) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = '#e7b0cf';
+    for (const u of breathing.rings) {
+      const echoes = detail.bloom ? [0, 0.12] : [0];
+      for (const lag of echoes) {
+        const v = u - lag;
+        if (v <= 0) continue;
+        ctx.globalAlpha = 0.2 * (1 - v) * breathing.intensity * (lag ? 0.5 : 1);
+        ctx.lineWidth = 3 + 14 * (1 - v);
+        ctx.beginPath();
+        ctx.arc(CX, CY, 20 + (RIM - 30) * (1 - (1 - v) ** 2), 0, TAU);
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
   return {
     /**
      * Draw the whole liquid surface, clipped to the cup.
      * @param {object} liquid tea state from createTea()
      * @param {object} state simulation state (read only)
+     * @param {{ quality?: string, scale?: number, breathing?: object }} [options] breathing: the
+     *   Strange Happening's breath, if the cup is breathing. Only the liquid's picture swells (never
+     *   below its own size, and never with reduced motion); the leaves and the rim stay exactly put.
      */
-    paint(liquid, state, { quality = 'high', scale = 1 } = {}) {
+    paint(liquid, state, { quality = 'high', scale = 1, breathing = null } = {}) {
       detail = QUALITY[quality] ?? QUALITY.high;
       prepare(detail.fullResolution ? Math.max(1, Math.min(2, scale)) : 1);
       ctx = soft;
@@ -1510,9 +1591,11 @@ export function createTeaPainter(main) {
       drawCocoaSwirls(liquid);
       drawWisps(liquid);
       drawTint(liquid);
+      drawSheen(liquid);
       drawGlows(liquid);
       drawHighlights(liquid);
       drawReadingGlow(liquid);
+      if (breathing) drawBreathColor(breathing);
       ctx.strokeStyle = cached.shadow;
       ctx.lineWidth = 50;
       ctx.beginPath();
@@ -1524,7 +1607,11 @@ export function createTeaPainter(main) {
       ctx.beginPath();
       ctx.arc(CX, CY, RIM, 0, TAU);
       ctx.clip();
-      ctx.drawImage(soft.canvas, ORIGIN_X, ORIGIN_Y, BOX, BOX);
+      const b = breathing ? breathing.intensity * breathing.breath : 0;
+      const swell = liquid.reduced ? 0 : b * (detail.bloom ? BREATH_SWELL.high : BREATH_SWELL.low);
+      ctx.drawImage(soft.canvas, ORIGIN_X - (BOX * swell) / 2, ORIGIN_Y - (BOX * swell) / 2, BOX * (1 + swell), BOX * (1 + swell));
+      breathGlow = 1.2 * b;
+      if (breathing?.rings.length) drawBreathRings(breathing);
       drawWakes(state);
       drawRipples(liquid);
       drawSurges(liquid);

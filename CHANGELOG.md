@@ -5,6 +5,38 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-11-03 — The Cup Has Gone Fungal
+
+*There is something growing in the tea. It has a manager.*
+
+- **Mushroom Tea:** puffballs release spore clouds, and sprouts make the
+  familiar cup behave a little less familiarly. Beat the Mycelium Manager
+  to open Chapter 3; its first cup introduces Mushroom Tea before it joins
+  the rotation.
+- **Strange Happenings:** Time Rewind, Breathing Cup and Impostor Spoon
+  interrupt Mushroom Tea with theatrical surprises. Their schedule follows
+  Mushroom Tea cups and continues across saved pots.
+- **The Mycelium Manager:** cut back roots, pop memos and dodge all-hands
+  meetings. Rematches escalate with The Reorg, Back-to-Back Meetings,
+  Synergy and combinations of those twists.
+- **Chapter 3 and Rush Hour:** a faster late-game pace, with occasional
+  spread-out arrivals in eligible teas. Days still control Heat; Chapters
+  control content. Rush Hour remains an initial version for tester feedback.
+- **Tea Tray:** temporary rewards keep late-game offers useful after
+  permanent spoon upgrades are exhausted.
+- **Fortune distribution:** readings use the last 16 settled leaves and a
+  revised Spiral threshold, so busy cups no longer overwhelmingly favor
+  the Spiral pattern. Milk and concentrated play retain their identities.
+- **Saved-pot compatibility:** additive checkpoint migrations preserve
+  earlier saved pots, including 0.16.0 and 0.18.0 fixtures; the current
+  checkpoint schema is 5.
+
+Desktop keyboard play remains the primary experience. Mobile testing has
+primarily used browser emulation. Additional human gameplay testing was
+waived for publication; Manager difficulty, phone readability and Rush Hour
+feel remain open to public tester feedback. The Manager currently shares
+The Daily Grind's musical arrangement.
+
 ## [0.18.0] - 2026-11-02 — Room for Tea
 
 *The cup has finally found some room to breathe.*

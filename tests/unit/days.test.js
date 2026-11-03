@@ -173,7 +173,7 @@ describe('sixty completed normal rounds', () => {
       expect(rows[i].target).toBe(Math.min(32, 16 + 2 * expected));
       expect(rows[i].day).toBe(Math.floor(i / 10) + 1);
     }
-    expect(game.state.round).toBe(61); expect(game.state.progress.chapter).toBe(2);
+    expect(game.state.round).toBe(61); expect(game.state.progress.chapter).toBe(3);
   });
 
   it('keeps chapter unlocks, tea selection and adventure scheduling identical across policies', () => {

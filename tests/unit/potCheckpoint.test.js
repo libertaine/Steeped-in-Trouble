@@ -25,7 +25,7 @@ describe('Mulberry32 cursor continuity', () => {
 });
 
 describe('genuine normal-round checkpoints', () => {
-  it.each([1, 8, 9, 10, 12, 19, 27, 31])('restores the complete logical reading after round %s', (round) => {
+  it.each([1, 8, 9, 10, 11, 12, 19, 20, 27, 31])('restores the complete logical reading after round %s', (round) => {
     const { game, checkpoint } = checkpointAfter(round, { day: round > 20 ? 'fresh' : 'keep' });
     const before = game.exportRandom();
     expect(Object.keys(checkpoint.random)).toEqual(RANDOM_STREAMS);
@@ -36,8 +36,10 @@ describe('genuine normal-round checkpoints', () => {
     expect(checkpoint.state.nextFortune).toBeTruthy();
     if (round === 1) expect(checkpoint.state.offer).not.toBeNull();
     if (round === 9) expect(checkpoint.state.shortageDue).toBe(true);
-    if (round === 10) expect(checkpoint.state.dayPending).toBe(true);
-    if (round === 19) expect(checkpoint.state.arcadeDue).toBe('biscuitBreakout');
+    if (round === 10) expect(checkpoint.state).toMatchObject({ dayPending: true, managerDue: true }); // Chapter 2's fifth cup
+    if (round === 11) expect(checkpoint.state).toMatchObject({ tea: 'mushroom', teaAge: 1, mushroomCups: 1, progress: { chapter: 3 } });
+    if (round === 19) expect(checkpoint.state).toMatchObject({ managerDue: true, arcadeDue: null }); // a rematch; the biscuits wait
+    if (round === 20) expect(checkpoint.state.arcadeDue).toBe('biscuitBreakout');
     if (round >= 8) expect(Object.values(checkpoint.state.spoon).some((n) => n > 0)).toBe(true);
   });
   it.each([[1, 'fresh'], [1, 'keep'], [31, 'fresh'], [31, 'keep']])('matches uninterrupted choices and encounters from checkpoint %s through round 40: %s', (start, day) => {
@@ -75,6 +77,7 @@ describe('genuine normal-round checkpoints', () => {
     leaveReading(game);
     const s = game.state;
     s.grindAfter = null; s.lastGrind = round; s.havocAfter = round + 100;
+    s.managerAfter = null; s.lastManager = s.progress.chapter >= 3 ? round : 0; // no boss at this reading
     s.shortageAfter = round + 100;
     for (const other of Object.keys(s.arcade.after)) s.arcade.after[other] = other === id ? round : round + 100;
     finishNormal(game);

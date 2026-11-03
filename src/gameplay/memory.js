@@ -75,10 +75,12 @@ export function rememberRound(record, fortuneId, { secrets = 0 } = {}) {
     add(1, 'veilPattern', `Milk helped defeat ${record.milkKills} ${plural(record.milkKills, 'leaf', 'leaves')}.`,
       'Milk-soaked leaves formed a strong Veil pattern.', ['veil']);
   } else if (pattern === 'crown') {
-    add(1, 'crownPattern', `${leaves.maxCluster} of ${leaves.total} ${plural(leaves.total, 'leaf', 'leaves')} settled close together.`,
+    const of = leaves.buried ? `the last ${leaves.total}` : leaves.total;
+    add(1, 'crownPattern', `${leaves.maxCluster} of ${of} ${plural(leaves.total, 'leaf', 'leaves')} settled close together.`,
       'The concentrated pattern favored The Crown.', ['crown']);
   } else if (pattern === 'spiral') {
-    add(1, 'spiralPattern', `Leaves settled across ${leaves.occupiedLanes} of ${LANES} lanes.`,
+    const which = leaves.buried ? `The last ${leaves.total} leaves` : 'Leaves';
+    add(1, 'spiralPattern', `${which} settled across ${leaves.occupiedLanes} of ${LANES} lanes.`,
       'The scattered pattern favored The Spiral.', ['spiral']);
   }
   if (escapes > 0) {

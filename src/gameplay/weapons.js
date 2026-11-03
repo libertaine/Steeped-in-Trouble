@@ -217,8 +217,8 @@ export function findStrikingShot(shots, enemy) {
   return -1;
 }
 
-/** Points for destroying a leaf with a given dart under the round's modifiers. */
-export function killScore(shot, modifiers) {
+/** Points for destroying a leaf with a given dart under the round's modifiers (and any bonus, such as giggling). */
+export function killScore(shot, modifiers, bonus = 1) {
   const base = shot.sugar ? CONFIG.scoring.sugarKill : CONFIG.scoring.steamKill;
-  return Math.round(base * modifiers.scoreMultiplier);
+  return Math.round(base * modifiers.scoreMultiplier * bonus);
 }

@@ -89,6 +89,21 @@ export const CONFIG = deepFreeze({
     escapeInset: 3, // escapes when within this distance of the rim
   },
 
+  // Rush Hour (Chapter 3): now and then three leaves arrive close together in
+  // time but spread round the cup, about a third of the way apart, then a
+  // quiet spell makes up the time, so the average arrival rate is unchanged.
+  // (Bunched in neighbouring lanes, the bot sweeps measured no difference.)
+  // Never in Mushroom Tea or Chai cups, whose puffballs and currents have
+  // bursts of their own.
+  rushHour: {
+    chance: 0.1, // per ordinary arrival, once allowed
+    leaves: 3,
+    gap: 0.45, // seconds between a rush's arrivals (never below days.minSpawnInterval)
+    apart: [5, 6], // lanes between a rush's arrivals, either way round (one of these, at random)
+    afterKills: 3, // not before this many leaves of the cup have gone
+    cooldown: 5, // ordinary arrivals before another rush can start
+  },
+
   spawning: {
     firstDelay: 0.95,
     jitterMin: 0.72, // each gap is the chapter's interval (CONFIG.chapters) times a random factor between these
@@ -139,6 +154,15 @@ export const CONFIG = deepFreeze({
       spawnInterval: 1,
       teas: { chai: 0, green: 2, black: 4 },
     },
+    {
+      // Opened by beating The Mycelium Manager. Mushroom Tea comes on tap at
+      // once, so the chapter's first cup is always Mushroom Tea (debutTea()).
+      name: 'The Cup Has Gone Fungal',
+      enemySpeed: 1.25, // a step up just where Keep the Kettle On's Heat is gentlest (cups 11–20)
+      spawnInterval: 0.95,
+      teas: { mushroom: 0 },
+      rushHour: true, // CONFIG.rushHour
+    },
   ],
 
   residue: {
@@ -154,9 +178,14 @@ export const CONFIG = deepFreeze({
 
   fortunes: {
     veilMilkKills: 3, // milk kills needed for The Veil
+    // The pattern is read from the top layer: the last leaves to settle. A
+    // fixed sample keeps each pattern about as likely at the 32-leaf cap as in
+    // the 16-leaf first cup (issue #15); with every leaf counted, more kills
+    // meant more lanes covered, and The Spiral crowded out The Star.
+    topLayer: 16,
     crownClusterWidth: 3, // adjacent lanes examined for The Crown
-    crownClusterShare: 0.4, // share of leaves that must sit in that cluster
-    spiralOccupiedLanes: 10, // distinct lanes holding leaves for The Spiral
+    crownClusterShare: 0.4, // share of the top layer that must sit in that cluster
+    spiralOccupiedLanes: 11, // distinct lanes the top layer covers for The Spiral
     crownBonusSugar: 1,
     veilMilkBonus: 2.5,
     spiralScoreMultiplier: 1.25,
@@ -189,6 +218,12 @@ export const CONFIG = deepFreeze({
     choices: 2,
     polishedSpeed: 0.2, // Polished Spoon: steam speed per level
     quickStirSpeed: 0.15, // Quick Stir: turn speed per level
+  },
+
+  // The Tea Tray (gameplay/teaTray.js): one-cup treats that fill an upgrade
+  // offer once fewer upgrades can improve than it has cards.
+  teaTray: {
+    goldenSpoon: 9, // A Golden Moment: seconds of Golden Spoon from the next cup's start
   },
 
   // The Golden Spoon: a temporary transformation from the golden sugar cube.
@@ -368,6 +403,60 @@ export const CONFIG = deepFreeze({
     fullCupPoints: 150, // instead of a cup the player has no room for
   },
 
+  // The Mycelium Manager: Chapter 2's milestone boss (gameplay/mycelium.js).
+  // A fight over territory: roots claim lanes, memos are the only way to hurt
+  // it, and all-hands meetings scald the lanes it has claimed. Scalds, their
+  // safe window and hit width, the clock and the rewards are The Daily
+  // Grind's (CONFIG.grind), so both bosses play by the same rules.
+  manager: {
+    milestoneCup: 5, // the first encounter follows Chapter 2's fifth cup…
+    retryAfter: 2, // …and, if it gets away, comes back this many normal rounds later, until beaten
+    minGap: 4, // once beaten, rematches: at least this many normal rounds apart…
+    chance: 0.25, // …then this chance after each round (never alongside another boss or the hot chocolate)
+    introTime: 4.6,
+    health: 56,
+    bodyRadius: 84, // steam stops here, with a papery thump
+    memoDamage: 5, // a popped memo's spores, blown back into the Manager: twelve to win
+
+    // Roots: one per lane, growing out from the Manager's base.
+    rootSprout: 1, // seconds the base of a new root glows before it grows
+    rootSpeed: [17, 23], // units per second [calm, furious]
+    rootGap: [2.2, 1.6], // seconds between new roots
+    meetingLine: 0.5, // share of the way from the body to the rim past which a root's lane is invited
+    cutBack: 55, // units each steam dart cuts a root back (sugar clears it)
+    maxRoots: 9,
+
+    // Memos: puffballs that drift out to the rim and file themselves there.
+    memoSpeed: [48, 62],
+    memoGap: [2, 1.5],
+    // The twists change the mix, not the supply: Reorg's pairs come half as
+    // often, and under Synergy most memos have to be earned by cutting roots.
+    twistMemoGap: { reorg: 2, synergy: 1.5 },
+    memoReach: [3, 6], // lanes from the spoon a memo sets out along…
+    memoAlongRoots: 0.7, // …and this often along a root there, if there is one
+    memoSize: 13,
+    maxMemos: 6,
+    puffSpeed: 520, // the spores of a popped memo, back down the lane
+
+    // All-hands meetings.
+    meetingGap: [7, 5.5], // seconds from the end of one meeting to the next
+    warn: [2, 1.6], // the invitation, never shorter than minWarn
+    minWarn: 1.4,
+    ringSpeed: 760, // the meeting's ring, from the body out to the rim
+    maxInvited: 11, // never more lanes than this…
+    pocketReach: 4, // …and always two adjacent safe lanes within this many lanes of the spoon,
+    pocketWalk: 2.5, // preferring, when lanes must be let off, a pair about this far away
+    secondWave: { delay: 1.2, halfWidth: 2 }, // Back-to-Back Meetings: lanes this far either side of the spoon
+
+    // When things start, seconds into the fight. The first encounter brings
+    // one thing at a time; rematches get on with it.
+    lesson: { root: 0.8, memo: 6, meeting: 13 },
+    rematch: { root: 0.6, memo: 2, meeting: 8 },
+
+    memoPoints: 5,
+    rootPoints: 2,
+  },
+
   // Strange Brews: the tea variety brewed for each normal round (gameplay/teas.js).
   teas: {
     weightCap: 4, // a variety's draw weight grows by 1 per round since it was last served, up to this
@@ -414,6 +503,88 @@ export const CONFIG = deepFreeze({
     latestAt: 130, // a wanderer somehow further out than this when its turn comes stays in its lane
     warnTime: [0.8, 0.65, 0.55], // by stage
     glideTime: 0.35,
+  },
+
+  // Mushroom Tea's puffballs (gameplay/mushroom.js), brewed from Chapter 3 (or
+  // pinned with ?tea=mushroom). A puffball rises slowly; popped, it leaves a
+  // spore cloud; left alone past its ripening radius, it swells, then splits
+  // into sprouts in the lanes either side, never beyond the cup's leaf limit.
+  puffballs: {
+    chance: [0.12, 0.18, 0.24], // by stage: share of new leaves that are puffballs
+    speed: 0.85, // a puffball rises at this share of an ordinary leaf's speed
+    size: 13,
+    ripeMin: 125, // swelling starts once a puffball passes a radius between these
+    ripeMax: 150,
+    warnTime: [1.1, 0.95, 0.8], // by stage: seconds of visible swelling before it splits…
+    warnPace: 0.4, // …rising at this share of its speed
+    sprouts: 2, // little leaves it splits into, one lane either side (fewer if the cup is full)
+    sproutSize: 7,
+    sproutSpeed: 1.2, // share of the puffball's speed (about an ordinary leaf's)
+    sproutGlide: 0.3, // seconds a sprout takes to slide out into its own lane
+  },
+  // The cloud a popped puffball leaves where it was: leaves inside giggle,
+  // hardly rising, and score more if destroyed while giggling.
+  spores: {
+    duration: 2.5,
+    radius: 58, // units from where the puffball popped (about a lane either side, mid-cup)
+    hold: 0.1, // giggling leaves rise at this share of their speed (milk's slowdown never stacks with it)
+    linger: 0.4, // seconds a leaf keeps giggling after leaving a cloud
+    scoreBonus: 1.5,
+    max: 4, // clouds at once; the oldest clears first
+  },
+  // Mushroom Tea's Strange Happenings (rendering/strange.js): presentation
+  // only. The simulation never sees them; a rewind only holds its clock still,
+  // like a pause. Prototype tuning, meant to be playtested.
+  strange: {
+    // Counted in Mushroom Tea cups, not rounds: the 2nd Mushroom Tea cup of a pot,
+    // the 3rd, and so on, whatever was brewed in between.
+    firstCup: 2, // the first is due in this Mushroom Tea cup (never the first), and waits for a later one if it cannot happen safely…
+    gaps: [[2, 0.45], [3, 0.4], [4, 0.15]], // …then this many Mushroom Tea cups after it: [cups, weight]
+    weights: { rewind: 0.4, breathing: 0.3, impostor: 0.3 }, // never the same one twice running
+    startMin: 5, // seconds of play into the cup, before any wait for a quiet moment
+    startMax: 14,
+    rimClearance: 50, // no happening starts while a leaf is this close to the rim
+    silence: 0.35, // share of later happenings that pass without a word
+    rewind: {
+      sampleRate: 20, // history samples per second of play
+      history: 3.5, // seconds kept
+      back: 3, // seconds shown in reverse
+      hiccup: 0.12, // the moment it catches, before anything moves
+      reverse: 1, // seconds to wind back…
+      hold: 0.3, // …a beat at the far end…
+      forward: 0.55, // …and back to now
+      settle: 0.3, // the tint clears while play resumes
+      waitForKill: 5, // seconds it waits for a leaf to fall (so one can come back), then goes anyway
+      stills: [1, 2, 3], // reduced motion: seconds back of each still frame…
+      still: 0.35, // …each shown this long
+      maxEnemies: 24,
+      maxShots: 48,
+      maxSpores: 4,
+      maxResidue: 40,
+    },
+    breathing: {
+      duration: 12.5,
+      breath: 4.2, // seconds per breath (in, then out)
+      fadeIn: 2,
+      fadeOut: 2.5,
+      swell: { high: 0.035, low: 0.02 }, // how far the broth expands (never with reduced motion)
+      ringTime: 2, // seconds an exhaled ring takes to reach the rim
+    },
+    impostor: {
+      duration: 10,
+      delay: 1, // seconds behind the real spoon
+      appear: 0.9,
+      vanish: 1,
+      opacity: 0.5,
+      gestures: [3.2, 6], // seconds in when its two gestures begin
+      lap: 1.6, // a flourish: one full lap of the cup in this long
+      mirror: 2.2, // seconds walking the other way
+      bow: 1.2, // reduced motion's gesture instead
+      personalSpace: 0.16, // radians: closer than this to the real spoon and it steps aside…
+      sidestep: 0.26, // …to this far
+      puffs: 10, // harmless rings of pretend steam on screen at once
+      puffLife: 0.5,
+    },
   },
 
   // Chai's spice currents: on a fixed clock, every leaf in the cup is carried one lane sideways.
