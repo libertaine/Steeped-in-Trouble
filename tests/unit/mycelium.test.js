@@ -366,6 +366,26 @@ describe('the twists', () => {
     for (const lane of m.meeting.lanes) expect(Math.abs(signed(lane, 4))).toBeLessThanOrEqual(M.secondWave.halfWidth);
   });
 
+  it('change the mix of memos, not how many there are to pop', () => {
+    /** Memos released in 30 s of a fight with nothing else going on, nothing popped and nothing cut. */
+    const supply = (appearance) => {
+      const game = arena({ appearance, quiet: false });
+      Object.assign(game.state.manager, { rootTimer: Infinity, meetingTimer: Infinity, health: M.health });
+      const memos = [];
+      for (let t = 0; t < 30; t += 1 / 60) {
+        game.update(1 / 60);
+        for (const e of game.drainEvents()) if (e.type === 'memo') memos.push(...e.lanes);
+        game.state.manager.memos = []; // out of the way, so the limit never holds any back
+      }
+      return memos.length;
+    };
+    const plain = supply(2 + 2); // Synergy alone, for its own check below
+    const base = supply(3); // Back-to-Back Meetings: the plain memo supply
+    expect(supply(2) / base).toBeGreaterThan(0.85); // The Reorg: pairs, half as often
+    expect(supply(2) / base).toBeLessThan(1.15);
+    expect(plain / base).toBeLessThan(0.8); // Synergy: most must be earned by cutting roots
+  });
+
   it('Synergy: cutting a root clear drops a memo from its base', () => {
     const game = arena({ appearance: 4 });
     const m = game.state.manager;

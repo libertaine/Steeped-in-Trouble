@@ -413,6 +413,9 @@ export const CONFIG = deepFreeze({
     // Memos: puffballs that drift out to the rim and file themselves there.
     memoSpeed: [48, 62],
     memoGap: [2, 1.5],
+    // The twists change the mix, not the supply: Reorg's pairs come half as
+    // often, and under Synergy most memos have to be earned by cutting roots.
+    twistMemoGap: { reorg: 2, synergy: 1.5 },
     memoReach: [3, 6], // lanes from the spoon a memo sets out along…
     memoAlongRoots: 0.7, // …and this often along a root there, if there is one
     memoSize: 13,

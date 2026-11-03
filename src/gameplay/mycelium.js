@@ -269,7 +269,7 @@ function updateMemos(sim, dt) {
   if (m.meeting?.stage === 'warn') return; // and no new memos while it is
   m.memoTimer -= dt;
   if (m.memoTimer > 0) return;
-  m.memoTimer = by(M.memoGap, fury(m));
+  m.memoTimer = by(M.memoGap, fury(m)) * m.twists.reduce((scale, twist) => scale * (M.twistMemoGap[twist] ?? 1), 1);
   releaseMemos(sim);
 }
 
