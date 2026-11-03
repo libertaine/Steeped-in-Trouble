@@ -56,6 +56,12 @@ const KARMA = '#ffa6d9'; // Karma's rim and the leaves it has warned
 const DART = '#d9f59a';
 const WANDER = '#d7c2f6';
 const SPICE = '#ffb85c';
+// Mushroom Tea: the puffball, its ripening warning, and its spores.
+const PUFF = '#efe2d4';
+const PUFF_SPOTS = '#a46fb8';
+const RIPE = '#ffa25c';
+const SPORE = '#8ef0dc';
+const SPORE_RADIUS = CONFIG.spores.radius;
 
 /** Is the spoon aiming right now (a round, the toasting, or the boss fight in progress, or paused during one)? */
 function aiming(state) {
@@ -1076,7 +1082,10 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     const p = polar(e.radius, e.angle);
     const lively = reduced ? 0 : 1;
     const scale = e.size * (1 + Math.sin(time * 7 + e.wiggle) * 0.08 * lively);
-    const rotation = e.angle + Math.PI / 2 + Math.sin(time * 3 + e.wiggle) * 0.3 * lively;
+    const giggling = e.giggle > 0;
+    // Giggling leaves wobble on the spot: rotation only, never position.
+    const rotation = e.angle + Math.PI / 2 + Math.sin(time * 3 + e.wiggle) * 0.3 * lively
+      + (giggling ? Math.sin(time * 22 + e.wiggle) * 0.45 * lively : 0);
     // A soft shadow lifts the leaf off the tea so it never melts into the currents.
     circle(p.x + 1.5, p.y + 2.5, scale * 1.15, '#0c0501', 0, true, e.alpha * 0.4);
     if (e.kind === 'darter') {
@@ -1114,9 +1123,30 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       const leaning = e.wander?.stage === 'warning';
       circle(p.x, p.y, scale + 4, WANDER, leaning ? 1.4 : 0.8, false, e.alpha * (leaning ? 0.8 : 0.45));
       if (leaning) wanderArrow(e, e.alpha * (0.7 + 0.3 * Math.sin(time * 14) * lively));
+    } else if (e.kind === 'puffball') {
+      drawPuffball(e, p, lively);
+    } else if (e.kind === 'sprout') {
+      leafShape(p.x, p.y, scale, rotation, '#d9cf9c', e.alpha);
+      // A tiny cap on the stem: it came out of a puffball.
+      const cap = polar(e.radius - scale * 0.9, e.angle);
+      circle(cap.x, cap.y, 3.2, PUFF_SPOTS, 0, true, e.alpha);
+      circle(p.x, p.y, scale + 3.5, RIPE, 0.9, false, e.alpha * 0.5);
     } else {
       leafShape(p.x, p.y, scale, rotation, '#dcb877', e.alpha);
       circle(p.x, p.y, scale + 4, '#ead199', 0.65, false, e.alpha * 0.3);
+    }
+    if (giggling) {
+      // Giggling in the spores: a dotted teal ring (it spins unless motion is reduced).
+      ctx.save();
+      ctx.globalAlpha = e.alpha * Math.min(1, e.giggle / CONFIG.spores.linger) * 0.85;
+      ctx.strokeStyle = SPORE;
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([2.5, 3.5]);
+      ctx.lineDashOffset = -time * 14 * lively;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, scale + 5, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
     }
     if (e.karma) {
       // Warned once by Karma: a rose ring, broken like a return arrow. Next time it reaches the rim, poof.
@@ -1134,6 +1164,128 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       const tail = polar(e.radius + scale + Math.min(40, e.backwash * 0.45), e.angle);
       const head = polar(e.radius + scale * 0.6, e.angle);
       line(head, tail, '#f6efe2', 3.5, Math.min(0.6, e.backwash / 60) * e.alpha);
+    }
+  }
+
+  /**
+   * A puffball: a pale, spotted cap. Swelling, it grows, shivers in place and
+   * glows amber, and two marks show the lanes its sprouts will slide into.
+   * Reduced motion keeps the swelling, the glow and the marks, without the shiver.
+   */
+  function drawPuffball(e, p, lively) {
+    const puff = e.puff;
+    const ripening = puff?.stage === 'swelling' ? Math.min(1, puff.time / puff.warn) : 0;
+    const size = e.size * (1 + 0.35 * ripening) * (1 + Math.sin(time * 4 + e.wiggle) * 0.04 * lively);
+    const shiver = ripening ? Math.sin(time * 48) * 1.6 * ripening * lively : 0;
+    const q = polar(e.radius, e.angle + shiver / Math.max(30, e.radius));
+    ctx.save();
+    ctx.globalAlpha = e.alpha;
+    ctx.translate(q.x, q.y);
+    ctx.rotate(e.angle + Math.PI / 2);
+    ctx.fillStyle = ripening ? mixRipe(ripening) : PUFF;
+    ctx.strokeStyle = '#2a1830';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, size, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = PUFF_SPOTS;
+    for (const [x, y, r] of [[-0.4, -0.35, 0.22], [0.38, -0.1, 0.17], [-0.05, 0.4, 0.15], [0.15, -0.55, 0.11]]) {
+      ctx.beginPath();
+      ctx.arc(x * size, y * size, r * size, 0, TAU);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#ffffff';
+    ctx.globalAlpha = e.alpha * 0.35;
+    ctx.beginPath();
+    ctx.ellipse(-size * 0.25, -size * 0.45, size * 0.35, size * 0.18, -0.4, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+    if (!ripening) {
+      circle(p.x, p.y, size + 4, PUFF, 0.7, false, e.alpha * 0.35);
+      return;
+    }
+    const pulse = 0.5 + 0.5 * Math.sin(time * 16);
+    circle(p.x, p.y, size + 5 + 3 * pulse * lively, RIPE, 2, false, e.alpha * (0.55 + 0.4 * ripening));
+    for (const side of [-1, 1]) {
+      // Where each sprout will go: a little ring in the next lane, filling in as the moment nears.
+      const m = polar(e.radius, e.angle + side * LANE_STEP);
+      circle(m.x, m.y, 6.5, RIPE, 2, false, e.alpha * (0.5 + 0.45 * ripening));
+      circle(m.x, m.y, 6.5 * ripening, RIPE, 0, true, e.alpha * 0.55);
+    }
+  }
+
+  /** A swelling puffball's colour, from cream towards amber. */
+  function mixRipe(u) {
+    const from = [0xef, 0xe2, 0xd4];
+    const to = [0xff, 0xb8, 0x7a];
+    return `rgb(${from.map((v, i) => Math.round(v + (to[i] - v) * u)).join(',')})`;
+  }
+
+  /**
+   * Mushroom Tea's spore clouds, under the leaves: a soft teal disc with a
+   * dashed edge exactly where its hold ends, and a ring that runs down with
+   * its time. High quality adds more drifting spores; reduced motion stills them.
+   */
+  function drawSpores(spores, reduced) {
+    for (const c of spores) {
+      const age = c.duration - c.time;
+      const alpha = Math.min(1, age / 0.2) * Math.min(1, c.time / 0.4);
+      const p = polar(c.radius, c.angle);
+      ctx.save();
+      const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, SPORE_RADIUS);
+      glow.addColorStop(0, 'rgba(142,240,220,0.26)');
+      glow.addColorStop(0.7, 'rgba(142,240,220,0.12)');
+      glow.addColorStop(1, 'rgba(142,240,220,0)');
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, SPORE_RADIUS, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = SPORE;
+      ctx.lineWidth = 1.2;
+      ctx.globalAlpha = alpha * 0.5;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineWidth = 2.2;
+      ctx.globalAlpha = alpha * 0.7;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, SPORE_RADIUS + 4, -Math.PI / 2, -Math.PI / 2 + TAU * (c.time / c.duration));
+      ctx.stroke();
+      ctx.restore();
+      const t = reduced ? 0 : time;
+      for (let k = 0; k < (renderer.quality === 'high' ? 9 : 5); k++) {
+        const a = k * 2.399 + t * (0.5 + 0.07 * k);
+        const r = SPORE_RADIUS * (0.25 + 0.6 * ((k * 0.37 + t * 0.05) % 1));
+        circle(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r, 1.6 + (k % 3) * 0.5, '#d9fff6', 0, true, alpha * 0.7);
+      }
+    }
+  }
+
+  /** Mushroom Tea: little caps have sprouted on the porcelain, well outside the spoon's path. */
+  function drawRimMushrooms(reduced) {
+    const bob = reduced || renderer.quality !== 'high' ? 0 : 1;
+    for (let k = 0; k < 6; k++) {
+      const a = 0.35 + (k * TAU) / 6 + (k % 2) * 0.17;
+      const lean = Math.sin(time * 1.3 + k) * 0.12 * bob;
+      const foot = polar(OUTER + 36, a);
+      const head = polar(OUTER + 44 + (k % 3) * 2, a);
+      line(foot, head, '#efe2d4', 2.2, 0.85);
+      ctx.save();
+      ctx.translate(head.x, head.y);
+      ctx.rotate(a + Math.PI / 2 + lean);
+      ctx.fillStyle = k % 2 ? '#c9a2e8' : '#e7b0cf';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 6.5 + (k % 3), 4.2, 0, Math.PI, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#fff6ee';
+      for (const [x, y, r] of [[-2, -2, 1.1], [2.4, -1.4, 0.9]]) {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
     }
   }
 
@@ -1615,6 +1767,8 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       if (inPlay) drawKarmaRim(state);
       drawAimBeams(state, fx);
       drawClouds(state.clouds);
+      if (inPlay) drawSpores(state.spores ?? [], reduced);
+      if (inPlay && state.tea === 'mushroom') drawRimMushrooms(reduced);
       if (inPlay) drawPulse(state, reduced);
       if (inPlay) drawCurrent(state.current, reduced);
       // The announcements sit beneath the leaves, so they can never hide one.

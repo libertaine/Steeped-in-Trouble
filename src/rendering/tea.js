@@ -54,7 +54,20 @@ const TEA_LIQUIDS = {
     base: ['#8e5a5e', '#734552', '#45283c', '#22121e'],
     light: ['#f2a2ba', '#e6c070', '#cfe0a0', '#f6c6d6'], dark: '#140810', spin: 0.6, calm: 0.55,
   },
+  // A mushroom broth with an oily sheen: violet, teal and rose over umber.
+  mushroom: {
+    base: ['#6a4a3c', '#523646', '#30203a', '#160c1b'],
+    light: ['#c9a2e8', '#8fdcc6', '#e7b0cf', '#d7c08e'], dark: '#0d0611', spin: 0.8, calm: 0.9,
+  },
 };
+
+// Mushroom Tea's sheen: broad soft colours that drift slowly round the cup,
+// beneath every leaf. Only the liquid's colour moves; nothing in play does.
+const SHEEN = [
+  { color: '#b07ae0', r: 120, angle: 0.4, size: 150 },
+  { color: '#62d6b8', r: 150, angle: 2.5, size: 130 },
+  { color: '#e38ab8', r: 95, angle: 4.4, size: 120 },
+];
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
@@ -1064,6 +1077,24 @@ export function createTeaPainter(main) {
     ctx.globalAlpha = 1;
   }
 
+  /** Mushroom Tea's sheen. High quality drifts and breathes; low quality and reduced motion hold still. */
+  function drawSheen(liquid) {
+    const { from, to, blend } = liquid.variety;
+    const share = (to === 'mushroom' ? blend : 0) + (from === 'mushroom' ? 1 - blend : 0);
+    const amount = share * (1 - liquid.choco);
+    if (amount < 0.01) return;
+    const moving = detail.bloom && !liquid.reduced;
+    const t = moving ? liquid.time : 0;
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [i, s] of SHEEN.entries()) {
+      const p = polar(s.r + 18 * Math.sin(t * 0.21 + i), s.angle + t * 0.06 * (i % 2 ? -1 : 1));
+      ctx.globalAlpha = amount * (0.13 + 0.05 * Math.sin(t * 0.4 + i * 2));
+      blot(s.color, p.x, p.y, s.size);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
   function drawGlows(liquid) {
     ctx.globalCompositeOperation = 'lighter';
     for (const g of liquid.glows) {
@@ -1510,6 +1541,7 @@ export function createTeaPainter(main) {
       drawCocoaSwirls(liquid);
       drawWisps(liquid);
       drawTint(liquid);
+      drawSheen(liquid);
       drawGlows(liquid);
       drawHighlights(liquid);
       drawReadingGlow(liquid);

@@ -62,6 +62,7 @@ export const TEA_MUSIC = Object.freeze({
   chai: { tempo: 4 }, // warm and rhythmic: a hand-drum pattern in threes and twos
   black: { tempo: 6 }, // insistent: steady quarter-note bass and kick
   herbal: { tempo: -10 }, // quiet and playful: no drums until it matters, more melody
+  mushroom: { tempo: -6 }, // a little woozy
 });
 const DORIAN_MELODY = [62, 65, 67, 69, 71, 74, 77]; // Earl Grey: B natural instead of C
 const CHAI_DRUM = { 0: ['kick', 0.7], 3: ['hat', 0.8], 6: ['kick', 0.5], 8: ['hat', 0.5], 10: ['kick', 0.6], 13: ['hat', 0.7] };

@@ -75,6 +75,21 @@ const KARMA_REMARKS = ['INSTANT KARMA!', 'INSTANT KARMA!', 'Return to sender.', 
 
 const ESCAPE_REMARKS = ['The leaves saw that.', 'That one had somewhere to be.', 'Spilled, but with dignity.'];
 
+// Mushroom Tea.
+const SPORE_TEAL = '#8ef0dc';
+const RIPE_AMBER = '#ffa25c';
+const SPORE_WORDS = Object.freeze([
+  'The leaves are seeing sounds.',
+  'Hee hee. Hee.',
+  'Nobody tell the spoon.',
+  'The cup has gone fungal.',
+]);
+const SPROUT_WORDS = Object.freeze([
+  'It is spreading. Socially.',
+  'Now there are two of them.',
+  'The puffball has delegated.',
+]);
+
 const ABSURD_TEAS = [
   { color: '#2f7fe0', text: 'The tea is now Earl Blue.' },
   { color: '#e04fa8', text: 'Raspberry oolong, apparently.' },
@@ -333,6 +348,29 @@ export function createEffects({ random = Math.random } = {}) {
       burst(10, () => radius - rnd(0, 16), () => angle + rnd(-0.03, 0.03), (i) => (i % 2 ? DART_GREEN : '#f4fff0'),
         () => rnd(0.2, 0.5), 0.8, [1, 2.4]);
     },
+    puffWarn({ radius, angle }) {
+      burst(6, () => radius + rnd(-6, 6), () => angle + rnd(-0.05, 0.05), (i) => (i % 2 ? SPORE_TEAL : RIPE_AMBER),
+        () => rnd(0.25, 0.5), 0.5);
+      explainOnce('puff', 'A puffball is swelling. Pop it now, or it splits in two.', RIPE_AMBER);
+    },
+    spores({ radius, angle }) {
+      burst(16, () => radius + rnd(-10, 10), () => angle + rnd(-0.12, 0.12), (i) => (i % 3 ? SPORE_TEAL : '#f3e9ff'),
+        () => rnd(0.5, 1.1), 0.7);
+      if (explained.has('spores')) {
+        if (random() < 0.2) say(pick(SPORE_WORDS), { color: SPORE_TEAL, life: 2 });
+      } else {
+        explainOnce('spores', 'Spores! Leaves in the cloud giggle in place, and are worth more.', SPORE_TEAL);
+      }
+    },
+    sprout({ radius, angle }) {
+      burst(12, () => radius + rnd(-6, 6), () => angle + rnd(-0.15, 0.15), (i) => (i % 2 ? RIPE_AMBER : '#d9cf9c'),
+        () => rnd(0.3, 0.7), 1.1);
+      if (explained.has('sprout')) {
+        if (random() < 0.3) say(pick(SPROUT_WORDS), { color: RIPE_AMBER, life: 2 });
+      } else {
+        explainOnce('sprout', 'It split. Puffballs left alone become two leaves.', RIPE_AMBER);
+      }
+    },
     wanderWarn() {
       explainOnce('wander', 'A lavender curl: that leaf is about to change lanes.', WANDER_LAVENDER);
     },
@@ -499,7 +537,7 @@ export function createEffects({ random = Math.random } = {}) {
       spoonBurst(18, angle, ['#b39a5a', '#e4f2ee'], 1);
       say('The gold wears off. Still a fine spoon.', { color: '#c9b27a', life: 2.6 });
     },
-    kill({ radius, angle, by }) {
+    kill({ radius, angle, by, giggling = false }) {
       if (by === 'wake') {
         // Churned out over the rim by the Silver Tornado.
         burst(14, () => radius + rnd(-4, 10), () => angle + rnd(-0.08, 0.08),
@@ -511,6 +549,8 @@ export function createEffects({ random = Math.random } = {}) {
         burst(9, () => radius + rnd(-8, 8), () => angle + rnd(-0.07, 0.07),
           (i) => (i % 3 === 0 ? '#efe4b4' : '#b4dcc0'), () => rnd(0.25, 0.7));
       }
+      // A giggling leaf goes out laughing: a little extra teal confetti.
+      if (giggling) burst(8, () => radius + rnd(-6, 6), () => angle + rnd(-0.1, 0.1), () => SPORE_TEAL, () => rnd(0.3, 0.6), 1.3);
     },
     discover({ id }) {
       fx.discovery = { id, time: 4, life: 4 };

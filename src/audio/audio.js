@@ -52,6 +52,9 @@ const SOUNDS = {
   dart: [700, 0.1, 'sawtooth', 0.005, 0, 1.8], // zip
   wanderWarn: [880, 0.16, 'sine', 0.008, 0, 0.85],
   wander: [660, 0.2, 'sine', 0.008, 0, 1.25], // a soft swoosh sideways
+  puffWarn: [300, 0.5, 'triangle', 0.012, 0, 1.6], // a swelling wobble
+  spores: [520, 0.22, 'sine', 0.016, 0, 0.6], // pff
+  sprout: [760, 0.12, 'square', 0.009, 0, 1.4], // pop-pop
   // The Tea Run.
   runJump: [420, 0.16, 'triangle', 0.016, 0, 1.8], // boing
   runAerialJump: [640, 0.18, 'triangle', 0.014, 0, 2.1],
