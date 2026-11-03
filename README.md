@@ -28,8 +28,22 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
 ## Status
 
-Version **[0.18.0 — Room for Tea](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.18.0)**
+Version **[0.19.0 — The Cup Has Gone Fungal](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.19.0)**
 is the current release.
+
+### The Cup Has Gone Fungal
+
+*There is something growing in the tea. It has a manager.*
+
+Mushroom Tea brings puffballs, sprouts and spore clouds, with three Strange
+Happenings: Time Rewind, Breathing Cup and Impostor Spoon. Face the
+**Mycelium Manager**, survive its increasingly unreasonable rematches, and
+open Chapter 3, where Rush Hour gives the leaves a little more urgency.
+The Tea Tray offers temporary rewards when permanent upgrades run out,
+and fortune patterns have a fairer distribution as cups grow busier.
+Earlier saved pots continue. See the [release notes](docs/releases/v0.19.0.md).
+Mobile testing has primarily used browser emulation; desktop keyboard play
+remains the primary experience.
 
 ### Room for Tea
 
