@@ -2,14 +2,16 @@
 
 *The cup has gone fungal, and now the game has too.*
 
-A prototype on `feature/0.19.0-the-cup-has-gone-fungal`, for owner
-playtesting. It is not released. Mushroom Tea is still brewed only with
-`?tea=mushroom`, so no ordinary pot can meet a Strange Happening.
+On `feature/0.19.0-the-cup-has-gone-fungal`, for owner playtesting. It is
+not released. Since Phase 4 Mushroom Tea is Chapter 3's tea (its first cup is
+always Mushroom Tea), and `?tea=mushroom` still brews it every cup.
 
 ## What it is
 
-About once every two or three Mushroom Tea cups (never the first), one of
-three things happens:
+Counted in Mushroom Tea cups, whatever is brewed in between: never in a
+pot's first, the first always due in its second (or, if that cup never has
+a safe moment, the next Mushroom Tea cup), then one every two to four. One
+of three things happens:
 
 | Happening | What the player sees | What it can change |
 |---|---|---|
@@ -17,7 +19,7 @@ three things happens:
 | The Cup Is Breathing | About 12 s: the broth swells and settles, rings run out on each breath, rim caps and porcelain respond, the music muffles. | Nothing. Only the liquid's picture changes. |
 | The Impostor Spoon | About 10 s: a translucent violet spoon with eyes follows yours a second behind, copies your steam with hollow rings, does a lap or walks the wrong way, and leaves. | Nothing. It has no collision, score or resources. |
 
-See [ARCHITECTURE.md](ARCHITECTURE.md#strange-happenings-0190-prototype) for
+See [ARCHITECTURE.md](ARCHITECTURE.md#strange-happenings-0190) for
 how it works and [GAME_DESIGN.md](GAME_DESIGN.md) for the player-facing rules.
 
 ## Trying each one locally
@@ -36,7 +38,11 @@ wind back, and every happening waits while a leaf is near the rim).
 - The Impostor Spoon: `?debug&tea=mushroom&strange=impostor`
 - One every cup, in turn: `?debug&tea=mushroom&strange=often`
 - The real schedule: `?debug&tea=mushroom&seed=42` (any seed). In the
-  console, `__TEACUP__.strange.schedule(12)` lists the cups that will have one.
+  console, `__TEACUP__.strange.schedule(12)` lists the Mushroom Tea cups that
+  will have one, if the first comes when due.
+- In a normal pot: `?debug&progress=manager`, beat the Manager, and Chapter
+  3's first cup is Mushroom Tea; its second Mushroom Tea cup is the first
+  with a happening.
 - None at all: `?debug&tea=mushroom&strange=off`
 
 Add `&graphics=low` for Low graphics. For reduced motion, turn on the
@@ -92,12 +98,11 @@ Local, 2026-11-02, Node 24.22.1, production build:
 
 ## Known limitations
 
-- The plan counts rounds. Mushroom Tea is pinned-only today, so every round
-  is a Mushroom Tea cup; if it ever joins a shelf, a happening planned for a
-  cup of another tea is simply skipped, and the rate per Mushroom Tea cup
-  would need revisiting.
-- A happening whose moment comes after its cup has ended is missed, not
-  carried over, so short cups see slightly fewer than planned.
+- The plan counts Mushroom Tea cups (Phase 4), so Chapter 3's rotation keeps
+  the intended rate per Mushroom Tea cup.
+- After the first, a happening whose moment comes after its cup has ended is
+  missed, not carried over, so short cups see slightly fewer than planned.
+  The first is never missed: it waits for a later Mushroom Tea cup.
 - During a rewind only leaves, darts, spores, the residue, the spoon, the
   score and the kill count are wound back. Milk clouds, sugar cubes, the
   Golden Leaf, particles and on-screen messages hold still at their live
