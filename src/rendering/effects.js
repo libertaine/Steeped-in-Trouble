@@ -13,6 +13,7 @@ import { UPGRADES } from '../gameplay/upgrades.js';
 import { TRAY } from '../gameplay/teaTray.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { fury, grindInProgress } from '../gameplay/grind.js';
+import { managerInProgress } from '../gameplay/mycelium.js';
 import { TEAS } from '../gameplay/teas.js';
 import { createTea } from './tea.js';
 
@@ -61,6 +62,18 @@ const COMPLAINTS = ['Ow.', 'I have a warranty!', 'That is my good valve!', 'I am
   'Rude.', 'I was descaled on TUESDAY.', 'Stop that. Stop that at once.', 'My crema!'];
 const SCALD_REMARKS = ['Scalding!', 'Ow, hot! Who serves it this hot?', 'That was a direct pour.', 'Extra hot, as requested.'];
 const VICTORY_WORDS = ['The machine is out of order.', 'Order up!', 'Descaled. Permanently.'];
+// The Mycelium Manager. Its own lines, chosen by the simulation and said at most once a fight.
+const MANAGER_VOICE = '#c9f7dc';
+const MANAGER_LINES = Object.freeze({
+  perMyLastSpore: '“Per my last spore…”',
+  circleBack: '“Let’s circle back.”',
+  whoApproved: '“Who approved this?”',
+  takeOffline: '“Let’s take this offline.”',
+  pinInIt: '“I’ll put a pin in it.”',
+});
+const MEETING_REMARKS = ['That meeting could have been an email.', 'You have been minuted.', 'Mandatory fun.',
+  'Attendance has been noted.'];
+const MANAGER_HITS = ['Noted.', 'I’ll be escalating this.', 'That’s not on the agenda.', 'Let’s not make this a thing.'];
 const POD_WORDS = ['It spat out a defective pod.', 'A pod. Possibly decaf. Definitely broken.'];
 
 const UPGRADE_WORDS = {
@@ -180,6 +193,7 @@ export function createEffects({ random = Math.random } = {}) {
   let burnedOnce = false; // has the first burn been explained this pot?
   let perfects = 0; // perfect marshmallows this bonus round
   let grindMet = false; // has the machine explained itself this pot?
+  let managerMet = new Set(); // which of the Manager's mechanics have been pointed out this pot
   let warned = false; // has the first pressure warning been explained this pot?
   let podTimer = null; // seconds until the furious machine spits out a defective pod
   let herbalTimer = null; // seconds until Herbal Tea's next harmless surprise
@@ -298,6 +312,7 @@ export function createEffects({ random = Math.random } = {}) {
       strained = false;
       burnedOnce = false;
       grindMet = false;
+      managerMet = new Set();
       warned = false;
       explained.clear();
       fx.discovery = null;
@@ -784,11 +799,14 @@ export function createEffects({ random = Math.random } = {}) {
         fx.banner = { title: 'CRITICAL CAFFEINE', words: 'It is making a noise it should not make.', time: 2.8, life: 2.8 };
       }
     },
-    scald({ angle, left }) {
+    scald({ angle, left, by }) {
       fx.flash = 0.35;
       fx.shake = Math.max(fx.shake, 0.4);
-      burst(22, () => RIM - rnd(0, 10), () => angle + rnd(-0.1, 0.1), (i) => (i % 2 ? '#c8915a' : '#f0a878'), 0.7, 1.6);
-      if (left > 0) say(`${pick(SCALD_REMARKS)}${left === 1 ? ' One more and it gets away.' : ''}`, { color: '#ff9a7a', life: 2.4 });
+      const meeting = by === 'meeting';
+      burst(22, () => RIM - rnd(0, 10), () => angle + rnd(-0.1, 0.1),
+        (i) => (meeting ? (i % 2 ? '#b77cff' : '#f0e2ff') : i % 2 ? '#c8915a' : '#f0a878'), 0.7, 1.6);
+      if (left > 0) say(`${pick(meeting ? MEETING_REMARKS : SCALD_REMARKS)}${left === 1 ? ' One more and it gets away.' : ''}`,
+        { color: '#ff9a7a', life: 2.4 });
     },
     grindDefeat({ perfect }) {
       hush();
@@ -816,6 +834,99 @@ export function createEffects({ random = Math.random } = {}) {
       fx.banner = null;
       steamCloud(70, CX, CY - 10, 60, 1);
       say('“You’ll be hearing from my manager.”', { color: CREMA, life: 3.2 });
+    },
+
+    // The Mycelium Manager. The first encounter points each thing out once,
+    // in a few words, as it first turns up; after that the Manager talks.
+    managerStart() {
+      clearScene();
+      hush();
+      fx.shake = 0.25;
+    },
+    managerFight() {
+      say('“Quick sync?”', { color: MANAGER_VOICE, life: 2 });
+    },
+    rootSprout({ lanes }) {
+      pulseLanes(lanes, 'root', 0.6);
+      if (!managerMet.has('roots')) {
+        managerMet.add('roots');
+        say('Roots! Steam their glowing tips to cut them back.', { color: '#9be8c0', then: true, life: 2.8 });
+      }
+    },
+    rootCut({ lane, tip, cleared, sugar }) {
+      const angle = -Math.PI / 2 + lane * LANE_STEP;
+      burst(cleared ? 12 : 5, () => tip + rnd(-6, 6), () => angle + rnd(-0.05, 0.05), (i) => (i % 2 ? '#9be8c0' : '#e9fff3'),
+        () => rnd(0.2, 0.5), sugar ? 1.6 : 1.1, [1, 2.4]);
+    },
+    memo() {
+      if (!managerMet.has('memos')) {
+        managerMet.add('memos');
+        say('Pop the memos: their spores fly back at the Manager.', { color: '#f6f0de', then: true, life: 2.8 });
+      }
+    },
+    memoPop({ radius, angle }) {
+      burst(14, () => radius + rnd(-6, 6), () => angle + rnd(-0.06, 0.06), (i) => (i % 3 ? '#f6f0de' : '#8ef0dc'),
+        () => rnd(0.25, 0.6), 1.4, [1.2, 2.8]);
+    },
+    memoFiled({ lane }) {
+      const angle = -Math.PI / 2 + lane * LANE_STEP;
+      burst(6, () => RIM - rnd(0, 8), () => angle + rnd(-0.05, 0.05), '#ffe066', () => rnd(0.2, 0.4), 0.8);
+      popup('FILED', RIM - 30, angle, '#ffe066', 0.9);
+      if (!managerMet.has('notes')) {
+        managerMet.add('notes');
+        say('A memo got filed. Its lane is on the next meeting’s invite list.', { color: '#ffe066', then: true, life: 3 });
+      }
+    },
+    thump({ angle }) {
+      if (random() < 0.6) return;
+      burst(2, () => CONFIG.manager.bodyRadius + rnd(0, 6), () => angle + rnd(-0.04, 0.04), '#f6f0de', () => rnd(0.12, 0.3), 1.2, [1, 2]);
+    },
+    meetingCall({ lanes, wave }) {
+      pulseLanes(lanes, 'invite', 0.35);
+      if (wave === 2) say('And another meeting, straight after!', { color: '#d8b8ff', life: 1.4 });
+      else if (!managerMet.has('meeting')) {
+        managerMet.add('meeting');
+        say('All-hands! Leave the invited lanes, or cut their roots back.', { color: '#d8b8ff', then: true, life: 2.6 });
+      }
+    },
+    meetingBurst() {
+      fx.shake = Math.max(fx.shake, 0.25);
+    },
+    managerHit({ angle, damage, health }) {
+      burst(10, () => CONFIG.manager.bodyRadius + rnd(0, 10), () => angle + rnd(-0.08, 0.08),
+        (i) => (i % 3 ? '#8ef0dc' : '#f4e8f0'), () => rnd(0.2, 0.6), 1.6, [1.2, 3]);
+      popup(`-${damage}`, CONFIG.manager.bodyRadius + 18, angle, '#c9f7dc', 0.8);
+      if (health > 0 && random() < 0.2) say(pick(MANAGER_HITS), { color: MANAGER_VOICE, life: 1.6 });
+    },
+    managerRage({ level }) {
+      fx.shake = 0.4;
+      fx.banner = level === 1
+        ? { title: 'RESTRUCTURING', words: 'The Manager is circling back faster.', time: 2.6, life: 2.6 }
+        : { title: 'MANDATORY OVERTIME', words: 'Nobody leaves until this is resolved.', time: 2.6, life: 2.6 };
+    },
+    managerSay({ line }) {
+      if (MANAGER_LINES[line]) say(MANAGER_LINES[line], { color: MANAGER_VOICE, life: 2.2 });
+    },
+    managerDefeat({ perfect }) {
+      hush();
+      fx.banner = null;
+      fx.shake = 0.6;
+      for (let i = 0; i < 70; i++) {
+        const a = rnd(0, TAU);
+        const speed = rnd(60, 320);
+        const life = rnd(0.6, 1.4);
+        fx.particles.push({
+          x: CX, y: CY, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, time: life, life,
+          color: ['#8ef0dc', '#f6f0de', '#ffe066', '#8a5a7a'][i % 4], size: rnd(1.5, 4),
+        });
+      }
+      say(MANAGER_LINES.pinInIt, { color: MANAGER_VOICE, life: 2.4 });
+      if (perfect) say('Perfect attendance.', { color: GOLD, then: true, life: 2.6 });
+    },
+    managerEscape() {
+      hush();
+      fx.banner = null;
+      steamCloud(60, CX, CY - 10, 55, 1);
     },
   };
 
@@ -866,7 +977,8 @@ export function createEffects({ random = Math.random } = {}) {
         fx.spoonScale = 1;
       }
       const grind = grindInProgress(state);
-      const fighting = grind?.stage === 'fight' && state.phase !== PHASE.PAUSED;
+      const boss = grind ?? managerInProgress(state);
+      const fighting = boss?.stage === 'fight' && state.phase !== PHASE.PAUSED;
       const toasting = (havocInProgress(state)?.stage === 'play' && state.phase !== PHASE.PAUSED) || fighting;
       if ((playing || toasting) && state.goldenSpoon > 0 && random() < dt * 18) {
         spoonBurst(1, state.angle, [GOLD, '#fff8e2'], 0.6);
@@ -906,7 +1018,7 @@ export function createEffects({ random = Math.random } = {}) {
         }
       }
 
-      if (fighting) {
+      if (fighting && grind) {
         // The machine leaks steam, more the angrier it gets, and later spits out defective pods.
         const f = fury(grind);
         if (random() < dt * (1.5 + 10 * f)) steamCloud(1, CX + rnd(-30, 30), CY - 62, 4, 0.5 + f);

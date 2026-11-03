@@ -154,6 +154,21 @@ const TUNES = {
   // Wah, wah, wah, wahhh.
   grindEscape: [[392, 0.3, 'sawtooth', 0.016], [370, 0.3, 'sawtooth', 0.016, 0.32], [349, 0.3, 'sawtooth', 0.016, 0.64],
     [330, 0.9, 'sawtooth', 0.016, 0.96, 0.92]],
+  // The Mycelium Manager: a soft thud from below, paper, and a meeting chime.
+  managerStart: [[73, 0.7, 'sine', 0.04, 0, 1.3], [110, 0.6, 'triangle', 0.02, 0.4, 1.2], [988, 0.08, 'sine', 0.01, 0.9]],
+  managerFight: [[523, 0.12, 'triangle', 0.016], [659, 0.2, 'triangle', 0.016, 0.14]],
+  rootSprout: [[180, 0.18, 'sine', 0.012, 0, 1.6]],
+  rootCut: [[900, 0.05, 'triangle', 0.008, 0, 0.7]],
+  memo: [[700, 0.08, 'sine', 0.008, 0, 1.3]],
+  memoPop: [[620, 0.1, 'triangle', 0.016, 0, 0.6], [1240, 0.08, 'sine', 0.008, 0.04]],
+  memoFiled: [[300, 0.05, 'square', 0.008], [300, 0.05, 'square', 0.008, 0.08]], // a stapler
+  meetingCall: [[784, 0.35, 'sine', 0.02], [622, 0.6, 'sine', 0.02, 0.32]], // ding-dong
+  meetingBurst: [[200, 0.4, 'sine', 0.03, 0, 0.5], [400, 0.3, 'triangle', 0.012, 0.02, 0.5]],
+  managerHit: [[440, 0.08, 'triangle', 0.016, 0, 0.7]],
+  managerRage: [[147, 0.25, 'triangle', 0.026], [156, 0.25, 'triangle', 0.026, 0.22], [165, 0.5, 'triangle', 0.026, 0.44]],
+  managerDefeat: [[784, 0.12, 'triangle', 0.016], [659, 0.12, 'triangle', 0.016, 0.12], [523, 0.12, 'triangle', 0.016, 0.24],
+    [392, 0.6, 'sine', 0.024, 0.36, 0.5], [1568, 0.4, 'sine', 0.02, 0.9]],
+  managerEscape: [[392, 0.3, 'triangle', 0.016], [349, 0.3, 'triangle', 0.016, 0.32], [330, 0.9, 'triangle', 0.016, 0.64, 0.92]],
   // Chai: a spicy shimmer as the current gathers, then the whoosh as it sweeps.
   currentWarn: [[392, 0.5, 'triangle', 0.014, 0, 1.3], [494, 0.5, 'triangle', 0.01, 0.12, 1.3], [587, 0.6, 'sine', 0.01, 0.24, 1.3]],
   currentFlow: [[180, 0.7, 'sawtooth', 0.014, 0, 1.6], [360, 0.5, 'sine', 0.01, 0.05, 1.4]],

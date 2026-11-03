@@ -119,7 +119,7 @@ export function createPresentation({ doc = document, game, params, storage, rese
         || (s.phase === 'crossingStreet' && s.crossingStreet.stage === 'play'));
       // The modal can suspend a reading at any point without advancing its clock.
       menu.disabled = s.phase === 'shortage';
-      menu.textContent = ['playing', 'chocolate', 'grind', 'teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet'].includes(s.phase) ? 'Pause / Menu' : 'Tea Break';
+      menu.textContent = ['playing', 'chocolate', 'grind', 'manager', 'teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet'].includes(s.phase) ? 'Pause / Menu' : 'Tea Break';
     },
     dispose() {
       closeMenu();

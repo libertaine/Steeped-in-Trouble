@@ -15,6 +15,8 @@ import { grindInProgress } from '../gameplay/grind.js';
 import { TEAS, currentStageLength } from '../gameplay/teas.js';
 import { runInProgress } from '../gameplay/teaRun.js';
 import { createGrindPainter } from './grind.js';
+import { createManagerPainter } from './mycelium.js';
+import { managerInProgress } from '../gameplay/mycelium.js';
 import { createTeaPainter } from './tea.js';
 import { createRunPainter } from './teaRun.js';
 import { createPourPainter } from './dailyPour.js';
@@ -47,6 +49,8 @@ const AIM = {
   flame: '#ffb36b',
   valve: '#ffcf6a', // the coffee boss's open safety valve
   danger: '#ff5a3a', // and the lanes it is about to scald
+  root: '#9be8c0', // the Mycelium Manager's roots sprouting
+  invite: '#b77cff', // and the lanes its meeting has invited
 };
 const AIM_FADE = 0.12; // seconds for the highlight to cross-fade to a new lane
 
@@ -73,6 +77,8 @@ function aiming(state) {
   if (havoc) return havoc.stage === 'play';
   const grind = grindInProgress(state);
   if (grind) return grind.stage === 'fight';
+  const manager = managerInProgress(state);
+  if (manager) return manager.stage === 'fight';
   return state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED;
 }
 
@@ -149,6 +155,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
   const tea = createTeaPainter(ctx);
   const porcelain = createPorcelainPainter(ctx);
   const espresso = createGrindPainter(ctx, { circle, text, laneBeam, highQuality: () => renderer.quality === 'high' });
+  const office = createManagerPainter(ctx, { circle, text, highQuality: () => renderer.quality === 'high' });
   const errand = createRunPainter(ctx, { circle, text, compact: () => canvas.clientWidth < 560, highQuality: () => renderer.quality === 'high' });
   const aim = { lane: null, prev: null, fade: 1 }; // the highlighted lane, and the one fading out
 
@@ -616,7 +623,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     const look = spoonLook(state);
     const size = (fx.spoonScale ?? 1) * (1 + 0.08 * spoon.sugarScoop);
     // The Golden Spoon flickers as it wears off, and a scalded spoon blinks while it recovers.
-    const scalded = grindInProgress(state)?.safe > 0;
+    const scalded = (grindInProgress(state) ?? managerInProgress(state))?.safe > 0;
     const flicker = scalded ? 0.35 + 0.65 * Math.abs(Math.sin(time * 18))
       : look.golden && state.goldenSpoon < 1.5 ? 0.6 + 0.4 * Math.abs(Math.sin(time * 14)) : 1;
     // Quick Stir: afterimages trail a hurrying spoon.
@@ -1807,7 +1814,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       // Simulation coordinates, hitboxes, and the runner remain unchanged. UI is
       // drawn after restoring this transform so warnings and text stay in bounds.
       ctx.save();
-      const active = [PHASE.PLAYING, PHASE.CHOCOLATE, PHASE.GRIND].includes(
+      const active = [PHASE.PLAYING, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.MANAGER].includes(
         state.phase === PHASE.PAUSED ? state.pausedFrom : state.phase);
       if (compact() && active) {
         ctx.translate(CX, CY);
@@ -1835,8 +1842,10 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       }
       const havoc = havocInProgress(state);
       const grind = grindInProgress(state);
-      const inPlay = !havoc && !grind && (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED);
-      const live = inPlay || !!havoc || !!grind;
+      const manager = managerInProgress(state);
+      const boss = grind || manager;
+      const inPlay = !havoc && !boss && (state.phase === PHASE.PLAYING || state.phase === PHASE.PAUSED);
+      const live = inPlay || !!havoc || !!boss;
       if (inPlay) drawStrainer(state);
       if (inPlay) drawKarmaRim(state);
       drawAimBeams(state, fx);
@@ -1854,6 +1863,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
         drawTeaCard(fx.teaCard, reduced);
       }
       if (grind) espresso.drawField(grind, time);
+      if (manager) office.drawField(manager, time, reduced);
       drawResidue(state);
       for (const e of state.enemies) drawEnemy(e, reduced);
       if (havoc) {
@@ -1868,6 +1878,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       if (state.goldenLeaf) porcelain.drawGoldenLeaf(state.goldenLeaf, time);
       for (const s of state.shots) drawShot(s, state.spoon.polished);
       if (grind) espresso.drawMachine(grind, state, fx, time);
+      if (manager) office.drawManager(manager, time, reduced);
       if (inPlay) drawWake(state.wake);
       if (inPlay) drawRecovery(state);
       if (inPlay && happening === 'impostor') drawImpostor(state, strange.impostor);
@@ -1875,17 +1886,18 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       drawGlints(fx.glints ?? []);
       if (inPlay) drawRebounds(fx.rebounds ?? []);
       drawParticles(fx.particles);
-      if (havoc || grind) drawPopups(fx.popups ?? []);
+      if (havoc || boss) drawPopups(fx.popups ?? []);
       if (happening === 'rewind') drawRewindTint(strange.rewind, reduced);
       ctx.restore();
       if (happening === 'rewind') drawRewindMark(strange.rewind);
       if (state.phase === PHASE.GRIND) espresso.drawOverlay(grind, time);
+      if (state.phase === PHASE.MANAGER) office.drawOverlay(manager, time);
       drawOverlay(state, fx);
       if (state.phase === PHASE.SHORTAGE) errand.drawShortage(state.shortage, state, time);
       if (state.phase === PHASE.CHOCOLATE) drawHavocOverlay(havoc);
       if (live) drawWhisper(fx.whisper);
       if (inPlay) drawDiscovery(fx.discovery);
-      if (havoc || grind || inPlay) drawBanner(fx.banner, reduced);
+      if (havoc || boss || inPlay) drawBanner(fx.banner, reduced);
     },
   };
   return renderer;

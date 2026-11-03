@@ -12,6 +12,7 @@ import { LANE_STEP, TAU, angleDifference, toCanvasPoint as polar } from '../game
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
 import { grindInProgress } from '../gameplay/grind.js';
+import { managerInProgress } from '../gameplay/mycelium.js';
 
 const { centerX: CX, centerY: CY, rimRadius: RIM } = CONFIG.arena;
 
@@ -594,6 +595,14 @@ export function createTea({ random = Math.random } = {}) {
       for (let i = 0; i < 70; i++) crystal(p.x, p.y, 170, rnd(0.5, 1.4), '#fff8ee');
     },
 
+    // The Mycelium Manager: the tea stays tea, but something stirs underneath.
+    managerStart() {
+      liquid.wisps = [];
+      kick(0.5);
+      ripple(CX, CY, { size: RIM * 1.05, life: 3, strength: 1.1, rings: 2, tone: '#9be8c0' });
+      glow(CX, CY, 180, '#5a8a6a', 2.6, 0.7);
+    },
+
     // The Daily Grind.
     grindStart() {
       // The tea goes dark and bitter, from the middle outward.
@@ -699,7 +708,9 @@ export function createTea({ random = Math.random } = {}) {
       const reading = phase === PHASE.READING;
       const havoc = havocInProgress(state);
       const grind = grindInProgress(state);
-      const toasting = (phase === PHASE.CHOCOLATE && havoc.stage === 'play') || (phase === PHASE.GRIND && grind.stage === 'fight');
+      const manager = managerInProgress(state);
+      const toasting = (phase === PHASE.CHOCOLATE && havoc.stage === 'play') || (phase === PHASE.GRIND && grind.stage === 'fight')
+        || (phase === PHASE.MANAGER && manager.stage === 'fight');
       const stormy = playing && state.fortune === 'tempest'; // Tempestuous Tea
 
       // Pausing lets the tea settle to a standstill rather than freezing mid-slosh.
@@ -1117,7 +1128,8 @@ export function createTeaPainter(main) {
     ctx.strokeStyle = '#f3d9a4';
     ctx.lineWidth = 1.1;
     const havoc = havocInProgress(state);
-    const beans = grindInProgress(state)?.beans.map((b) => ({ ...b, size: CONFIG.grind.beanSize, alpha: 0.7 }));
+    const beans = grindInProgress(state)?.beans.map((b) => ({ ...b, size: CONFIG.grind.beanSize, alpha: 0.7 }))
+      ?? managerInProgress(state)?.memos.map((memo) => ({ ...memo, size: CONFIG.manager.memoSize, alpha: 0.6 }));
     const floaters = havoc && havoc.stage !== 'outro' ? havoc.marshmallows.map((m) => ({ ...m, alpha: 0.55 })) : beans ?? state.enemies;
     for (const e of floaters) {
       const ux = Math.cos(e.angle);

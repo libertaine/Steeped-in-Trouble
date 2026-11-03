@@ -26,6 +26,7 @@ import { prepareDayPractice } from './dev/days.js';
 import { crossForMe, prepareCrossingPractice } from './dev/crossing.js';
 import { prepareCheckpoint, prepareRecord } from './dev/collection.js';
 import { prepareCup, seedLegacyPot } from './dev/cup.js';
+import { prepareManager, prepareProgression } from './dev/manager.js';
 import { POT_SCHEMA_VERSION } from './core/checkpoint.js';
 import { drawArcadeCenterpiece } from './rendering/splashArt.js';
 import { createInstructionOverlay } from './ui/instructionOverlay.js';
@@ -252,7 +253,8 @@ function boot() {
     'crossingStart', 'crossingGo', 'crossingFinish', 'crossingEnd',
     'runBird', 'runZap', 'runOrbit', 'runReturn',
     'runStart', 'runGo', 'runFinish', 'runFail', 'runEnd', 'chocolateStart', 'havocStart', 'havocEnd',
-    'grindStart', 'grindFight', 'grindDefeat', 'grindEscape', 'gameover']);
+    'grindStart', 'grindFight', 'grindDefeat', 'grindEscape',
+    'managerStart', 'managerFight', 'managerDefeat', 'managerEscape', 'gameover']);
 
   function handleEvents() {
     for (const event of game.drainEvents()) {
@@ -312,7 +314,8 @@ function boot() {
     }
   }
 
-  const isDirectScenario = params.has('arcade') || params.has('day') || params.has('cup') || params.has('fortune') || params.has('noOverlay');
+  const isDirectScenario = params.has('arcade') || params.has('day') || params.has('cup') || params.has('fortune')
+    || params.has('boss') || params.has('progress') || params.has('noOverlay');
   title.ready({ bypass: isDirectScenario && !params.has('holdSplash') });
 
   const instance = {
@@ -435,6 +438,21 @@ function boot() {
         return ok;
       };
       if (params.has('cup') && params.get('cup') !== 'migrated') window.__TEACUP__.cup(params.get('cup'));
+      // The Mycelium Manager (see dev/manager.js): ?boss=manager&visit=N meets it at once (1 = the
+      // milestone, 2+ the rematches); ?progress=manager starts Chapter 2's fifth cup, a few leaves
+      // from done, so the reading, the fight, Chapter 3 and its first Mushroom Tea follow for real.
+      window.__TEACUP__.manager = (visit = 1) => {
+        const ok = prepareManager(game, visit);
+        controls.reset();
+        return ok;
+      };
+      window.__TEACUP__.managerProgression = () => {
+        const ok = prepareProgression(game);
+        controls.reset();
+        return ok;
+      };
+      if (params.get('boss') === 'manager') window.__TEACUP__.manager(params.get('visit') ?? 1);
+      if (params.get('progress') === 'manager') window.__TEACUP__.managerProgression();
     }
     // Vite removes this helper from production. No player-facing secret menu.
     if (import.meta.env.DEV) window.__TEACUP__.previewAerial = (kind) => {

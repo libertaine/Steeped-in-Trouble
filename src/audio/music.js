@@ -158,6 +158,16 @@ export function musicMood(state, tension = 0) {
         section: 'grind', tempo: 104 + 34 * fury, tension: fury, pressure, golden: state.goldenSpoon > 0, stormy: false,
       };
     }
+    case PHASE.MANAGER: {
+      // The Grind's arrangement for now, steadier, with the alarm rising while a meeting is called.
+      const m = state.manager;
+      if (m.stage === 'intro') return { section: 'grindIntro', tempo: 88, tension: 0, golden: false, stormy: false };
+      if (m.stage !== 'fight') return { section: 'reading', tempo: 70, tension: 0, golden: false, stormy: false, chocolate: true };
+      const fury = 1 - m.health / CONFIG.manager.health;
+      const a = m.meeting;
+      const pressure = a?.stage === 'warn' ? 0.3 + 0.7 * Math.min(1, a.time / a.length) : 0;
+      return { section: 'grind', tempo: 96 + 28 * fury, tension: fury, pressure, golden: state.goldenSpoon > 0, stormy: false };
+    }
     case PHASE.PLAYING: {
       const stormy = state.fortune === 'tempest';
       const tea = Object.hasOwn(TEA_MUSIC, state.tea ?? '') ? state.tea : 'house';
