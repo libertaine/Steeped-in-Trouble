@@ -22,8 +22,8 @@ export function spawnGolden({ state, rng, emit }) {
  * Turn the spoon golden for a while. Catching another golden cube while it
  * shines tops the time back up rather than adding to it.
  */
-export function gildSpoon(state) {
-  state.goldenSpoon = Math.max(state.goldenSpoon, CONFIG.goldenSpoon.duration);
+export function gildSpoon(state, seconds = CONFIG.goldenSpoon.duration) {
+  state.goldenSpoon = Math.max(state.goldenSpoon, seconds);
 }
 
 /** Roll and apply a reward. Returns { reward, points }. A restored cup mends a crack (gameplay/porcelain.js). */

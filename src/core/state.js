@@ -88,6 +88,7 @@ export function createInitialState() {
     goldenLeafTimer: null, // seconds until this cup's Golden Leaf appears, or null (gameplay/goldenLeaf.js)
     goldenLeaf: null, // the Golden Leaf on the field: { home, depth, phase, angle, radius, time, life }
     extraSugar: 0, // sugar bursts promised for the next cup on top of the usual
+    tray: null, // a Tea Tray treat waiting for the next normal cup (gameplay/teaTray.js), or null
     secrets: [], // secret ids the leaves noticed at the latest reading
     discovered: [], // unexpected brews (gameplay/combos.js) already announced this pot
     stir: { dir: 0, time: 0 }, // which way the spoon is turning (-1, 0, 1), and for how long

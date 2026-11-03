@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createGame } from '../../src/core/game.js';
 import { POT_SCHEMA_VERSION, RANDOM_STREAMS, migrateCheckpoint, validateCheckpoint } from '../../src/core/checkpoint.js';
 import { POT_KEY, createLocalProgress } from '../../src/storage/localProgress.js';
-import { continueFrom, killLast, leave, signature, undefended } from '../support/legacyPlay.js';
+import { continueFrom, killLast, leave, signature, undefended, withoutTray } from '../support/legacyPlay.js';
 import release from '../fixtures/pot-0.18.0.json' with { type: 'json' };
 import oldest from '../fixtures/pot-0.16.0.json' with { type: 'json' };
 
@@ -25,10 +25,11 @@ describe('Continue Pot: 0.18.0 saves', () => {
       expect(JSON.stringify(original)).toBe(before); // never changed in place
       expect(migrated.schemaVersion).toBe(POT_SCHEMA_VERSION);
       expect(validateCheckpoint(migrated)).toBe(true);
-      const { spores, modifiers, ...kept } = migrated.state;
+      const { spores, tray, modifiers, ...kept } = migrated.state;
       const { modifiers: heldModifiers, ...held } = original.state;
       expect(kept).toEqual(held);
       expect(spores).toEqual([]);
+      expect(tray).toBeNull();
       expect(modifiers).toEqual({ ...heldModifiers, puffballChance: 0 });
       for (const id of RANDOM_STREAMS) expect(migrated.random[id]).toEqual(original.random[id]);
       expect(migrated.pinnedTea).toBe(original.pinnedTea);
@@ -51,7 +52,7 @@ describe('Continue Pot: 0.18.0 saves', () => {
     }
   });
 
-  it('loads a stored 0.18.0 save without rewriting it, then saves again under schema 3', () => {
+  it('loads a stored 0.18.0 save without rewriting it, then saves again under the current schema', () => {
     const raw = JSON.stringify(release.checkpoints.critical);
     const storage = memoryStorage({ [POT_KEY]: raw });
     const progress = createLocalProgress(storage);
@@ -65,7 +66,7 @@ describe('Continue Pot: 0.18.0 saves', () => {
     expect(createGame({ checkpoint: saved }).exportCheckpoint()).toEqual(saved);
   });
 
-  it('still migrates the oldest saves, through schema 2, to schema 3', () => {
+  it('still migrates the oldest saves, through schemas 2 and 3, to the current schema', () => {
     const migrated = migrateCheckpoint(structuredClone(oldest.checkpoints.critical));
     expect(migrated?.schemaVersion).toBe(POT_SCHEMA_VERSION);
     expect(migrated.state.spores).toEqual([]);
@@ -105,7 +106,9 @@ describe('0.18.0 seeded pots', () => {
         now.push(signature(game, Object.keys(readings[0].random)));
         leave(game);
       }
-      expect(now).toEqual(readings);
+      expect(now.map(withoutTray)).toEqual(readings); // the Tea Tray only fills gaps (#14)
+      // …and every offer is now a real choice, where 0.18.0 had one card or none.
+      for (const r of now) if (r.round % 2) expect(r.offer).toHaveLength(2);
     }
   });
 

@@ -10,6 +10,7 @@ import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { FIBS, FORTUNES } from '../gameplay/fortunes.js';
 import { UPGRADES } from '../gameplay/upgrades.js';
+import { TRAY } from '../gameplay/teaTray.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { fury, grindInProgress } from '../gameplay/grind.js';
 import { TEAS } from '../gameplay/teas.js';
@@ -534,10 +535,11 @@ export function createEffects({ random = Math.random } = {}) {
       burst(12, () => RIM - rnd(0, 8), () => angle + rnd(-0.08, 0.08), (i) => (i % 2 ? '#f7e8cc' : '#e6ad82'),
         () => rnd(0.3, 0.6), 1.2);
     },
-    upgrade({ id, level, angle }) {
+    upgrade({ id, level, angle, tray }) {
       fx.upgradeGlow = 1;
       spoonBurst(46, angle, ['#ffffff', '#e4f2ee', GOLD], 1.8);
-      say(`${UPGRADES[id].name} ${ROMAN[level] ?? level}. ${UPGRADE_WORDS[id]}`, { color: '#e4eef0', then: true });
+      const words = tray ? `${TRAY[id].name}. ${TRAY[id].words}` : `${UPGRADES[id].name} ${ROMAN[level] ?? level}. ${UPGRADE_WORDS[id]}`;
+      say(words, { color: '#e4eef0', then: true });
     },
     secret({ id, angle }) {
       // A shower of lilac sparks over the top of the cup (the reading shows the words).

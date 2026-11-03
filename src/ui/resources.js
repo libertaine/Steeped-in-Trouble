@@ -25,7 +25,7 @@ export function resourceView(s, text) {
   const g = grindInProgress(s), c = havocInProgress(s), r = runInProgress(s);
   const p = pourInProgress(s), b = breakoutInProgress(s), x = crossingInProgress(s);
   const phase = s.phase === PHASE.PAUSED ? s.pausedFrom : s.phase;
-  const milk = inventory('milk', 'Milk', s.milkLeft, CONFIG.milk.perRound);
+  const milk = inventory('milk', 'Milk', s.milkLeft, CONFIG.milk.perRound, s.milkLeft > CONFIG.milk.perRound ? '+ bonus' : '');
   const cap = sugarCapacity(s);
   const sugar = inventory('sugar', 'Sugar', s.sugarLeft, cap, s.sugarLeft > cap ? '+ bonus'
     : s.modifiers.sugarRegenInterval && s.sugarLeft < cap ? `Next ${seconds(s.sugarRegenTimer)}` : '');
@@ -52,7 +52,8 @@ export function resourceView(s, text) {
     items = [stat('Attempts', `${x.attempts}/${CONFIG.crossingStreet.attempts}`), stat('Lanes', `${x.credited.length}/${TRAFFIC_ROWS.length}`), stat('Time', seconds(CONFIG.crossingStreet.duration - x.clock))];
     progress = [x.credited.length, TRAFFIC_ROWS.length]; progressLabel = 'Crossing'; cue = `${text.hudStatus} · Arrow keys hop; median is safe`;
   } else {
-    items = [milk, sugar, inventory('strainer', 'Leaf catches', s.strainerLeft, strainerCapacity(s.spoon), s.strainerLeft === 0 ? 'exhausted' : '')];
+    items = [milk, sugar, inventory('strainer', 'Leaf catches', s.strainerLeft, strainerCapacity(s.spoon),
+      s.strainerLeft === 0 ? 'exhausted' : s.strainerLeft > strainerCapacity(s.spoon) ? '+ bonus' : '')];
     if ([PHASE.SHORTAGE, PHASE.DAY, PHASE.ARCADE_OFFER].includes(phase)) {
       items = [stat('Tea Cash', s.teaCash), stat('Status', text.roundTitle), stat('Choice', phase === PHASE.SHORTAGE ? `Tin ${CONFIG.shortage.teaPrice} · run / skip free` : 'See choices below')];
       progress = null; cue = text.hudStatus;

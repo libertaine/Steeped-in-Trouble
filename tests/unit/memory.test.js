@@ -6,7 +6,7 @@ import { fortuneRecord, readingMemory, rememberRound } from '../../src/gameplay/
 import { teaFortuneNudges } from '../../src/gameplay/teas.js';
 import { hudText } from '../../src/ui/hud.js';
 import { completeRound, playingGame } from './helpers.js';
-import { killLast, leave, signature } from '../support/legacyPlay.js';
+import { killLast, leave, signature, withoutTray } from '../support/legacyPlay.js';
 import legacy from '../fixtures/pot-0.16.0.json' with { type: 'json' };
 
 const lanesEach = (lanes, perLane = 1) => lanes.flatMap((lane) => new Array(perLane).fill(lane));
@@ -164,7 +164,7 @@ describe('the reading explains itself without changing the draw', () => {
       game.primaryAction();
       for (const expected of readings) {
         killLast(game);
-        expect(signature(game, Object.keys(expected.random))).toEqual(expected);
+        expect(withoutTray(signature(game, Object.keys(expected.random)))).toEqual(expected);
         leave(game);
       }
     }

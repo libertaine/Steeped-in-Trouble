@@ -21,6 +21,7 @@ import { breakoutInProgress } from '../gameplay/biscuitBreakout.js';
 import { TRAFFIC_ROWS, crossingInProgress } from '../gameplay/crossingStreet.js';
 import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
+import { TRAY } from '../gameplay/teaTray.js';
 import { cupCondition } from '../gameplay/porcelain.js';
 import { sugarCapacity } from '../gameplay/weapons.js';
 import { createResources } from './resources.js';
@@ -216,13 +217,16 @@ export function spoonKitText(state) {
   return parts.length ? parts.join(' · ') : 'An ordinary silver spoon.';
 }
 
+const OFFER_NOTES = Object.freeze({ cupboard: 'The cupboard offers assistance.', tray: 'The Tea Tray comes round.' });
+
 /**
  * The upgrade cards to show, or null while no offer is open. Each shows the
- * level the upgrade would reach.
+ * level the upgrade would reach; a Tea Tray treat shows only its name.
  */
 export function offerCards(state) {
   if (state.phase !== PHASE.READING || !state.offer || state.readingTime < readingReadyAt(state)) return null;
   return state.offer.map((id) => {
+    if (Object.hasOwn(TRAY, id)) return { id, title: TRAY[id].name, info: TRAY[id].info, tray: true };
     const u = UPGRADES[id];
     return { id, title: `${u.name} ${pips(state.spoon[id] + 1, u.max)}`, info: u.info };
   });
@@ -386,9 +390,10 @@ export function hudText(state) {
   values.readingSecrets = ready ? state.secrets.map((id) => `${SECRETS[id].words} ${SECRETS[id].reward}.`).join(' ') : '';
   values.referenceSecrets = values.readingSecrets;
   values.temporaryUpgrades = [state.goldenSpoon > 0 ? `Golden Spoon: ${Math.ceil(state.goldenSpoon)} seconds remaining in play.` : '',
-    state.extraSugar > 0 ? `Earned sugar for the next cup: +${state.extraSugar}.` : ''].filter(Boolean).join(' ')
+    state.extraSugar > 0 ? `Earned sugar for the next cup: +${state.extraSugar}.` : '',
+    state.tray ? `From the Tea Tray, for the next cup: ${TRAY[state.tray].name}.` : ''].filter(Boolean).join(' ')
     || 'No temporary spoon effect is active.';
-  values.upgradeProgression = `The cupboard offers help after cup ${CONFIG.upgrades.firstOffer}, then every ${CONFIG.upgrades.offerEvery} cups, while any upgrade can still improve. Upgrades stack for this pot.`;
+  values.upgradeProgression = `The cupboard offers help after cup ${CONFIG.upgrades.firstOffer}, then every ${CONFIG.upgrades.offerEvery} cups, Upgrades stack for this pot; once they run short, the Tea Tray fills the gaps with treats for the next cup only.`;
   if (state.phase === PHASE.SHORTAGE) values.roundNum = `${pad(state.round, 2)}½`;
   if (state.phase === PHASE.ARCADE_OFFER) {
     const offer = ARCADE_OFFERS[state.interlude?.id] ?? ARCADE_OFFERS.dailyPour;
@@ -519,6 +524,8 @@ export function createHud(doc = document) {
     if (!offer || key === shownOffer) return;
     shownOffer = key;
     offer.hidden = !view;
+    const note = offer.querySelector('.offer-head em');
+    if (note) note.textContent = view?.some((card) => card.tray) ? OFFER_NOTES.tray : OFFER_NOTES.cupboard;
     cards.forEach((card, i) => {
       const choice = view?.[i];
       card.hidden = !choice;
@@ -557,7 +564,7 @@ export function createHud(doc = document) {
       const acknowledgment = doc.getElementById('upgradeAcknowledgment');
       if (!acknowledgment) return;
       doc.defaultView.clearTimeout(acknowledgmentTimer);
-      acknowledgment.textContent = `${event.name} acquired · level ${event.level}`;
+      acknowledgment.textContent = event.tray ? `${event.name} · next cup only` : `${event.name} acquired · level ${event.level}`;
       acknowledgment.hidden = false;
       acknowledgmentTimer = doc.defaultView.setTimeout(() => { acknowledgment.hidden = true; }, 2400);
     },

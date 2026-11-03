@@ -126,6 +126,24 @@ until the pot runs dry.
 
 With three or more upgrades the spoon grows a filigree handle.
 
+**The Tea Tray.** The four upgrades run out after ten picks (usually by cup
+19), so once fewer upgrades can improve than an offer has cards, the Tea Tray
+fills the empty slots. Every offer stays a choice of two. Its treats last one
+cup and never stack:
+
+| Treat | Next cup only |
+| --- | --- |
+| **A Spare Jug** | +1 milk pour |
+| **A Spare Strainer** | +1 strainer catch (not offered before Karma, which needs no strainer) |
+| **A Sugar Lump** | +1 sugar burst |
+| **A Golden Moment** | The spoon starts the cup golden, for 9 s (not offered before The Daily Grind, whose win gilds the spoon for longer) |
+
+A treat is served when the next normal cup starts, never during a bonus round
+or adventure in between, and whatever is left of it is gone when the cup after
+that starts. The cards rotate offer by offer and use no random numbers, so a
+seeded pot plays exactly as before. Tea Cash is not on the tray: by the late
+game every pot has more than enough of it.
+
 ### The Golden Spoon
 
 The golden sugar cube may now award the Golden Spoon (and every jackpot does):

@@ -63,6 +63,7 @@ import {
 import { advanceEnemy, hasEscaped, updateSpawning, washBack } from '../gameplay/enemies.js';
 import { releaseSpores, sproutPuffball, updateSpores } from '../gameplay/mushroom.js';
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
+import { TRAY, fillFromTray, serveTray } from '../gameplay/teaTray.js';
 import {
   findStrikingShot, fireSteam, isNearCloud, killScore, milkPulse, pourMilk, spendDart, sugarBurst, sugarCapacity,
   updateClouds, updateShots, updateSugarRegen,
@@ -193,6 +194,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
       round: state.round, fortune: state.fortune, tea: state.tea, debut: state.round > 1 && state.teaAge === 1,
       chapter: state.progress.chapter, opens: opensChapter(state.progress, state.round),
     });
+    serveTray(state, emit);
   }
 
   function resetMatch() {
@@ -210,6 +212,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state.spoon = createSpoon();
     state.goldenSpoon = 0;
     state.extraSugar = 0;
+    state.tray = null;
     state.discovered = [];
     state.chocolate = null;
     state.havocDue = false;
@@ -242,7 +245,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     clearField();
     // The same record explains the reading afterwards (gameplay/memory.js), without drawing again.
     state.nextFortune = drawFortune(fortuneRecord(state), rng);
-    state.offer = offerDue(state.round) ? drawOffer(state.spoon, rng) : null;
+    const offering = offerDue(state.round);
+    const upgrades = offering ? drawOffer(state.spoon, rng) ?? [] : null;
     state.havocDue = havocDue(state, treats);
     if (state.havocDue && milestoneDue(state)) {
       // The milestone never waits: the hot chocolate comes after the next reading instead.
@@ -250,6 +254,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
       state.havocAfter = state.round + 1;
     }
     state.grindDue = grindDue(state, brew); // never alongside the hot chocolate
+    // Upgrades running short? The Tea Tray fills the gaps, knowing what follows this reading.
+    state.offer = offering ? fillFromTray(state, upgrades) : null;
     state.shortageDue = shortageDue(state); // never alongside a milestone boss
     state.arcadeDue = eligibleInterlude(state);
     earnTeaCash(state, CONFIG.teaCash.round);
@@ -919,17 +925,20 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
       return null;
     },
     /**
-     * Take offered upgrade number `index` (0-based) and brew the next cup.
-     * Returns true if an upgrade was taken.
+     * Take offered card number `index` (0-based), an upgrade or a Tea Tray
+     * treat for the next cup, and brew on. Returns true if a card was taken.
      */
     chooseUpgrade(index) {
       if (!offerOpen()) return false;
       const id = state.offer[index];
       if (!id) return false;
-      applyUpgrade(state.spoon, id);
+      const tray = Object.hasOwn(TRAY, id);
+      if (tray) state.tray = id; // served when the next normal cup starts
+      else applyUpgrade(state.spoon, id);
       state.offer = null;
       continueFromReading();
-      emit('upgrade', { id, level: state.spoon[id], name: UPGRADES[id].name, angle: state.angle });
+      emit('upgrade', tray ? { id, tray, name: TRAY[id].name, angle: state.angle }
+        : { id, level: state.spoon[id], name: UPGRADES[id].name, angle: state.angle });
       return true;
     },
     /** P: pause or resume during a round. Returns true if handled. */

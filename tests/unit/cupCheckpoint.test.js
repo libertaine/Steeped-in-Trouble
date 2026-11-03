@@ -25,11 +25,12 @@ describe('Continue Pot: 0.16.0 saves', () => {
     expect(JSON.stringify(original)).toBe(before); // never changed in place
     expect(migrated.schemaVersion).toBe(POT_SCHEMA_VERSION);
     expect(validateCheckpoint(migrated)).toBe(true);
-    const { porcelain, goldenLeaf, goldenLeafTimer, spores, modifiers, ...kept } = migrated.state;
+    const { porcelain, goldenLeaf, goldenLeafTimer, spores, tray, modifiers, ...kept } = migrated.state;
     const { modifiers: heldModifiers, ...held } = original.state;
     expect(kept).toEqual(held);
     expect(modifiers).toEqual({ ...heldModifiers, puffballChance: 0 }); // schema 3: the neutral puffball chance
     expect(spores).toEqual([]);
+    expect(tray).toBeNull(); // schema 4: no Tea Tray treat waits at a saved reading
     expect({ goldenLeaf, goldenLeafTimer }).toEqual({ goldenLeaf: null, goldenLeafTimer: null });
     for (const id of V1_STREAMS) expect(migrated.random[id]).toEqual(original.random[id]);
     const seed = toSeed(original.random.normal.seed) ^ GOLDEN_LEAF_SALT;

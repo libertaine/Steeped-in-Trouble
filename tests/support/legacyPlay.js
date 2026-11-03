@@ -46,6 +46,17 @@ export function signature(game, streams = Object.keys(game.exportRandom())) {
     heat: s.heat, chapter: s.progress.chapter, random: Object.fromEntries(streams.map((id) => [id, random[id]])) };
 }
 
+/**
+ * A reading as a release before the Tea Tray (0.19.0) would have recorded it:
+ * the tray's cards dropped from the offer, and an offer left empty is none.
+ * The tray draws no random numbers, so everything else must already match.
+ */
+export function withoutTray(reading) {
+  if (!reading.offer) return reading;
+  const offer = reading.offer.filter((id) => !id.startsWith('tray'));
+  return { ...reading, offer: offer.length ? offer : null };
+}
+
 /** Restore a checkpoint and play `rounds` more cups, recording each reading. */
 export function continueFrom(createGame, checkpoint, rounds, streams) {
   const game = createGame({ checkpoint: structuredClone(checkpoint) });

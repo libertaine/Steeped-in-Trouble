@@ -196,6 +196,12 @@ export const CONFIG = deepFreeze({
     quickStirSpeed: 0.15, // Quick Stir: turn speed per level
   },
 
+  // The Tea Tray (gameplay/teaTray.js): one-cup treats that fill an upgrade
+  // offer once fewer upgrades can improve than it has cards.
+  teaTray: {
+    goldenSpoon: 9, // A Golden Moment: seconds of Golden Spoon from the next cup's start
+  },
+
   // The Golden Spoon: a temporary transformation from the golden sugar cube.
   goldenSpoon: {
     duration: 9,
