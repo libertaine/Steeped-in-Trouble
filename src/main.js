@@ -287,6 +287,7 @@ function boot() {
     handleEvents();
     strange.update(dt, game.state, { blocked });
     for (const event of strange.drainEvents()) {
+      if (event.type === 'strangeStart') game.noteStrange(); // the pot's plan follows its first
       effects.handle(event);
       audio.handle(event);
     }

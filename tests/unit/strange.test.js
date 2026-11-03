@@ -20,8 +20,9 @@ function watch(game, options = {}) {
 
 /**
  * One frame of main.js's loop: events, the simulation (unless a menu or a
- * rewind holds it), events again, then the happenings. Returns whether the
- * simulation advanced, and the presentation events.
+ * rewind holds it), events again, then the happenings, whose start is
+ * reported back to the game. Returns whether the simulation advanced, and
+ * the presentation events.
  */
 function frame(game, strange, { input = IDLE, blocked = false } = {}) {
   for (const e of game.drainEvents()) strange.handle(e);
@@ -29,7 +30,9 @@ function frame(game, strange, { input = IDLE, blocked = false } = {}) {
   if (advanced) game.update(DT, input);
   for (const e of game.drainEvents()) strange.handle(e);
   strange.update(DT, game.state, { blocked });
-  return { advanced, events: strange.drainEvents() };
+  const events = strange.drainEvents();
+  if (events.some((e) => e.type === 'strangeStart')) game.noteStrange();
+  return { advanced, events };
 }
 
 /** Run frames for `seconds`; returns how many advanced the simulation, and every event. */
@@ -45,7 +48,9 @@ function run(game, strange, seconds, options) {
 }
 
 const mushroom = (seed = 3, spawning = false) => playingGame({ seed, tea: 'mushroom', spawning });
-const snapshot = (game) => JSON.stringify({ state: game.state, random: game.exportRandom() });
+// Everything but the one thing the happenings are allowed to leave behind: which Mushroom Tea cup
+// had the pot's first (state.strangeFirst, bookkeeping for the plan, read by nothing that plays).
+const snapshot = (game) => JSON.stringify({ state: { ...game.state, strangeFirst: null }, random: game.exportRandom() });
 const types = (events) => events.map((e) => e.type);
 
 describe('Strange Happenings: the schedule', () => {
@@ -54,10 +59,10 @@ describe('Strange Happenings: the schedule', () => {
     expect(strangeSchedule(7, 80)).not.toEqual(strangeSchedule(8, 80));
   });
 
-  it('never visits the first cup; the first comes in cup 2 or 3, then every 2–4 cups, never the same twice running', () => {
+  it('never visits the first Mushroom Tea cup; the first comes in the second, then every 2–4, never the same twice running', () => {
     for (let seed = 1; seed <= 300; seed++) {
       const cups = strangeSchedule(seed, 40).map((p, cup) => (p ? { ...p, cup } : null)).filter(Boolean);
-      expect(cups[0].cup === 2 || cups[0].cup === 3).toBe(true);
+      expect(cups[0].cup).toBe(S.firstCup);
       for (let i = 1; i < cups.length; i++) {
         expect([2, 3, 4]).toContain(cups[i].cup - cups[i - 1].cup);
         expect(cups[i].kind).not.toBe(cups[i - 1].kind);
@@ -95,6 +100,90 @@ describe('Strange Happenings: the schedule', () => {
   });
 });
 
+describe('Strange Happenings: counted in Mushroom Tea cups', () => {
+  /** A cup of Mushroom Tea in round `round`, the pot's `cup`th, with the plan's first happening at `first` (0: still to come). */
+  function mushroomCup(seed, { round, cup, first = 0 }) {
+    const game = mushroom(seed);
+    Object.assign(game.state, { round, mushroomCups: cup, strangeFirst: first });
+    return game;
+  }
+  /** Seeds whose first happening (in the second Mushroom Tea cup) is a breathing one: the simplest to watch. */
+  const breathingFirst = Array.from({ length: 300 }, (_, i) => i + 1).filter((seed) => strangeSchedule(seed, 3)[2]?.kind === 'breathing');
+
+  it('follows the Mushroom Tea cups, whatever round they fall in', () => {
+    const seed = breathingFirst[0];
+    const plan = strangeSchedule(seed, 3)[2];
+    const second = mushroomCup(seed, { round: 17, cup: 2 });
+    const a = watch(second);
+    run(second, a, plan.start + 0.2);
+    expect(a.active?.kind).toBe('breathing');
+    const first = mushroomCup(seed, { round: 17, cup: 1 });
+    const b = watch(first);
+    expect(run(first, b, 30).events).toEqual([]); // never the first Mushroom Tea cup, even in round 17
+  });
+
+  it('records the cup of the first happening, and plans the rest from it', () => {
+    const seed = breathingFirst[1];
+    const game = mushroomCup(seed, { round: 12, cup: 2 });
+    const strange = watch(game);
+    run(game, strange, 30);
+    expect(game.state.strangeFirst).toBe(2);
+    const later = strangeSchedule(seed, 20, 2).map((p, cup) => (p ? cup : 0)).filter(Boolean);
+    expect(later[0]).toBe(2);
+    expect([4, 5, 6]).toContain(later[1]);
+  });
+
+  it('waits for the next Mushroom Tea cup when the second never offers a safe moment, never forcing one', () => {
+    const seed = breathingFirst[2];
+    const game = mushroomCup(seed, { round: 14, cup: 2 });
+    const strange = watch(game);
+    const leaf = placeEnemy(game.state, { lane: 5, radius: CONFIG.arena.rimRadius - 10 }); // the rim is never quiet
+    expect(run(game, strange, 40).events).toEqual([]);
+    expect(game.state.strangeFirst).toBe(0);
+    // The next Mushroom Tea cup, a few rounds later: now it comes.
+    game.state.enemies.splice(game.state.enemies.indexOf(leaf), 1);
+    Object.assign(game.state, { round: 19, mushroomCups: 3 });
+    strange.handle({ type: 'roundStart' });
+    const plan = strangeSchedule(seed, 3, 3)[3];
+    run(game, strange, plan.start + 6);
+    expect(game.state.strangeFirst).toBe(3);
+    expect(strange.active ?? { kind: plan.kind }).toMatchObject({ kind: plan.kind });
+  });
+
+  it('picks up a restored pot’s plan exactly, from its saved count and first cup', () => {
+    for (const seed of breathingFirst.slice(0, 5)) {
+      const plans = strangeSchedule(seed, 30, 3);
+      const next = plans.findIndex((p, cup) => p && cup > 3);
+      const game = mushroomCup(seed, { round: 25, cup: next, first: 3 });
+      const strange = watch(game); // a fresh controller, as after a restore
+      run(game, strange, plans[next].start - 0.2);
+      expect(strange.active).toBeNull();
+      const started = run(game, strange, 7).events.find((e) => e.type === 'strangeStart');
+      expect(started).toMatchObject({ kind: plans[next].kind });
+      const between = mushroomCup(seed, { round: 24, cup: next - 1, first: 3 });
+      if (!plans[next - 1]) expect(run(between, watch(between), 30).events).toEqual([]);
+    }
+  });
+
+  it('keeps the kinds from repeating, whichever cup the first happening took', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      for (const first of [2, 3, 5]) {
+        const cups = strangeSchedule(seed, 40, first).filter(Boolean);
+        expect(cups[0].cup).toBe(first);
+        for (let i = 1; i < cups.length; i++) {
+          expect(cups[i].kind).not.toBe(cups[i - 1].kind);
+          expect([2, 3, 4]).toContain(cups[i].cup - cups[i - 1].cup);
+        }
+      }
+    }
+  });
+
+  it('changes nothing for a pinned Mushroom Tea pot, where every cup is a Mushroom Tea cup', () => {
+    const game = mushroom(4);
+    expect(game.state).toMatchObject({ round: 1, mushroomCups: 1 });
+  });
+});
+
 describe('Strange Happenings: what is said', () => {
   it('the first rewind always says the patch-notes line; later lines do not repeat until all are heard', () => {
     const book = createLineBook();
@@ -125,7 +214,7 @@ describe('Strange Happenings: when they happen', () => {
     const seed = Array.from({ length: 200 }, (_, i) => i + 1).find((s) => strangeSchedule(s, 3)[2]?.kind === 'breathing');
     const plan = strangeSchedule(seed, 3)[2];
     const game = mushroom(seed);
-    game.state.round = 2; // as if the first cup had been played
+    Object.assign(game.state, { round: 2, mushroomCups: 2 }); // as if the first cup had been played
     const strange = watch(game);
     run(game, strange, plan.start - 0.1);
     expect(strange.active).toBeNull();

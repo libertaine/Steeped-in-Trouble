@@ -517,8 +517,10 @@ export const CONFIG = deepFreeze({
   // only. The simulation never sees them; a rewind only holds its clock still,
   // like a pause. Prototype tuning, meant to be playtested.
   strange: {
-    firstCups: [2, 3], // the first can come in either of these cups (never the first)…
-    gaps: [[2, 0.45], [3, 0.4], [4, 0.15]], // …then this many cups later: [cups, weight]
+    // Counted in Mushroom Tea cups, not rounds: the 2nd Mushroom Tea cup of a pot,
+    // the 3rd, and so on, whatever was brewed in between.
+    firstCup: 2, // the first is due in this Mushroom Tea cup (never the first), and waits for a later one if it cannot happen safely…
+    gaps: [[2, 0.45], [3, 0.4], [4, 0.15]], // …then this many Mushroom Tea cups after it: [cups, weight]
     weights: { rewind: 0.4, breathing: 0.3, impostor: 0.3 }, // never the same one twice running
     startMin: 5, // seconds of play into the cup, before any wait for a quiet moment
     startMax: 14,

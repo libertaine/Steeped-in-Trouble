@@ -1,10 +1,14 @@
 // Mushroom Tea's Strange Happenings: now and then the game itself misbehaves.
 //
 // Presentation only, like effects.js. Nothing here changes game state or
-// draws from a gameplay generator. Each cup's chances come from a tiny
-// generator of its own, derived from the pot's seed and the cup's number, so
-// the same seed always brings the same happenings in the same cups, and a
-// restored pot or a restart needs nothing saved.
+// draws from a gameplay generator. Cups are counted in Mushroom Tea cups (the
+// simulation keeps state.mushroomCups), so in Chapter 3's rotation the plan
+// follows the tea, not the round. Each Mushroom Tea cup's chances come from a
+// tiny generator of its own, derived from the pot's seed and that count, so
+// the same seed always brings the same happenings in the same cups. The one
+// thing remembered is which Mushroom Tea cup had the pot's first happening
+// (state.strangeFirst, reported through game.noteStrange() by main.js), so a
+// restored pot carries on its plan exactly.
 //
 // - Time Rewind: play stops for a moment while the last few seconds run
 //   backwards (from a short recording of what was drawn: never the
@@ -15,8 +19,10 @@
 // - The Impostor Spoon: a translucent spoon follows the real one's recorded
 //   path a second behind, with ideas of its own. It cannot touch anything.
 //
-// One at a time, at most one a cup, never in the first cup, and only while a
-// Mushroom Tea cup is being played. The controller's clock is the cup's play
+// One at a time, at most one a cup, never in the first Mushroom Tea cup, and
+// only while a Mushroom Tea cup is being played. The first is due in the
+// second Mushroom Tea cup; if that cup never offers a safe moment it waits for
+// the next one, never forcing itself into an unsafe one. The controller's clock is the cup's play
 // time: it stops while paused, between cups, and behind every menu.
 //
 // Output: `view` (read by the renderer, tea painter and soundtrack), `shown()`
@@ -69,7 +75,7 @@ const smoothstep = (t) => {
   return u * u * (3 - 2 * u);
 };
 
-/** A cup's own little generator. Cup 0 decides when the first happening comes. */
+/** A Mushroom Tea cup's own little generator. */
 export function cupRandom(seed, cup) {
   return createRandom(toSeed(toSeed(seed) ^ STRANGE_SALT ^ Math.imul(cup, 0x9e3779b1)));
 }
@@ -85,15 +91,15 @@ function weighted(pairs, r) {
 }
 
 /**
- * The happenings planned for cups 1..cups, as an array indexed by cup
- * (null where there is none). Pure: the same seed always gives the same plan.
- * Every cup's generator draws the same five numbers whether or not it has a
- * happening, so changing a rule for one cup never reshuffles the others.
+ * The happenings planned for Mushroom Tea cups 1..cups, as an array indexed
+ * by that count (null where there is none), with the first in cup `first`.
+ * Pure: the same seed and first cup always give the same plan. Every cup's
+ * generator draws the same five numbers whether or not it has a happening,
+ * so changing a rule for one cup never reshuffles the others.
  */
-export function strangeSchedule(seed, cups) {
+export function strangeSchedule(seed, cups, first = S.firstCup) {
   const plans = [null];
-  const first = cupRandom(seed, 0);
-  let next = S.firstCups[Math.min(S.firstCups.length - 1, Math.floor(first.next() * S.firstCups.length))];
+  let next = first;
   let last = null;
   for (let cup = 1; cup <= cups; cup++) {
     const rng = cupRandom(seed, cup);
@@ -204,6 +210,7 @@ export function createStrangeHappenings({ reduced = () => false, seed = () => 0,
   let watched = null; // the state being watched: a new one (a restored pot, a practice) starts afresh
   let plans = [null];
   let planSeed = null;
+  let planFirst = null;
   let forced = mode && STRANGE_KINDS.includes(mode) ? mode : null; // a kind still to be forced
   let clock = 0; // seconds of play in this cup
   let consumed = false; // this cup has had its happening (or its moment has passed)
@@ -251,13 +258,17 @@ export function createStrangeHappenings({ reduced = () => false, seed = () => 0,
     clearHistory();
   }
 
-  function planFor(cup) {
+  /** This Mushroom Tea cup's plan. Until the pot's first happening has played, every cup from the first one due is its chance. */
+  function planFor(state) {
+    const cup = state.mushroomCups;
+    const first = state.strangeFirst || Math.max(S.firstCup, cup);
     const s = seed();
-    if (s !== planSeed) {
+    if (s !== planSeed || first !== planFirst) {
       planSeed = s;
+      planFirst = first;
       plans = [null];
     }
-    if (cup >= plans.length) plans = strangeSchedule(planSeed, Math.max(cup, plans.length * 2, 16));
+    if (cup >= plans.length) plans = strangeSchedule(planSeed, Math.max(cup, plans.length * 2, 16), first);
     return plans[cup] ?? null;
   }
 
@@ -572,12 +583,12 @@ export function createStrangeHappenings({ reduced = () => false, seed = () => 0,
       return cupForced;
     }
     if (mode === 'often') {
-      const plan = planFor(state.round);
+      const plan = planFor(state);
       cupForced = { kind: STRANGE_KINDS[(state.round - 1) % STRANGE_KINDS.length], start: plan?.start ?? S.startMin,
         quip: plan?.quip ?? 0.5, variant: plan?.variant ?? 0.5 };
       return cupForced;
     }
-    return planFor(state.round);
+    return planFor(state);
   }
 
   function maybeBegin(state) {
@@ -610,7 +621,7 @@ export function createStrangeHappenings({ reduced = () => false, seed = () => 0,
     get active() {
       return active ? { kind: active.kind, stage: active.stage, time: active.time } : null;
     },
-    /** The plans for the first `cups` cups of the current pot (for tests and tinkering). */
+    /** The plans for the first `cups` Mushroom Tea cups of the current pot, if the first comes when due (for tests and tinkering). */
     schedule: (cups = 12) => strangeSchedule(seed(), cups).slice(1).map((p, i) => (p ? { ...p } : { cup: i + 1, kind: null })),
     /** Start a happening as soon as it can (testing): the current cup, if it is Mushroom Tea, or the next one. */
     force(kind) {
