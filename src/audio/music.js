@@ -431,14 +431,18 @@ export function createMusic({ random = Math.random } = {}) {
      * @param {AudioContext | null} context the shared context, or null while sound is off
      * @param {object} state simulation state (read only)
      * @param {number} dt seconds since the previous frame
+     * @param {object} [strange] Mushroom Tea's Strange Happenings: silent while a rewind holds time
+     *   still, and muffled on each of the cup's breaths
      */
-    update(context, state, dt) {
+    update(context, state, dt, strange = null) {
       const playing = state.phase === PHASE.PLAYING;
       // Tension rises quickly and lets go slowly.
       const target = playing ? rawTension(state.enemies) : 0;
       const rate = target > tension ? 2.5 : 0.6;
       tension += (target - tension) * Math.min(1, dt * rate);
-      const mood = musicMood(state, tension);
+      const held = !!strange?.holding;
+      const mood = held ? { section: 'silent', tempo, tension: 0, golden: false, stormy: false } : musicMood(state, tension);
+      const breath = strange?.kind === 'breathing' ? strange.breathing.intensity * strange.breathing.breath : 0;
       tempo += (mood.tempo - tempo) * Math.min(1, dt * 0.5);
 
       if (!context) {
@@ -451,11 +455,11 @@ export function createMusic({ random = Math.random } = {}) {
       // The band swells a little with the tension, on top of the layers it adds.
       const intensity = mood.section === 'grind' ? mood.tension : tension;
       const level = VOLUME * (mood.section === 'silent' ? 0 : mood.section === 'play' || mood.section === 'grind' ? 0.7 + 0.3 * intensity : 0.8);
-      bus.gain.setTargetAtTime(level, now, mood.section === 'silent' ? 0.25 : 0.6);
+      bus.gain.setTargetAtTime(level, now, held ? 0.05 : mood.section === 'silent' ? 0.25 : 0.6);
       const brightness = mood.section === 'play' ? 1400 + 5600 * tension
         : mood.section === 'havoc' ? 3000 + 2000 * tension
           : mood.section === 'grind' ? 1800 + 4200 * mood.tension + 1500 * mood.pressure : 1100;
-      tone.frequency.setTargetAtTime(brightness, now, 0.3);
+      tone.frequency.setTargetAtTime(brightness * (1 - 0.5 * breath), now, 0.3);
       if (mood.section === 'silent') {
         nextTime = 0;
         pending = [];

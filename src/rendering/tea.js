@@ -71,6 +71,9 @@ const SHEEN = [
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
+// The Cup Is Breathing (rendering/strange.js): how far the broth swells, by quality.
+const BREATH_SWELL = CONFIG.strange.breathing.swell;
+
 const rgbCache = new Map();
 function rgb(hex) {
   if (!rgbCache.has(hex)) rgbCache.set(hex, [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)));
@@ -890,6 +893,7 @@ export function createTeaPainter(main) {
   const xs = new Float64Array(MAX_POINTS);
   const ys = new Float64Array(MAX_POINTS);
   const ws = new Float64Array(MAX_POINTS);
+  let breathGlow = 0; // while the cup breathes, the meniscus brightens with each breath
 
   function layer(res) {
     const g = offscreen(Math.ceil(BOX * res)).getContext('2d');
@@ -1460,7 +1464,7 @@ export function createTeaPainter(main) {
       const n = 0.5 + 0.5 * Math.sin(a * 3 + t * 0.5 + Math.sin(a * 2 - t * 0.3)) * Math.sin(a * 5 - t * 0.8);
       const lit = Math.max(0, Math.cos(a + 2.25));
       const near = angleDifference(a, spoon.angle);
-      const alpha = 0.05 + 0.16 * n * n + 0.12 * lit + stirGlow * Math.exp(-(near * near) / 0.03);
+      const alpha = (0.05 + 0.16 * n * n + 0.12 * lit + stirGlow * Math.exp(-(near * near) / 0.03)) * (1 + breathGlow);
       levels[Math.min(STEPS - 1, Math.floor(alpha * STEPS * 1.6))].push(a);
     }
     ctx.globalCompositeOperation = 'lighter';
@@ -1480,13 +1484,47 @@ export function createTeaPainter(main) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  /** The breath's colour, welling up from the middle of the broth: violet on the way in, rose on the way out. */
+  function drawBreathColor(breathing) {
+    const b = breathing.intensity * breathing.breath;
+    if (b < 0.01) return;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.16 * b;
+    blot(mixHex('#b07ae0', '#e38ab8', breathing.breath), CX, CY, 150 + 90 * breathing.breath);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** Exhaled rings, running out from the middle to the porcelain. */
+  function drawBreathRings(breathing) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = '#e7b0cf';
+    for (const u of breathing.rings) {
+      const echoes = detail.bloom ? [0, 0.12] : [0];
+      for (const lag of echoes) {
+        const v = u - lag;
+        if (v <= 0) continue;
+        ctx.globalAlpha = 0.2 * (1 - v) * breathing.intensity * (lag ? 0.5 : 1);
+        ctx.lineWidth = 3 + 14 * (1 - v);
+        ctx.beginPath();
+        ctx.arc(CX, CY, 20 + (RIM - 30) * (1 - (1 - v) ** 2), 0, TAU);
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
   return {
     /**
      * Draw the whole liquid surface, clipped to the cup.
      * @param {object} liquid tea state from createTea()
      * @param {object} state simulation state (read only)
+     * @param {{ quality?: string, scale?: number, breathing?: object }} [options] breathing: the
+     *   Strange Happening's breath, if the cup is breathing. Only the liquid's picture swells (never
+     *   below its own size, and never with reduced motion); the leaves and the rim stay exactly put.
      */
-    paint(liquid, state, { quality = 'high', scale = 1 } = {}) {
+    paint(liquid, state, { quality = 'high', scale = 1, breathing = null } = {}) {
       detail = QUALITY[quality] ?? QUALITY.high;
       prepare(detail.fullResolution ? Math.max(1, Math.min(2, scale)) : 1);
       ctx = soft;
@@ -1545,6 +1583,7 @@ export function createTeaPainter(main) {
       drawGlows(liquid);
       drawHighlights(liquid);
       drawReadingGlow(liquid);
+      if (breathing) drawBreathColor(breathing);
       ctx.strokeStyle = cached.shadow;
       ctx.lineWidth = 50;
       ctx.beginPath();
@@ -1556,7 +1595,11 @@ export function createTeaPainter(main) {
       ctx.beginPath();
       ctx.arc(CX, CY, RIM, 0, TAU);
       ctx.clip();
-      ctx.drawImage(soft.canvas, ORIGIN_X, ORIGIN_Y, BOX, BOX);
+      const b = breathing ? breathing.intensity * breathing.breath : 0;
+      const swell = liquid.reduced ? 0 : b * (detail.bloom ? BREATH_SWELL.high : BREATH_SWELL.low);
+      ctx.drawImage(soft.canvas, ORIGIN_X - (BOX * swell) / 2, ORIGIN_Y - (BOX * swell) / 2, BOX * (1 + swell), BOX * (1 + swell));
+      breathGlow = 1.2 * b;
+      if (breathing?.rings.length) drawBreathRings(breathing);
       drawWakes(state);
       drawRipples(liquid);
       drawSurges(liquid);

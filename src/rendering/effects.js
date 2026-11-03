@@ -90,6 +90,10 @@ const SPROUT_WORDS = Object.freeze([
   'The puffball has delegated.',
 ]);
 
+// Strange Happenings (rendering/strange.js): the game's own voice, and the impostor's ghostly silver.
+const STRANGE_VOICE = '#d9c4f2';
+const IMPOSTOR_SILVER = ['#dcd0ff', '#b48cff', '#f4f0ff'];
+
 const ABSURD_TEAS = [
   { color: '#2f7fe0', text: 'The tea is now Earl Blue.' },
   { color: '#e04fa8', text: 'Raspberry oolong, apparently.' },
@@ -370,6 +374,17 @@ export function createEffects({ random = Math.random } = {}) {
       } else {
         explainOnce('sprout', 'It split. Puffballs left alone become two leaves.', RIPE_AMBER);
       }
+    },
+    // Strange Happenings. A remark never talks over something the player is being told.
+    strangeQuip({ text }) {
+      if (fx.whisper || queue.length) return;
+      say(text, { color: STRANGE_VOICE, life: 3 });
+    },
+    impostorAppear({ angle }) {
+      spoonBurst(10, angle, IMPOSTOR_SILVER, 0.6);
+    },
+    impostorVanish({ angle }) {
+      spoonBurst(18, angle, IMPOSTOR_SILVER, 0.9);
     },
     wanderWarn() {
       explainOnce('wander', 'A lavender curl: that leaf is about to change lanes.', WANDER_LAVENDER);

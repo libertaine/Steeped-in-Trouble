@@ -17,6 +17,7 @@ import { createAudio } from './audio/audio.js';
 import { attachCanvasScaling } from './rendering/canvas.js';
 import { attachViewportFit } from './ui/viewport.js';
 import { createEffects } from './rendering/effects.js';
+import { createStrangeHappenings } from './rendering/strange.js';
 import { createRenderer } from './rendering/renderer.js';
 import { createHud } from './ui/hud.js';
 import { createPresentation } from './ui/presentation.js';
@@ -78,6 +79,10 @@ function boot() {
   const progress = createLocalProgress(storage);
   const sessions = createSessions(mainPot, progress);
   const game = sessions.game;
+  // Mushroom Tea's Strange Happenings (presentation only). With ?debug, ?strange=rewind|breathing|impostor
+  // brings one in the next Mushroom Tea cup, ?strange=often one every cup, and ?strange=off none.
+  const strange = createStrangeHappenings({ reduced: () => effects.fx.tea.reduced, seed: () => game.seed,
+    mode: params.has('debug') ? params.get('strange') : null });
   let settings = initialSettings({ params, storage, touchDevice: isTouchDevice(window) });
   let controls;
   const onScreen = createOnScreenControls({ doc: document, storage,
@@ -138,9 +143,10 @@ function boot() {
   controls = createControls({
     doc: document,
     commands: {
-      fire: game.fireSteam,
-      milk: game.pourMilk,
-      sugar: game.sugarBurst,
+      // While a rewind holds time still, the spoon's actions wait too (pausing still works, and ends it).
+      fire: () => !strange.holding && game.fireSteam(),
+      milk: () => !strange.holding && game.pourMilk(),
+      sugar: () => !strange.holding && game.sugarBurst(),
       confirm: () => collectionUI?.primary() || game.confirm(),
       togglePause: game.togglePause,
       restart: () => game.state.phase === 'gameover' && (collectionUI?.primary() || game.restart()),
@@ -251,6 +257,7 @@ function boot() {
   function handleEvents() {
     for (const event of game.drainEvents()) {
       sessions.handle(event);
+      strange.handle(event);
       // Leaving an adventure, a Space still held from it must not become steam in the cup.
       if (event.type === 'pourEnd' || event.type === 'breakoutEnd') controls.settle();
       // Nor may an arrow still held from the street start turning the spoon.
@@ -264,7 +271,8 @@ function boot() {
   }
 
   const loop = createLoop((dt) => {
-    effects.update(dt, game.state);
+    // A rewind holds time still: the simulation and its particles wait for it.
+    if (!strange.holding) effects.update(dt, game.state);
     controls.update();
     // Input can leave the runner between frames. Clear its holds before the
     // next cup advances, so the Space used to go home cannot also fire steam.
@@ -272,11 +280,19 @@ function boot() {
     if (overlay.isOpen && !overlay.fromTeaBreak && (game.state.phase !== 'ready' || sessions.practice)) {
       overlay.close();
     }
-    if (!title.blocked && !presentation.blocked && !collectionUI.blocked && !overlay.blocked) game.update(dt, controls.held, controls.walk);
+    const blocked = title.blocked || presentation.blocked || collectionUI.blocked || overlay.blocked;
+    if (!blocked && !strange.holding) game.update(dt, controls.held, controls.walk);
     handleEvents();
-    audio.update(game.state, dt);
-    renderer.draw(game.state, effects.fx, dt);
-    hud.update(game.state);
+    strange.update(dt, game.state, { blocked });
+    for (const event of strange.drainEvents()) {
+      effects.handle(event);
+      audio.handle(event);
+    }
+    audio.update(game.state, dt, strange.view);
+    // During a rewind, a recorded moment is drawn (and its score shown) in place of the live one.
+    const shown = strange.shown(game.state);
+    renderer.draw(shown, effects.fx, dt, strange.view);
+    hud.update(shown);
     presentation.update();
     collectionUI.update();
   });
@@ -321,6 +337,14 @@ function boot() {
     window.__TEACUP__ = {
       game,
       effects,
+      strange: {
+        force: (kind) => strange.force(kind),
+        schedule: (cups) => strange.schedule(cups),
+        get active() { return strange.active; },
+        get holding() { return strange.holding; },
+        get recorded() { return strange.recorded; },
+        view: strange.view,
+      },
       version: __APP_VERSION__,
       config: CONFIG,
       settings: () => ({ ...settings }),

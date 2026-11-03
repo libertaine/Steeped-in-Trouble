@@ -62,6 +62,10 @@ const PUFF_SPOTS = '#a46fb8';
 const RIPE = '#ffa25c';
 const SPORE = '#8ef0dc';
 const SPORE_RADIUS = CONFIG.spores.radius;
+// Strange Happenings: the impostor's ghostly silver, and the rewind's tape tint.
+const IMPOSTOR = { fill: '#dcd0ff', edge: '#3a2d5c', glow: '#b48cff', blur: 16, bowl: '#7a62b8', golden: false };
+const IMPOSTOR_LOW = { ...IMPOSTOR, blur: 0 };
+const TAPE = '#7fd6e8';
 
 /** Is the spoon aiming right now (a round, the toasting, or the boss fight in progress, or paused during one)? */
 function aiming(state) {
@@ -541,6 +545,70 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
     ctx.beginPath();
     ctx.arc(x, y, r, 0, TAU);
     ctx.fill();
+  }
+
+  /**
+   * The Impostor Spoon: a translucent violet copy, drawn beneath the real
+   * spoon and without an aim beam, with a pair of eyes that keep glancing at
+   * the real one. Its pretend steam is hollow rings that fade within a short
+   * way of the rim, so it never looks like a shot.
+   */
+  function drawImpostor(state, im) {
+    if (im.opacity <= 0.01) return;
+    const look = renderer.quality === 'high' ? IMPOSTOR : IMPOSTOR_LOW;
+    drawSpoonAt(state, im.angle, im.scale, look, im.opacity);
+    const pos = polar(OUTER + 7, im.angle);
+    ctx.save();
+    ctx.translate(pos.x, pos.y);
+    ctx.rotate(im.angle + Math.PI / 2);
+    ctx.scale(im.scale, im.scale);
+    ctx.globalAlpha = Math.min(1, im.opacity * 2);
+    for (const x of [-3.6, 3.6]) {
+      ctx.fillStyle = '#ffffff';
+      circleAt(x, -9, 3);
+      ctx.fillStyle = '#1b1430';
+      circleAt(x + 1.1 * im.look, -9.2, 1.3);
+    }
+    ctx.restore();
+    for (const p of im.puffs) {
+      if (!p.live) continue;
+      const u = p.age / CONFIG.strange.impostor.puffLife;
+      const at = polar(OUTER - 12 - 60 * u, p.angle);
+      circle(at.x, at.y, 4 + 7 * u, '#c9b6ff', 1.6, false, im.opacity * 1.4 * (1 - u));
+    }
+  }
+
+  /** Time Rewind, over the cup: a tape tint and faint scan lines. Nothing flashes; it all eases in and out. */
+  function drawRewindTint(rewind, reduced) {
+    if (rewind.tint <= 0.01) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(CX, CY, OUTER + 40, 0, TAU);
+    ctx.clip();
+    ctx.globalCompositeOperation = 'color';
+    ctx.globalAlpha = 0.5 * rewind.tint;
+    ctx.fillStyle = '#5f8fb0';
+    ctx.fillRect(CX - OUTER - 40, CY - OUTER - 40, (OUTER + 40) * 2, (OUTER + 40) * 2);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = (renderer.quality === 'high' ? 0.08 : 0.05) * rewind.tint;
+    ctx.fillStyle = '#0a0f18';
+    const drift = reduced ? 0 : (time * 40) % 6;
+    for (let y = CY - OUTER - 40 + drift; y < CY + OUTER + 40; y += 6) ctx.fillRect(CX - OUTER - 40, y, (OUTER + 40) * 2, 2);
+    if (renderer.quality === 'high' && !reduced && rewind.icon) {
+      // The tape's tracking band, rolling slowly down the picture.
+      const band = CY - OUTER + ((time * 120) % ((OUTER + 40) * 2));
+      ctx.globalAlpha = 0.06 * rewind.tint;
+      ctx.fillStyle = '#e8f6ff';
+      ctx.fillRect(CX - OUTER - 40, band, (OUTER + 40) * 2, 14);
+    }
+    ctx.restore();
+  }
+
+  /** The tape's own label in the corner: ◀◀ while it winds back, ▶▶ as it catches up. */
+  function drawRewindMark(rewind) {
+    if (!rewind.icon || rewind.tint <= 0.01) return;
+    const label = { rewind: '◀◀ REW', pause: '❚❚', forward: '▶▶ FF' }[rewind.icon];
+    text(label, 42, 58, 22, TAPE, 'left', MONO, 'bold ');
   }
 
   function drawPlayer(state, fx) {
@@ -1264,8 +1332,10 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
   }
 
   /** Mushroom Tea: little caps have sprouted on the porcelain, well outside the spoon's path. */
-  function drawRimMushrooms(reduced) {
+  function drawRimMushrooms(reduced, breath = 0) {
     const bob = reduced || renderer.quality !== 'high' ? 0 : 1;
+    // While the cup breathes, the little caps swell and settle with it.
+    const swell = reduced ? 1 : 1 + 0.2 * breath;
     for (let k = 0; k < 6; k++) {
       const a = 0.35 + (k * TAU) / 6 + (k % 2) * 0.17;
       const lean = Math.sin(time * 1.3 + k) * 0.12 * bob;
@@ -1275,6 +1345,7 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       ctx.save();
       ctx.translate(head.x, head.y);
       ctx.rotate(a + Math.PI / 2 + lean);
+      ctx.scale(swell, swell);
       ctx.fillStyle = k % 2 ? '#c9a2e8' : '#e7b0cf';
       ctx.beginPath();
       ctx.ellipse(0, 0, 6.5 + (k % 3), 4.2, 0, Math.PI, TAU);
@@ -1698,8 +1769,9 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
      * @param {{ particles: object[], flash: number, whisper: object, fib: object, glitch: number,
      *   glints: object[], spoonScale: number, upgradeGlow: number }} fx cosmetic effects
      * @param {number} dt seconds since the previous frame
+     * @param {object} [strange] Mushroom Tea's Strange Happenings (rendering/strange.js), if one is under way
      */
-    draw(state, fx, dt) {
+    draw(state, fx, dt, strange = null) {
       time += dt;
       gradients ??= createGradients();
       ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
@@ -1752,7 +1824,9 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       // The porcelain remembers: the whole cup, or at the end of a pot its pieces.
       if (over) porcelain.drawShattered(state, fx.shatter?.age ?? Infinity, reduced);
       else porcelain.drawCup();
-      if (fx.tea) tea.paint(fx.tea, state, { quality: renderer.quality, scale: canvas.width / W });
+      const happening = strange?.kind ?? null;
+      const breathing = happening === 'breathing' ? strange.breathing : null;
+      if (fx.tea) tea.paint(fx.tea, state, { quality: renderer.quality, scale: canvas.width / W, breathing });
       drawGuides();
       const cup = { clock: fx.cupClock ?? 0, reduced };
       if (!over) {
@@ -1768,7 +1842,10 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       drawAimBeams(state, fx);
       drawClouds(state.clouds);
       if (inPlay) drawSpores(state.spores ?? [], reduced);
-      if (inPlay && state.tea === 'mushroom') drawRimMushrooms(reduced);
+      const breath = breathing ? breathing.intensity * breathing.breath : 0;
+      if (inPlay && state.tea === 'mushroom') drawRimMushrooms(reduced, breath);
+      // The porcelain itself seems to glow a little on each breath.
+      if (breath > 0.01) circle(CX, CY, OUTER + 18, '#c9a2e8', 10, false, 0.1 * breath);
       if (inPlay) drawPulse(state, reduced);
       if (inPlay) drawCurrent(state.current, reduced);
       // The announcements sit beneath the leaves, so they can never hide one.
@@ -1793,12 +1870,15 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
       if (grind) espresso.drawMachine(grind, state, fx, time);
       if (inPlay) drawWake(state.wake);
       if (inPlay) drawRecovery(state);
+      if (inPlay && happening === 'impostor') drawImpostor(state, strange.impostor);
       drawPlayer(state, fx);
       drawGlints(fx.glints ?? []);
       if (inPlay) drawRebounds(fx.rebounds ?? []);
       drawParticles(fx.particles);
       if (havoc || grind) drawPopups(fx.popups ?? []);
+      if (happening === 'rewind') drawRewindTint(strange.rewind, reduced);
       ctx.restore();
+      if (happening === 'rewind') drawRewindMark(strange.rewind);
       if (state.phase === PHASE.GRIND) espresso.drawOverlay(grind, time);
       drawOverlay(state, fx);
       if (state.phase === PHASE.SHORTAGE) errand.drawShortage(state.shortage, state, time);
