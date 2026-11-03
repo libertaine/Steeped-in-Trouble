@@ -1375,3 +1375,25 @@ pot is one key away, and brings a whole cup.
 Cracked lanes that slow or speed anything, bonuses for gold seams, and any
 other effect of damage on play are deferred until players have tried this.
 See [CUP_REMEMBERS_TESTING.md](CUP_REMEMBERS_TESTING.md).
+
+## 0.19.0 prototype — Mushroom Tea (spoilers)
+
+*"The Cup Has Gone Fungal."* Brewed only with `?tea=mushroom` while it is
+evaluated; it is on no shelf in a normal pot.
+
+- **Puffballs** are 12%, 18% and 24% of new leaves as the tea ages (learn,
+  adapt, full). They rise at 85% of a leaf's speed.
+- **Pop one** with anything that destroys a leaf and it counts as a kill and
+  leaves a **spore cloud** (58 units, 2.5 seconds) where it popped. Leaves
+  inside **giggle**: they rise at 10% of their speed, keep giggling 0.4
+  seconds after leaving, and score 50% more if destroyed while giggling.
+  Milk's slowdown and the spores' hold never stack.
+- **Leave one** and past a ripening radius (125–150) it swells for 1.1,
+  0.95 or 0.8 seconds, amber and shivering, with marks in the lanes either
+  side; then it **splits into two sprouts** that slide into those lanes,
+  near the rim. Only one sprout appears if the cup holds 17 other leaves.
+  Splitting is not a kill; each sprout is.
+- The decision: pop a puffball early and safely, or wait until leaves crowd
+  its lanes for a bigger, riskier payoff.
+
+All numbers are first-pass tuning in `CONFIG.puffballs` and `CONFIG.spores`.

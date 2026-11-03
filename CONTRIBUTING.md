@@ -10,7 +10,7 @@ This is a small, experimental arcade game. The process is meant to stay light.
    `npm run test:browser` for substantial gameplay, rendering, input,
    persistence or responsive-layout changes, and releases.
 3. Open a pull request for meaningful changes. CI runs lint, unit tests, and
-   the build on Ubuntu and Windows, plus 33 explicitly tagged Chromium/mobile
+   the build on Ubuntu and Windows, plus 34 explicitly tagged Chromium/mobile
    browser smoke executions on Ubuntu. Documentation-only changes complete
    the same named checks successfully without test execution.
 4. Merge when CI passes. Every push to `main` is deployed to GitHub Pages
