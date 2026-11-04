@@ -244,10 +244,12 @@ function boot() {
   const detachViewport = attachViewportFit(canvas.closest('.playfield'));
   const detachScaling = attachCanvasScaling(canvas);
   // Decorative visitors in the stage gutters: stepped below, never part of the game.
-  // With ?debug, ?ambientSeed=<number> fixes their cosmetic randomness.
+  // With ?debug, ?ambientSeed=<number> fixes their cosmetic randomness and
+  // ?ambientAnts=<0-12> replaces the display's population ceiling (for profiling).
   const ambientLayer = document.getElementById('ambientLayer');
   const ambient = ambientLayer ? createAmbient({ canvas: ambientLayer, quality: () => renderer.quality,
-    seed: params.has('debug') ? seedFromUrl(params, 'ambientSeed') : undefined }) : null;
+    seed: params.has('debug') ? seedFromUrl(params, 'ambientSeed') : undefined,
+    ants: params.has('debug') ? seedFromUrl(params, 'ambientAnts') : undefined }) : null;
 
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
   const RESETS = new Set(['paused', 'resumed', 'matchStart', 'roundStart', 'reading', 'shortage',
@@ -362,7 +364,8 @@ function boot() {
       },
       version: __APP_VERSION__,
       config: CONFIG,
-      ambient: ambient && { snapshot: () => ambient.snapshot(), summon: () => ambient.summon() },
+      ambient: ambient && { snapshot: () => ambient.snapshot(), summon: (n) => ambient.summon(n),
+        socialize: (kind) => ambient.socialize(kind) },
       settings: () => ({ ...settings }),
       overlay: {
         show: (opts) => overlay.show(opts),

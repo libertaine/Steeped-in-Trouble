@@ -50,7 +50,7 @@ src/
 │   ├── renderer.js      draws state onto the canvas
 │   ├── effects.js       cosmetic particles and the spill flash
 │   ├── strange.js       Mushroom Tea's Strange Happenings: schedule, visual history, view data (no drawing)
-│   ├── ambient.js       decorative visitors: safe-region geometry, presentation policy, the wandering ant and its painter
+│   ├── ambient.js       decorative visitors: safe-region geometry, population, presentation policy, the ant colony and its painter
 │   ├── grind.js         draws the espresso machine and its attacks
 │   ├── dailyPour.js     draws the paper route
 │   ├── biscuitBreakout.js draws the tray, biscuits, spoon paddle, cube and the talking biscuit
@@ -106,7 +106,7 @@ frame:
 4. `audio.update(state, dt)` keeps the soundtrack scheduled.
 5. `renderer.draw(state, fx, dt)` paints the frame, and `hud.update(state)`
    updates changed DOM text.
-6. Last, `ambient.update(dt, scene)` steps and paints the decorative visitor
+6. Last, `ambient.update(dt, scene)` steps and paints the decorative ants
    (see [Ambient visitors](#ambient-visitors-0200)), after the HUD and panels
    have applied this frame's layout.
 
@@ -265,7 +265,7 @@ numbers per round start, so the teas come in the same order however the
 cups are played. Every later system that needs chance (the Tea Run, The
 Daily Pour, Biscuit Breakout, Crossing the Street, and the Golden Leaf) has
 its own salted generator too. Effects use `Math.random`, so changing
-particles can never change gameplay. The ambient visitor has its own private
+particles can never change gameplay. The ambient colony has its own private
 `createRandom()` instance (fixed only by `?debug&ambientSeed=`), shared with
 nothing else. The URL parameter `?seed=` sets the seed in the browser,
 `?tea=<id>` brews only one variety (`createGame({ tea })`; unknown ids are
@@ -1087,8 +1087,9 @@ recordings until it arrives after cup 10.
 ## Ambient visitors (0.20.0)
 
 A transparent `#ambientLayer` canvas fills `.stage` (absolute, out of the
-grid, `aria-hidden`, not focusable, `pointer-events: none`). An occasional
-ant wanders the empty gutters beside the cup. It is presentation only:
+grid, `aria-hidden`, not focusable, `pointer-events: none`). Now and then a
+small colony of ants wanders the empty gutters beside the cup. It is
+presentation only:
 `rendering/ambient.js` has no DOM, game or storage access, and
 `ui/ambient.js` only reads `game.state.phase`, `pausedFrom` and `offer`,
 the modal `blocked` flags and `strange.holding`. It adds no input listener,
@@ -1097,7 +1098,8 @@ and disposes it from `stop()`.
 
 **Safe geometry.** Layout is measured only when dirty: a ResizeObserver on
 the stage, playfield, `#game` and `#readingPresentation`; window resize and
-scroll; visualViewport resize; and a per-frame comparison of a few body
+scroll; visualViewport resize; a `(orientation: portrait)` media change;
+and a per-frame comparison of a few body
 `data-*` attributes, panel `hidden` flags, child counts and the pixel ratio.
 The next frame after 0.12 s without further change measures once. While
 dirty nothing is drawn. The visible area is the stage ∩ playfield ∩
@@ -1107,17 +1109,66 @@ inflated by 8 px. What remains is cut into strip regions; a region must be
 at least 32 px across, 96 px long and 24,000 px² on its own (slivers are
 never combined). Its portals are only its sides on a real border, the
 playfield frame or screen edge, never a seam beside the HUD or a button row.
-Capacity is counted per region and capped at one visitor in this increment.
 The backing store, at a pixel ratio capped at 2, is allocated only while
-capacity is positive. A layout change keeps the ant only if its region lies
-inside a new one; otherwise it is retired before the next draw.
+the room below is positive. A layout change keeps an ant only if its region
+lies inside a new one; otherwise it is retired before the next draw.
+
+**Population.** Three limits, all prototype values for review:
+
+- *Region capacity* (`capacity()`): each region holds ⌊area / 24,000 px²⌋
+  ants on its own. Regions are never pooled, so two slivers either side of
+  the cup add nothing, and an ant never crosses between gutters.
+- *Display budget* (`displayBudget()`): by total safe area, ≥ 420,000 px² →
+  6, ≥ 250,000 → 4, ≥ 150,000 → 3, otherwise 2; at most 2 when the viewport
+  is a phone held sideways, and none at all on a portrait phone (short side
+  ≤ 500 CSS px), whatever the geometry: there the cup fills the width and
+  the bands above and below it are the HUD's and the controls'. These are
+  viewport-shape rules, separate from the measured capacity.
+- *Quality* (`populationLimit()`): at most 2 in Low graphics, read every
+  frame.
+
+The room is the smaller of the first two; this frame's limit applies the
+third. Measured examples (production build, Chromium): 1920 × 1080 Full → 6;
+1366 × 768 and 1280 × 720 → 4; 1024 × 768 → 3; 800 × 600 → 2; 844 × 390
+landscape phone → 2; 412 × 839 portrait phone → 0. A 2560 × 1440 window has
+only 46 px gutters in play (the stage stops widening at 1526 px while the
+cup grows), so it holds 2–4. Twelve slots are allocated once; nothing,
+including the `?debug&ambientAnts=<0–12>` profiling override of the display
+budget, exceeds them. When the limit drops (Low, a resize) or a region is
+over capacity, the latest extras walk home; nobody new enters meanwhile.
 
 **Visitor.** absent → entering (from just beyond a portal, fully clipped) →
 wandering to random waypoints with turn-rate-limited headings, a drifting
 wobble and occasional pauses → leaving through the nearest portal → absent
-for 14–30 s. The whole drawing stays within a 9 px radius, and its centre
-is clamped to the region shrunk by that radius (plus the portal side while
-arriving or leaving).
+for 14–30 s. The whole drawing stays within a 9 px radius (legs and antennae
+included, checked against the painter's geometry), and its centre is clamped
+to the region shrunk by that radius (plus the portal side while arriving or
+leaving). No step may bring an ant's centre within 14 px of another's
+(bodies never overlap; stepping apart is always allowed); a blocked ant
+stands and turns, and after 0.35 s picks something else. Waypoints and entry
+points prefer open space away from other ants and their destinations.
+
+**Colony** (`createColony()`). The colony comes and goes in spells: active
+for 40–80 s, during which ants arrive one at a time at independent,
+staggered moments (at least 1–3 s apart), each into a region with spare
+capacity, larger and emptier regions more often; then quiet, with no new
+arrivals until the last ant has left; then empty for 12–30 s. So the gutters
+are regularly empty and never fill in a procession.
+
+**Social moments** (High only). Every 6–14 s there is a 60 % chance of one
+moment, never two at once, among wandering ants in the same region within
+200 px of each other with at least 4 s of their visit left:
+
+| Moment | Behaviour | Ends |
+| --- | --- | --- |
+| Follow | One ant walks 0.7–1.5 s behind another along its recent path (a 12-point, 0.2 s trail), a few pixels to either side, at its own pace; hurries when more than 70 px behind; waits when within 26 px | After 6–12 s, by losing interest (5 % per trail point), or when the leader leaves |
+| Greet | Two ants walk to either side of their midpoint, 15 px apart (antennae just touching), turn to face each other and stand 0.8–1.6 s; the first to arrive waits up to 3 s for the other | Each then wanders off away from the other; it gives up after 6 s of approach |
+| Drift | Two or three nearby ants head the same way along the gutter's long axis, each with its own waypoints 50–110 px ahead and up to 22 px to the side | After 5–9 s, or at the end of the gutter |
+
+Any moment ends at once on a layout change or in Low graphics, and every
+ant returns to wandering alone, which is the default. In 20-minute seeded
+runs at 1920 × 1080 (ceiling 6) about 96 % of ant-time is solo, an average
+of 3.3 ants are out, and the gutters are empty about a fifth of the time.
 
 **Visibility policy** (`ambientPolicy()`):
 
@@ -1137,5 +1188,19 @@ nobody is watching and resumes with no catch-up. Hiding under modals avoids
 drawing behind the top layer without inventing a new visit afterwards.
 Reduced motion removes it entirely, because a still ant would read as a
 smudge on the screen. Low graphics keeps the same behaviour with a simpler
-body (straight legs, no highlight). The current quality is read every frame,
-so a change applies without a reload.
+body (straight legs, no highlight), at most two ants and no social moments.
+The current quality is read every frame, so a change applies without a
+reload.
+
+**Drawing and cost.** One pass per frame clears the last frame's ant spots
+(a 22 px square each, all before any drawing) and paints every present ant;
+a frozen colony is repainted only when uncovered or its look changes. The
+colony's arrays, trails and drawn-position buffer are allocated once; the
+per-frame path does no layout reads, sorting or array building. Measured on
+a Ryzen 9 5900X, headless Chromium 156 (software rasteriser), 1920 × 1080
+Full, during autoplayed play, timing the adapter's `update()` on a real
+stage-sized canvas: 6 ants p95 0.085 ms (0.22 ms including forced
+rasterisation), 12 ants p95 0.13 ms (0.35 ms), at DPR 2 12 ants p95 0.25 ms
+(0.64 ms); an idle layer about 0.01 ms. Whole-frame timings with the layer
+removed, idle and with 1–12 ants differed by less than the run-to-run noise
+(±0.4 ms on a 14 ms software-rendered frame).

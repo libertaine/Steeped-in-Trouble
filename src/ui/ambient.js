@@ -1,5 +1,6 @@
 // The ambient layer's page adapter: a decorative canvas over the stage on
-// which an occasional ant wanders through the empty gutters beside the cup.
+// which a small colony of ants now and then wanders the empty gutters beside
+// the cup.
 //
 // It is stepped by the main loop (no animation loop of its own), never
 // receives input (pointer-events: none, aria-hidden, not focusable) and only
@@ -8,7 +9,9 @@
 // key mark it dirty, and the next settled frame measures once.
 
 import { createRandom } from '../core/random.js';
-import { AMBIENT, ambientPolicy, capacity, createVisitor, drawAnt, safeRegions } from '../rendering/ambient.js';
+import {
+  AMBIENT, ambientPolicy, capacity, createColony, displayBudget, drawAnt, populationLimit, safeRegions,
+} from '../rendering/ambient.js';
 
 const MAX_PIXEL_RATIO = 2;
 const SETTLE_SECONDS = 0.12; // wait for a layout change to finish before measuring
@@ -62,8 +65,10 @@ export function measureLayout({ host, clip, candidates, viewport }) {
  * @param {HTMLCanvasElement} options.canvas the decorative surface, absolutely filling its host
  * @param {() => string} [options.quality] current graphics quality ('high' | 'low')
  * @param {number} [options.seed] fixed cosmetic seed (tests and ?debug only)
+ * @param {number} [options.ants] population ceiling replacing the display's own,
+ *   up to AMBIENT.slots (profiling and ?debug only; region capacity still applies)
  */
-export function createAmbient({ canvas, quality = () => 'high', seed } = {}) {
+export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {}) {
   const doc = canvas.ownerDocument;
   const win = doc.defaultView;
   const host = canvas.parentElement;
@@ -77,16 +82,22 @@ export function createAmbient({ canvas, quality = () => 'high', seed } = {}) {
   let candidates = collect();
   let hiddenKey = candidates.map((element) => element.hidden);
   let childCount = -1;
-  const visitor = createVisitor({ random: createRandom(seed) });
+  const colony = createColony({ random: createRandom(seed) });
+  const override = Number.isFinite(ants) ? Math.max(0, Math.min(AMBIENT.slots, ants)) : undefined;
 
   let regions = [];
-  let room = 0;
+  let room = 0; // what the measured space and the display allow
+  let space = 0; // region capacity alone
+  let budget = 0; // the display's ceiling alone
+  let limit = 0; // this frame's ceiling, after graphics quality
   let layout = null;
   let dirty = true;
   let settle = 0;
   let ratio = 0;
+  // Where each ant was last drawn, so only those spots are cleared.
+  const drawnAt = new Float64Array(AMBIENT.slots * 2);
+  let drawnCount = 0;
   let drawn = false;
-  let drawnX = 0, drawnY = 0;
   let drawnQuality = null;
   let policy = 'off';
   let reduced = false;
@@ -108,6 +119,8 @@ export function createAmbient({ canvas, quality = () => 'high', seed } = {}) {
   const motion = win.matchMedia?.('(prefers-reduced-motion: reduce)');
   reduced = !!motion?.matches;
   listen(motion, 'change', (event) => { reduced = event.matches; });
+  // Turning a phone changes the display's ceiling, even before any resize is reported.
+  listen(win.matchMedia?.('(orientation: portrait)'), 'change', markDirty);
   const observer = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(markDirty) : null;
   for (const element of [host, clip, doc.getElementById('game'), doc.getElementById('readingPresentation')]) {
     if (element) observer?.observe(element);
@@ -139,34 +152,45 @@ export function createAmbient({ canvas, quality = () => 'high', seed } = {}) {
     // All reads first, then the backing-store writes.
     layout = measureLayout({ host, clip, candidates, viewport: { x: 0, y: 0, w: win.innerWidth, h: win.innerHeight } });
     regions = safeRegions(layout.visible, layout.exclusions, { open: layout.open });
-    room = capacity(regions);
+    space = capacity(regions);
+    budget = displayBudget(regions, { w: win.innerWidth, h: win.innerHeight }, { override });
+    room = Math.min(space, budget);
     // Only hold backing pixels while a visitor could actually appear.
     const width = room > 0 ? Math.round(layout.width * ratio) : 0;
     const height = room > 0 ? Math.round(layout.height * ratio) : 0;
     if (canvas.width !== width) canvas.width = width;
     if (canvas.height !== height) canvas.height = height;
     drawn = false; // resizing the backing store clears it
-    visitor.relayout(regions);
+    drawnCount = 0;
+    colony.relayout(regions);
   }
 
   function clear() {
     if (!drawn) return;
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     const reach = AMBIENT.footprint + 2;
-    ctx.clearRect(drawnX - reach, drawnY - reach, reach * 2, reach * 2);
+    for (let i = 0; i < drawnCount; i++) {
+      ctx.clearRect(drawnAt[i * 2] - reach, drawnAt[i * 2 + 1] - reach, reach * 2, reach * 2);
+    }
     drawn = false;
+    drawnCount = 0;
   }
 
+  // Every old spot is cleared before any ant is drawn, so neighbours are never clipped.
   function paint(moving) {
     clear();
-    const ant = visitor.ant;
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     drawnQuality = quality();
-    drawAnt(ctx, { x: ant.x, y: ant.y, heading: ant.heading, gait: ant.gait,
-      moving: moving && ant.state !== 'paused', twitch: ant.twitch }, { quality: drawnQuality });
+    for (let i = 0; i < colony.ants.length; i++) {
+      const ant = colony.ants[i];
+      if (ant.state === 'absent') continue;
+      drawAnt(ctx, { x: ant.x, y: ant.y, heading: ant.heading, gait: ant.gait,
+        moving: moving && ant.state !== 'paused', twitch: ant.twitch }, { quality: drawnQuality });
+      drawnAt[drawnCount * 2] = ant.x;
+      drawnAt[drawnCount * 2 + 1] = ant.y;
+      drawnCount++;
+    }
     drawn = true;
-    drawnX = ant.x;
-    drawnY = ant.y;
   }
 
   function show(on) {
@@ -182,7 +206,7 @@ export function createAmbient({ canvas, quality = () => 'high', seed } = {}) {
     update(dt, scene) {
       if (layoutChanged()) markDirty();
       policy = ambientPolicy({ ...scene, reduced, focused, hidden: doc.visibilityState === 'hidden' });
-      if (policy === 'off' && visitor.visible) visitor.retire();
+      if (policy === 'off' && colony.count > 0) colony.retire();
       if (dirty) {
         // Nothing is drawn against a layout that is still changing.
         clear();
@@ -192,11 +216,14 @@ export function createAmbient({ canvas, quality = () => 'high', seed } = {}) {
         dirty = false;
         measure();
       }
-      if (policy === 'run') visitor.step(dt, regions, room);
-      const visible = visitor.visible && (policy === 'run' || policy === 'frozen');
+      const look = quality();
+      limit = populationLimit(room, look);
+      // Low graphics keeps to plain wandering: no social moments.
+      if (policy === 'run') colony.step(dt, regions, limit, { social: look !== 'low' });
+      const visible = colony.count > 0 && (policy === 'run' || policy === 'frozen');
       show(visible);
       if (!visible) { clear(); return; }
-      // A still visitor is only redrawn when uncovered or its look changes.
+      // A still colony is only redrawn when uncovered or its look changes.
       if (policy === 'run' || !drawn || drawnQuality !== quality()) paint(policy === 'run');
     },
 
@@ -205,26 +232,35 @@ export function createAmbient({ canvas, quality = () => 'high', seed } = {}) {
 
     /** Read-only state for tests and ?debug. */
     snapshot() {
-      const ant = visitor.ant;
+      const box = (r) => r && { x: r.x, y: r.y, w: r.w, h: r.h };
+      const slot = (ant) => colony.ants.indexOf(ant);
       return {
-        policy, state: ant.state, x: ant.x, y: ant.y, heading: ant.heading, room, reduced, focused,
+        policy, room, space, budget, limit, count: colony.count, spell: colony.spell, reduced, focused,
         drawn, quality: drawnQuality, hidden: canvas.hidden, width: canvas.width, height: canvas.height,
         visible: layout?.visible ?? null, exclusions: layout?.exclusions ?? [], open: layout?.open ?? null,
-        regions: regions.map((r) => ({ x: r.x, y: r.y, w: r.w, h: r.h, portals: [...r.portals] })),
-        region: ant.region && { x: ant.region.x, y: ant.region.y, w: ant.region.w, h: ant.region.h },
+        regions: regions.map((r) => ({ ...box(r), portals: [...r.portals] })),
+        ants: colony.ants.filter((ant) => ant.state !== 'absent').map((ant) => ({
+          slot: slot(ant), state: ant.state, mode: ant.mode, x: ant.x, y: ant.y, heading: ant.heading,
+          partner: ant.partner ? slot(ant.partner) : null, region: box(ant.region),
+        })),
       };
     },
 
-    /** ?debug only: bring the next visit forward. Space and policy still apply. */
-    summon() {
-      if (visitor.ant.state === 'absent') visitor.ant.timer = 0;
+    /** ?debug only: bring `n` visits forward. Space and policy still apply. */
+    summon(n = 1) {
+      colony.summon(n);
+    },
+
+    /** ?debug only: the next social moment now ('follow' | 'greet' | 'drift' | any), once ants allow. */
+    socialize(kind) {
+      colony.socialize(kind);
     },
 
     dispose() {
       for (const remove of listeners.splice(0)) remove();
       observer?.disconnect();
       clear();
-      visitor.retire();
+      colony.retire();
       canvas.width = 0;
       canvas.height = 0;
       canvas.hidden = true;
