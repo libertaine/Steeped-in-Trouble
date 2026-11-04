@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+- **A wandering ant (prototype):** now and then a small ant wanders the
+  empty space beside the cup and leaves again. It stays out of the game and
+  its controls, hides when there is no room, and is absent when reduced
+  motion is requested. Decorative only; gameplay is unchanged.
+
 ## [0.19.0] - 2026-11-03 — The Cup Has Gone Fungal
 
 *There is something growing in the tea. It has a manager.*

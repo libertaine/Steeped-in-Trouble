@@ -16,6 +16,7 @@ import { initialSettings, isTouchDevice, normalize, saveSettings } from './input
 import { createAudio } from './audio/audio.js';
 import { attachCanvasScaling } from './rendering/canvas.js';
 import { attachViewportFit } from './ui/viewport.js';
+import { createAmbient } from './ui/ambient.js';
 import { createEffects } from './rendering/effects.js';
 import { createStrangeHappenings } from './rendering/strange.js';
 import { createRenderer } from './rendering/renderer.js';
@@ -46,9 +47,9 @@ function initialQuality(params) {
   }
 }
 
-/** Read an optional ?seed=<number> to replay a gameplay sequence. */
-function seedFromUrl(params) {
-  const raw = params.get('seed');
+/** Read an optional ?seed=<number> to replay a gameplay sequence (or another named seed). */
+function seedFromUrl(params, name = 'seed') {
+  const raw = params.get(name);
   if (raw === null || raw.trim() === '') return undefined;
   const seed = Number(raw);
   return Number.isFinite(seed) ? seed : undefined;
@@ -242,6 +243,11 @@ function boot() {
 
   const detachViewport = attachViewportFit(canvas.closest('.playfield'));
   const detachScaling = attachCanvasScaling(canvas);
+  // Decorative visitors in the stage gutters: stepped below, never part of the game.
+  // With ?debug, ?ambientSeed=<number> fixes their cosmetic randomness.
+  const ambientLayer = document.getElementById('ambientLayer');
+  const ambient = ambientLayer ? createAmbient({ canvas: ambientLayer, quality: () => renderer.quality,
+    seed: params.has('debug') ? seedFromUrl(params, 'ambientSeed') : undefined }) : null;
 
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
   const RESETS = new Set(['paused', 'resumed', 'matchStart', 'roundStart', 'reading', 'shortage',
@@ -298,6 +304,10 @@ function boot() {
     hud.update(shown);
     presentation.update();
     collectionUI.update();
+    // After the HUD and panels, so this frame's layout is the one measured.
+    const s = game.state;
+    ambient?.update(dt, { phase: s.phase, pausedFrom: s.pausedFrom, offer: !!s.offer, holding: strange.holding,
+      blocked: title.blocked || presentation.blocked || collectionUI.blocked || overlay.blocked });
   });
 
   hud.update(game.state);
@@ -329,6 +339,7 @@ function boot() {
       collectionUI.dispose();
       overlay.dispose();
       title.dispose();
+      ambient?.dispose();
       detachScaling();
       detachViewport();
       delete window[INSTANCE_KEY];
@@ -351,6 +362,7 @@ function boot() {
       },
       version: __APP_VERSION__,
       config: CONFIG,
+      ambient: ambient && { snapshot: () => ambient.snapshot(), summon: () => ambient.summon() },
       settings: () => ({ ...settings }),
       overlay: {
         show: (opts) => overlay.show(opts),

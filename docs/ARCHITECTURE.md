@@ -50,6 +50,7 @@ src/
 │   ├── renderer.js      draws state onto the canvas
 │   ├── effects.js       cosmetic particles and the spill flash
 │   ├── strange.js       Mushroom Tea's Strange Happenings: schedule, visual history, view data (no drawing)
+│   ├── ambient.js       decorative visitors: safe-region geometry, presentation policy, the wandering ant and its painter
 │   ├── grind.js         draws the espresso machine and its attacks
 │   ├── dailyPour.js     draws the paper route
 │   ├── biscuitBreakout.js draws the tray, biscuits, spoon paddle, cube and the talking biscuit
@@ -60,7 +61,8 @@ src/
 ├── audio/
 │   ├── audio.js         optional synthesized sound effects; owns the AudioContext
 │   └── music.js         the adaptive procedural soundtrack
-└── ui/                  hud.js, presentation.js, collection.js: HUD, views/Tea Break, collection/save controls
+└── ui/                  hud.js, presentation.js, collection.js: HUD, views/Tea Break, collection/save controls;
+                         ambient.js measures the stage and owns the decorative ambient canvas
 ```
 
 ## The one rule: simulation vs. presentation
@@ -104,6 +106,9 @@ frame:
 4. `audio.update(state, dt)` keeps the soundtrack scheduled.
 5. `renderer.draw(state, fx, dt)` paints the frame, and `hud.update(state)`
    updates changed DOM text.
+6. Last, `ambient.update(dt, scene)` steps and paints the decorative visitor
+   (see [Ambient visitors](#ambient-visitors-0200)), after the HUD and panels
+   have applied this frame's layout.
 
 `dt` is capped at 0.04 s (`CONFIG.timing.maxFrameSeconds`), so a slow frame
 or a return from a background tab never causes a large jump. One-shot
@@ -260,7 +265,9 @@ numbers per round start, so the teas come in the same order however the
 cups are played. Every later system that needs chance (the Tea Run, The
 Daily Pour, Biscuit Breakout, Crossing the Street, and the Golden Leaf) has
 its own salted generator too. Effects use `Math.random`, so changing
-particles can never change gameplay. The URL parameter `?seed=` sets the seed in the browser,
+particles can never change gameplay. The ambient visitor has its own private
+`createRandom()` instance (fixed only by `?debug&ambientSeed=`), shared with
+nothing else. The URL parameter `?seed=` sets the seed in the browser,
 `?tea=<id>` brews only one variety (`createGame({ tea })`; unknown ids are
 ignored), and the `?debug` parameter exposes `window.__TEACUP__.game` for
 tests and tinkering.
@@ -1076,3 +1083,59 @@ checks the layout it reads; only the last validates. The 0.16.0 and 0.18.0
 fixtures replay identically with the Manager out of the way
 (`withoutManager()` in `tests/support/legacyPlay.js`), and match their
 recordings until it arrives after cup 10.
+
+## Ambient visitors (0.20.0)
+
+A transparent `#ambientLayer` canvas fills `.stage` (absolute, out of the
+grid, `aria-hidden`, not focusable, `pointer-events: none`). An occasional
+ant wanders the empty gutters beside the cup. It is presentation only:
+`rendering/ambient.js` has no DOM, game or storage access, and
+`ui/ambient.js` only reads `game.state.phase`, `pausedFrom` and `offer`,
+the modal `blocked` flags and `strange.holding`. It adds no input listener,
+timer or animation frame; `main.js` steps it after `collectionUI.update()`
+and disposes it from `stop()`.
+
+**Safe geometry.** Layout is measured only when dirty: a ResizeObserver on
+the stage, playfield, `#game` and `#readingPresentation`; window resize and
+scroll; visualViewport resize; and a per-frame comparison of a few body
+`data-*` attributes, panel `hidden` flags, child counts and the pixel ratio.
+The next frame after 0.12 s without further change measures once. While
+dirty nothing is drawn. The visible area is the stage ∩ playfield ∩
+viewport. Every visible, non-decorative child of the stage and playfield
+(the game canvas, panels, offers, HUD, controls, buttons) is protected,
+inflated by 8 px. What remains is cut into strip regions; a region must be
+at least 32 px across, 96 px long and 24,000 px² on its own (slivers are
+never combined). Its portals are only its sides on a real border, the
+playfield frame or screen edge, never a seam beside the HUD or a button row.
+Capacity is counted per region and capped at one visitor in this increment.
+The backing store, at a pixel ratio capped at 2, is allocated only while
+capacity is positive. A layout change keeps the ant only if its region lies
+inside a new one; otherwise it is retired before the next draw.
+
+**Visitor.** absent → entering (from just beyond a portal, fully clipped) →
+wandering to random waypoints with turn-rate-limited headings, a drifting
+wobble and occasional pauses → leaving through the nearest portal → absent
+for 14–30 s. The whole drawing stays within a 9 px radius, and its centre
+is clamped to the region shrunk by that radius (plus the portal side while
+arriving or leaving).
+
+**Visibility policy** (`ambientPolicy()`):
+
+| Situation | Policy |
+| --- | --- |
+| Ready, playing, or a reading with no offer | `run` |
+| Paused cup, rewind hold, window blurred, tab hidden | `frozen`: drawn standing still, no clock advance |
+| Title, instructions, Tea Break, collection open | `hidden`: nothing drawn, its place kept |
+| Reading with an upgrade offer; any other phase (decisions, adventures, bosses, game over) | `off`: retired at once |
+| `prefers-reduced-motion: reduce`, including a live change | `off` |
+
+Why this policy: a calm cup is the only scene where a tiny moving detail
+adds charm without competing for attention. Decisions, adventures and bosses
+already demand the player's eyes, and their layouts vary the most. Freezing
+rather than retiring on pause and blur means the ant never moves while
+nobody is watching and resumes with no catch-up. Hiding under modals avoids
+drawing behind the top layer without inventing a new visit afterwards.
+Reduced motion removes it entirely, because a still ant would read as a
+smudge on the screen. Low graphics keeps the same behaviour with a simpler
+body (straight legs, no highlight). The current quality is read every frame,
+so a change applies without a reload.

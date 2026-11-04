@@ -450,6 +450,23 @@ body[data-touch="easy"] canvas {
   display: none;
 }
 
+/* Decorative ambient life (see ui/ambient.js): fills the stage without taking
+   a grid track, never receives input, and is drawn only in measured gutters
+   beside the game canvas. The id selector outranks the generic canvas rules. */
+#ambientLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  pointer-events: none;
+  touch-action: auto;
+}
+
+#ambientLayer[hidden] {
+  display: none;
+}
+
 .touch-ring.charging {
   animation: ring-charge var(--press, 450ms) linear forwards;
 }
