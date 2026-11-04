@@ -37,6 +37,23 @@ test('a large desktop holds up to six, in both gutters, and never more', async (
   expect(problems).toEqual([]);
 });
 
+test('a short desktop window follows its own geometry rather than the phone rule', async ({ page, problems }) => {
+  await page.setViewportSize({ width: 1200, height: 480 });
+  await openGame(page, '&view=full&ambientSeed=13');
+  await expect.poll(async () => (await ambientState(page)).visible).not.toBeNull();
+  const state = await ambientState(page);
+  // A desktop screen and a mouse: not a phone held sideways, however short the window.
+  expect(state.shape).toBeNull();
+  expect(state.budget).toBeGreaterThan(2);
+  expect(state.room).toBe(Math.min(state.space, state.budget));
+  await summonAnts(page, state.room);
+  const { most, nearest, hits } = await protectedOverlaps(page, { samples: 20 });
+  expect(most).toBeLessThanOrEqual(state.room);
+  expect(nearest).toBeGreaterThanOrEqual(14);
+  expect(hits).toEqual([]);
+  expect(problems).toEqual([]);
+});
+
 test('social moments play out in the real layout with a fixed cosmetic seed', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await openGame(page, '&view=full&ambientSeed=5');

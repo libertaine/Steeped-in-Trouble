@@ -13,7 +13,7 @@ export const AMBIENT = Object.freeze({
   // Total safe area (CSS px²) → population ceiling. Prototype values, tuned by eye.
   budget: Object.freeze([[420_000, 6], [250_000, 4], [150_000, 3], [0, 2]]),
   lowQuality: 2, // ceiling in Low graphics
-  phoneSide: 500, // a viewport whose short side is at most this is phone-shaped
+  phoneSide: 500, // a touch-first device whose whole screen's short side is at most this is a phone
   phoneLandscape: 2, // ceiling on a phone held sideways; a portrait phone has none
   clearance: 8, // CSS px kept clear around every protected rectangle
   footprint: 9, // radius containing the whole animated ant, legs and antennae included
@@ -44,7 +44,9 @@ export const AMBIENT = Object.freeze({
     meet: 15, // centre distance when greeting: antennae just touch
     approach: 6, // seconds allowed to reach each other before giving up
     drift: [5, 9], // seconds a few ants travel the same way
-    reach: 200, // farthest apart (CSS px) two ants can be to start following or meeting
+    reach: 200, // farthest apart (CSS px) two ants can be to start meeting or drifting
+    followReach: 110, // farthest a leader can be: a follower must be able to catch up
+    lose: 150, // a follower left this far behind gives up
   }),
 });
 
@@ -86,8 +88,8 @@ export function inflate(r, d) {
 
 /**
  * Free space left in `area` once every exclusion is removed. Each piece is a
- * full-height or full-width strip beside an exclusion, so pieces can overlap;
- * a visitor stays inside one piece for its whole visit, never crossing between.
+ * full-height or full-width strip beside an exclusion, so pieces can overlap
+ * (safeRegions() makes them disjoint).
  */
 export function subtract(area, exclusions) {
   let pieces = [area];
@@ -123,6 +125,12 @@ const EDGE = 0.5;
  * `open` names the visible edges that are real borders (the playfield frame
  * or the screen edge); an edge that is only a seam beside the HUD or a button
  * row would show an ant popping out of thin air, so it is not a portal.
+ *
+ * Regions never overlap. The largest usable piece is taken first and cut out
+ * of the rest, then the largest of what remains, and so on: two strips
+ * meeting round a panel's corner become one strip and the remainder of the
+ * other, so no space is counted twice and ants in different regions can
+ * never meet in shared space. A seam between two regions is never a portal.
  */
 export function safeRegions(visible, exclusions, {
   clearance = AMBIENT.clearance, minCorridor = AMBIENT.minCorridor, minLength = AMBIENT.minLength,
@@ -130,18 +138,26 @@ export function safeRegions(visible, exclusions, {
 } = {}) {
   if (!visible || visible.w <= 0 || visible.h <= 0) return [];
   const blocked = exclusions.filter((e) => e.w > 0 && e.h > 0).map((e) => inflate(e, clearance));
-  const regions = [];
-  for (const r of subtract(visible, blocked)) {
-    const short = Math.min(r.w, r.h), long = Math.max(r.w, r.h);
-    if (short < minCorridor || long < minLength || r.w * r.h < minArea) continue;
+  const portalsOf = (r) => {
     const portals = [];
     if (open.left && r.x <= visible.x + EDGE) portals.push('left');
     if (open.right && r.x + r.w >= visible.x + visible.w - EDGE) portals.push('right');
     if (open.top && r.y <= visible.y + EDGE) portals.push('top');
     if (open.bottom && r.y + r.h >= visible.y + visible.h - EDGE) portals.push('bottom');
-    if (portals.length) regions.push({ ...r, portals });
+    return portals;
+  };
+  const usable = (r) => Math.min(r.w, r.h) >= minCorridor && Math.max(r.w, r.h) >= minLength
+    && r.w * r.h >= minArea && portalsOf(r).length > 0;
+  const regions = [];
+  let pieces = subtract(visible, blocked);
+  for (;;) {
+    let best = null;
+    for (const r of pieces) if (usable(r) && (!best || r.w * r.h > best.w * best.h)) best = r;
+    if (!best) return regions;
+    regions.push({ ...best, portals: portalsOf(best) });
+    const taken = best;
+    pieces = withoutContained(pieces.flatMap((r) => (r === taken ? [] : subtract(r, [taken]))));
   }
-  return regions;
 }
 
 /** How many visitors one region can host by itself. */
@@ -158,9 +174,19 @@ export function capacity(regions, { max = AMBIENT.slots, areaPerVisitor = AMBIEN
   return Math.min(max, count);
 }
 
-/** 'portrait' or 'landscape' for a phone-shaped viewport ({ w, h } CSS px), otherwise null. */
-export function phoneShape(viewport, { phoneSide = AMBIENT.phoneSide } = {}) {
-  if (!viewport || Math.min(viewport.w, viewport.h) > phoneSide) return null;
+/**
+ * 'portrait' or 'landscape' on a phone, otherwise null. `device` is
+ * { viewport, screen } in CSS px ({ w, h } each) and `touch`, whether the
+ * primary pointer is touch (input/settings.js hasPrimaryTouch()).
+ *
+ * A phone is a touch-first device whose whole screen is phone-sized; the
+ * viewport only says which way up it is held. Neither the window nor touch
+ * decides it alone: a short or narrow desktop window still has a desktop
+ * screen, and a touch laptop or tablet has a larger one. Both follow their
+ * measured geometry instead.
+ */
+export function phoneShape({ viewport, screen, touch = false } = {}, { phoneSide = AMBIENT.phoneSide } = {}) {
+  if (!viewport || !touch || !(Math.min(screen?.w, screen?.h) <= phoneSide)) return null;
   return viewport.h > viewport.w ? 'portrait' : 'landscape';
 }
 
@@ -168,11 +194,12 @@ export function phoneShape(viewport, { phoneSide = AMBIENT.phoneSide } = {}) {
  * The display's population ceiling, before region capacity: none on a
  * portrait phone, where the cup fills the width and an ant would only crowd
  * it; otherwise scaled by the total safe area, and at most two on a phone
- * held sideways. `override` (debug profiling) replaces the scaled ceiling,
- * never the portrait rule or the slot count.
+ * held sideways. `device` is as for phoneShape(). `override` (debug
+ * profiling) replaces the scaled ceiling, never the portrait rule or the
+ * slot count.
  */
-export function displayBudget(regions, viewport, { tuning = AMBIENT, override } = {}) {
-  const shape = phoneShape(viewport, tuning);
+export function displayBudget(regions, device, { tuning = AMBIENT, override } = {}) {
+  const shape = phoneShape(device, tuning);
   if (shape === 'portrait') return 0;
   let ceiling = 0;
   if (Number.isFinite(override)) ceiling = override;
@@ -501,13 +528,15 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
     ant.trailCount = Math.min(TRAIL, ant.trailCount + 1);
   }
 
-  // A social moment ends with its time, or as soon as its partner is gone.
+  // A social moment ends with its time, or as soon as its partner is gone
+  // (a follower left far behind has lost its leader too).
   function checkSocial(dt) {
     if (ant.mode === 'solo') return;
     ant.social -= dt;
     const p = ant.partner;
     const lost = p && (p.state === 'absent' || p.state === 'leaving' || p.region !== ant.region
-      || (ant.mode === 'greet' && ant.state !== 'paused' && p.mode !== 'greet'));
+      || (ant.mode === 'greet' && ant.state !== 'paused' && p.mode !== 'greet')
+      || (ant.mode === 'follow' && Math.hypot(p.x - ant.x, p.y - ant.y) > social.lose));
     if (lost || (ant.social <= 0 && !(ant.mode === 'greet' && ant.state === 'paused'))) endSocial();
   }
 
@@ -515,7 +544,10 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
     if (ant.mode === 'greet') { pause(random.range(...social.greet)); return; }
     if (ant.mode === 'follow') {
       if (random.next() < social.breakOff) endSocial(); // loses interest
-      else if (random.next() < 0.4) pause(random.range(0.2, 0.7)); // stop-and-go, never in lockstep
+      // Stop-and-go, never in lockstep; but no dawdling once it has fallen behind.
+      else if (random.next() < 0.4 && Math.hypot(ant.partner.x - ant.x, ant.partner.y - ant.y) < social.catchUp) {
+        pause(random.range(0.2, 0.7));
+      }
       else trailPoint();
       return;
     }
@@ -695,8 +727,32 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
   const settled = (ant) => (ant.state === 'wandering' || ant.state === 'paused')
     && ant.mode === 'solo' && ant.stay > 4;
 
+  // The closest two settled ants sharing a region, close enough to follow;
+  // whichever is ahead of the other (by its heading) leads.
+  function gatherFollow() {
+    let leader = -1, follower = -1, closest = tuning.social.followReach;
+    for (let i = 0; i < ants.length; i++) {
+      const a = ants[i];
+      if (!settled(a)) continue;
+      for (let j = i + 1; j < ants.length; j++) {
+        const b = ants[j];
+        if (!settled(b) || b.region !== a.region) continue;
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d > closest) continue;
+        closest = d;
+        const bAhead = Math.cos(a.heading) * (b.x - a.x) + Math.sin(a.heading) * (b.y - a.y) > 0;
+        [leader, follower] = bAhead ? [j, i] : [i, j];
+      }
+    }
+    if (leader < 0) return false;
+    const s = tuning.social;
+    visitors[follower].socialize('follow', { partner: ants[leader], seconds: random.range(...s.follow), lag: random.range(...s.lag) });
+    return true;
+  }
+
   // Find ants for a social moment; false if nobody suitable is about.
   function gather(kind) {
+    if (kind === 'follow') return gatherFollow();
     const start = random.int(ants.length);
     for (let n = 0; n < ants.length; n++) {
       const a = ants[(start + n) % ants.length];
@@ -708,9 +764,7 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
         const d = Math.hypot(a.x - b.x, a.y - b.y);
         if (d > tuning.social.reach || (kind === 'greet' && d < 40)) continue;
         const s = tuning.social;
-        if (kind === 'follow') {
-          visitors[j].socialize('follow', { partner: a, seconds: random.range(...s.follow), lag: random.range(...s.lag) });
-        } else if (kind === 'greet') {
+        if (kind === 'greet') {
           const meetX = (a.x + b.x) / 2, meetY = (a.y + b.y) / 2, seconds = s.approach;
           visitors[(start + n) % ants.length].socialize('greet', { partner: b, seconds, meetX, meetY });
           visitors[j].socialize('greet', { partner: a, seconds, meetX, meetY });

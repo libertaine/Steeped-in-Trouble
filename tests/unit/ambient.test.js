@@ -42,13 +42,20 @@ function fakeContext() {
  * are viewport CSS pixels and can be changed between frames.
  */
 function fakePage({ stage = { left: 0, top: 0, width: 1200, height: 500 },
-  game = { left: 350, top: 0, width: 500, height: 500 }, viewport = [1200, 800], dpr = 1, reduced = false } = {}) {
+  game = { left: 350, top: 0, width: 500, height: 500 }, viewport = [1200, 800], dpr = 1, reduced = false,
+  touch = false, screen = [1920, 1080] } = {}) {
   const win = new Target();
-  Object.assign(win, { innerWidth: viewport[0], innerHeight: viewport[1], devicePixelRatio: dpr });
+  Object.assign(win, { innerWidth: viewport[0], innerHeight: viewport[1], devicePixelRatio: dpr,
+    screen: { width: screen[0], height: screen[1] } });
   win.visualViewport = new Target();
   win.media = Object.assign(new Target(), { matches: reduced });
   win.orientation = Object.assign(new Target(), { matches: viewport[1] > viewport[0] });
-  win.matchMedia = (query) => (query.includes('orientation') ? win.orientation : win.media);
+  // The primary pointer: coarse on a touch-first device, otherwise fine.
+  win.coarse = Object.assign(new Target(), { matches: touch });
+  win.matchMedia = (query) => (query.includes('orientation') ? win.orientation
+    : query === '(pointer: coarse)' ? win.coarse
+    : query === '(pointer: fine)' ? { matches: !win.coarse.matches }
+    : query.includes('pointer') ? { matches: false } : win.media);
   win.observers = [];
   win.ResizeObserver = class {
     constructor(callback) { this.callback = callback; this.observed = []; this.connected = true; win.observers.push(this); }
@@ -88,7 +95,13 @@ function fakePage({ stage = { left: 0, top: 0, width: 1200, height: 500 },
     gameCanvas.box = g;
     [win.innerWidth, win.innerHeight] = v;
   }
-  return { win, doc, host, frame, gameCanvas, panel, layer, context, relayout, reads: () => reads };
+  /** Add a protected panel to the stage (shown at once), as a reveal or a new control would. */
+  function addPanel(rect) {
+    const added = element(rect);
+    host.children = [...host.children, added];
+    return added;
+  }
+  return { win, doc, host, frame, gameCanvas, panel, layer, context, relayout, addPanel, reads: () => reads };
 }
 
 const PLAYING = Object.freeze({ phase: 'playing', pausedFrom: null, offer: false, blocked: false, holding: false });
@@ -110,6 +123,9 @@ const footprint = ({ x, y }) => ({ x: x - AMBIENT.footprint, y: y - AMBIENT.foot
 // Measured 0.20.0 layouts (production build, Chromium; see docs/ARCHITECTURE.md).
 const DESKTOP = { visible: { x: 0, y: 0, w: 1526, h: 857 }, game: { x: 264, y: 0, w: 998, h: 857 } }; // 1920 × 1080, Full
 const regionsOf = ({ visible, game }) => safeRegions(visible, [game]);
+/** A desktop window (a 1920 × 1080 screen, a mouse), and a touch-first 412 × 915 phone held either way. */
+const desk = (w, h) => ({ viewport: { w, h }, screen: { w: 1920, h: 1080 }, touch: false });
+const phone = (w, h) => ({ viewport: { w, h }, screen: { w: 412, h: 915 }, touch: true });
 const gutters = (w, h) => [
   { x: 0, y: 0, w, h, portals: ['left', 'top', 'bottom'] },
   { x: 2000, y: 0, w, h, portals: ['right', 'top', 'bottom'] },
@@ -138,6 +154,61 @@ describe('safe-region geometry', () => {
     const pieces = subtract(stage, exclusions);
     expect(pieces.length).toBeGreaterThan(0);
     for (const p of pieces) for (const e of exclusions) expect(intersects(p, e)).toBe(false);
+  });
+
+  /** Every pair of regions is disjoint, each clear of every exclusion's margin and open to a real edge. */
+  function expectSound(regions, exclusions, visible = stage) {
+    for (let i = 0; i < regions.length; i++) {
+      for (let j = i + 1; j < regions.length; j++) expect(intersects(regions[i], regions[j])).toBe(false);
+      for (const e of exclusions) expect(intersects(regions[i], inflate(e, AMBIENT.clearance - 0.01))).toBe(false);
+      expect(regions[i].portals.length).toBeGreaterThan(0);
+      const r = regions[i];
+      expect(r.x >= visible.x && r.y >= visible.y && r.x + r.w <= visible.x + visible.w && r.y + r.h <= visible.y + visible.h).toBe(true);
+    }
+  }
+
+  it('never overlaps regions where strips meet round a panel, so no space counts twice', () => {
+    // A badge in the left gutter's top corner leaves an L of free space.
+    const badge = { x: 0, y: 0, w: 150, h: 120 };
+    const exclusions = [game, badge];
+    const blocked = exclusions.map((e) => inflate(e, AMBIENT.clearance));
+    const pieces = subtract(stage, blocked).filter((p) => p.x < 350);
+    expect(pieces.some((p, i) => pieces.some((q, j) => j > i && intersects(p, q)))).toBe(true); // the raw strips overlap
+    const regions = safeRegions(stage, exclusions);
+    expectSound(regions, exclusions);
+    // The L holds 342 × 500 − 158 × 128 px²: room for six at most, never the eight the two strips would claim.
+    const left = regions.filter((r) => r.x < 350);
+    const free = 342 * 500 - 158 * 128;
+    expect(left.reduce((sum, r) => sum + r.w * r.h, 0)).toBeLessThanOrEqual(free);
+    expect(capacity(left)).toBeLessThanOrEqual(Math.floor(free / AMBIENT.areaPerVisitor));
+    expect(pieces.reduce((sum, p) => sum + regionCapacity(p), 0)).toBe(8);
+    expect(capacity(left)).toBe(5);
+  });
+
+  it('keeps regions disjoint and clear around a control partly covering a gutter', () => {
+    const button = { x: 100, y: 200, w: 80, h: 60 };
+    const exclusions = [game, button, { x: 0, y: 440, w: 1200, h: 60 }];
+    const regions = safeRegions(stage, exclusions);
+    expectSound(regions, exclusions);
+    // A seam between two regions is never a way in.
+    for (const r of regions) {
+      if (r.portals.includes('left')) expect(r.x).toBe(0);
+      if (r.portals.includes('top')) expect(r.y).toBe(0);
+    }
+    expect(capacity(regions)).toBeGreaterThan(0);
+  });
+
+  it.each([1, 2, 3, 4, 5, 6])('stays disjoint and clear for scattered panels and partly hidden stages (seed %i)', (seed) => {
+    const random = createRandom(seed);
+    for (let trial = 0; trial < 40; trial++) {
+      const visible = { x: 0, y: 0, w: random.range(600, 1600), h: random.range(300, 900) };
+      const exclusions = Array.from({ length: random.int(6) + 1 }, () => ({
+        x: random.range(-50, visible.w), y: random.range(-50, visible.h), w: random.range(20, 500), h: random.range(20, 400),
+      }));
+      const regions = safeRegions(visible, exclusions, { open: { left: true, right: random.next() < 0.5, top: true, bottom: random.next() < 0.5 } });
+      expectSound(regions, exclusions, visible);
+      expect(regions.reduce((sum, r) => sum + r.w * r.h, 0)).toBeLessThanOrEqual(visible.w * visible.h);
+    }
   });
 
   it('keeps nothing narrower than a practical corridor, and no space means no visitors', () => {
@@ -180,37 +251,50 @@ describe('population', () => {
   });
 
   it.each([
-    ['1920 × 1080 desktop', gutters(256, 857), [1920, 1080], 6],
-    ['1600 × 900 desktop', gutters(361, 677), [1600, 900], 6],
-    ['1366 × 768 laptop', gutters(331, 545), [1366, 768], 4],
-    ['1280 × 720 laptop', gutters(315, 498), [1280, 720], 4],
-    ['1024 × 768 tablet or small window', gutters(154, 554), [1024, 768], 3],
-    ['800 × 600 window', gutters(103, 482), [800, 600], 2],
-    ['844 × 390 landscape phone', gutters(152, 272), [844, 390], 2],
-    ['932 × 430 landscape phone', gutters(173, 312), [932, 430], 2],
-    ['412 × 839 portrait phone, even with bands above and below the cup', gutters(394, 86), [412, 839], 0],
-  ])('scales the ceiling with the measured space: %s → %i', (_, regions, [w, h], expected) => {
-    expect(displayBudget(regions, { w, h })).toBe(expected);
+    ['1920 × 1080 desktop', gutters(256, 857), desk(1920, 1080), 6],
+    ['1600 × 900 desktop', gutters(361, 677), desk(1600, 900), 6],
+    ['1366 × 768 laptop', gutters(331, 545), desk(1366, 768), 4],
+    ['1280 × 720 laptop', gutters(315, 498), desk(1280, 720), 4],
+    ['1024 × 768 tablet or small window', gutters(154, 554), desk(1024, 768), 3],
+    ['800 × 600 window', gutters(103, 482), desk(800, 600), 2],
+    ['1200 × 480 short desktop window, by its geometry alone', gutters(300, 330), desk(1200, 480), 3],
+    ['844 × 390 landscape phone', gutters(152, 272), phone(844, 390), 2],
+    ['932 × 430 landscape phone', gutters(173, 312), phone(932, 430), 2],
+    ['844 × 390 landscape phone, even with roomier gutters', gutters(300, 330), phone(844, 390), 2],
+    ['412 × 839 portrait phone, even with bands above and below the cup', gutters(394, 86), phone(412, 839), 0],
+  ])('scales the ceiling with the measured space: %s → %i', (_, regions, device, expected) => {
+    expect(displayBudget(regions, device)).toBe(expected);
   });
 
   it('never exceeds the prototype cap, however much room; a debug override reaches the slot count and no further', () => {
     const vast = gutters(2000, 2000);
     expect(capacity(vast)).toBe(AMBIENT.slots);
-    expect(displayBudget(vast, { w: 3840, h: 2160 })).toBe(AMBIENT.maxVisitors);
+    expect(displayBudget(vast, desk(3840, 2160))).toBe(AMBIENT.maxVisitors);
     expect(AMBIENT.maxVisitors).toBe(6);
     expect(AMBIENT.slots).toBe(12);
-    expect(displayBudget(vast, { w: 3840, h: 2160 }, { override: 12 })).toBe(12);
-    expect(displayBudget(vast, { w: 3840, h: 2160 }, { override: 50 })).toBe(12);
-    expect(displayBudget(vast, { w: 3840, h: 2160 }, { override: 0 })).toBe(0);
+    expect(displayBudget(vast, desk(3840, 2160), { override: 12 })).toBe(12);
+    expect(displayBudget(vast, desk(3840, 2160), { override: 50 })).toBe(12);
+    expect(displayBudget(vast, desk(3840, 2160), { override: 0 })).toBe(0);
     // A portrait phone stays empty even under an override.
-    expect(displayBudget(vast, { w: 412, h: 839 }, { override: 12 })).toBe(0);
+    expect(displayBudget(vast, phone(412, 839), { override: 12 })).toBe(0);
   });
 
-  it('tells phone shapes from the viewport, separately from the measured space', () => {
-    expect(phoneShape({ w: 412, h: 839 })).toBe('portrait');
-    expect(phoneShape({ w: 844, h: 390 })).toBe('landscape');
-    expect(phoneShape({ w: 768, h: 1024 })).toBe(null); // a tablet in portrait follows its geometry
-    expect(phoneShape({ w: 1280, h: 720 })).toBe(null);
+  it('tells a phone by its device, and which way up by its viewport', () => {
+    expect(phoneShape(phone(412, 839))).toBe('portrait');
+    expect(phoneShape(phone(844, 390))).toBe('landscape');
+    expect(phoneShape(phone(915, 412))).toBe('landscape');
+    // Short or narrow desktop windows are not phones, whatever their shape.
+    expect(phoneShape(desk(1200, 480))).toBe(null);
+    expect(phoneShape(desk(844, 390))).toBe(null);
+    expect(phoneShape(desk(412, 839))).toBe(null);
+    expect(phoneShape(desk(1280, 720))).toBe(null);
+    // Touch alone is not a phone: a touch laptop, or a tablet, follows its geometry.
+    expect(phoneShape({ viewport: { w: 1200, h: 480 }, screen: { w: 1920, h: 1080 }, touch: true })).toBe(null);
+    expect(phoneShape({ viewport: { w: 768, h: 1024 }, screen: { w: 768, h: 1024 }, touch: true })).toBe(null);
+    // Nor is a small screen driven by a mouse; and with no screen reported, nothing is a phone.
+    expect(phoneShape({ viewport: { w: 412, h: 839 }, screen: { w: 412, h: 915 }, touch: false })).toBe(null);
+    expect(phoneShape({ viewport: { w: 412, h: 839 }, touch: true })).toBe(null);
+    expect(phoneShape()).toBe(null);
   });
 
   it('allows at most two in Low graphics', () => {
@@ -423,6 +507,56 @@ describe('the colony', () => {
     } });
   });
 
+  it.each([62, 63, 64])('keeps ants in neighbouring regions apart where panels divide a gutter (seed %i)', (seed) => {
+    // The 1920 × 1080 left gutter, with a badge in its corner and a button part way down.
+    const panels = [DESKTOP.game, { x: 0, y: 0, w: 140, h: 110 }, { x: 90, y: 420, w: 100, h: 60 }];
+    const rooms = safeRegions(DESKTOP.visible, panels);
+    expect(rooms.filter((r) => r.x < 264).length).toBeGreaterThan(1);
+    let shared = 0;
+    simulate(seed, 120, { limit: 12, tuning: LINGER, rooms, each: (colony, t) => {
+      if (t < FRAME) colony.summon(12);
+      const out = present(colony);
+      for (const a of out) {
+        for (const p of panels) expect(intersects(footprint(a), inflate(p, AMBIENT.clearance - 0.01))).toBe(false);
+        if (a.state === 'wandering' || a.state === 'paused') expectContained(a, DESKTOP.game);
+      }
+      for (let i = 0; i < out.length; i++) {
+        for (let j = i + 1; j < out.length; j++) {
+          if (out[i].region === out[j].region) continue;
+          shared++;
+          expect(intersects(footprint(out[i]), footprint(out[j]))).toBe(false);
+        }
+      }
+    } });
+    expect(shared).toBeGreaterThan(0);
+  });
+
+  it('retires at once, rather than walking out, any ant whose region a layout change cuts into', () => {
+    const { colony } = simulate(65, 20, { tuning: LINGER, each: (c, t) => { if (t < FRAME) c.summon(6); } });
+    // Half of them are already on their way home.
+    colony.step(FRAME, regions, 3);
+    const out = present(colony);
+    expect(out.some((a) => a.state === 'leaving')).toBe(true);
+    // A panel now covers part of the left gutter.
+    const panel = { x: 40, y: 300, w: 160, h: 120 };
+    const next = safeRegions(DESKTOP.visible, [DESKTOP.game, panel]);
+    const cut = regions[0];
+    const wasThere = out.filter((a) => a.region === cut).length;
+    expect(wasThere).toBeGreaterThan(0);
+    colony.relayout(next);
+    for (const a of present(colony)) {
+      expect(a.region).not.toBe(cut);
+      expect(next).toContain(a.region);
+    }
+    expect(present(colony).length).toBe(out.length - wasThere);
+    // From here on nobody comes near it.
+    for (let t = 0; t < 60; t += FRAME) {
+      if (t < FRAME) colony.summon(6);
+      colony.step(FRAME, next, 6);
+      for (const a of present(colony)) expect(intersects(footprint(a), inflate(panel, AMBIENT.clearance - 0.01))).toBe(false);
+    }
+  });
+
   it('sends the extras home when the ceiling drops, and lets no more in', () => {
     const { colony } = simulate(71, 20, { tuning: LINGER, each: (c, t) => { if (t < FRAME) c.summon(6); } });
     expect(colony.count).toBe(6);
@@ -483,6 +617,50 @@ describe('the colony', () => {
     const spread = Math.sqrt(later.reduce((a, b) => a + (b - mean) ** 2, 0) / later.length);
     expect(spread).toBeGreaterThan(2);
     expect(Math.min(...gaps)).toBeGreaterThanOrEqual(AMBIENT.spacing - 1e-6);
+  });
+
+  it.each([91, 96, 97, 98, 99])('picks a leader close enough to catch, walking ahead of its follower (seed %i)', (seed) => {
+    const frames = moment('follow', seed);
+    const start = frames.findIndex((f) => f.some((a) => a.mode === 'follow'));
+    expect(start).toBeGreaterThanOrEqual(0);
+    const follower = frames[start].findIndex((a) => a.mode === 'follow');
+    const leader = frames[start][follower].partner;
+    const gap = (f) => Math.hypot(f[follower].x - f[leader].x, f[follower].y - f[leader].y);
+    expect(gap(frames[start])).toBeLessThanOrEqual(AMBIENT.social.followReach);
+    // The leader is the nearest settled companion it could have had, and walks on ahead of it.
+    const others = frames[start].filter((a, i) => i !== follower && i !== leader && a.state !== 'absent' && a.state !== 'entering'
+      && a.state !== 'leaving');
+    const near = others.filter((a) => Math.hypot(a.x - frames[start][follower].x, a.y - frames[start][follower].y) < gap(frames[start]) - 1e-6);
+    expect(near.filter((a) => a.mode === 'solo')).toHaveLength(0);
+    // Either the follower is behind the leader, or the leader is in front of the follower: never head to head.
+    const [f, l] = [frames[start][follower], frames[start][leader]];
+    const behind = Math.cos(l.heading) * (f.x - l.x) + Math.sin(l.heading) * (f.y - l.y) <= 0;
+    const ahead = Math.cos(f.heading) * (l.x - f.x) + Math.sin(f.heading) * (l.y - f.y) > 0;
+    expect(behind || ahead).toBe(true);
+    // It is soon walking close behind, not chasing a speck across the gutter.
+    let caught = false;
+    for (let i = start; i < Math.min(frames.length, start + 6 * 60) && frames[i][follower].mode === 'follow'; i++) {
+      if (gap(frames[i]) < AMBIENT.social.catchUp) caught = true;
+    }
+    expect(caught).toBe(true);
+  });
+
+  it('lets a follower that falls far behind give up', () => {
+    const colony = createColony({ random: createRandom(5), tuning: LINGER });
+    for (let t = 0; t < 12; t += FRAME) { if (t < FRAME) colony.summon(2); colony.step(FRAME, regions, 2); }
+    colony.socialize('follow');
+    let follower = null;
+    for (let t = 0; t < 30 && !follower; t += FRAME) {
+      colony.step(FRAME, regions, 2);
+      follower = colony.ants.find((a) => a.mode === 'follow') ?? null;
+    }
+    expect(follower).not.toBe(null);
+    // Its leader is suddenly well out of reach (a wild sprint, for the test).
+    const leader = follower.partner;
+    leader.y = leader.y < 400 ? leader.y + 400 : leader.y - 400;
+    colony.step(FRAME, regions, 2);
+    expect(follower.mode).toBe('solo');
+    expect(follower.partner).toBe(null);
   });
 
   it('lets two ants meet, stand face to face a moment, then go their own ways', () => {
@@ -625,6 +803,7 @@ describe('the ant painter', () => {
 });
 
 describe('the ambient layer', () => {
+  const PHONE = Object.freeze({ touch: true, screen: [412, 915] }); // Pixel 7
   it('attaches to the existing loop: no timers, animation frames or input listeners of its own, and cleans up', () => {
     const page = fakePage();
     const frames = vi.fn(() => 0);
@@ -636,13 +815,15 @@ describe('the ambient layer', () => {
     expect(page.layer.getContext).toHaveBeenCalledTimes(1);
     expect([...page.win.attached.keys()].sort()).toEqual(['blur', 'focus', 'resize', 'scroll']);
     expect(page.win.orientation.live).toBe(1);
+    expect(page.win.coarse.live).toBe(1);
     expect(page.win.observers).toHaveLength(1);
     expect(page.win.observers[0].observed).toContain(page.gameCanvas);
     untilVisible(ambient, 4);
     expect(page.layer.hidden).toBe(false);
     expect(page.layer.width).toBe(1200);
     ambient.dispose();
-    expect(page.win.live + page.win.visualViewport.live + page.win.media.live + page.win.orientation.live).toBe(0);
+    expect(page.win.live + page.win.visualViewport.live + page.win.media.live + page.win.orientation.live
+      + page.win.coarse.live).toBe(0);
     expect(page.win.observers[0].connected).toBe(false);
     expect(page.layer).toMatchObject({ width: 0, height: 0, hidden: true });
     expect(ambient.snapshot()).toMatchObject({ count: 0, ants: [] });
@@ -710,6 +891,35 @@ describe('the ambient layer', () => {
     ambient.dispose();
   });
 
+  it('never draws an ant over a panel that appears in its gutter: those ants go at once, the rest stay', () => {
+    const page = fakePage({ stage: { left: 197, top: 100, width: 1526, height: 857 }, game: { left: 461, top: 100, width: 998, height: 857 }, viewport: [1920, 1080] });
+    const ambient = createAmbient({ canvas: page.layer, seed: 9 });
+    untilVisible(ambient, 6);
+    run(ambient, 4);
+    const before = ambient.snapshot();
+    const left = before.ants.filter((a) => a.region.x < 264).map((a) => a.slot);
+    const right = before.ants.filter((a) => a.region.x >= 264 && a.state !== 'leaving').map((a) => a.slot);
+    expect(left.length).toBeGreaterThan(0);
+    expect(right.length).toBeGreaterThan(0);
+    // A panel unfolds across the middle of the left gutter (no resize event: the child count changes).
+    const panel = { x: 30, y: 280, w: 200, h: 180 }; // stage-local
+    page.addPanel({ left: 197 + panel.x, top: 100 + panel.y, width: panel.w, height: panel.h });
+    let shown = 0;
+    for (let t = 0; t < 30; t += FRAME) {
+      ambient.update(FRAME, PLAYING);
+      const s = ambient.snapshot();
+      if (s.hidden) continue;
+      if (shown++ === 0) {
+        // The left gutter is now two smaller regions; its ants were retired, not walked out past the panel.
+        expect(s.ants.filter((a) => left.includes(a.slot))).toEqual([]);
+        expect(s.ants.filter((a) => right.includes(a.slot))).toHaveLength(right.length);
+      }
+      for (const a of s.ants) expect(intersects(footprint(a), inflate(panel, AMBIENT.clearance - 0.01))).toBe(false);
+    }
+    expect(shown).toBeGreaterThan(0);
+    ambient.dispose();
+  });
+
   it('shows nothing when the space is inadequate, however long it waits', () => {
     const page = fakePage({ stage: { left: 0, top: 0, width: 357, height: 356 }, game: { left: 0, top: 25, width: 357, height: 307 } });
     const ambient = createAmbient({ canvas: page.layer, seed: 3 });
@@ -722,7 +932,7 @@ describe('the ambient layer', () => {
 
   it('keeps a portrait phone empty even where there is measured room, and frees the surface', () => {
     // A 412 × 839 phone in play: real bands above and below the cup, but the cup fills the width.
-    const page = fakePage({ stage: { left: 9, top: 200, width: 394, height: 527 }, game: { left: 9, top: 300, width: 394, height: 327 }, viewport: [412, 839] });
+    const page = fakePage({ stage: { left: 9, top: 200, width: 394, height: 527 }, game: { left: 9, top: 300, width: 394, height: 327 }, viewport: [412, 839], ...PHONE });
     const ambient = createAmbient({ canvas: page.layer, seed: 3 });
     ambient.summon(6);
     run(ambient, 30);
@@ -735,7 +945,7 @@ describe('the ambient layer', () => {
   it('re-evaluates on turning the device: landscape ants leave for portrait, and may return', () => {
     const landscape = { stage: { left: 104, top: 70, width: 636, height: 272 }, game: { left: 264, top: 70, width: 316, height: 272 }, viewport: [844, 390] };
     const portrait = { stage: { left: 9, top: 200, width: 394, height: 527 }, game: { left: 9, top: 300, width: 394, height: 327 }, viewport: [412, 839] };
-    const page = fakePage(landscape);
+    const page = fakePage({ ...landscape, ...PHONE });
     const ambient = createAmbient({ canvas: page.layer, seed: 4 });
     untilVisible(ambient, 2);
     expect(ambient.snapshot()).toMatchObject({ budget: 2, room: 2 });
@@ -753,6 +963,44 @@ describe('the ambient layer', () => {
     run(ambient, 0.3);
     expect(ambient.snapshot().room).toBe(2);
     untilVisible(ambient, 1);
+    ambient.dispose();
+  });
+
+  it('treats a short desktop window by its geometry, not as a phone held sideways', () => {
+    // 1200 × 480: two roomy gutters beside a 380 px cup, on a 1920 × 1080 desktop screen.
+    const short = { stage: { left: 27, top: 120, width: 1146, height: 340 }, game: { left: 410, top: 120, width: 380, height: 340 }, viewport: [1200, 480] };
+    const desktop = fakePage(short);
+    const ambient = createAmbient({ canvas: desktop.layer, seed: 4 });
+    run(ambient, 0.3);
+    const s = ambient.snapshot();
+    expect(s.shape).toBe(null);
+    expect(s.budget).toBeGreaterThan(AMBIENT.phoneLandscape);
+    expect(s.room).toBe(Math.min(s.space, s.budget));
+    untilVisible(ambient, 3);
+    ambient.dispose();
+    // The same layout on a phone keeps the phone's conservative ceiling.
+    const handset = fakePage({ ...short, ...PHONE });
+    const sideways = createAmbient({ canvas: handset.layer, seed: 4 });
+    run(sideways, 0.3);
+    expect(sideways.snapshot()).toMatchObject({ shape: 'landscape', budget: 2, room: 2 });
+    sideways.dispose();
+  });
+
+  it('re-evaluates when the primary pointer changes, and when a resize makes a phone portrait', () => {
+    const short = { stage: { left: 27, top: 120, width: 1146, height: 340 }, game: { left: 410, top: 120, width: 380, height: 340 }, viewport: [1200, 480] };
+    const page = fakePage({ ...short, screen: [412, 915] }); // small screen, but a mouse for now
+    const ambient = createAmbient({ canvas: page.layer, seed: 5 });
+    run(ambient, 0.3);
+    expect(ambient.snapshot().shape).toBe(null);
+    page.win.coarse.matches = true;
+    page.win.coarse.dispatchEvent(new Event('change'));
+    run(ambient, 0.3);
+    expect(ambient.snapshot()).toMatchObject({ shape: 'landscape', budget: 2 });
+    // Only a resize reports this one: now it is upright.
+    page.relayout({ stage: { left: 9, top: 200, width: 394, height: 527 }, game: { left: 9, top: 300, width: 394, height: 327 }, viewport: [412, 839] });
+    page.win.dispatchEvent(new Event('resize'));
+    run(ambient, 0.3);
+    expect(ambient.snapshot()).toMatchObject({ shape: 'portrait', budget: 0, room: 0, count: 0 });
     ambient.dispose();
   });
 

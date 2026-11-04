@@ -1098,8 +1098,8 @@ and disposes it from `stop()`.
 
 **Safe geometry.** Layout is measured only when dirty: a ResizeObserver on
 the stage, playfield, `#game` and `#readingPresentation`; window resize and
-scroll; visualViewport resize; a `(orientation: portrait)` media change;
-and a per-frame comparison of a few body
+scroll; visualViewport resize; `(orientation: portrait)` and
+`(pointer: coarse)` media changes; and a per-frame comparison of a few body
 `data-*` attributes, panel `hidden` flags, child counts and the pixel ratio.
 The next frame after 0.12 s without further change measures once. While
 dirty nothing is drawn. The visible area is the stage ∩ playfield ∩
@@ -1107,11 +1107,18 @@ viewport. Every visible, non-decorative child of the stage and playfield
 (the game canvas, panels, offers, HUD, controls, buttons) is protected,
 inflated by 8 px. What remains is cut into strip regions; a region must be
 at least 32 px across, 96 px long and 24,000 px² on its own (slivers are
-never combined). Its portals are only its sides on a real border, the
-playfield frame or screen edge, never a seam beside the HUD or a button row.
+never combined). Regions never overlap: the strips beside an exclusion
+overlap where they meet round a panel's corner, so the largest usable strip
+is taken first and cut out of the others, then the largest of what remains,
+and so on. No area is counted twice, and ants in different regions can
+never meet in shared space. Its portals are only its sides on a real
+border, the playfield frame or screen edge, never a seam beside the HUD, a
+button row or a neighbouring region.
 The backing store, at a pixel ratio capped at 2, is allocated only while
 the room below is positive. A layout change keeps an ant only if its region
-lies inside a new one; otherwise it is retired before the next draw.
+lies inside a new one; otherwise it is retired before the next draw, even
+if it was already walking home: an ant never crosses newly protected space
+on its way out.
 
 **Population.** Three limits, all prototype values for review:
 
@@ -1119,18 +1126,25 @@ lies inside a new one; otherwise it is retired before the next draw.
   ants on its own. Regions are never pooled, so two slivers either side of
   the cup add nothing, and an ant never crosses between gutters.
 - *Display budget* (`displayBudget()`): by total safe area, ≥ 420,000 px² →
-  6, ≥ 250,000 → 4, ≥ 150,000 → 3, otherwise 2; at most 2 when the viewport
-  is a phone held sideways, and none at all on a portrait phone (short side
-  ≤ 500 CSS px), whatever the geometry: there the cup fills the width and
-  the bands above and below it are the HUD's and the controls'. These are
-  viewport-shape rules, separate from the measured capacity.
+  6, ≥ 250,000 → 4, ≥ 150,000 → 3, otherwise 2; at most 2 on a phone held
+  sideways, and none at all on a portrait phone, whatever the geometry:
+  there the cup fills the width and the bands above and below it are the
+  HUD's and the controls'. A phone (`phoneShape()`) is a device decision,
+  not a window shape: its primary pointer is touch (`hasPrimaryTouch()`,
+  the controls' own test) *and* its whole screen's short side is at most
+  500 CSS px; the viewport only says which way up it is held. A short or
+  narrow desktop window has a desktop screen, and a touch laptop or tablet
+  a larger one, so they follow their measured geometry. Touch alone never
+  makes a phone.
 - *Quality* (`populationLimit()`): at most 2 in Low graphics, read every
   frame.
 
 The room is the smaller of the first two; this frame's limit applies the
 third. Measured examples (production build, Chromium): 1920 × 1080 Full → 6;
 1366 × 768 and 1280 × 720 → 4; 1024 × 768 → 3; 800 × 600 → 2; 844 × 390
-landscape phone → 2; 412 × 839 portrait phone → 0. A 2560 × 1440 window has
+landscape phone → 2; 412 × 839 portrait phone → 0. A 1200 × 480 desktop
+window in play (two 391 × 329 gutters) → 4, where it used to be capped as
+a phone held sideways; the same short window on a phone stays at 2. A 2560 × 1440 window has
 only 46 px gutters in play (the stage stops widening at 1526 px while the
 cup grows), so it holds 2–4. Twelve slots are allocated once; nothing,
 including the `?debug&ambientAnts=<0–12>` profiling override of the display
@@ -1157,18 +1171,41 @@ are regularly empty and never fill in a procession.
 
 **Social moments** (High only). Every 6–14 s there is a 60 % chance of one
 moment, never two at once, among wandering ants in the same region within
-200 px of each other with at least 4 s of their visit left:
+200 px of each other (110 px to follow) with at least 4 s of their visit
+left:
 
 | Moment | Behaviour | Ends |
 | --- | --- | --- |
-| Follow | One ant walks 0.7–1.5 s behind another along its recent path (a 12-point, 0.2 s trail), a few pixels to either side, at its own pace; hurries when more than 70 px behind; waits when within 26 px | After 6–12 s, by losing interest (5 % per trail point), or when the leader leaves |
+| Follow | The closest two settled ants within 110 px of each other; the one ahead (by heading) leads. The follower walks 0.7–1.5 s behind along the leader's recent path (a 12-point, 0.2 s trail), a few pixels to either side, at its own pace, with stop-and-go pauses while close; hurries when more than 70 px behind; waits when within 26 px | After 6–12 s, by losing interest (5 % per trail point), when the leader leaves, or when it falls more than 150 px behind |
 | Greet | Two ants walk to either side of their midpoint, 15 px apart (antennae just touching), turn to face each other and stand 0.8–1.6 s; the first to arrive waits up to 3 s for the other | Each then wanders off away from the other; it gives up after 6 s of approach |
 | Drift | Two or three nearby ants head the same way along the gutter's long axis, each with its own waypoints 50–110 px ahead and up to 22 px to the side | After 5–9 s, or at the end of the gutter |
 
 Any moment ends at once on a layout change or in Low graphics, and every
-ant returns to wandering alone, which is the default. In 20-minute seeded
-runs at 1920 × 1080 (ceiling 6) about 96 % of ant-time is solo, an average
-of 3.3 ants are out, and the gutters are empty about a fifth of the time.
+ant returns to wandering alone, which is the default. A follower used to
+be paired with any ant up to 200 px away and often never caught up (in
+twelve 20-minute seeded runs at 1920 × 1080, starts had a median gap of
+120 px and only 68 % ever came within 60 px); choosing the nearest leader
+in reach gives a median start of 82 px and 89 %, with the same pace.
+Follows are rarer (27 rather than 63 in those four hours; greets and
+drifts take up the difference, about 170 moments in all).
+
+**Pacing** (`node tests/support/ambientPacing.js [seeds] [minutes]`,
+20 seeds × 30 minutes, the measured layouts, from a calm screen; an ant is
+visible once any of it is inside the stage):
+
+| 1920 × 1080 Full (ceiling 6) | Empty | Mean (while seen) | Moments / 10 min | Activity median / p90 | Quiet median / p90 | 4+ out | Clumps |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A: current, empty 12–30 s | 22 % | 3.33 (4.26) | 6.9 | 73 / 93 s | 20 / 28 s | 53 % | 9 % |
+| B: empty 24–48 s | 32 % | 2.93 (4.30) | 6.7 | 68 / 92 s | 35 / 46 s | 47 % | 10 % |
+| C: empty 45–90 s | 46 % | 2.33 (4.28) | 4.6 | 77 / 94 s | 66 / 85 s | 37 % | 9 % |
+
+At 1280 × 720 (ceiling 4) the empty shares are the same (22 / 32 / 46 %),
+with 2.52 / 2.20 / 1.73 ants on average and 5.7 / 5.2 / 4.3 moments per ten
+minutes. "Clumps" is the share of multi-ant time two solo ants are within
+40 px. Longer quiet spells change how often the colony is there, not what it
+looks like while it is: the population while seen, the activity runs and
+the clumping stay put. The current timing (A) is kept for now; see the
+0.20.0 planning document for the recommendation.
 
 **Visibility policy** (`ambientPolicy()`):
 
@@ -1191,6 +1228,16 @@ smudge on the screen. Low graphics keeps the same behaviour with a simpler
 body (straight legs, no highlight), at most two ants and no social moments.
 The current quality is read every frame, so a change applies without a
 reload.
+
+**Visual review.** `node tests/support/ambientReview.js <preview URL>
+<output directory> [scenario …]` records a short clip, a still and a
+timeline of each scene through the `?debug` hook (one ant, a full colony,
+follow, greet, drift, entry and exit, the natural rhythm with its quiet
+spells, Low graphics, a 1200 × 480 desktop window and an 844 × 390
+landscape phone). By hand, any of these with `?debug&noOverlay&ambientSeed=7`
+and `window.__TEACUP__.ambient.summon(n)` / `.socialize('follow' | 'greet'
+| 'drift')` in the console; `&ambientAnts=1` for a single ant and
+`&graphics=low` for Low.
 
 **Drawing and cost.** One pass per frame clears the last frame's ant spots
 (a 22 px square each, all before any drawing) and paints every present ant;

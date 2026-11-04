@@ -9,8 +9,9 @@
 // key mark it dirty, and the next settled frame measures once.
 
 import { createRandom } from '../core/random.js';
+import { hasPrimaryTouch } from '../input/settings.js';
 import {
-  AMBIENT, ambientPolicy, capacity, createColony, displayBudget, drawAnt, populationLimit, safeRegions,
+  AMBIENT, ambientPolicy, capacity, createColony, displayBudget, drawAnt, phoneShape, populationLimit, safeRegions,
 } from '../rendering/ambient.js';
 
 const MAX_PIXEL_RATIO = 2;
@@ -89,6 +90,7 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
   let room = 0; // what the measured space and the display allow
   let space = 0; // region capacity alone
   let budget = 0; // the display's ceiling alone
+  let shape = null; // 'portrait' | 'landscape' on a phone, otherwise null
   let limit = 0; // this frame's ceiling, after graphics quality
   let layout = null;
   let dirty = true;
@@ -119,8 +121,10 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
   const motion = win.matchMedia?.('(prefers-reduced-motion: reduce)');
   reduced = !!motion?.matches;
   listen(motion, 'change', (event) => { reduced = event.matches; });
-  // Turning a phone changes the display's ceiling, even before any resize is reported.
+  // Turning a phone changes the display's ceiling, even before any resize is
+  // reported; so does a convertible switching between touch and a mouse.
   listen(win.matchMedia?.('(orientation: portrait)'), 'change', markDirty);
+  listen(win.matchMedia?.('(pointer: coarse)'), 'change', markDirty);
   const observer = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(markDirty) : null;
   for (const element of [host, clip, doc.getElementById('game'), doc.getElementById('readingPresentation')]) {
     if (element) observer?.observe(element);
@@ -153,7 +157,11 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
     layout = measureLayout({ host, clip, candidates, viewport: { x: 0, y: 0, w: win.innerWidth, h: win.innerHeight } });
     regions = safeRegions(layout.visible, layout.exclusions, { open: layout.open });
     space = capacity(regions);
-    budget = displayBudget(regions, { w: win.innerWidth, h: win.innerHeight }, { override });
+    // Whether this is a phone is the device's question; how many fit is the geometry's.
+    const device = { viewport: { w: win.innerWidth, h: win.innerHeight },
+      screen: { w: win.screen?.width, h: win.screen?.height }, touch: hasPrimaryTouch(win) };
+    shape = phoneShape(device);
+    budget = displayBudget(regions, device, { override });
     room = Math.min(space, budget);
     // Only hold backing pixels while a visitor could actually appear.
     const width = room > 0 ? Math.round(layout.width * ratio) : 0;
@@ -235,7 +243,7 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
       const box = (r) => r && { x: r.x, y: r.y, w: r.w, h: r.h };
       const slot = (ant) => colony.ants.indexOf(ant);
       return {
-        policy, room, space, budget, limit, count: colony.count, spell: colony.spell, reduced, focused,
+        policy, room, space, budget, limit, shape, count: colony.count, spell: colony.spell, reduced, focused,
         drawn, quality: drawnQuality, hidden: canvas.hidden, width: canvas.width, height: canvas.height,
         visible: layout?.visible ?? null, exclusions: layout?.exclusions ?? [], open: layout?.open ?? null,
         regions: regions.map((r) => ({ ...box(r), portals: [...r.portals] })),
