@@ -3,7 +3,7 @@ import { CONFIG } from '../../src/config.js';
 import { createGame } from '../../src/core/game.js';
 import { createRandom } from '../../src/core/random.js';
 import { createTextMischief, textFormation } from '../../src/rendering/textMischief.js';
-import { readingTextSpace } from '../../src/ui/textMischief.js';
+import { createReadingMischief, readingTextSpace } from '../../src/ui/textMischief.js';
 
 const eligible = { eligible: true };
 const tuning = CONFIG.textMischief;
@@ -166,5 +166,101 @@ describe('safe decorative reading space', () => {
     if (kind === 'invalid') s.panel.left = NaN;
     if (kind === 'portrait') s.viewport = { w: 400, h: 900 };
     expect(readingTextSpace(s)).toBe(false);
+  });
+});
+
+describe('the reading overlay invariant: no measured space, no overlay', () => {
+  /** Just enough of a page to measure, with geometry each test can change. */
+  function fakePage() {
+    const target = () => ({ addEventListener() {}, removeEventListener() {} });
+    const room = { last: { bottom: 300 } };
+    const line = {};
+    const copy = { ...target(), scrollHeight: 300, clientHeight: 300, children: [line], lastElementChild: { getBoundingClientRect: () => room.last } };
+    const panel = { ...target(), querySelector: () => copy, contains: () => false,
+      getBoundingClientRect: () => ({ left: 650, top: 100, right: 1250, bottom: 700, width: 600 }) };
+    const lane = { hidden: true };
+    const context = { font: '', measureText: () => ({ width: 240 }), clearRect() {}, setTransform() {} };
+    const canvas = { hidden: true, width: 0, height: 0, getContext: () => context };
+    const caption = { textContent: 'Management denies the existence of ants.', hasAttribute: () => false, setAttribute() {}, removeAttribute() {} };
+    const observers = [];
+    const win = { ...target(), innerWidth: 1280, innerHeight: 720, devicePixelRatio: 1,
+      getComputedStyle: () => ({ font: '13px serif', color: '#fff' }),
+      ResizeObserver: class { constructor(run) { this.run = run; this.watched = []; observers.push(this); }
+        observe(e) { this.watched.push(e); } disconnect() { this.watched = []; } } };
+    const nodes = { readingMischief: lane, readingAnts: canvas, readingCaption: caption, readingPresentation: panel };
+    const doc = { ...target(), defaultView: win, activeElement: null, visibilityState: 'visible',
+      getElementById: (id) => nodes[id], getSelection: () => null };
+    const scene = { phase: 'reading', readingReady: true, readingKey: 'a', offer: false, blocked: false, holding: false };
+    const mischief = createReadingMischief({ doc, random: createRandom(7) });
+    const settings = { quality: 'high', reduced: false, focused: true, hidden: false, settling: false };
+    const update = (over = {}, sceneOver = {}) => mischief.update(0.016, { ...scene, ...sceneOver }, { ...settings, ...over });
+    return { room, lane, line, observers, mischief, update };
+  }
+  const CROWDED = { bottom: 640 };
+
+  it('shows the lane when there is room to spare', () => {
+    const { lane, mischief, update } = fakePage();
+    update();
+    expect(mischief.snapshot()).toMatchObject({ eligible: true, measured: true, laneHidden: false });
+    expect(lane.hidden).toBe(false);
+  });
+  it('keeps the lane hidden, and refuses a trigger, when the copy needs the space', () => {
+    const { room, lane, mischief, update } = fakePage();
+    room.last = CROWDED;
+    update();
+    expect(mischief.snapshot()).toMatchObject({ eligible: false, geometry: null, measured: true, laneHidden: true });
+    expect(lane.hidden).toBe(true);
+    expect(mischief.trigger()).toBe(false);
+  });
+  it('hides the lane the moment a layout change invalidates it, not on the next measurement', () => {
+    const { room, lane, mischief, update } = fakePage();
+    update();
+    room.last = CROWDED;
+    mischief.invalidate();
+    expect(lane.hidden).toBe(true);
+    expect(mischief.snapshot()).toMatchObject({ eligible: false, geometry: null, measured: false });
+    update();
+    expect(mischief.snapshot()).toMatchObject({ eligible: false, measured: true, laneHidden: true });
+  });
+  it('watches the words for a reflow inside a panel that keeps its size', () => {
+    const { room, line, lane, observers, mischief, update } = fakePage();
+    expect(observers[0].watched).toEqual([line]);
+    update();
+    room.last = CROWDED;
+    observers[0].run();
+    update();
+    expect(lane.hidden).toBe(true);
+    expect(mischief.snapshot().eligible).toBe(false);
+  });
+  it('does not carry a measurement to a new reading while an unfocused window cannot measure', () => {
+    const { room, lane, mischief, update } = fakePage();
+    update();
+    expect(lane.hidden).toBe(false);
+    room.last = CROWDED;
+    update({ focused: false }, { readingKey: 'b' });
+    expect(lane.hidden).toBe(true);
+    expect(mischief.snapshot()).toMatchObject({ eligible: false, geometry: null, measured: false });
+    update({ focused: true }, { readingKey: 'b' });
+    expect(mischief.snapshot()).toMatchObject({ eligible: false, measured: true, laneHidden: true });
+  });
+  it('holds through every way out of a reading', () => {
+    const cases = [[{}, { phase: 'playing' }], [{ quality: 'low' }, {}], [{ reduced: true }, {}], [{ settling: true }, {}], [{}, { offer: true }]];
+    for (const [over, sceneOver] of cases) {
+      const { lane, mischief, update } = fakePage();
+      update();
+      update(over, sceneOver);
+      expect(lane.hidden).toBe(true);
+      expect(mischief.snapshot().eligible).toBe(false);
+    }
+  });
+  it('returns once room is back, so a cramped moment is not a permanent verdict', () => {
+    const { room, lane, mischief, update } = fakePage();
+    room.last = CROWDED;
+    update();
+    room.last = { bottom: 300 };
+    mischief.invalidate();
+    update();
+    expect(lane.hidden).toBe(false);
+    expect(mischief.snapshot().eligible).toBe(true);
   });
 });

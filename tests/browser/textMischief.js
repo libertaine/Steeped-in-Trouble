@@ -26,6 +26,20 @@ export async function stealText(page, { clock = true } = {}) {
   if (clock) await page.clock.runFor(32);
 }
 
+/** Wait for the reading to be measured: before that, `eligible: false` says nothing. */
+export async function measuredText(page) {
+  await expect.poll(async () => (await textState(page)).measured).toBe(true);
+  return textState(page);
+}
+
+/** Remember whether the lane ever shows from here on, even for a single frame. */
+export const watchLane = page => page.evaluate(() => {
+  const lane = document.getElementById('readingMischief');
+  window.__laneShown = !lane.hidden;
+  new MutationObserver(() => { window.__laneShown ||= !lane.hidden; }).observe(lane, { attributes: true, attributeFilter: ['hidden'] });
+});
+export const laneWasShown = page => page.evaluate(() => window.__laneShown);
+
 export async function freezeTextClock(page) {
   await page.clock.install();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));

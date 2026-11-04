@@ -60,8 +60,8 @@ test('Show restores the rail; Hide reclaims it and survives reload independently
   expect(problems).toEqual([]);
 });
 
-test('Tea Break settings reflow and scroll with enlarged text and reduced motion', async ({ page, problems }) => {
-  await page.setViewportSize({ width: 375, height: 667 });
+for (const [width, height, name] of [[375, 667, ''], [320, 568, ' on the narrowest phone']]) test(`Tea Break settings reflow and scroll with enlarged text and reduced motion${name}`, async ({ page, problems }) => {
+  await page.setViewportSize({ width, height });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openGame(page);
   await page.locator('#menuBtn').click();
@@ -74,13 +74,45 @@ test('Tea Break settings reflow and scroll with enlarged text and reduced motion
   });
   await page.getByLabel('On-screen controls', { exact: true }).scrollIntoViewIfNeeded();
   await expect(page.getByLabel('On-screen controls', { exact: true })).toBeVisible();
-  const layout = await page.locator('#teaBreak').evaluate(e => ({
-    overflow: e.scrollWidth - e.clientWidth, scrolls: e.scrollHeight > e.clientHeight,
-  }));
-  expect(layout).toEqual({ overflow: 0, scrolls: true });
+  const layout = await page.locator('#teaBreak').evaluate(e => {
+    const edge = e.getBoundingClientRect();
+    return {
+      overflow: e.scrollWidth - e.clientWidth, scrolls: e.scrollHeight > e.clientHeight,
+      // Measured element by element, so hiding the overflow could not pass this.
+      clipped: [...e.querySelectorAll('*')].filter(c => {
+        const box = c.getBoundingClientRect();
+        return box.width > 0 && (box.right > edge.right + 0.5 || box.left < edge.left - 0.5);
+      }).map(c => c.id || c.tagName),
+      targets: [...e.querySelectorAll('.break-head button')].map(b => {
+        const box = b.getBoundingClientRect();
+        return box.width >= 44 && box.height >= 44;
+      }),
+    };
+  });
+  expect(layout).toEqual({ overflow: 0, scrolls: true, clipped: [], targets: [true, true] });
+  // The header's buttons stay within keyboard reach.
+  await page.locator('#breakSoundBtn').focus();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#closeBreak')).toBeFocused();
   await page.getByLabel('On-screen controls', { exact: true }).selectOption('show');
   await page.keyboard.press('Escape');
   await expect(page.locator('#game')).toBeFocused();
+  expect(problems).toEqual([]);
+});
+
+test('the Tea Break header stays on one row on a desktop, its buttons at the right edge', async ({ page, problems }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openGame(page);
+  await page.locator('#menuBtn').click();
+  await expect(page.locator('#teaBreak')).toBeVisible();
+  const head = await page.locator('.break-head').evaluate((e) => {
+    const box = e.getBoundingClientRect();
+    const [title, sound, close] = ['#teaBreakTitle', '#breakSoundBtn', '#closeBreak'].map((s) => e.querySelector(s).getBoundingClientRect());
+    return { height: box.height, closeHeight: close.height, soundHeight: sound.height, titleOnOneLine: title.height < close.height,
+      inOrder: title.left < sound.left && sound.right < close.left, atRight: Math.abs(close.right - box.right) < 0.5 };
+  });
+  expect(head).toEqual({ height: 64, closeHeight: 44, soundHeight: 44, titleOnOneLine: true, inOrder: true, atRight: true });
+  expect(await page.locator('#teaBreak').evaluate((e) => e.scrollWidth - e.clientWidth)).toBe(0);
   expect(problems).toEqual([]);
 });
 

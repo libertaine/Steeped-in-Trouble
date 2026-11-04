@@ -1,5 +1,5 @@
 import { expect, openGame, test } from './fixtures.js';
-import { freezeTextClock, openTextReading, stageTextReading, stealText, textState } from './textMischief.js';
+import { freezeTextClock, laneWasShown, measuredText, openTextReading, stageTextReading, stealText, textState, watchLane } from './textMischief.js';
 
 test('text theft preserves semantic reading, focus, inputs and RNG through the entire sequence', async ({ page, problems }) => {
   await freezeTextClock(page);
@@ -137,10 +137,53 @@ test('ordinary play has no debug trigger and cramped readings have no decorative
   await page.goto('./?noOverlay');
   expect(await page.evaluate(() => !!window.__TEACUP__)).toBe(false);
   await openGame(page, '&view=compact&ambientSeed=7');
+  // 800x450: the reading's words run down into where the lane would sit.
+  await page.setViewportSize({ width: 800, height: 450 });
+  await watchLane(page);
+  await stageTextReading(page);
+  expect(await measuredText(page)).toMatchObject({ eligible: false, geometry: null, laneHidden: true, hidden: true });
+  await expect(page.locator('#readingMischief')).toBeHidden();
+  expect(await page.evaluate(() => window.__TEACUP__.ambient.stealText())).toBe(false);
+  await page.waitForTimeout(500); // well past the layout settling
+  expect(await textState(page)).toMatchObject({ eligible: false, laneHidden: true });
+  expect(await laneWasShown(page)).toBe(false);
+  // The reading itself is all still there.
+  await expect(page.locator('#readingTitle')).toBeVisible();
+  await expect(page.locator('#mainBtn')).toBeEnabled();
+  expect(problems).toEqual([]);
+});
+
+test('eligibility follows the measured space: the overlay shows with room and goes as soon as room is lost', async ({ page, problems }) => {
+  await openGame(page, '&view=compact&ambientSeed=7');
   await page.setViewportSize({ width: 800, height: 600 });
   await stageTextReading(page);
-  await expect.poll(() => textState(page)).toMatchObject({ eligible: false });
-  await expect(page.locator('#readingMischief')).toBeHidden();
+  const lane = page.locator('#readingMischief');
+  // Room to spare at this size, so this is a valid layout and not a cramped one.
+  await expect.poll(() => textState(page)).toMatchObject({ measured: true, eligible: true, laneHidden: false });
+  await expect(lane).toBeVisible();
+  expect(await page.evaluate(() => {
+    const a = document.getElementById('readingMischief').getBoundingClientRect();
+    return [...document.querySelectorAll('.reading-copy > *')].every((e) => e.getBoundingClientRect().bottom <= a.top);
+  })).toBe(true);
+
+  // The viewport shrinks.
+  await page.setViewportSize({ width: 800, height: 450 });
+  await expect(lane).toBeHidden();
+  expect(await measuredText(page)).toMatchObject({ eligible: false, geometry: null, laneHidden: true });
+
+  // Back again: a cramped moment is not a permanent verdict.
+  await page.setViewportSize({ width: 800, height: 600 });
+  await expect.poll(() => textState(page)).toMatchObject({ measured: true, eligible: true, laneHidden: false });
+
+  // The words reflow inside a panel that keeps its size.
+  const panel = () => page.evaluate(() => document.getElementById('readingPresentation').getBoundingClientRect().height);
+  const height = await panel();
+  await page.locator('#readingSecrets').evaluate((e) => { e.style.minHeight = '140px'; });
+  await expect(lane).toBeHidden();
+  expect(await measuredText(page)).toMatchObject({ eligible: false, laneHidden: true });
+  expect(await panel()).toBe(height);
+  await page.locator('#readingSecrets').evaluate((e) => { e.style.minHeight = ''; });
+  await expect.poll(() => textState(page)).toMatchObject({ measured: true, eligible: true, laneHidden: false });
   expect(problems).toEqual([]);
 });
 

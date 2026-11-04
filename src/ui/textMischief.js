@@ -28,6 +28,14 @@ export function createReadingMischief({ doc, random }) {
     target.addEventListener(type, handler, options);
     listeners.push(() => target.removeEventListener(type, handler, options));
   };
+  // The one way the lane appears or goes. Its invariant: the lane is visible only
+  // while `geometry` holds a measurement of the current layout that fits, so no
+  // space means no decoration, on every path. Readings themselves are untouched.
+  function placeLane(fit) {
+    geometry = fit;
+    if (!fit) eligible = false;
+    lane.hidden = !fit;
+  }
   function clearOverlay() {
     if (painted) ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!canvas.hidden) canvas.hidden = true;
@@ -39,7 +47,7 @@ export function createReadingMischief({ doc, random }) {
   }
   function interrupt() { controller.cancel(); restore(); }
   function suspend() { controller.suspend(); restore(); }
-  function invalidate() { dirty = true; geometry = null; interrupt(); lane.hidden = true; }
+  function invalidate() { dirty = true; interrupt(); placeLane(null); }
   function engaged() {
     return pointerInside || panel.contains(doc.activeElement) || !!doc.getSelection()?.toString();
   }
@@ -55,6 +63,13 @@ export function createReadingMischief({ doc, random }) {
   listen(doc, 'visibilitychange', () => { if (doc.visibilityState === 'hidden') suspend(); });
   // Font readiness can change both the reading's height and the caption's width.
   doc.fonts?.ready.then(() => { if (!disposed) invalidate(); });
+  // The words can reflow inside a panel that keeps its size (text-only zoom, a
+  // reading filled in late), which neither the viewport nor the panel reports.
+  if (typeof win.ResizeObserver === 'function') {
+    const reflow = new win.ResizeObserver(invalidate);
+    for (const line of copy.children) reflow.observe(line);
+    listeners.push(() => reflow.disconnect());
+  }
 
   function measure() {
     const p = panel.getBoundingClientRect();
@@ -65,15 +80,13 @@ export function createReadingMischief({ doc, random }) {
     const textWidth = ctx.measureText(caption.textContent).width;
     const width = p.width - 24;
     if (!readingTextSpace({ panel: p, copy, last, width, textWidth, viewport: { w: win.innerWidth, h: win.innerHeight } })) {
-      geometry = null;
-      lane.hidden = true;
+      placeLane(null);
       return;
     }
     const ratio = Math.max(1, Math.min(2, win.devicePixelRatio || 1));
-    geometry = { width, textWidth, font, color: style.color, ratio };
     canvas.width = Math.round(width * ratio);
     canvas.height = CONFIG.textMischief.laneHeight * ratio;
-    lane.hidden = false;
+    placeLane({ width, textWidth, font, color: style.color, ratio });
   }
 
   return {
@@ -82,13 +95,15 @@ export function createReadingMischief({ doc, random }) {
       if (disposed) return;
       const nextKey = scene.phase === 'reading' ? `${scene.readingKey}:${scene.readingReady}:${scene.offer}` : null;
       if (key !== nextKey) {
-        controller.reset(); restore(); key = nextKey; dirty = true;
+        // A new reading never inherits the last one's measurement, even if an
+        // unfocused window has to wait before it can measure this one.
+        controller.reset(); restore(); key = nextKey; dirty = true; placeLane(null);
       }
       const screen = scene.phase === 'reading' && scene.readingReady && !scene.offer;
       suspended = hidden || !focused;
       const allowed = screen && quality === 'high' && !reduced && !scene.blocked && !scene.holding;
       if (!allowed || settling) {
-        interrupt(); lane.hidden = true; eligible = false; dirty = true; return;
+        interrupt(); placeLane(null); dirty = true; return;
       }
       // Do not measure hidden tabs. Their clocks and geometry wait until visible again.
       if (dirty && !suspended) { measure(); dirty = false; }
@@ -114,12 +129,12 @@ export function createReadingMischief({ doc, random }) {
       if (disposed || !eligible || suspended || engaged() || dirty) return false;
       return controller.trigger();
     },
-    snapshot: () => ({ ...controller.snapshot(), eligible, geometry, hidden: canvas.hidden,
+    // `measured`: this answer comes from a measurement of the layout now showing.
+    snapshot: () => ({ ...controller.snapshot(), eligible, geometry, measured: !dirty, laneHidden: lane.hidden, hidden: canvas.hidden,
       carried: caption.hasAttribute('data-carried'), text: caption.textContent }),
     dispose() {
       disposed = true;
-      eligible = false;
-      interrupt(); lane.hidden = true;
+      interrupt(); placeLane(null);
       for (const remove of listeners.splice(0)) remove();
       canvas.width = 0; canvas.height = 0;
     },

@@ -830,9 +830,11 @@ kbd {
   border-radius: 18px; width: min(680px, calc(100% - 20px)); max-height: calc(100dvh - 24px);
   padding: 0 14px 14px; overscroll-behavior: contain; }
 #teaBreak::backdrop { background: #06140de0; }
-.break-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+/* The buttons drop to their own line when the title's longest word and the
+   buttons cannot share one, so enlarged text never widens the dialog. */
+.break-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
   position: sticky; top: 0; z-index: 2; background: #12251f; padding: 10px 0; }
-.break-head h2 { margin: 0; }
+.break-head h2 { margin: 0; flex: 1 1 min-content; }
 #teaBreak aside { display: grid; grid-template-columns: 1fr; }
 #teaBreak details { min-width: 0; }
 #teaBreak summary { padding: 12px; min-height: 48px; cursor: pointer; font-size: 16px;
@@ -1598,4 +1600,4 @@ body[data-onscreen-controls="hidden"] .header-actions { flex-wrap: wrap; justify
 .sound-toggle[data-muted="true"] { color: #b9c2b9; }
 .sound-toggle[data-muted="true"] .sound-waves,
 .sound-toggle[data-muted="false"] .sound-cross { display: none; }
-.break-head-actions { display: flex; align-items: center; gap: 8px; }
+.break-head-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }

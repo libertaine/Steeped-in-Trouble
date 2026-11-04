@@ -30,6 +30,59 @@ export async function expectPalette(page, day, { fade = null } = {}) {
   for (const key of ['glow', 'mid', 'deep']) expect(g.image).toContain(rgb(p[key]));
 }
 
+/** Exactly a palette's colours, as the computed --day-* properties read. */
+export const coloursOf = (day) => {
+  const p = DAY_PALETTES[(day - 1) % 7];
+  return { paper: rgb(p.paper), glow: rgb(p.glow), mid: rgb(p.mid), deep: rgb(p.deep) };
+};
+
+/**
+ * Record the next palette change from inside the page, at the moment it happens.
+ *
+ * A read from the test itself races twice over: the palette is written on the
+ * frame after the input, and a read after a loaded runner's delay can land
+ * anywhere in the fade, or past it (the Day colours differ by so little that
+ * they round to their final value well before 0.8 s). So the record is made in
+ * the frame of the change, and any fade is sampled by seeking its own transitions
+ * before they are let go to run out by themselves. Call before the input.
+ */
+export const watchDayChange = (page) => page.evaluate(() => {
+  const body = document.body;
+  const colours = () => {
+    const css = getComputedStyle(body);
+    return Object.fromEntries(['paper', 'glow', 'mid', 'deep'].map((k) => [k, css.getPropertyValue(`--day-${k}`).trim()]));
+  };
+  window.__dayFadeEnds = [];
+  body.addEventListener('transitionend', (e) => {
+    if (e.target === body) window.__dayFadeEnds.push({ property: e.propertyName, seconds: e.elapsedTime });
+  });
+  window.__dayChange = new Promise((resolve) => {
+    const observer = new MutationObserver(() => {
+      observer.disconnect();
+      const fades = body.getAnimations().filter((a) => String(a.transitionProperty).startsWith('--day-'));
+      const record = {
+        id: body.dataset.dayPalette, fade: body.dataset.dayFade ?? null,
+        phase: window.__TEACUP__.game.state.phase, hud: document.getElementById('hudDay').textContent,
+        colours: colours(),
+        transitions: fades.map((a) => ({ property: a.transitionProperty, ms: a.effect.getComputedTiming().duration })),
+      };
+      if (fades.length) {
+        const at = (ms) => {
+          for (const a of fades) { a.pause(); a.currentTime = ms; }
+          return colours();
+        };
+        record.start = at(0);
+        record.quarter = at(200);
+        for (const a of fades) { a.currentTime = 0; a.play(); }
+      }
+      resolve(record);
+    });
+    observer.observe(body, { attributes: true, attributeFilter: ['data-day-palette'] });
+  });
+});
+export const dayChange = (page) => page.evaluate(() => window.__dayChange);
+export const dayFadeEnds = (page) => page.evaluate(() => window.__dayFadeEnds);
+
 /** Colours the palette must never reach: arena, HUD, panels, buttons and the title label. */
 export const fixedColours = (page) => page.evaluate(() => {
   const style = (selector, ...props) => {

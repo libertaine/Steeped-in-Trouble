@@ -1,7 +1,6 @@
 import { test, expect, openGame } from './fixtures.js';
 import { toDayReading } from './days.js';
-import { POT_KEY, expectPalette, fixedColours, ground, rgb, saveAt, toDay } from './dayPalette.js';
-import { DAY_PALETTES } from '../../src/ui/dayPalette.js';
+import { POT_KEY, coloursOf, dayChange, dayFadeEnds, expectPalette, fixedColours, ground, saveAt, toDay, watchDayChange } from './dayPalette.js';
 
 // The page ground's Day palette: decoration that follows the HUD's Day.
 
@@ -31,14 +30,25 @@ test('the Day choice fades to the next palette without delaying the cup', async 
   await expect(page.locator('#dayOffer')).toBeVisible();
   await expectPalette(page, 1); // "Day 1 complete" is still Day 1
   const before = await fixedColours(page);
+  await watchDayChange(page);
   await page.keyboard.press('2');
-  // The cup starts straight away; the ground is still on its way.
-  expect(await page.evaluate(() => window.__TEACUP__.game.state.phase)).toBe('playing');
-  await expect(page.locator('#hudDay')).toHaveText('DAY 2 · CUP 1/10 · HEAT 10');
-  const mid = await ground(page);
-  expect(mid).toMatchObject({ id: 'sage', fade: 'on' });
-  expect(mid.glow).not.toBe(rgb(DAY_PALETTES[1].glow));
+  const change = await dayChange(page);
+  // The cup starts straight away: by the frame the palette changes, it already has.
+  expect(change).toMatchObject({ id: 'sage', fade: 'on', phase: 'playing', hud: 'DAY 2 · CUP 1/10 · HEAT 10' });
+  // All four colours fade over 0.8 s, starting from yesterday's...
+  expect(change.transitions.map((t) => t.property).sort()).toEqual(['--day-deep', '--day-glow', '--day-mid', '--day-paper']);
+  expect(change.transitions.every((t) => t.ms === 800)).toBe(true);
+  expect(change.start).toEqual(coloursOf(1));
+  // ...through colours that are neither yesterday's nor today's...
+  for (const key of ['paper', 'glow', 'mid', 'deep']) {
+    expect(change.quarter[key]).not.toBe(coloursOf(1)[key]);
+    expect(change.quarter[key]).not.toBe(coloursOf(2)[key]);
+  }
+  // ...and run out to today's by themselves.
   await expectPalette(page, 2, { fade: 'on' });
+  await expect.poll(async () => (await dayFadeEnds(page)).length).toBe(4);
+  expect((await dayFadeEnds(page)).every((end) => Math.abs(end.seconds - 0.8) < 0.01)).toBe(true);
+  await expect(page.locator('#hudDay')).toHaveText('DAY 2 · CUP 1/10 · HEAT 10');
   const after = await fixedColours(page);
   expect(after.playfield).toBe(before.playfield);
   expect(after.brand).toBe(before.brand);
@@ -55,17 +65,19 @@ test('reduced motion, including a live change, and Low graphics apply the next D
   await openGame(page, '&seed=42&view=full');
   await toDayReading(page);
   await page.emulateMedia({ reducedMotion: 'reduce' }); // changed while the game is running
+  await watchDayChange(page);
   await page.keyboard.press('1');
-  const now = await ground(page);
-  expect(now).toMatchObject({ id: 'sage', glow: rgb(DAY_PALETTES[1].glow), deep: rgb(DAY_PALETTES[1].deep) });
+  // In the very frame of the change: no fade, and already the whole palette.
+  expect(await dayChange(page)).toMatchObject({ id: 'sage', phase: 'playing', transitions: [], colours: coloursOf(2) });
   expect(await page.evaluate(() => getComputedStyle(document.body).transitionDuration)).toBe('0s');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
 
   await openGame(page, '&seed=42&view=full&graphics=low');
   await toDayReading(page);
+  await watchDayChange(page);
   await page.keyboard.press('2');
+  expect(await dayChange(page)).toMatchObject({ id: 'sage', fade: null, phase: 'playing', transitions: [], colours: coloursOf(2) });
   await expect(page.locator('#hudDay')).toContainText('DAY 2');
-  expect(await ground(page)).toMatchObject({ id: 'sage', fade: null, glow: rgb(DAY_PALETTES[1].glow) });
   // Switching graphics mid-pot keeps the palette.
   await page.evaluate(() => document.getElementById('graphicsBtn').click());
   await expectPalette(page, 2);
