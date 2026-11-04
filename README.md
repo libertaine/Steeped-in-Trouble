@@ -1,144 +1,64 @@
+![The 0.20.0 title screen: a caped silver spoon leads ants past a teacup beneath vintage cream, green and burgundy tea-label lettering.](docs/images/title-screen-0.20.0.png)
+
 # Steeped in Trouble
 
 **One small spoon. An unreasonable amount of responsibility.**
 
-Meet the silver spoon: defender of a very temperamental teacup, part-time
-newspaper carrier, occasional biscuit demolition expert, and the only kitchen
-utensil willing to confront an angry espresso machine.
-
-Keep escaping tea leaves in check with steam, milk, and sugar. Read fortunes
-in the leaves you've defeated, upgrade your spoon, and discover what happens
-when the tea starts making its own rules.
-
-Between cups, things get stranger. Run to the tea shop, deliver newspapers
-from a bicycle, launch a sugar cube at a wall of rebellious biscuits, or hop
-across a very busy road. Apparently, all of this is in the spoon's job
-description.
-
-**Simple arcade action, unexpected little adventures, and a generous helping of nonsense.**
-
-Play in your browser. The spoon will handle the paperwork.
+Defend a temperamental teacup with steam, milk and sugar, upgrade your silver
+spoon, and read tea-leaf fortunes that change the next cup. Optional little
+adventures and unexpected humor keep finding their way into the pot.
 
 **[▶ Play it in your browser](https://libertaine.github.io/Steeped-in-Trouble/)**
 
-![Gameplay of Steeped in Trouble: a silver spoon circles the rim of a teacup of swirling brown tea and fires steam at tea leaves drifting out from the centre, then pours milk across one side of the cup and fires a three-lane sugar burst, while the side panel tracks the first cup.](docs/images/gameplay.gif)
+![A silver spoon circles the teacup, firing steam at rising leaves, pouring milk and launching a three-lane sugar burst.](docs/images/gameplay.gif)
 
-*The first cup of a fresh pot: steam, milk, and sugar against the rising leaves.*
+*A first cup's basic mechanics: steam, milk and sugar. This earlier recording
+does not show all current features.*
 Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
-## Status
+## 0.20.0 — Tiny Heroes, Big Tea Problems
 
-Version **[0.19.0 — The Cup Has Gone Fungal](https://github.com/libertaine/Steeped-in-Trouble/releases/tag/v0.19.0)**
-is the current release.
+*Now with More Bugs!*
 
-### The Cup Has Gone Fungal
+The ants are intentional.
 
-*There is something growing in the tea. It has a manager.*
+- A small ambient colony wanders beside the cup, occasionally following or
+  greeting its neighbors. They discover crumbs, carry them home, and sometimes
+  cooperate to haul a sugar cube that clearly exceeds the job description.
+- Occasional inter-round text mischief. Keep an eye on the small print.
+- A redesigned vintage tea-adventure title screen starring the caped spoon.
+- Quick audio mute/unmute with **M** or the speaker button.
+- Subtle background palettes follow your **in-game Days**, repeating every
+  seven Days; they do not follow real-world weekdays.
 
-Mushroom Tea brings puffballs, sprouts and spore clouds, with three Strange
-Happenings: Time Rewind, Breathing Cup and Impostor Spoon. Face the
-**Mycelium Manager**, survive its increasingly unreasonable rematches, and
-open Chapter 3, where Rush Hour gives the leaves a little more urgency.
-The Tea Tray offers temporary rewards when permanent upgrades run out,
-and fortune patterns have a fairer distribution as cups grow busier.
-Earlier saved pots continue. See the [release notes](docs/releases/v0.19.0.md).
-Mobile testing has primarily used browser emulation; desktop keyboard play
-remains the primary experience.
+The ants and background colors are decorative. Ants respect available space,
+pause and graphics settings, and are absent with reduced motion.
+Earlier saved pots continue.
 
-### Room for Tea
+See the [release notes](docs/releases/v0.20.0.md),
+[changelog](CHANGELOG.md) and
+[past releases](https://github.com/libertaine/Steeped-in-Trouble/releases).
 
-*The cup has finally found some room to breathe.*
+## What's in the pot
 
-The whole cup now fits your browser window, and big screens get a bigger
-cup. An illustrated strip above the arena shows your porcelain, milk, sugar
-and progress at a glance (and whatever matters in the side adventures). The
-leaf reading gets the stage before explaining what your cup did to the next
-fortune, and Tea Break is tidied into four sections. Desktop players no
-longer share the screen with touch buttons they never use: **On-screen
-controls** defaults to Auto, and Show or Hide is one setting away. The
-spoon remains deeply underqualified. Saved pots continue.
+- **Teacup arcade defense:** living tea, distinct brews, spoon upgrades,
+  fortunes influenced by your play, and increasingly unreasonable opponents.
+  Mushroom Tea and its Mycelium Manager await later chapters.
+- **Optional mini-adventures:** The Tea Run, The Daily Pour, Biscuit Breakout
+  and Crossing the Street. Skip them freely during a pot, or jump straight
+  into **The Spoon's Other Jobs** to chase browser-local personal records.
+- **Days and Chapters:** every ten normal cups, choose a gentler Fresh Brew
+  or carry the Heat forward. Days control difficulty; Chapters open content.
+- **Continue Your Pot:** completed normal cups save automatically. Return to
+  the last reading and pending choices; mid-round positions are not saved.
+  Progress and arcade records stay in this browser on this device. Clearing
+  browser data may erase them; there is no account or cloud synchronization.
+- **Room for tea:** Compact and Full View, Easy and Classic Touch, optional
+  Auto Steam, an illustrated resource HUD, and an adaptive synthesized score.
 
-### The Cup Remembers
-
-*The leaves remember what you did. The porcelain remembers what happened.*
-
-After each cup, the reading explains which of
-your actions favored which fortunes, then names the fortune the leaves
-actually chose and what it does. Your play makes a fortune more likely; it
-never guarantees one. The teacup shows its condition instead of hearts: a
-spill cracks the porcelain where the leaf went over, a rare Golden Leaf
-mends a crack with permanent gold, and losing the last cup breaks the cup
-apart. Saved 0.16.0 pots continue. See the
-[testing guide](docs/CUP_REMEMBERS_TESTING.md).
-
-Desktop browsers with keyboard controls are the primary supported experience.
-Gameplay quality comes first, followed by desktop presentation and controls,
-then performance and reliability. Tablet and phone compatibility are best
-effort; the existing touch controls and Compact View remain available.
-
-### The Spoon's Other Jobs
-
-**THE SPOON'S OTHER JOBS**
-
-*Apparently, defending a teacup doesn't pay enough.*
-
-Jump directly into The Tea Run, The Daily Pour, Biscuit Breakout, or Crossing
-the Street. Chase personal records without disturbing your main game. Retry
-the same layout or play a new one, from the initial screen, game over, or Tea Break.
-
-### Continue Your Pot
-
-Your progress is automatically saved after completed normal tea rounds, so
-you can return later without starting from scratch. **Continue Your Pot**
-returns to your last completed round's reading and pending choices. Closing
-halfway through a cup or adventure returns to that checkpoint; mid-round
-positions are not saved. Starting a new pot or clearing the saved pot asks
-for confirmation and leaves arcade records alone.
-
-Saves and personal arcade records stay locally in your browser on this device.
-There is no account, cloud synchronization, or cross-device saving. Clearing
-browser data may erase your progress.
-See the [Arcade Collection testing guide](docs/ARCADE_COLLECTION_TESTING.md).
-
-### More adventures in the pot
-
-**Crossing the Street:** Why did the spoon cross the road? Nobody knows. But
-apparently, it's our problem now. Dodge traffic, survive an unreasonable
-number of motorists, and reach the tea shop in one piece. Like every arcade
-adventure, it's optional: skipping it costs nothing.
-
-**Another Day, Another Brew** (0.14.0): Every ten normal cups, decide whether
-tomorrow starts with a gentler challenge or keeps building the Heat. Your upgrades,
-unlocked teas, fortunes, score, and arcade adventures carry forward either way.
-**Days control difficulty. Chapters control content.**
-See the [Day testing guide](docs/DAYS_TESTING.md) for practice and qualification.
-
-Already in the published game:
-
-- Arcade defence around a living teacup whose tea swirls, ripples, and
-  reacts to every shot.
-- New in 0.13.0: **Biscuit Breakout**, an optional arcade game with a
-  silver-spoon paddle, a sugar-cube ball, and a talking biscuit among the
-  wall, and **Karma**, a rare protective fortune for your next cup.
-- **The Daily Pour**, an optional bicycle paper route, and **The Tea Run**,
-  a dash to the shop with jumps, slides, and occasional aerial nonsense.
-  Both are free to skip.
-- Compact / Full View, the Tea Break, recurring optional Tea Shortages,
-  an optional Tea Run to the shop, Tea Cash, Easy Touch, and Auto Steam for
-  a more relaxed pot. Classic Touch remains available.
-- Five tea varieties, each changing how its round plays, from
-  leaves that dart or change lanes to spice currents that sweep the cup.
-  They arrive as you progress, in chapters: a steady first chapter to learn
-  the cup, then a milestone to clear before the next brew is poured.
-- Tea-leaf fortunes: the leaves you defeat are read at the end of each
-  round, and the reading changes the next one. Tea and fortune combine.
-- Spoon upgrades that last the whole pot, and combinations that sometimes
-  brew something unexpected.
-- Occasional bonus rounds and a very angry espresso machine.
-- Procedurally drawn vector graphics and an adaptive soundtrack that follows
-  the cup, and the tea.
-
-See the [changelog](CHANGELOG.md) for what changed in each version.
+Desktop browsers with keyboard controls are the primary experience. Phone
+and tablet support is best effort; mobile checks primarily use browser
+emulation. Extended human playtesting and physical-device testing remain open.
 
 ## How to play
 
@@ -192,34 +112,9 @@ steering pads, double-tap the cup for milk, and hold the cup for sugar.
 Auto Steam fires only at targets lined up with your spoon. Select **Classic
 Touch** for the buttons in the table; it also works with Auto Steam.
 
-After round 9, once the first milestone is beaten, the tea tin may run out.
-Buy tea for 20 Tea Cash, fetch it in a roughly 34-second run, or skip for
-free. Buying and a successful run each add one sugar burst to the next
-normal cup; a successful run also earns 5 Tea Cash. Neither a failed run
-nor skipping costs a cup. Your spoon and next fortune wait for you.
-
-Later in Chapter 2, the neighborhood may need a delivery spoon. The Daily
-Pour is a 30-second paper route: line the marked mailbox or porch up with
-your landing ring and throw. Each delivery earns 25 points, five or more
-earn 5 Tea Cash, and a perfect route adds a bonus. Skipping is free.
-
-After round 19, the biscuits may revolt. Biscuit Breakout lasts up to 45
-seconds with three sugar cubes: keep the cube bouncing off the spoon (its
-edges send it off at an angle) and break the wall. Each biscuit earns 10
-points, breaking 70% earns 5 Tea Cash, and a clear adds 50 points. Losing
-cubes never costs a cup, and skipping is free.
-
-After round 27, the spoon may decide to cross the road. Crossing the Street
-hops it one square at a time across five lanes of traffic, with a safe
-median halfway, to the tea shop opposite, in 40 seconds. A bump sends it
-back to the curb and costs one of three attempts, never a cup. Each new lane
-earns 10 points; reaching the shop earns 50 more and 5 Tea Cash, and 40 more
-without a bump. Skipping is free.
-
-Now and then the leaves foretell **Karma**. For that one cup, a leaf that
-reaches the rim bounces back instead of spilling; if it comes back again it
-vanishes in a puff of steam. It still counts towards finishing the cup, but
-earns no points.
+Mini-adventures explain their controls when offered. Skipping or failing one
+never costs a cup. For the complete rules and rewards (with spoilers), see
+[Game design](docs/GAME_DESIGN.md).
 
 ## Options
 
@@ -280,7 +175,8 @@ Then open the URL Vite prints (normally
 | `npm run lint` | ESLint |
 | `npm test` | Unit tests (Vitest) |
 | `npm run test:watch` | Unit tests in watch mode |
-| `npm run test:browser` | Browser smoke tests (Playwright) against a fresh production build |
+| `npm run test:browser` | Complete Playwright regression against a fresh production build |
+| `npm run test:browser:smoke` | Fast Chromium and mobile smoke checks |
 | `npm run check` | Lint, unit tests, and build in one go |
 
 Before running browser tests for the first time, install the browsers:
@@ -291,7 +187,7 @@ npx playwright install chromium firefox
 
 On Linux you may also need `npx playwright install-deps` (requires sudo).
 
-To smoke-test the published site instead of a local build:
+To run browser tests against the published site instead of a local build:
 
 ```bash
 BASE_URL=https://libertaine.github.io/Steeped-in-Trouble/ npm run test:browser
@@ -305,16 +201,16 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-
   add enemies, weapons, and fortunes
 - [Game design](docs/GAME_DESIGN.md): creative direction, the full rules
   (secrets included, so beware of spoilers), and future ideas
-- [Day testing](docs/DAYS_TESTING.md): 0.14.0 approval, practice shortcuts,
+- [Day testing](docs/DAYS_TESTING.md): practice shortcuts,
   deterministic tuning and human testing instructions
-- [Crossing the Street testing](docs/CROSSING_STREET_TESTING.md): 0.15.0
-  approval, practice shortcuts, deterministic replay and testing instructions
-- [Arcade Collection testing](docs/ARCADE_COLLECTION_TESTING.md): 0.16.0
-  approval, Continue Your Pot and the human playtesting checklist
-- [The Cup Remembers testing](docs/CUP_REMEMBERS_TESTING.md): 0.17.0 fortune
+- [Crossing the Street testing](docs/CROSSING_STREET_TESTING.md): practice
+  shortcuts, deterministic replay and testing instructions
+- [Arcade Collection testing](docs/ARCADE_COLLECTION_TESTING.md):
+  Continue Your Pot and the human playtesting checklist
+- [The Cup Remembers testing](docs/CUP_REMEMBERS_TESTING.md): fortune
   explanations, porcelain damage, Golden Leaves, save migration and
   playtesting instructions
-- [Development](DEVELOPMENT.md): the principles for working on the game
+- [Development](DEVELOPMENT.md): principles and full Windows/Ubuntu qualification
 - [Contributing](CONTRIBUTING.md): branching, checks, and releases
 - [Reference prototype](docs/reference/README.md): the preserved original and
   its differences from 0.1.0
@@ -327,9 +223,9 @@ Bug reports and ideas are welcome in
 
 ## License
 
-[MIT](LICENSE). All artwork is drawn procedurally with Canvas paths, and all
-sound is synthesized at runtime. The game uses no third-party art, fonts,
-audio, or runtime libraries, and it is not affiliated with or adapted from
+[MIT](LICENSE). The original SVG title illustration accompanies procedural
+Canvas artwork; sound is synthesized at runtime. The game uses no third-party
+art, fonts, audio, or runtime libraries, and it is not affiliated with or adapted from
 any commercial arcade game.
 
 ## Support the Project
