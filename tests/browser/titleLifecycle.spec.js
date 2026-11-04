@@ -23,6 +23,8 @@ test('production title waits for an explicit gesture and each Enter advances one
   await page.waitForTimeout(3200);
   await expect(title).toBeVisible();
   await page.keyboard.press('Tab');
+  await expect(page.locator('#titleInstructionsBtn')).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
   await expect(page.locator('#titleContinueBtn')).toBeFocused();
   await page.keyboard.down('Enter');
   await expect(title).toBeHidden();

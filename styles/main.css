@@ -1044,110 +1044,6 @@ body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-si
 #closeCollectionTop { display: block; margin: 0 0 14px auto; font-size: 11px; }
 
 /*
- * The title screen and the instruction overlay. Both borrow the splash art's
- * 16-colour palette: flat fills and hard one-colour drop shadows, no glows.
- */
-.arcade-splash {
-  margin: 0;
-  border: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  color: #f4efe2;
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: #050510;
-  transition: opacity 0.32s ease-out, visibility 0.32s ease-out;
-}
-
-.arcade-splash.dismissed {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.arcade-splash[hidden] { display: none; }
-
-/* Match the global button:hover specificity so arcade palettes win. */
-button.splash-continue {
-  max-width: 92vw;
-  padding: 12px 16px;
-  border: 2px solid #ffd23f;
-  border-radius: 0;
-  background: #0e1030;
-  color: #ffd23f;
-  font: 700 clamp(12px, 1.8vw, 18px) / 1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: 0.08em;
-  box-shadow: 4px 4px 0 #2a3fa8;
-}
-.splash-continue:focus-visible { outline: 3px solid #f4efe2; outline-offset: 4px; }
-.splash-continue:hover { filter: brightness(1.1); }
-.splash-continue:active { transform: translateY(3px); box-shadow: none; }
-
-.splash-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(8px, 2vh, 18px);
-  padding: 12px;
-}
-
-/* The picture is the hero: as large as the window allows, upscaled with hard pixels. */
-.splash-screen {
-  position: relative;
-  line-height: 0;
-  background: #0e1030;
-  border: 4px solid #2a3fa8;
-  box-shadow: 0 0 0 4px #050510, 0 0 0 8px #1c2156;
-}
-
-.splash-screen::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px);
-}
-
-.splash-screen canvas {
-  display: block;
-  width: min(calc(100vw - 40px), calc((100vh - 155px) * 1.6));
-  width: min(calc(100vw - 40px), calc((100dvh - 155px) * 1.6));
-  height: auto;
-  aspect-ratio: 256 / 160;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
-}
-
-.splash-subtitle {
-  margin: 0;
-  max-width: 92vw;
-  font: 700 clamp(11px, 1.6vw, 15px) / 1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: center;
-  color: #f4efe2;
-}
-
-.splash-status {
-  font: 700 12px ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: 0.3em;
-  color: #ffd23f;
-  animation: splashBlink 1s steps(1) infinite;
-}
-
-@keyframes splashBlink {
-  50% { opacity: 0; }
-}
-
-/*
  * The instruction overlay is a modal dialog in the top layer, centred in the
  * browser window (not the canvas). The page behind it is inert and dimmed
  * but still recognisable. The header and the buttons never scroll away: if
@@ -1483,8 +1379,6 @@ button.arcade-secondary-btn {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .arcade-splash { transition: none !important; }
-  .splash-status { animation: none !important; }
   .arcade-start-btn.nudge {
     animation: none;
     outline: 3px solid #9be7ff;

@@ -95,12 +95,12 @@ function expectFits(layout, { scrollable = false } = {}) {
   }
 }
 
-test.describe('80s Arcade Title and Instruction Overlay', () => {
+test.describe('Tea packaging title and instruction overlay', () => {
   test('1 & 2: Splash and instruction overlay appear at startup with exact required text and version', { tag: '@smoke' }, async ({ page, problems }) => {
     await page.goto('./?debug');
     await expect(page.locator('#arcadeSplash')).toBeAttached();
     await expect(page.locator('.splash-title')).toHaveText('STEEPED IN TROUBLE');
-    await expect(page.locator('.splash-subtitle')).toHaveText('One small spoon. An unreasonable amount of responsibility.');
+    await expect(page.locator('.splash-subtitle')).toHaveText('Tiny Heroes, Big Tea Problems');
 
     await page.waitForFunction(() => window.__TEACUP__?.game);
     await expect(page.locator('#arcadeSplash')).toBeVisible();
@@ -129,35 +129,6 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
     await expect(page.locator('.overlay-footer')).toHaveText('You can review controls again any time in Tea Break.');
     await expect(page.locator('#overlayVersion')).toHaveText(`v${VERSION}`);
 
-    expect(problems).toEqual([]);
-  });
-
-  test('the splash is a large low-resolution pixel-art picture in a 16-colour palette', async ({ page, problems }) => {
-    await page.goto('./?debug');
-    await page.waitForFunction(() => window.__TEACUP__?.game);
-    const art = await page.evaluate(() => {
-      const canvas = document.getElementById('splashCanvas');
-      const ctx = canvas.getContext('2d');
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      const colours = new Set();
-      for (let i = 0; i < data.length; i += 4) colours.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]);
-      const r = canvas.getBoundingClientRect();
-      return {
-        width: canvas.width,
-        height: canvas.height,
-        colours: colours.size,
-        rendering: getComputedStyle(canvas).imageRendering,
-        shown: { width: r.width, height: r.height },
-        viewport: { width: innerWidth, height: innerHeight },
-      };
-    });
-    expect([art.width, art.height]).toEqual([256, 160]);
-    expect(art.colours).toBeLessThanOrEqual(16);
-    expect(['pixelated', 'crisp-edges']).toContain(art.rendering);
-    // The hero fills most of a 1280 x 720 window: at least 3x upscaling.
-    expect(art.shown.width).toBeGreaterThanOrEqual(art.width * 3);
-    expect(art.shown.height).toBeGreaterThanOrEqual(art.viewport.height * 0.7);
-    expect(art.shown.width).toBeLessThanOrEqual(art.viewport.width);
     expect(problems).toEqual([]);
   });
 
@@ -519,14 +490,14 @@ test.describe('80s Arcade Title and Instruction Overlay', () => {
 
   test('Visual qualification screenshots', async ({ page, problems }, testInfo) => {
     if (testInfo.project.name !== 'chromium') return;
-    const dir = 'docs/images/arcade-title';
+    const dir = testInfo.outputPath('title-review');
     const holdSplash = async () => {
       await page.goto('./?debug');
       await page.waitForFunction(() => window.__TEACUP__?.game);
       await page.evaluate(() => document.querySelector('.splash-status').style.setProperty('animation', 'none'));
     };
 
-    // 1. The pixel-art title screen, desktop and phone
+    // 1. The tea packaging title screen, desktop and phone
     await holdSplash();
     await page.screenshot({ path: `${dir}/arcade-splash.png` });
     await page.setViewportSize({ width: 375, height: 667 });

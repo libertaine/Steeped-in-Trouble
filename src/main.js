@@ -29,7 +29,6 @@ import { prepareCheckpoint, prepareRecord } from './dev/collection.js';
 import { prepareCup, seedLegacyPot } from './dev/cup.js';
 import { prepareManager, prepareProgression } from './dev/manager.js';
 import { POT_SCHEMA_VERSION } from './core/checkpoint.js';
-import { drawArcadeCenterpiece } from './rendering/splashArt.js';
 import { createInstructionOverlay } from './ui/instructionOverlay.js';
 import { createTitleScreen } from './ui/titleScreen.js';
 
@@ -175,7 +174,7 @@ function boot() {
     onGesture: showRing,
     enabled: () => !title?.blocked && !presentation?.blocked && !collectionUI?.blocked && !overlay?.blocked && document.visibilityState !== 'hidden',
   });
-  title = createTitleScreen({ doc: document, onContinue: () => {
+  title = createTitleScreen({ doc: document, onGraphics: toggleGraphics, onContinue: () => {
     controls.settle(true);
     overlay.show({ hasSavedPot: !!progress.pot });
   } });
@@ -224,10 +223,12 @@ function boot() {
   });
 
   const graphicsButton = document.getElementById('graphicsBtn');
+  const titleGraphicsButton = document.getElementById('titleGraphicsBtn');
   const showQuality = () => {
     if (graphicsButton) graphicsButton.textContent = `Graphics: ${renderer.quality}`;
+    titleGraphicsButton.textContent = `Graphics: ${renderer.quality}`;
   };
-  graphicsButton?.addEventListener('click', () => {
+  function toggleGraphics() {
     renderer.quality = renderer.quality === 'high' ? 'low' : 'high';
     showQuality();
     try {
@@ -235,7 +236,8 @@ function boot() {
     } catch {
       // Storage may be unavailable (private mode); the choice just won't persist.
     }
-  });
+  }
+  graphicsButton?.addEventListener('click', toggleGraphics);
   showQuality();
 
   const version = document.getElementById('version');
@@ -306,6 +308,7 @@ function boot() {
     hud.update(shown);
     presentation.update();
     collectionUI.update();
+    title.update(dt, renderer.quality);
     // After the HUD and panels, so this frame's layout is the one measured.
     const s = game.state;
     ambient?.update(dt, { phase: s.phase, pausedFrom: s.pausedFrom, offer: !!s.offer, holding: strange.holding,
@@ -317,16 +320,6 @@ function boot() {
   presentation.update();
   collectionUI.update();
   loop.start();
-
-  // Draw retro arcade splash centerpiece
-  const splashCanvas = document.getElementById('splashCanvas');
-  if (splashCanvas) {
-    try {
-      drawArcadeCenterpiece(splashCanvas);
-    } catch {
-      // Graceful fallback if 2D context or canvas drawing encounters an error
-    }
-  }
 
   const isDirectScenario = params.has('arcade') || params.has('day') || params.has('cup') || params.has('fortune')
     || params.has('boss') || params.has('progress') || params.has('noOverlay');

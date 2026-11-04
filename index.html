@@ -7,17 +7,33 @@
   <meta name="description" content="An original, experimental, tea-themed vector arcade game. Defend the cup with a silver spoon; the leaves you defeat foretell the next round." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="/styles/main.css" />
+  <link rel="stylesheet" href="/styles/title.css" />
 </head>
 <body>
 <dialog open id="arcadeSplash" class="arcade-splash" aria-labelledby="splashTitle" aria-describedby="splashSubtitle">
   <div class="splash-content">
-    <h1 id="splashTitle" class="splash-title sr-only">STEEPED IN TROUBLE</h1>
-    <div class="splash-screen">
-      <canvas id="splashCanvas" width="256" height="160" role="img" aria-label="Pixel-art title: a silver spoon in round glasses stands in a blue-and-white porcelain teacup and blasts steam at angry tea leaves climbing the rim"></canvas>
+    <div class="splash-imprint" aria-hidden="true"><span>THE TEA CUP ADVENTURE CO.</span><span>A MOST UNREASONABLE BLEND</span></div>
+    <div class="splash-copy">
+      <p class="splash-edition">A small hero. A very large kettle.</p>
+      <h1 id="splashTitle" class="splash-title">STEEPED <em>IN</em> TROUBLE</h1>
+      <p id="splashSubtitle" class="splash-subtitle">Tiny Heroes, Big Tea Problems</p>
+      <p class="splash-tagline">Now with More Bugs!</p>
+      <p class="splash-description">One small spoon. An unreasonable amount of responsibility.</p>
     </div>
-    <p id="splashSubtitle" class="splash-subtitle">One small spoon. An unreasonable amount of responsibility.</p>
-    <span class="splash-status" role="status">INITIALIZING...</span>
-    <button id="titleContinueBtn" class="splash-continue" hidden disabled>PRESS ENTER OR CLICK TO CONTINUE</button>
+    <div class="splash-screen" aria-hidden="true">
+      <img src="/title-hero.svg" width="520" height="480" alt="" />
+      <svg class="splash-steam" viewBox="0 0 520 480" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M165 316q-15-12 0-24t0-24"/><path d="M188 313q-13-11 0-22t0-22"/></g></svg>
+    </div>
+    <div class="splash-menu">
+      <span class="splash-status" role="status">INITIALIZING...</span>
+      <div class="splash-actions" hidden>
+        <button id="titleContinueBtn" class="splash-continue" disabled>START / CONTINUE <span aria-hidden="true">→</span></button>
+        <button id="titleInstructionsBtn" class="splash-secondary">How to play</button>
+        <button id="titleGraphicsBtn" class="splash-secondary">Graphics: high</button>
+      </div>
+      <p class="splash-hint">Enter or tap to continue · Controls before the first cup</p>
+    </div>
+    <p class="splash-colophon" aria-hidden="true">FINE TEA · QUESTIONABLE WORKING CONDITIONS · NO ANT LEFT BEHIND</p>
   </div>
 </dialog>
 <header>
