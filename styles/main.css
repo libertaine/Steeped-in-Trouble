@@ -10,13 +10,23 @@
   --panel: #14221e;
 }
 
+/*
+ * Day palettes (ui/dayPalette.js holds the seven; these initial values are Day 1).
+ * Only the page ground and the header rule use them. Registered as colours so a
+ * Day choice can fade them; body[data-day-fade] is set only for that change.
+ */
+@property --day-paper { syntax: '<color>'; inherits: true; initial-value: #e6e1d5; }
+@property --day-glow { syntax: '<color>'; inherits: true; initial-value: #263e34; }
+@property --day-mid { syntax: '<color>'; inherits: true; initial-value: #13231f; }
+@property --day-deep { syntax: '<color>'; inherits: true; initial-value: #0c1716; }
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: radial-gradient(circle at 24% 8%,#263e34 0%,#13231f 43%,#0c1716 100%);
+  background: radial-gradient(circle at 24% 8%,var(--day-glow) 0%,var(--day-mid) 43%,var(--day-deep) 100%);
   color: var(--ink);
   font: 14px/1.48 ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;
   min-height: 100vh;
@@ -28,7 +38,15 @@ header {
   justify-content: space-between;
   gap: 12px;
   padding: 21px min(4vw,52px) 13px;
-  border-bottom: 1px solid #ffffff16;
+  border-bottom: 1px solid color-mix(in srgb, var(--day-paper) 12%, transparent);
+}
+
+body[data-day-fade="on"] {
+  transition: --day-paper .8s ease, --day-glow .8s ease, --day-mid .8s ease, --day-deep .8s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-day-fade="on"] { transition: none; }
 }
 
 .brand {

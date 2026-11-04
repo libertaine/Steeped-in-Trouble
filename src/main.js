@@ -32,6 +32,7 @@ import { POT_SCHEMA_VERSION } from './core/checkpoint.js';
 import { createInstructionOverlay } from './ui/instructionOverlay.js';
 import { createTitleScreen } from './ui/titleScreen.js';
 import { createSoundToggle } from './ui/soundToggle.js';
+import { createDayPalette } from './ui/dayPalette.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -67,6 +68,8 @@ function boot() {
   const renderer = createRenderer(canvas, { quality: initialQuality(params),
     compact: () => document.body.dataset.view === 'compact' });
   const hud = createHud(document);
+  // The page ground's quiet Day tint (decoration only; see ui/dayPalette.js).
+  const dayPalette = createDayPalette(document);
 
   // Control settings: Easy or Classic Touch, and Auto Steam (see input/settings.js).
   let storage = null;
@@ -278,6 +281,7 @@ function boot() {
       effects.handle(event);
       audio.handle(event);
       hud.handle(event);
+      dayPalette.handle(event);
     }
     sessions.settle();
   }
@@ -306,6 +310,7 @@ function boot() {
     const shown = strange.shown(game.state);
     renderer.draw(shown, effects.fx, dt, strange.view);
     hud.update(shown);
+    dayPalette.update(game.state, { quality: renderer.quality });
     presentation.update();
     collectionUI.update();
     title.update(dt, renderer.quality);
@@ -317,6 +322,7 @@ function boot() {
   });
 
   hud.update(game.state);
+  dayPalette.update(game.state, { quality: renderer.quality });
   presentation.update();
   collectionUI.update();
   loop.start();

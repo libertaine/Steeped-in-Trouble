@@ -23,6 +23,15 @@ All notable changes to this project are documented here. The project uses
   remembered in this browser; a remembered "on" waits for the first key
   press, click or tap, as browsers require. Unmuting no longer plays a chirp.
   **M no longer pours milk**: use Q or ↑.
+- **A different shade for each Day:** the page around the cup takes on a
+  slightly different tint for each in-game Day (Warm Parchment, Sage Cream,
+  Lavender Mist, Honey Cream, Rose Beige, Blue Porcelain and Sunday Biscuit),
+  repeating every seven Days. The new shade fades in over a moment when you
+  choose how tomorrow brews, or appears at once with reduced motion or Low
+  graphics. A continued pot comes back in its own Day's shade. The cup, the
+  game area, the HUD, readings, buttons and the title screen keep their
+  colours, and the HUD's Day count is unchanged. Decorative only; gameplay
+  and saves are unchanged.
 
 ## [0.19.0] - 2026-11-03 — The Cup Has Gone Fungal
 

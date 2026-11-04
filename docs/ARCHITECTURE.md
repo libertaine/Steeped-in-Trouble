@@ -62,7 +62,8 @@ src/
 │   ├── audio.js         optional synthesized sound effects; owns the AudioContext
 │   └── music.js         the adaptive procedural soundtrack
 └── ui/                  hud.js, presentation.js, collection.js: HUD, views/Tea Break, collection/save controls;
-                         ambient.js measures the stage and owns the decorative ambient canvas
+                         ambient.js measures the stage and owns the decorative ambient canvas;
+                         dayPalette.js tints the page ground for the in-game Day
 ```
 
 ## The one rule: simulation vs. presentation
@@ -838,6 +839,39 @@ through real collisions, readings, upgrades and choices. It is referenced only
 inside the `import.meta.env.DEV` branch in `main.js`, so its implementation and
 `practiceDay` hook are removed from production. The pre-existing `?debug` state
 inspection facility remains available for production browser tests.
+
+### Day palettes (0.20.0)
+
+`ui/dayPalette.js` gives each in-game Day a quiet page-ground tint. It is
+presentation only and reads the same `dayOf(state.round)` as the HUD's
+`DAY n`, so there is no second counter and nothing new in the checkpoint.
+Seven frozen palettes (`DAY_PALETTES`) repeat: `paletteIndex(day)` is
+`(day - 1) % 7`, and anything that is not a safe integer of at least 1 counts
+as Day 1. No clock, timezone or random stream is read. During the Day choice
+the round is still the tenth cup's, so "Day 1 complete" is shown on Day 1's
+ground. The palette changes when `chooseDay()` brews cup 11.
+
+`main.js` creates one controller beside the HUD. It passes it every event,
+then calls `update(game.state, { quality })` each frame after `hud.update()`.
+`update()` writes to `<body>` only when the palette changes: `data-day-palette`
+plus the inline custom properties `--day-paper`, `--day-glow`, `--day-mid`
+and `--day-deep`. `styles/main.css` registers them with `@property` as
+`<color>` values. Their initial values are Day 1, the established ground, so
+the page looks the same before scripts run. The values feed only two rules:
+the body's radial gradient and the header's bottom rule (12% of the paper
+colour). The ground stays dark because the page's lettering is light. Each
+palette keeps the kicker, brand, version and footer text at least as legible
+as Day 1, and a unit test checks this.
+
+A change fades only if a `dayStart` event arrived since the last update and
+graphics are High. In that case `data-day-fade="on"` is set in the same style
+change, and `body[data-day-fade="on"]` transitions the four properties over
+0.8 s. Any other change snaps: a new pot, Continue, a practice pot (round 1)
+and its return, debug set-ups, and Low graphics. `prefers-reduced-motion:
+reduce` removes the transition in CSS, so live preference changes apply too.
+There is no animation loop, timer or input block, and the cup starts at once.
+The playfield, canvas, HUD, panels, buttons, overlays and the title dialog
+keep their own colours.
 
 ## Crossing the Street (0.15.0)
 
