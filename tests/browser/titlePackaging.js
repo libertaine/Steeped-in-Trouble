@@ -8,7 +8,7 @@ export function titlePackagingTests() {
       await expect(page.getByRole('heading', { name: 'STEEPED IN TROUBLE' })).toBeVisible();
       await expect(page.locator('.splash-tagline')).toHaveText('Now with More Bugs!');
       await expect(page.locator('.splash-subtitle')).toHaveText('Tiny Heroes, Big Tea Problems');
-      for (const selector of ['.splash-title', '.splash-subtitle', '.splash-tagline', '#titleContinueBtn', '#titleInstructionsBtn', '#titleGraphicsBtn']) {
+      for (const selector of ['.splash-title', '.splash-subtitle', '.splash-tagline', '#titleContinueBtn', '#titleInstructionsBtn', '#titleGraphicsBtn', '#titleSoundBtn']) {
         const box = await page.locator(selector).boundingBox();
         expect(box, selector).not.toBeNull();
         expect(box.x, selector).toBeGreaterThanOrEqual(0);
@@ -31,6 +31,8 @@ export function titlePackagingTests() {
     await openGame(page, '&graphics=high', { onboarding: true });
     await expect(page.locator('#titleContinueBtn')).toBeFocused();
     await page.keyboard.press('Shift+Tab');
+    await expect(page.locator('#titleSoundBtn')).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
     await expect(page.locator('#titleGraphicsBtn')).toBeFocused();
     await page.keyboard.down('Enter');
     await expect(page.locator('#titleGraphicsBtn')).toHaveText('Graphics: low');
@@ -38,6 +40,8 @@ export function titlePackagingTests() {
     await expect(page.locator('#titleGraphicsBtn')).toHaveText('Graphics: low');
     await expect(page.locator('#arcadeSplash')).toBeVisible();
     await page.keyboard.up('Enter');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#titleSoundBtn')).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.locator('#titleContinueBtn')).toBeFocused();
     await page.keyboard.press('Tab');

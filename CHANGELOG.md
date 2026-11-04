@@ -16,6 +16,13 @@ All notable changes to this project are documented here. The project uses
   controls, hide when there is no room (and in any narrow upright window),
   stay put while the game is paused, and are absent when reduced motion is
   requested. Decorative only; gameplay is unchanged.
+- **Quick sound switch:** a speaker button on the title screen, at the top of
+  the game and in the Tea Break mutes and unmutes all sound, music and
+  effects together, and **M** does the same from anywhere (holding it, or
+  pressing it with Ctrl, Alt, Meta or Shift, does nothing). The choice is
+  remembered in this browser; a remembered "on" waits for the first key
+  press, click or tap, as browsers require. Unmuting no longer plays a chirp.
+  **M no longer pours milk**: use Q or ↑.
 
 ## [0.19.0] - 2026-11-03 — The Cup Has Gone Fungal
 

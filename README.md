@@ -171,9 +171,10 @@ See the [changelog](CHANGELOG.md) for what changed in each version.
 | --- | --- | --- |
 | Move the silver spoon | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> | hold **◀ TURN** / **TURN ▶** |
 | Fire steam (hold for continuous fire) | <kbd>Space</kbd> | hold **STEAM ↑** |
-| Milk: wash back and slow a wedge of the cup, and the whole cup briefly | <kbd>Q</kbd>, <kbd>↑</kbd>, or <kbd>M</kbd> | **MILK** |
+| Milk: wash back and slow a wedge of the cup, and the whole cup briefly | <kbd>Q</kbd> or <kbd>↑</kbd> | **MILK** |
 | Sugar: three-lane burst | <kbd>E</kbd>, <kbd>↓</kbd>, or <kbd>S</kbd> | **SUGAR** |
 | Pause / resume | <kbd>P</kbd> | main button |
+| Mute / Unmute Audio | <kbd>M</kbd> | speaker button |
 | Start, next cup, new pot | <kbd>Enter</kbd> | main button |
 | Pick a spoon upgrade | <kbd>1</kbd> / <kbd>2</kbd> | tap a card |
 | Restart after game over | <kbd>R</kbd> | main button |
@@ -241,7 +242,10 @@ earns no points.
   remembered; hiding them gives the cup the extra width. Keyboard shortcuts
   and Easy Touch cup gestures always work.
 - **Sound** is off by default. Turn it on for synthesized sound effects and
-  the adaptive soundtrack.
+  the adaptive soundtrack with the speaker button (on the title screen, at the
+  top of the game, and in the Tea Break), with <kbd>M</kbd> from anywhere, or
+  with Sound in Controls & Settings. All three are one switch for music and
+  effects together, and the choice is remembered in this browser.
 - **Graphics** switches between high quality (full-resolution tea with
   glowing currents) and low quality for older machines. You can also add
   `?graphics=low` or `?graphics=high` to the URL.

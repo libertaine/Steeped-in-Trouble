@@ -115,3 +115,22 @@ export function saveSettings(storage, settings) {
     // Storage may be unavailable (private mode); the choice just won't persist.
   }
 }
+
+// Sound: one remembered on/off for music and effects together, shared by the
+// Settings toggle, the speaker buttons and M (ui/soundToggle.js). Off unless
+// the player has turned it on; anything else stored is ignored.
+export const SOUND_KEY = 'steeped-in-trouble:sound';
+
+export function initialSound(storage) {
+  try {
+    return storage?.getItem(SOUND_KEY) === 'on';
+  } catch {
+    return false; // Sound stays off when storage is unavailable.
+  }
+}
+
+export function saveSound(storage, on) {
+  try {
+    storage?.setItem(SOUND_KEY, on ? 'on' : 'off');
+  } catch { /* The choice still applies for this visit. */ }
+}

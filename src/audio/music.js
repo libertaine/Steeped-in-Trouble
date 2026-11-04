@@ -413,7 +413,7 @@ export function createMusic({ random = Math.random } = {}) {
   let tension = 0;
   let pending = []; // one-off phrases (a Steam Nova flourish): { notes, steps }
 
-  function connect(context) {
+  function connect(context, output) {
     ctx = context;
     bus = ctx.createGain();
     tone = ctx.createBiquadFilter();
@@ -422,7 +422,7 @@ export function createMusic({ random = Math.random } = {}) {
     tone.Q.value = 0.6;
     bus.gain.value = 0;
     tone.connect(bus);
-    bus.connect(ctx.destination);
+    bus.connect(output ?? ctx.destination);
     noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const data = noise.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = random() * 2 - 1;
@@ -443,8 +443,9 @@ export function createMusic({ random = Math.random } = {}) {
      * @param {number} dt seconds since the previous frame
      * @param {object} [strange] Mushroom Tea's Strange Happenings: silent while a rewind holds time
      *   still, and muffled on each of the cup's breaths
+     * @param {AudioNode} [output] where the band plays (audio.js's master volume); the speakers by default
      */
-    update(context, state, dt, strange = null) {
+    update(context, state, dt, strange = null, output = null) {
       const playing = state.phase === PHASE.PLAYING;
       // Tension rises quickly and lets go slowly.
       const target = playing ? rawTension(state.enemies) : 0;
@@ -460,7 +461,7 @@ export function createMusic({ random = Math.random } = {}) {
         nextTime = 0;
         return;
       }
-      if (context !== ctx) connect(context);
+      if (context !== ctx) connect(context, output);
       const now = ctx.currentTime;
       // The band swells a little with the tension, on top of the layers it adds.
       const intensity = mood.section === 'grind' ? mood.tension : tension;

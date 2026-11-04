@@ -440,7 +440,7 @@ describe('Crossing the Street keys', () => {
       expect(controls.walk[dir]).toBe(false);
     }
     expect(commands.hop).toHaveBeenCalledTimes(8);
-    key('keydown', 'Space'); key('keydown', 'KeyQ'); key('keydown', 'KeyE'); key('keydown', 'KeyM'); key('keydown', 'Digit1');
+    key('keydown', 'Space'); key('keydown', 'KeyQ'); key('keydown', 'KeyE'); key('keydown', 'Digit1');
     for (const action of ['fire', 'milk', 'sugar', 'jump', 'slide', 'launchCube', 'throwPaper', 'aimPaper', 'choose']) {
       expect(commands[action]).not.toHaveBeenCalled();
     }

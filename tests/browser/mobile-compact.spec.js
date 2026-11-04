@@ -125,7 +125,7 @@ test('Tea Break pauses time, traps focus, changes settings, and dismisses withou
   await page.locator('#menuBtn').click();
   await expect(page.locator('#teaBreak')).toBeVisible();
   const snapshot = await page.evaluate(() => JSON.stringify(window.__TEACUP__.game.state));
-  for (const code of ['KeyP', 'Space', 'KeyM', 'KeyS', 'Digit1', 'Enter']) {
+  for (const code of ['KeyP', 'Space', 'KeyQ', 'KeyS', 'Digit1', 'Enter']) {
     // Put focus on a non-button before shortcut injection: keys must never reach the game.
     await page.locator('#roundTitle').evaluate((el) => { el.tabIndex = -1; el.focus(); });
     await expect(page.locator('#roundTitle')).toBeFocused();

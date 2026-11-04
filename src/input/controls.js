@@ -7,8 +7,9 @@
 // game calls it on pause, restart, and on the way into and out of the Tea
 // Shortage and the Tea Run). Upgrade cards are picked with 1 / 2 or a click
 // or tap, and the Tea Shortage is answered with 1 / 2 / 3. Milk and sugar sit
-// on Q / E beside the turning keys, on the up and down arrows beside the
-// other arrows, and on M / S; in the Tea Run the same arrows (and Space)
+// on Q / E beside the turning keys and on the up and down arrows beside the
+// other arrows, and sugar on S too (M is the sound switch, ui/soundToggle.js,
+// and means nothing here); in the Tea Run the same arrows (and Space)
 // jump and slide instead. In Biscuit Breakout the turning keys move the spoon
 // paddle, and Space (or LAUNCH) only ever launches the sugar cube. Crossing
 // the Street takes the arrows and WASD for itself (held in `walk`, never in
@@ -40,7 +41,7 @@ const CHOICE_KEYS = { Digit1: 0, Numpad1: 0, Digit2: 1, Numpad2: 1, Digit3: 2, N
 // Keys whose default browser action (scrolling) is suppressed.
 const CAPTURED_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp', 'ArrowDown']);
 
-const MILK_KEYS = new Set(['KeyQ', 'KeyM', 'ArrowUp']);
+const MILK_KEYS = new Set(['KeyQ', 'ArrowUp']);
 const SUGAR_KEYS = new Set(['KeyE', 'KeyS', 'ArrowDown']);
 const JUMP_KEYS = new Set(['Space', 'ArrowUp']);
 const SLIDE_KEYS = new Set(['ArrowDown']);

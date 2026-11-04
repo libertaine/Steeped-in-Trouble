@@ -12,7 +12,7 @@ import { createDailyPour } from './gameplay/dailyPour.js';
 import { BREAKOUT_SALT, createBreakout } from './gameplay/biscuitBreakout.js';
 import { createRandom, toSeed } from './core/random.js';
 import { createControls } from './input/controls.js';
-import { initialSettings, isTouchDevice, normalize, saveSettings } from './input/settings.js';
+import { initialSettings, initialSound, isTouchDevice, normalize, saveSettings } from './input/settings.js';
 import { createAudio } from './audio/audio.js';
 import { attachCanvasScaling } from './rendering/canvas.js';
 import { attachViewportFit } from './ui/viewport.js';
@@ -31,6 +31,7 @@ import { prepareManager, prepareProgression } from './dev/manager.js';
 import { POT_SCHEMA_VERSION } from './core/checkpoint.js';
 import { createInstructionOverlay } from './ui/instructionOverlay.js';
 import { createTitleScreen } from './ui/titleScreen.js';
+import { createSoundToggle } from './ui/soundToggle.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -66,7 +67,6 @@ function boot() {
   const renderer = createRenderer(canvas, { quality: initialQuality(params),
     compact: () => document.body.dataset.view === 'compact' });
   const hud = createHud(document);
-  const audio = createAudio();
 
   // Control settings: Easy or Classic Touch, and Auto Steam (see input/settings.js).
   let storage = null;
@@ -75,6 +75,10 @@ function boot() {
   } catch {
     // Storage may be unavailable; the defaults will do.
   }
+  // A remembered "on" still waits for the player's first gesture (see audio/audio.js).
+  const audio = createAudio({ enabled: initialSound(storage) });
+  // Before the title screen, so its Enter (which it keeps to itself) can still unlock audio.
+  const sound = createSoundToggle({ doc: document, audio, storage });
   // ?debug&cup=migrated: an authentic 0.16.0 pot is stored first, so Continue Your Pot migrates it (development only).
   if (import.meta.env.DEV && params.has('debug') && params.get('cup') === 'migrated') seedLegacyPot(storage);
   const progress = createLocalProgress(storage);
@@ -174,7 +178,7 @@ function boot() {
     onGesture: showRing,
     enabled: () => !title?.blocked && !presentation?.blocked && !collectionUI?.blocked && !overlay?.blocked && document.visibilityState !== 'hidden',
   });
-  title = createTitleScreen({ doc: document, onGraphics: toggleGraphics, onContinue: () => {
+  title = createTitleScreen({ doc: document, onGraphics: toggleGraphics, sound: document.getElementById('titleSoundBtn'), onContinue: () => {
     controls.settle(true);
     overlay.show({ hasSavedPot: !!progress.pot });
   } });
@@ -213,13 +217,9 @@ function boot() {
     onOpen: () => overlay.close(),
   });
 
-  const soundButton = document.getElementById('soundBtn');
   document.getElementById('mainBtn').addEventListener('click', () => {
     if (game.state.phase === 'reading') { game.confirm(); return; }
     if (!collectionUI.primary()) game.primaryAction();
-  });
-  soundButton.addEventListener('click', () => {
-    soundButton.textContent = `Sound: ${audio.toggle() ? 'on' : 'off'}`;
   });
 
   const graphicsButton = document.getElementById('graphicsBtn');
@@ -335,6 +335,7 @@ function boot() {
       collectionUI.dispose();
       overlay.dispose();
       title.dispose();
+      sound.dispose();
       ambient?.dispose();
       detachScaling();
       detachViewport();
@@ -362,6 +363,8 @@ function boot() {
         socialize: (kind) => ambient.socialize(kind), crumble: () => ambient.crumble(),
         sweeten: (options) => ambient.sweeten(options), stealText: () => ambient.stealText() },
       settings: () => ({ ...settings }),
+      // Read only: whether sound is on, unlocked, and what the AudioContext and master volume are doing.
+      audio: () => audio.snapshot(),
       overlay: {
         show: (opts) => overlay.show(opts),
         close: () => overlay.close(),

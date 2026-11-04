@@ -1570,3 +1570,14 @@ body[data-onscreen-controls="hidden"] .header-actions { flex-wrap: wrap; justify
   body[data-view] .reading-presentation .upgrade-card strong { font-size: 14px; }
   body[data-view] .reading-presentation .offer-head strong { font-size: 14px; }
 }
+
+/* 0.20.0: the quick sound switch. One speaker per surface that can be open (a modal makes
+   the rest inert); every copy shows the same state. M does the same from the keyboard. */
+.sound-toggle { display: inline-grid; place-items: center; flex: none; width: 44px; height: 44px;
+  min-width: 44px; min-height: 44px; padding: 0; border-radius: 999px; line-height: 0;
+  color: var(--gold); background: #1a2d25; border-color: #6a846d99; }
+.sound-toggle svg { display: block; width: 22px; height: 22px; }
+.sound-toggle[data-muted="true"] { color: #b9c2b9; }
+.sound-toggle[data-muted="true"] .sound-waves,
+.sound-toggle[data-muted="false"] .sound-cross { display: none; }
+.break-head-actions { display: flex; align-items: center; gap: 8px; }

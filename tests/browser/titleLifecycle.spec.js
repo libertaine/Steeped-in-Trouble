@@ -60,7 +60,7 @@ test('complete welcome and Tea Break flow uses browser keyboard and pointer inpu
   await page.keyboard.press('Space');
   await expect.poll(async () => (await state()).shots).toBeGreaterThan(0);
   const supplies = await state();
-  await page.keyboard.press('m');
+  await page.keyboard.press('q');
   await expect.poll(async () => (await state()).milk).toBe(supplies.milk - 1);
   await page.keyboard.press('s');
   await expect.poll(async () => (await state()).sugar).toBe(supplies.sugar - 1);

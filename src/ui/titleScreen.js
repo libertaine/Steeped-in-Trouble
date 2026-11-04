@@ -1,5 +1,5 @@
 // Title -> instructions -> cup. Only an explicit, fresh activation leaves title.
-export function createTitleScreen({ doc = document, onContinue, onGraphics }) {
+export function createTitleScreen({ doc = document, onContinue, onGraphics, sound = null }) {
   const dialog = doc.getElementById('arcadeSplash');
   const button = doc.getElementById('titleContinueBtn');
   const status = dialog.querySelector('[role="status"]');
@@ -38,17 +38,18 @@ export function createTitleScreen({ doc = document, onContinue, onGraphics }) {
       e.preventDefault();
       e.stopImmediatePropagation();
       if (open && ready && !wasHeld && !e.repeat) {
-        if (doc.activeElement === graphics) graphics.click();
+        if (doc.activeElement === graphics || (sound && doc.activeElement === sound)) doc.activeElement.click();
         else proceed();
       }
     } else if (open && e.code === 'Space') {
-      e.preventDefault(); // Space is steam, never a shortcut past title.
+      // Space is steam, never a shortcut past title. On the speaker it is that button's own activation.
+      if (!sound || doc.activeElement !== sound) e.preventDefault();
     } else if (open && e.code === 'Tab') {
       e.preventDefault();
       if (ready) {
-        const buttons = [button, instructions, graphics];
+        const buttons = [button, instructions, graphics, sound].filter(Boolean);
         const index = buttons.indexOf(doc.activeElement);
-        buttons[(index + (e.shiftKey ? 2 : 1)) % buttons.length].focus({ preventScroll: true });
+        buttons[(index + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus({ preventScroll: true });
       }
     }
   }

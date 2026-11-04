@@ -30,6 +30,7 @@
         <button id="titleContinueBtn" class="splash-continue" disabled>START / CONTINUE <span aria-hidden="true">→</span></button>
         <button id="titleInstructionsBtn" class="splash-secondary">How to play</button>
         <button id="titleGraphicsBtn" class="splash-secondary">Graphics: high</button>
+        <button id="titleSoundBtn" class="splash-sound sound-toggle" data-sound-toggle="title" data-muted="true" aria-label="Unmute audio" title="Unmute audio (M)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="sound-waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="sound-cross" d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       </div>
       <p class="splash-hint">Enter or tap to continue · Controls before the first cup</p>
     </div>
@@ -42,6 +43,7 @@
     <div class="brand">Steeped <em>in</em> Trouble</div>
   </div>
   <div class="header-actions">
+    <button id="headerSoundBtn" class="sound-toggle" data-sound-toggle="header" data-muted="true" aria-label="Unmute audio" title="Unmute audio (M)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="sound-waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="sound-cross" d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     <button id="viewBtn" aria-label="Switch Compact or Full View">View: full</button>
     <div class="version" id="version">VERSION</div>
   </div>
@@ -238,9 +240,10 @@
       <p id="activeControls"></p>
       <div class="keyrow"><span>Move the silver spoon</span><span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></span></div>
       <div class="keyrow"><span>Fire steam inward</span><span><kbd>Space</kbd></span></div>
-      <div class="keyrow"><span>Milk: slow a wedge</span><span><kbd>Q</kbd> / <kbd>↑</kbd> / <kbd>M</kbd></span></div>
+      <div class="keyrow"><span>Milk: slow a wedge</span><span><kbd>Q</kbd> / <kbd>↑</kbd></span></div>
       <div class="keyrow"><span>Sugar: triple shot</span><span><kbd>E</kbd> / <kbd>↓</kbd> / <kbd>S</kbd></span></div>
       <div class="keyrow"><span>Pause / next cup</span><span><kbd>P</kbd> / <kbd>Enter</kbd></span></div>
+      <div class="keyrow"><span>Mute / Unmute Audio</span><span><kbd>M</kbd></span></div>
       <div class="keyrow"><span>Pick a spoon upgrade</span><span><kbd>1</kbd> / <kbd>2</kbd></span></div>
       <div class="keyrow"><span>Tea Run: jump / slide</span><span><kbd>Space</kbd> / <kbd>↑</kbd> · <kbd>↓</kbd></span></div>
       <div class="keyrow"><span>Biscuit Breakout: move / launch</span><span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> · <kbd>Space</kbd></span></div>
@@ -296,8 +299,8 @@
               <td><kbd class="keycap">↓</kbd> <span class="key-sep">or</span> <kbd class="keycap">E</kbd></td>
             </tr>
             <tr>
-              <th scope="row">Pause</th>
-              <td><kbd class="keycap">P</kbd></td>
+              <th scope="row">Pause · Mute / unmute</th>
+              <td><kbd class="keycap">P</kbd> <span class="key-sep">·</span> <kbd class="keycap">M</kbd></td>
             </tr>
           </tbody>
         </table>
@@ -318,7 +321,7 @@
   </div>
 </dialog>
 <dialog id="teaBreak" aria-labelledby="teaBreakTitle">
-  <div class="break-head"><h2 id="teaBreakTitle">The Tea Break</h2><button id="closeBreak" autofocus>Back to cup</button></div>
+  <div class="break-head"><h2 id="teaBreakTitle">The Tea Break</h2><div class="break-head-actions"><button id="breakSoundBtn" class="sound-toggle" data-sound-toggle="break" data-muted="true" aria-label="Unmute audio" title="Unmute audio (M)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="sound-waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="sound-cross" d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><button id="closeBreak" autofocus>Back to cup</button></div></div>
   <button id="breakCollectionBtn">THE SPOON'S OTHER JOBS</button>
   <div class="save-controls">
     <p id="savedPotInfo"></p><button id="clearPotBtn" hidden>Clear saved pot</button>

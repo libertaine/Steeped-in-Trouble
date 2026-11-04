@@ -40,7 +40,7 @@ test('starts, steers, fires, pauses, and resumes from the keyboard', { tag: '@sm
   await page.keyboard.press('Space');
   await expect.poll(async () => (await gameState(page)).shots).toBeGreaterThan(0);
 
-  await page.keyboard.press('m');
+  await page.keyboard.press('q');
   await expect(page.locator('#milkCount')).toHaveText('1');
   await page.keyboard.press('s');
   await expect(page.locator('#sugarCount')).toHaveText('1');

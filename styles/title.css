@@ -184,3 +184,35 @@ button.splash-secondary {
 @media (prefers-reduced-motion: reduce) {
   .splash-steam { transform: none; opacity: .55; }
 }
+/* The speaker: top right of the label, just under the imprint rule, as it is in the game's header.
+   An upright phone has no room there, so it joins the centred row of secondary actions instead. */
+button.splash-sound {
+  position: absolute;
+  top: 66px;
+  right: 46px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid var(--label-gold);
+  border-radius: 0;
+  color: var(--label-green);
+  background: var(--label-cream);
+  box-shadow: none;
+}
+button.splash-sound[data-muted="true"] { color: var(--label-burgundy); }
+button.splash-sound:hover { background: #ede2c3; }
+@media (max-width: 900px), (max-height: 740px) {
+  button.splash-sound { top: 62px; right: 32px; }
+}
+@media (max-height: 500px) {
+  button.splash-sound { top: 44px; right: 42px; }
+}
+@media (min-width: 601px) and (min-height: 501px) and (max-height: 650px) {
+  button.splash-sound { top: 58px; right: 32px; }
+}
+@media (max-width: 600px) and (min-height: 501px) {
+  button.splash-sound { position: static; }
+  .splash-actions { gap: 8px 16px; }
+}

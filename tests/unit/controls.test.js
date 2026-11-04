@@ -31,7 +31,7 @@ describe('keyboard controls', () => {
     expect(controls.held).toEqual({ left: false, right: false, fire: false });
     controls.dispose();
   });
-  it('pours milk with Q or M, and fires sugar with E or S', () => {
+  it('pours milk with Q or ↑, fires sugar with E or S, and leaves M to the sound switch', () => {
     const game = playingGame();
     game.state.sugarLeft = 4;
     const { win, doc } = fakePage();
@@ -45,6 +45,8 @@ describe('keyboard controls', () => {
     press(win, 'KeyQ');
     expect(game.state.milkLeft).toBe(1);
     press(win, 'KeyM');
+    expect(game.state.milkLeft).toBe(1);
+    press(win, 'ArrowUp');
     expect(game.state.milkLeft).toBe(0);
     press(win, 'KeyE');
     expect(game.state.sugarLeft).toBe(3);
@@ -352,7 +354,7 @@ describe('input boundaries', () => {
     pointer(page.pads[0], 'pointerdown');
     enabled = false;
     controls.update();
-    press(page.win, 'KeyM');
+    press(page.win, 'KeyQ');
     press(page.win, 'KeyS');
     press(page.win, 'Space');
     pointer(page.pads[1], 'pointerdown');

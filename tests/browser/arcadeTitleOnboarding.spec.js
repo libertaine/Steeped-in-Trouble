@@ -122,6 +122,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
     await expect(table).toContainText('Pour milk');
     await expect(table).toContainText('Fire sugar');
     await expect(table).toContainText('Pause');
+    await expect(table.getByRole('row', { name: /Mute \/ unmute/ })).toContainText('M');
 
     await expect(page.locator('.overlay-notes')).toContainText('Milk pushes leaves back and slows them.');
     await expect(page.locator('.overlay-notes')).toContainText('Sugar fires a three-lane burst.');

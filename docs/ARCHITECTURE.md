@@ -92,6 +92,34 @@ on the Web Audio clock, so tempo changes never bend pitch. A pause, game over,
 or hidden tab simply stops scheduling. The band shares `audio.js`'s
 AudioContext and the Sound toggle.
 
+### Sound on and off
+
+`audio.enabled` is the only on/off switch. Music and effects play through one
+master gain into the speakers (effects through their own bus into it), so
+muting sets the master to 0 at once, detaches the effects' bus so notes
+already scheduled never come back, and stops anything new being scheduled.
+The band's own volume and lowpass are untouched, so unmuting sets the master
+back to 1 and the band fades back in where it would have been: no new
+AudioContext, no second band, and no confirmation chirp. Browser autoplay
+rules are respected by never creating the AudioContext before a user gesture
+(`unlock()`): turning sound on is one, and a player whose saved choice is on
+unlocks it with their first key press, click or tap. Focus and visibility
+handling is unchanged: the game pauses and the band stops scheduling.
+
+`ui/soundToggle.js` owns the controls and the saved choice
+(`steeped-in-trouble:sound`, `on` or `off`, read and written by
+`input/settings.js`; anything else reads as off, and storage failures are
+ignored). There are three speaker buttons, `[data-sound-toggle]` in the
+title screen, the page header (gameplay, pauses and readings) and the Tea
+Break, because a modal dialog makes the rest of the page inert; each shows the
+same state and an "Mute audio" / "Unmute audio" label, as does the Settings
+"Sound" toggle. M is one capturing `keydown` listener on the window, counted
+once per event: it ignores auto-repeat, Ctrl, Alt, Meta and Shift, IME
+composition, and focused inputs, textareas, selects and editable content. It
+is registered before the title screen, whose Enter handling stops other
+listeners, so that Enter can still unlock audio. A pointer click on the header
+speaker returns focus to the cup, so the next Space is steam.
+
 ## Main loop
 
 `main.js` starts one `createLoop()` (calling `start()` again is a no-op). Each
@@ -337,7 +365,8 @@ Spiral's drift all compose; a new glide folds in what is left of an old one.
 ## Input
 
 `controls.js` keeps `held = { left, right, fire }` and calls command
-callbacks for one-shot keys (milk on Q, ↑, or M; sugar on E, ↓, or S). It
+callbacks for one-shot keys (milk on Q or ↑; sugar on E, ↓, or S; M is the
+sound switch and is not bound here). It
 prevents page scrolling only for the arrow keys and Space, and it ignores key presses that use Ctrl, Alt, or Meta. Held
 state is released on window blur, page hide, pointer up, pointer cancel, and
 lost pointer capture, and (through the game's events) on pause and on a new

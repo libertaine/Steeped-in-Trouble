@@ -95,7 +95,7 @@ test('keyboard-only gameplay, settings navigation, pause and focus work with but
   await page.keyboard.up('ArrowRight');
   await page.keyboard.press('Space');
   await expect.poll(async () => (await gameState(page)).shots).toBeGreaterThan(0);
-  await page.keyboard.press('m'); await page.keyboard.press('s');
+  await page.keyboard.press('q'); await page.keyboard.press('s');
   expect(await gameState(page)).toMatchObject({ milkLeft: before.milkLeft - 1, sugarLeft: before.sugarLeft - 1 });
   await page.keyboard.press('p');
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');

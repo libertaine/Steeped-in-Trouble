@@ -62,7 +62,7 @@ test('Time Rewind winds the cup back and returns it untouched, swallowing presse
   const held = await keep(page);
   // Steam, milk and sugar wait while time stands still.
   await page.keyboard.press('Space');
-  await page.keyboard.press('KeyM');
+  await page.keyboard.press('KeyQ');
   await page.keyboard.press('KeyS');
   await page.waitForFunction(() => window.__TEACUP__.strange.view.rewind.icon === 'pause');
   expect(await keep(page)).toEqual(held);

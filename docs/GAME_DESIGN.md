@@ -304,7 +304,8 @@ and a bot that spread its flames between cool marshmallows about 630.
 ### Controls
 
 <kbd>Q</kbd> pours milk and <kbd>E</kbd> fires sugar, beside the turning keys.
-<kbd>M</kbd> and <kbd>S</kbd> still work.
+<kbd>S</kbd> still works for sugar. (<kbd>M</kbd> poured milk until 0.20.0;
+it now mutes and unmutes the sound.)
 
 ### The coffee boss (spoilers)
 
@@ -363,7 +364,7 @@ never perfectly.
 ### Controls
 
 <kbd>↑</kbd> pours milk and <kbd>↓</kbd> fires sugar, beside the turning
-arrows. <kbd>Q</kbd> / <kbd>M</kbd> and <kbd>E</kbd> / <kbd>S</kbd> still work.
+arrows. <kbd>Q</kbd> and <kbd>E</kbd> / <kbd>S</kbd> still work.
 
 ### Chapters: the slow burn
 
