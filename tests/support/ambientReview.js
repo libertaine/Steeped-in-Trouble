@@ -7,10 +7,11 @@
 // Each scenario writes <name>.webm (the whole page at its viewport size, from
 // load), <name>.png (the page once the scene is set) and <name>.json: when
 // the scene began (seconds into the clip), the stage's place on the page
-// (ant positions are stage-local), the measured regions and a
-// once-a-second timeline of the ants. Everything goes through the existing
-// ?debug hook (summon, socialize, snapshot) with a fixed ambient seed; the
-// game itself stays on its calm ready screen. Nothing here is committed.
+// when it began (ant positions are stage-local), the measured regions and a
+// timeline of the ants and any crumb (once a second, or more often for the
+// crumb scenes). Everything goes through the existing ?debug hook (summon,
+// socialize, crumble, snapshot) with a fixed ambient seed; the game itself
+// stays on its calm ready screen. Nothing here is committed.
 import { chromium, devices } from '@playwright/test';
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 
@@ -20,7 +21,26 @@ mkdirSync(output, { recursive: true });
 
 const desktop = (width, height) => ({ ...devices['Desktop Chrome'], viewport: { width, height } });
 
-/** name → { context, query, seconds, start(page) }. `start` sets the scene; the clip runs `seconds` after it. */
+/**
+ * Ask for a crumb until a wandering ant notices one (an unnoticed crumb just
+ * fades away), keeping the colony topped up; returns once it has been noticed.
+ */
+async function noticedCrumb(page) {
+  await page.evaluate(() => window.__TEACUP__.ambient.summon(6));
+  await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().ants
+    .filter((a) => a.state === 'wandering' || a.state === 'paused').length >= 3, null, { timeout: 30_000 });
+  await page.waitForFunction(() => {
+    const a = window.__TEACUP__.ambient, s = a.snapshot();
+    if (s.count < 4) a.summon(6);
+    if (!s.crumb) a.crumble();
+    return s.crumb?.claim != null;
+  }, null, { timeout: 90_000, polling: 100 });
+}
+
+/**
+ * name → { context, query, seconds, every, start(page), during(page, t) }. `start` sets the scene; the clip
+ * runs `seconds` after it, sampled every `every` ms (1000), calling `during` at each sample.
+ */
 const SCENARIOS = {
   'one-ant': { context: desktop(1280, 720), query: '&view=full&ambientAnts=1', seconds: 20,
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(1)) },
@@ -51,6 +71,15 @@ const SCENARIOS = {
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(6)) },
   'landscape-phone': { context: { ...devices['Pixel 7'], viewport: { width: 844, height: 390 } }, query: '', seconds: 20,
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(6)) },
+  // A crumb noticed, approached, looked over, picked up and carried out of sight.
+  crumb: { context: desktop(1280, 720), query: '&view=full', seconds: 16, every: 250, start: noticedCrumb },
+  // Once it is being carried, the window narrows: the gutter changes shape, and crumb and carrier go at once.
+  'crumb-cancel': { context: desktop(1280, 720), query: '&view=full', seconds: 8, every: 250,
+    async start(page) {
+      await noticedCrumb(page);
+      await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().crumb?.state === 'carried', null, { timeout: 20_000 });
+    },
+    async during(page, t) { if (t === 2) await page.setViewportSize({ width: 1100, height: 720 }); } },
 };
 
 const browser = await chromium.launch();
@@ -66,20 +95,25 @@ try {
     await page.waitForTimeout(500); // measured and settled
     await scenario.start(page);
     const start = (Date.now() - opened) / 1000;
+    const stage = await page.locator('.stage').evaluate((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
     const timeline = [];
     let shot = false;
-    for (let t = 0; t < scenario.seconds; t++) {
+    const every = scenario.every ?? 1000;
+    for (let i = 0; i < (scenario.seconds * 1000) / every; i++) {
+      const t = (i * every) / 1000;
+      await scenario.during?.(page, t);
       const s = await page.evaluate(() => window.__TEACUP__.ambient.snapshot());
+      const c = s.crumb;
       timeline.push({ t, count: s.count, spell: s.spell,
-        ants: s.ants.map((a) => `${a.slot}:${a.state}/${a.mode}${a.partner === null ? '' : `>${a.partner}`}@${Math.round(a.x)},${Math.round(a.y)}`) });
+        crumb: c && `${c.state}${c.claim === null ? '' : `<${c.claim}`}@${Math.round(c.x)},${Math.round(c.y)}`,
+        ants: s.ants.map((a) => `${a.slot}:${a.state}/${a.mode}${a.cargo ? '*' : ''}${a.partner === null ? '' : `>${a.partner}`}@${Math.round(a.x)},${Math.round(a.y)}`) });
       if (!shot && s.count > 0 && s.ants.some((a) => a.state !== 'entering')) {
         await page.screenshot({ path: `${output}/${name}.png` });
         shot = true;
       }
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(every);
     }
     const s = await page.evaluate(() => window.__TEACUP__.ambient.snapshot());
-    const stage = await page.locator('.stage').evaluate((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
     const video = page.video();
     await context.close();
     renameSync(await video.path(), `${output}/${name}.webm`);

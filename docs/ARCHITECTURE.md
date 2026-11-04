@@ -1088,8 +1088,8 @@ recordings until it arrives after cup 10.
 
 A transparent `#ambientLayer` canvas fills `.stage` (absolute, out of the
 grid, `aria-hidden`, not focusable, `pointer-events: none`). Now and then a
-small colony of ants wanders the empty gutters beside the cup. It is
-presentation only:
+small colony of ants wanders the empty gutters beside the cup, and once in a
+while one carries a crumb away. It is presentation only:
 `rendering/ambient.js` has no DOM, game or storage access, and
 `ui/ambient.js` only reads `game.state.phase`, `pausedFrom` and `offer`,
 the modal `blocked` flags and `strange.holding`. It adds no input listener,
@@ -1135,16 +1135,20 @@ on its way out.
   500 CSS px; the viewport only says which way up it is held. A short or
   narrow desktop window has a desktop screen, and a touch laptop or tablet
   a larger one, so they follow their measured geometry. Touch alone never
-  makes a phone.
+  makes a phone. Separately, an upright viewport at most 500 CSS px wide
+  (`narrowPortrait()`) has none on any device: a narrow desktop window lays
+  the cup out as a portrait phone does. Landscape viewports are never
+  suppressed this way.
 - *Quality* (`populationLimit()`): at most 2 in Low graphics, read every
   frame.
 
 The room is the smaller of the first two; this frame's limit applies the
 third. Measured examples (production build, Chromium): 1920 × 1080 Full → 6;
 1366 × 768 and 1280 × 720 → 4; 1024 × 768 → 3; 800 × 600 → 2; 844 × 390
-landscape phone → 2; 412 × 839 portrait phone → 0. A 1200 × 480 desktop
-window in play (two 391 × 329 gutters) → 4, where it used to be capped as
-a phone held sideways; the same short window on a phone stays at 2. A 2560 × 1440 window has
+landscape phone → 2; 412 × 839 portrait phone → 0, and a 412 × 839 desktop
+window → 0 too. A 1200 × 480 desktop window in play (two 391 × 329 gutters)
+→ 4, where it used to be capped as a phone held sideways; the same short
+window on a phone stays at 2. A 2560 × 1440 window has
 only 46 px gutters in play (the stage stops widening at 1526 px while the
 cup grows), so it holds 2–4. Twelve slots are allocated once; nothing,
 including the `?debug&ambientAnts=<0–12>` profiling override of the display
@@ -1159,14 +1163,16 @@ included, checked against the painter's geometry), and its centre is clamped
 to the region shrunk by that radius (plus the portal side while arriving or
 leaving). No step may bring an ant's centre within 14 px of another's
 (bodies never overlap; stepping apart is always allowed); a blocked ant
-stands and turns, and after 0.35 s picks something else. Waypoints and entry
-points prefer open space away from other ants and their destinations.
+stands and turns, and after 0.35 s picks something else: an ant on its own
+steps 30–70 px away from whoever is in its way (another path past them
+could leave it stuck behind a follower waiting close by). Waypoints and
+entry points prefer open space away from other ants and their destinations.
 
 **Colony** (`createColony()`). The colony comes and goes in spells: active
 for 40–80 s, during which ants arrive one at a time at independent,
 staggered moments (at least 1–3 s apart), each into a region with spare
 capacity, larger and emptier regions more often; then quiet, with no new
-arrivals until the last ant has left; then empty for 12–30 s. So the gutters
+arrivals until the last ant has left; then empty for 24–48 s. So the gutters
 are regularly empty and never fill in a procession.
 
 **Social moments** (High only). Every 6–14 s there is a 60 % chance of one
@@ -1193,19 +1199,67 @@ drifts take up the difference, about 170 moments in all).
 20 seeds × 30 minutes, the measured layouts, from a calm screen; an ant is
 visible once any of it is inside the stage):
 
-| 1920 × 1080 Full (ceiling 6) | Empty | Mean (while seen) | Moments / 10 min | Activity median / p90 | Quiet median / p90 | 4+ out | Clumps |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| A: current, empty 12–30 s | 22 % | 3.33 (4.26) | 6.9 | 73 / 93 s | 20 / 28 s | 53 % | 9 % |
-| B: empty 24–48 s | 32 % | 2.93 (4.30) | 6.7 | 68 / 92 s | 35 / 46 s | 47 % | 10 % |
-| C: empty 45–90 s | 46 % | 2.33 (4.28) | 4.6 | 77 / 94 s | 66 / 85 s | 37 % | 9 % |
+| 1920 × 1080 Full (ceiling 6) | Empty | Mean (while seen) | Moments / 10 min | Activity median / p90 | Quiet median / p90 | 4+ out | Clumps | Crumbs (carried) / 10 min |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A: prototype, empty 12–30 s | 22 % | 3.33 (4.25) | 7.0 | 78 / 95 s | 22 / 29 s | 54 % | 8 % | 2.4 (1.6) |
+| **B: current, empty 24–48 s** | 31 % | 2.95 (4.30) | 6.5 | 76 / 94 s | 35 / 46 s | 47 % | 8 % | 1.9 (1.3) |
+| C: empty 45–90 s | 47 % | 2.30 (4.29) | 5.1 | 69 / 92 s | 66 / 86 s | 37 % | 9 % | 1.5 (1.1) |
 
-At 1280 × 720 (ceiling 4) the empty shares are the same (22 / 32 / 46 %),
-with 2.52 / 2.20 / 1.73 ants on average and 5.7 / 5.2 / 4.3 moments per ten
-minutes. "Clumps" is the share of multi-ant time two solo ants are within
-40 px. Longer quiet spells change how often the colony is there, not what it
-looks like while it is: the population while seen, the activity runs and
-the clumping stay put. The current timing (A) is kept for now; see the
-0.20.0 planning document for the recommendation.
+At 1280 × 720 (ceiling 4) the empty shares are much the same (21 / 31 /
+46 %), with 2.52 / 2.20 / 1.75 ants on average, 6.0 / 5.2 / 4.4 moments and
+2.0 / 1.9 / 1.5 crumbs (1.5 / 1.4 / 1.0 carried) per ten minutes. "Clumps"
+is the share of multi-ant time two solo ants are within 40 px. Longer quiet
+spells change how often the colony is there, not what it looks like while
+it is: the population while seen, the activity runs and the clumping stay
+put. B is the approved timing (0.20.0 increment 3); before crumbs it gave
+6.7 moments per ten minutes at 1920 × 1080, so social frequency is
+unchanged within the run-to-run spread.
+
+**Crumbs** (`AMBIENT.crumb`). One crumb at a time, carried by one ant:
+
+1. *Appearing.* While a spell is active and ants are out, every 40–90 s
+   there is an even chance of a crumb. It turns up 45–100 px from a free
+   ant (wandering or paused on its own, at least 4 s of its visit left,
+   nobody's partner or leader), at least 28 px from every ant, and deep
+   enough inside that ant's region for a whole ant to stand over it (the
+   region shrunk by the footprint, the jaw offset and the crumb's radius).
+   It fades in over 0.6 s. Placement fails quietly (and tries again 3 s
+   later) when no ant is free or no spot fits.
+2. *Noticing.* A free ant in its region within 80 px notices it with a
+   chance of 0.8 a second, so passing close usually catches its attention
+   and passing by at a distance does not. Nobody in a social moment, and no
+   leader being followed, ever claims it; only one ant can claim it.
+   Unnoticed, it lies there 15–25 s (shorter if the colony quietens) and
+   fades out again.
+3. *Approach and investigation* (`forage`). The ant walks to the point just
+   behind the crumb, so its jaws (6.2 px ahead of its centre) are over it;
+   if it takes longer than 8 s it loses interest and the crumb is free
+   again. It then stands for 0.8–1.8 s, antennae twitching, turning to face
+   the crumb.
+4. *Pickup.* Once facing it, the ant takes it (`cargo`); the colony eases
+   the crumb from where it lay into the jaws over 0.25 s, so it never
+   jumps. From then on it sits exactly at the jaw point and turns with the
+   ant, keeping the angle it had on the ground.
+5. *Carrying* (`carry`). The ant heads for the nearest portal of its
+   region in 50–90 px steps, up to 14 px either side of the straight line,
+   at 75 % of its usual pace, stopping now and then (a quarter of its
+   waypoints, 0.3–0.8 s) to shift its grip. Within 60 px of the edge it
+   walks out. When it has gone, so has the crumb.
+
+The jaw point plus the crumb's radius (6.2 + 2.4 px) lies within the ant's
+9 px footprint, so a carried crumb is always inside its carrier's region
+(or beyond its portal, clipped, on the way out); a lying one is well inside
+its own. Crumbs never change the population or the arrival rhythm; an ant
+going after or carrying a crumb is not in a social moment, so moments go on
+as before, and Low graphics keeps crumbs (they are solo behaviour) with a
+plainer look. On a layout change a lying crumb stays only if its region
+lies inside a new one; a carrier follows the visitor rule above, and its
+crumb goes with it, at once. A crumb is also gone the moment the policy
+turns `off` (reduced motion, a decision, an adventure). It is drawn by
+`drawCrumb()`: an irregular seven-cornered piece of biscuit (radii 72–100 %
+of 2.4 px, round-jointed outline, one small highlight) or, in Low quality,
+a plain dot; a lying crumb is drawn under the ants, a carried one over its
+carrier's head. Its spot is cleared like an ant's.
 
 **Visibility policy** (`ambientPolicy()`):
 
@@ -1233,11 +1287,12 @@ reload.
 <output directory> [scenario …]` records a short clip, a still and a
 timeline of each scene through the `?debug` hook (one ant, a full colony,
 follow, greet, drift, entry and exit, the natural rhythm with its quiet
-spells, Low graphics, a 1200 × 480 desktop window and an 844 × 390
-landscape phone). By hand, any of these with `?debug&noOverlay&ambientSeed=7`
-and `window.__TEACUP__.ambient.summon(n)` / `.socialize('follow' | 'greet'
-| 'drift')` in the console; `&ambientAnts=1` for a single ant and
-`&graphics=low` for Low.
+spells, Low graphics, a 1200 × 480 desktop window, an 844 × 390 landscape
+phone, a crumb found and carried away, and a crumb cancelled by a narrower
+window). By hand, any of these with `?debug&noOverlay&ambientSeed=7` and
+`window.__TEACUP__.ambient.summon(n)` / `.socialize('follow' | 'greet' |
+'drift')` / `.crumble()` in the console; `&ambientAnts=1` for a single ant
+and `&graphics=low` for Low.
 
 **Drawing and cost.** One pass per frame clears the last frame's ant spots
 (a 22 px square each, all before any drawing) and paints every present ant;
@@ -1251,3 +1306,12 @@ rasterisation), 12 ants p95 0.13 ms (0.35 ms), at DPR 2 12 ants p95 0.25 ms
 (0.64 ms); an idle layer about 0.01 ms. Whole-frame timings with the layer
 removed, idle and with 1–12 ants differed by less than the run-to-run noise
 (±0.4 ms on a 14 ms software-rendered frame).
+
+Crumbs (increment 3) add no measurable cost: `colony.step()` with six ants
+took 1.2–1.5 µs in Node whether or not a crumb was in play (with one kept
+in play throughout, or none), and in headless Chromium at 1920 × 1080 on
+the ready screen the mean whole animation-frame callback was 13.35 ms with
+six ants and a crumb in play 98 % of the time against 13.61 ms with six
+ants and none (12.57 ms with no ants; three interleaved 10 s windows each,
+the same software rasteriser). A crumb adds one 22 px cleared spot and one
+small path a frame, and allocates nothing per frame.

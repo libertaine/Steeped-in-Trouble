@@ -10,10 +10,10 @@ test('a portrait phone has no ants, before or during play, and holds no surface'
   expect(await ambientState(page)).toMatchObject({ shape: 'portrait', count: 0, room: 0, budget: 0, hidden: true, width: 0, height: 0 });
   await page.locator('#mainBtn').tap();
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
-  await page.evaluate(() => window.__TEACUP__.ambient.summon(6));
+  await page.evaluate(() => { window.__TEACUP__.ambient.summon(6); window.__TEACUP__.ambient.crumble(); });
   await page.waitForTimeout(2000);
   const playing = await ambientState(page);
-  expect(playing).toMatchObject({ count: 0, room: 0, budget: 0, hidden: true, width: 0, height: 0 });
+  expect(playing).toMatchObject({ count: 0, room: 0, budget: 0, hidden: true, width: 0, height: 0, crumb: null });
   expect(problems).toEqual([]);
 });
 

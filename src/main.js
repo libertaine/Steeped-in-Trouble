@@ -365,7 +365,7 @@ function boot() {
       version: __APP_VERSION__,
       config: CONFIG,
       ambient: ambient && { snapshot: () => ambient.snapshot(), summon: (n) => ambient.summon(n),
-        socialize: (kind) => ambient.socialize(kind) },
+        socialize: (kind) => ambient.socialize(kind), crumble: () => ambient.crumble() },
       settings: () => ({ ...settings }),
       overlay: {
         show: (opts) => overlay.show(opts),

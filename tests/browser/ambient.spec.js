@@ -1,5 +1,5 @@
 import { expect, openGame, test } from './fixtures.js';
-import { ambientState, protectedOverlaps, summonAnts } from './ambient.js';
+import { ambientState, crumbIn, protectedOverlaps, summonAnts } from './ambient.js';
 
 // The ant colony (0.20.0): decorative visitors in the measured gutters beside
 // the cup, which never cover the game or its UI, scale with the space, and
@@ -70,6 +70,42 @@ test('social moments play out in the real layout with a fixed cosmetic seed', as
   expect(problems).toEqual([]);
 });
 
+test('a crumb is found, looked over and carried out of sight, clear of the game and its controls', async ({ page, problems }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await openGame(page, '&view=full&ambientSeed=5');
+  await summonAnts(page, 6, { settled: true });
+  await crumbIn(page, ['lying']);
+  // Noticed, approached and picked up by one ant; carried while sampled.
+  await crumbIn(page, ['carried']);
+  const carried = await ambientState(page);
+  const carrier = carried.ants.find((a) => a.slot === carried.crumb.claim);
+  expect(carrier.cargo).toBe(true);
+  expect(carried.ants.filter((a) => a.cargo)).toHaveLength(1);
+  const { hits, crumbs } = await protectedOverlaps(page, { samples: 15 });
+  expect(hits).toEqual([]);
+  // Home: the crumb is gone with it.
+  await expect.poll(async () => {
+    const s = await ambientState(page);
+    return !s.crumb && !s.ants.some((a) => a.cargo);
+  }, { timeout: 30_000 }).toBe(true);
+  expect(crumbs.carried + crumbs.lying).toBeGreaterThan(0);
+  expect(problems).toEqual([]);
+});
+
+test('a layout change takes a crumb away at once, with any ant after it or carrying it', async ({ page, problems }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await openGame(page, '&view=full&ambientSeed=5');
+  await summonAnts(page, 6, { settled: true });
+  await crumbIn(page, ['lying', 'carried']);
+  // A narrow upright window: no gutters, and no ants at all in portrait.
+  await page.setViewportSize({ width: 420, height: 900 });
+  await expect.poll(async () => ambientState(page)).toMatchObject({ crumb: null, count: 0, budget: 0, hidden: true });
+  await page.evaluate(() => { window.__TEACUP__.ambient.summon(6); window.__TEACUP__.ambient.crumble(); });
+  await page.waitForTimeout(1500);
+  expect(await ambientState(page)).toMatchObject({ crumb: null, count: 0 });
+  expect(problems).toEqual([]);
+});
+
 test('the ants never take input: the page beneath them answers clicks and keys', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await openGame(page, '&view=full&ambientSeed=7');
@@ -90,7 +126,17 @@ test('the ants never take input: the page beneath them answers clicks and keys',
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
   await page.keyboard.press('KeyP');
   await expect.poll(async () => page.evaluate(() => window.__TEACUP__.game.state.phase)).toBe('paused');
-  // Paused: every ant stands still where it was.
+  // Pausing reflows the stage (the cup shrinks to make room below it), so wait
+  // until the layer has measured the paused layout: ants whose gutter changed
+  // shape are retired then, by the safe-geometry rule. Every ant still out
+  // stands still where it was.
+  await expect.poll(() => page.evaluate(() => {
+    const s = window.__TEACUP__.ambient.snapshot();
+    const game = document.getElementById('game').getBoundingClientRect();
+    const host = document.querySelector('.stage').getBoundingClientRect();
+    return s.exclusions.some((e) => Math.abs(e.w - game.width) < 0.5 && Math.abs(e.h - game.height) < 0.5
+      && Math.abs(e.x - (game.left - host.left)) < 0.5 && Math.abs(e.y - (game.top - host.top)) < 0.5);
+  })).toBe(true);
   const where = (s) => s.ants.map((a) => [a.slot, a.x, a.y]);
   const a = await ambientState(page);
   await page.waitForTimeout(400);

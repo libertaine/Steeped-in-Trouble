@@ -53,7 +53,14 @@ run checks. No workflow-level path filters are used.
 
 ### Full regression and releases
 
-Run the complete suite locally with `npm run check` then `npm run test:browser`.
+Run the complete suite locally with `npm run check` then
+`CI=1 npx playwright test --workers=2` (PowerShell: `$env:CI=1; npx playwright
+test --workers=2`). That matches the GitHub runners: two workers and one retry,
+with any retry reported as flaky. Playwright's local default of half the CPU
+threads (12 on a 24-thread machine) starves the browsers of frames; the game
+clock advances at most 0.04 s a frame, so short game-clock and input-timing
+waits then miss, on clean releases too. Qualify with the CI-equivalent run
+rather than raising timeouts or weakening assertions.
 Install browsers first if needed: `npx playwright install chromium firefox`.
 The full command still runs Chromium, Firefox and mobile Chromium; smoke is an
 additional command, not a replacement. Use full qualification after substantial

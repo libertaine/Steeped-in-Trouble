@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { createGame } from '../../src/core/game.js';
 import { createRandom } from '../../src/core/random.js';
 import {
-  AMBIENT, ambientPolicy, capacity, createColony, createVisitor, displayBudget, drawAnt, inflate, intersects,
-  phoneShape, populationLimit, regionCapacity, safeRegions, subtract,
+  AMBIENT, ambientPolicy, capacity, createColony, createVisitor, displayBudget, drawAnt, drawCrumb, inflate, intersects,
+  narrowPortrait, phoneShape, populationLimit, regionCapacity, safeRegions, subtract,
 } from '../../src/rendering/ambient.js';
 import { createAmbient, measureLayout } from '../../src/ui/ambient.js';
 
@@ -262,6 +262,10 @@ describe('population', () => {
     ['932 × 430 landscape phone', gutters(173, 312), phone(932, 430), 2],
     ['844 × 390 landscape phone, even with roomier gutters', gutters(300, 330), phone(844, 390), 2],
     ['412 × 839 portrait phone, even with bands above and below the cup', gutters(394, 86), phone(412, 839), 0],
+    ['412 × 839 narrow portrait desktop window, whatever its input', gutters(394, 86), desk(412, 839), 0],
+    ['500 × 900 portrait window, at the limit', gutters(300, 330), desk(500, 900), 0],
+    ['501 × 900 portrait window, by its geometry', gutters(300, 330), desk(501, 900), 3],
+    ['844 × 390 short landscape desktop window, by its geometry', gutters(247, 272), desk(844, 390), 2],
   ])('scales the ceiling with the measured space: %s → %i', (_, regions, device, expected) => {
     expect(displayBudget(regions, device)).toBe(expected);
   });
@@ -277,6 +281,25 @@ describe('population', () => {
     expect(displayBudget(vast, desk(3840, 2160), { override: 0 })).toBe(0);
     // A portrait phone stays empty even under an override.
     expect(displayBudget(vast, phone(412, 839), { override: 12 })).toBe(0);
+  });
+
+  it('keeps every upright viewport up to 500 px wide empty, whatever the device; never a landscape one', () => {
+    expect(narrowPortrait({ w: 412, h: 839 })).toBe(true);
+    expect(narrowPortrait({ w: 500, h: 501 })).toBe(true);
+    expect(narrowPortrait({ w: 501, h: 900 })).toBe(false);
+    expect(narrowPortrait({ w: 500, h: 500 })).toBe(false); // square is not upright
+    expect(narrowPortrait({ w: 844, h: 390 })).toBe(false);
+    expect(narrowPortrait({ w: 1200, h: 480 })).toBe(false);
+    expect(narrowPortrait(null)).toBe(false);
+    // With a mouse, with touch, even under a debug override.
+    for (const touch of [false, true]) {
+      const device = { viewport: { w: 412, h: 839 }, screen: { w: 1920, h: 1080 }, touch };
+      expect(displayBudget(gutters(2000, 2000), device)).toBe(0);
+      expect(displayBudget(gutters(2000, 2000), device, { override: 12 })).toBe(0);
+    }
+    // The short desktop window is still a desktop, and a phone held sideways still holds two.
+    expect(displayBudget(gutters(300, 330), desk(1200, 480))).toBe(3);
+    expect(displayBudget(gutters(300, 330), phone(844, 390))).toBe(2);
   });
 
   it('tells a phone by its device, and which way up by its viewport', () => {
@@ -646,19 +669,22 @@ describe('the colony', () => {
   });
 
   it('lets a follower that falls far behind give up', () => {
+    const left = [regions[0]]; // one gutter, and the pair a few steps apart in it
     const colony = createColony({ random: createRandom(5), tuning: LINGER });
-    for (let t = 0; t < 12; t += FRAME) { if (t < FRAME) colony.summon(2); colony.step(FRAME, regions, 2); }
+    for (let t = 0; t < 12; t += FRAME) { if (t < FRAME) colony.summon(2); colony.step(FRAME, left, 2); }
+    const [a, b] = colony.ants;
+    Object.assign(b, { x: a.x + (a.x < left[0].x + left[0].w / 2 ? 40 : -40), y: a.y, targetX: a.x, targetY: a.y });
     colony.socialize('follow');
     let follower = null;
     for (let t = 0; t < 30 && !follower; t += FRAME) {
-      colony.step(FRAME, regions, 2);
+      colony.step(FRAME, left, 2);
       follower = colony.ants.find((a) => a.mode === 'follow') ?? null;
     }
     expect(follower).not.toBe(null);
     // Its leader is suddenly well out of reach (a wild sprint, for the test).
     const leader = follower.partner;
     leader.y = leader.y < 400 ? leader.y + 400 : leader.y - 400;
-    colony.step(FRAME, regions, 2);
+    colony.step(FRAME, left, 2);
     expect(follower.mode).toBe('solo');
     expect(follower.partner).toBe(null);
   });
@@ -761,6 +787,258 @@ describe('the colony', () => {
     } });
     expect(maxTurn).toBeLessThanOrEqual(AMBIENT.turnRate * 2.5 * FRAME + 1e-9);
   });
+  describe('crumbs', () => {
+    const K = AMBIENT.crumb;
+    const MAX_STEP = AMBIENT.speed[1] * FRAME; // the farthest an ant walks in one frame
+
+    /** Six lingering ants, a crumb asked for at 8 s; `each(colony, t)` every frame from then on. */
+    function crumbRun(seed, seconds, { rooms = regions, each, limit = 6, social = true, tuning = LINGER } = {}) {
+      return simulate(seed, 8 + seconds, { tuning, rooms, limit, social, each: (colony, t) => {
+        if (t < FRAME) colony.summon(limit);
+        if (Math.abs(t - 8) < FRAME / 2) colony.crumble();
+        if (t >= 8) each?.(colony, t);
+      } });
+    }
+
+    /** The crumb's whole outline, as a box. */
+    const outline = ({ x, y }) => ({ x: x - K.radius, y: y - K.radius, w: K.radius * 2, h: K.radius * 2 });
+    const within = (inner, outer) => inner.x >= outer.x - 1e-6 && inner.y >= outer.y - 1e-6
+      && inner.x + inner.w <= outer.x + outer.w + 1e-6 && inner.y + inner.h <= outer.y + outer.h + 1e-6;
+
+    /** Follow one crumb from the request to its end: per-frame copies of it and of whoever claims it. */
+    function story(seed, seconds = 40, options = {}) {
+      const frames = [];
+      let claimer = null;
+      crumbRun(seed, seconds, { ...options, each: (colony, t) => {
+        const c = colony.crumb;
+        if (c.claim && claimer === null) claimer = colony.ants.indexOf(c.claim);
+        const a = claimer === null ? null : colony.ants[claimer];
+        frames.push({ t, crumb: { state: c.state, x: c.x, y: c.y, alpha: c.alpha, region: c.region, claim: c.claim },
+          ant: a && { state: a.state, mode: a.mode, cargo: a.cargo, x: a.x, y: a.y, heading: a.heading, region: a.region, portal: a.portal },
+          count: colony.count, spell: colony.spell,
+          others: colony.ants.map((o) => ({ state: o.state, mode: o.mode, cargo: o.cargo, x: o.x, y: o.y })) });
+        options.each?.(colony, t);
+      } });
+      return { frames, claimer };
+    }
+
+    it.each([1, 2, 3, 4, 5, 6])('turns up only among settled ants, well inside a region and clear of everyone (seed %i)', (seed) => {
+      const { frames } = story(seed, 10);
+      const first = frames.find((f) => f.crumb.state === 'lying');
+      expect(first).toBeDefined();
+      expect(first.count).toBeGreaterThan(0);
+      expect(first.spell).toBe('active');
+      expect(regions).toContain(first.crumb.region);
+      // Room for a whole ant to stand over it, inside the region.
+      expect(within(outline(first.crumb), inflate(first.crumb.region, -(AMBIENT.footprint + K.mouth)))).toBe(true);
+      expect(intersects(outline(first.crumb), inflate(DESKTOP.game, AMBIENT.clearance))).toBe(false);
+      for (const o of first.others) {
+        if (o.state !== 'absent') expect(Math.hypot(o.x - first.crumb.x, o.y - first.crumb.y)).toBeGreaterThanOrEqual(AMBIENT.spacing * 2);
+      }
+      // It fades in rather than popping into view.
+      expect(first.crumb.alpha).toBeLessThan(0.1);
+    });
+
+    it('never turns up without ants, space or an active colony', () => {
+      for (const [limit, rooms] of [[0, regions], [6, []]]) {
+        const { colony } = simulate(7, 60, { limit, rooms, each: (c, t) => { if (t < FRAME) { c.summon(6); c.crumble(); } } });
+        expect(colony.crumb.state).toBe('none');
+      }
+      // Quiet spells bring none either: requested before anyone is about, it waits for them.
+      const { counts, colony } = simulate(8, 2, { each: (c, t) => { if (t < FRAME) c.crumble(); expect(c.crumb.state).toBe('none'); } });
+      expect(Math.max(...counts)).toBe(0);
+      expect(colony.crumb.state).toBe('none');
+    });
+
+    it.each([2, 3, 5, 7])('is noticed by a free ant close by, which walks over and looks it over, facing it (seed %i)', (seed) => {
+      const { frames, claimer } = story(seed);
+      expect(claimer).not.toBe(null);
+      const claimed = frames.findIndex((f) => f.crumb.claim);
+      const at = frames[claimed];
+      expect(at.crumb.alpha).toBe(1); // noticed once fully there
+      expect(Math.hypot(at.ant.x - at.crumb.x, at.ant.y - at.crumb.y)).toBeLessThanOrEqual(K.notice + MAX_STEP);
+      expect(at.ant.mode).toBe('forage');
+      // Investigating: standing still with its jaws at the crumb, turned toward it, for a moment.
+      const looking = frames.filter((f, i) => i > claimed && f.ant.mode === 'forage' && f.ant.state === 'paused');
+      expect(looking.length * FRAME).toBeGreaterThanOrEqual(K.investigate[0] - 2 * FRAME);
+      for (const f of looking) expect(Math.hypot(f.ant.x - f.crumb.x, f.ant.y - f.crumb.y)).toBeLessThanOrEqual(K.mouth + 4);
+      const lifted = frames.findIndex((f) => f.crumb.state === 'carried');
+      expect(lifted).toBeGreaterThan(claimed);
+      const before = frames[lifted - 1];
+      const toward = Math.atan2(before.crumb.y - before.ant.y, before.crumb.x - before.ant.x);
+      expect(Math.abs(Math.atan2(Math.sin(toward - before.ant.heading), Math.cos(toward - before.ant.heading)))).toBeLessThan(0.35);
+    });
+
+    it.each([2, 3, 5, 7])('is lifted into the jaws and held there, never jumping (seed %i)', (seed) => {
+      const { frames } = story(seed);
+      const lifted = frames.findIndex((f) => f.crumb.state === 'carried');
+      expect(lifted).toBeGreaterThan(0);
+      let jump = 0;
+      for (let i = 1; i < frames.length; i++) {
+        const [a, b] = [frames[i - 1].crumb, frames[i].crumb];
+        if (a.state === 'none' || b.state === 'none') continue;
+        jump = Math.max(jump, Math.hypot(b.x - a.x, b.y - a.y));
+      }
+      // At most a step and a turn of the head in one frame: the crumb never teleports.
+      expect(jump).toBeLessThan(MAX_STEP + AMBIENT.turnRate * 2.5 * FRAME * K.mouth + 0.5);
+      // Once lifted, it sits exactly in the jaws: a stable attachment.
+      const settledAt = lifted + Math.ceil(K.lift / FRAME) + 1;
+      let held = 0;
+      for (const f of frames.slice(settledAt)) {
+        if (f.crumb.state !== 'carried') break;
+        held++;
+        expect(f.crumb.x).toBeCloseTo(f.ant.x + Math.cos(f.ant.heading) * K.mouth, 9);
+        expect(f.crumb.y).toBeCloseTo(f.ant.y + Math.sin(f.ant.heading) * K.mouth, 9);
+      }
+      expect(held).toBeGreaterThan(30);
+    });
+
+    it.each([2, 3, 5, 7, 11, 12])('is carried slowly home, within the region, out through one of its portals (seed %i)', (seed) => {
+      const { frames } = story(seed, 60);
+      const lifted = frames.findIndex((f) => f.crumb.state === 'carried');
+      expect(lifted).toBeGreaterThan(0);
+      let fastest = 0, leaving = null;
+      for (let i = lifted + 1; i < frames.length; i++) {
+        const [a, b] = [frames[i - 1], frames[i]];
+        if (b.ant.state === 'absent') {
+          // Home: both are gone together, beyond the portal it walked out of.
+          expect(b.crumb.state).toBe('none');
+          expect(leaving).not.toBe(null);
+          expect(a.ant.region.portals).toContain(leaving);
+          const r = a.ant.region;
+          const out = { left: a.ant.x < r.x, right: a.ant.x > r.x + r.w, top: a.ant.y < r.y, bottom: a.ant.y > r.y + r.h }[leaving];
+          expect(out).toBe(true);
+          return;
+        }
+        fastest = Math.max(fastest, Math.hypot(b.ant.x - a.ant.x, b.ant.y - a.ant.y));
+        if (b.ant.state === 'leaving') leaving = b.ant.portal;
+        expect(b.ant.cargo).toBe(true);
+        // The crumb's whole outline stays in the region (or beyond its portal, out of sight, on the way out).
+        const r = b.ant.region;
+        if (b.ant.state !== 'leaving') expect(within(outline(b.crumb), r)).toBe(true);
+        expect(intersects(outline(b.crumb), inflate(DESKTOP.game, AMBIENT.clearance - 0.01))).toBe(false);
+        // Slower than usual.
+        expect(fastest).toBeLessThanOrEqual(AMBIENT.speed[1] * K.pace * FRAME + 1e-9);
+      }
+      throw new Error('the carrier never got home');
+    });
+
+    it('fades away again if nobody notices it', () => {
+      // Nobody ever notices: it lies there for its while, then fades out.
+      const blind = { ...LINGER, crumb: { ...K, notice: 0 } };
+      const { frames } = story(4, 40, { tuning: blind });
+      const lying = frames.filter((f) => f.crumb.state === 'lying');
+      expect(lying.length * FRAME).toBeGreaterThanOrEqual(K.linger[0]);
+      expect(lying.length * FRAME).toBeLessThanOrEqual(K.linger[1] + 2 * K.fade + 0.1);
+      const gone = frames.findIndex((f, i) => i > 0 && f.crumb.state === 'none' && frames[i - 1].crumb.state === 'lying');
+      expect(frames[gone - 1].crumb.alpha).toBeLessThan(0.05); // faded, not snatched away
+    });
+
+    it('is one crumb for one ant: the others, and ants busy with each other, leave it alone', () => {
+      let foragers = 0, socialForagers = 0, carried = 0;
+      for (const seed of [21, 22, 23, 24]) {
+        simulate(seed, 240, { tuning: LINGER, each: (colony, t) => {
+          if (t < FRAME) colony.summon(6);
+          if (Math.round(t * 60) % 600 === 0) { colony.crumble(); colony.socialize(); }
+          const busy = colony.ants.filter((a) => a.mode === 'forage' || a.cargo);
+          expect(busy.length).toBeLessThanOrEqual(1);
+          if (busy.length) {
+            foragers++;
+            expect(colony.crumb.claim).toBe(busy[0]);
+          }
+          for (const a of colony.ants) if (['follow', 'greet', 'drift'].includes(a.mode) && (a.cargo || a.crumb)) socialForagers++;
+          if (colony.crumb.state === 'carried') carried++;
+        } });
+      }
+      expect(foragers).toBeGreaterThan(0);
+      expect(carried).toBeGreaterThan(0);
+      expect(socialForagers).toBe(0);
+    });
+
+    it('is never claimed by an ant in a social moment, or by a leader being followed', () => {
+      const colony = createColony({ random: createRandom(31), tuning: LINGER });
+      const left = [regions[0]];
+      for (let t = 0; t < 12; t += FRAME) { if (t < FRAME) colony.summon(2); colony.step(FRAME, left, 2); }
+      const [a, b] = colony.ants;
+      Object.assign(b, { x: a.x, y: a.y + (a.y < 400 ? 40 : -40) });
+      colony.socialize('follow');
+      for (let t = 0; t < 3 && !colony.ants.some((x) => x.mode === 'follow'); t += FRAME) colony.step(FRAME, left, 2);
+      const follower = colony.ants.find((x) => x.mode === 'follow');
+      expect(follower).toBeDefined();
+      // A crumb right between them, fully there and waiting.
+      Object.assign(colony.crumb, { state: 'lying', x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, alpha: 1, life: 30,
+        region: left[0], claim: null });
+      let together = 0;
+      for (let t = 0; t < 10 && follower.mode === 'follow'; t += FRAME) {
+        colony.step(FRAME, left, 2);
+        together++;
+        expect(colony.crumb.claim).toBe(null);
+      }
+      expect(together).toBeGreaterThan(30);
+      // Once the moment is over, one of them is free to notice it after all.
+      let claimed = false;
+      for (let t = 0; t < 20 && !claimed; t += FRAME) {
+        colony.step(FRAME, left, 2);
+        claimed = colony.crumb.claim !== null || colony.crumb.state === 'carried';
+      }
+      expect(claimed).toBe(true);
+    });
+
+    it('is reproducible from a seed, and different seeds tell different stories', () => {
+      const trace = (seed) => story(seed, 30).frames.filter((f, i) => i % 20 === 0)
+        .map((f) => `${f.crumb.state}${f.crumb.claim ? '*' : ''}@${f.crumb.x.toFixed(3)},${f.crumb.y.toFixed(3)}`);
+      expect(trace(3)).toEqual(trace(3));
+      expect(trace(3)).not.toEqual(trace(4));
+    });
+
+    it('goes at once with its region on a layout change, lying or carried; a surviving region keeps it', () => {
+      for (const until of [(c) => c.crumb.state === 'lying' && c.crumb.claim, (c) => c.crumb.state === 'carried']) {
+        // Run to that moment, then cover the crumb's gutter.
+        let done = false;
+        crumbRun(5, 40, { each: (c) => {
+          if (done || !until(c)) return;
+          done = true;
+          const home = c.crumb.region ?? c.crumb.claim.region;
+          const kept = regions.filter((r) => r !== home);
+          // The same layout again keeps everything as it was.
+          const state = c.crumb.state;
+          c.relayout(regions);
+          expect(c.crumb.state).toBe(state);
+          c.relayout(kept);
+          expect(c.crumb.state).toBe('none');
+          expect(c.ants.some((a) => a.mode === 'forage' || a.cargo || a.crumb)).toBe(false);
+          for (const a of present(c)) expect(kept).toContain(a.region);
+        } });
+        expect(done).toBe(true);
+      }
+    });
+
+    it('keeps going in Low graphics (it is not a social moment), and leaves the population alone', () => {
+      let carried = 0, most = 0;
+      crumbRun(2, 40, { social: false, limit: 2, each: (colony) => {
+        if (colony.crumb.state === 'carried') carried++;
+        most = Math.max(most, colony.count);
+      } });
+      expect(carried).toBeGreaterThan(0);
+      expect(most).toBeLessThanOrEqual(2);
+    });
+
+    it('stays uncommon in the colony\'s own rhythm: a few an hour, never two at once', () => {
+      let appeared = 0, carried = 0, was = 'none';
+      for (const seed of [41, 42, 43]) {
+        simulate(seed, 1200, { each: (colony) => {
+          const now = colony.crumb.state;
+          if (now === 'lying' && was === 'none') appeared++;
+          if (now === 'carried' && was === 'lying') carried++;
+          was = now;
+        } });
+      }
+      const perTen = (n) => n / 6; // three runs of twenty minutes
+      expect(carried).toBeGreaterThan(0);
+      expect(perTen(appeared)).toBeLessThan(4);
+      expect(perTen(carried)).toBeLessThan(3);
+    });
+  });
 });
 
 describe('the ant painter', () => {
@@ -793,6 +1071,42 @@ describe('the ant painter', () => {
     }
     expect(reach).toBeGreaterThan(7); // the measurement saw the legs
     expect(reach).toBeLessThanOrEqual(AMBIENT.footprint);
+  });
+
+  it('draws a crumb within its radius, small beside the ant, and held within the ant\'s footprint', () => {
+    let reach = 0, lineWidth = 1;
+    const ctx = {
+      save() {}, restore() {}, translate() {}, rotate() {}, beginPath() {}, closePath() {}, stroke() {}, fill() {},
+      globalAlpha: 1, fillStyle: null, strokeStyle: null,
+      set lineWidth(w) { lineWidth = w; }, get lineWidth() { return lineWidth; },
+      moveTo(x, y) { reach = Math.max(reach, Math.hypot(x, y) + lineWidth / 2); },
+      lineTo(x, y) { reach = Math.max(reach, Math.hypot(x, y) + lineWidth / 2); },
+      arc(x, y, r) { reach = Math.max(reach, Math.hypot(x, y) + r); },
+    };
+    const random = createRandom(3);
+    for (let n = 0; n < 50; n++) {
+      const shape = Float64Array.from({ length: 7 }, () => random.range(0.72, 1));
+      for (const quality of ['high', 'low']) drawCrumb(ctx, { x: 0, y: 0, angle: 0, alpha: 1, shape }, { quality });
+    }
+    drawCrumb(ctx, { x: 0, y: 0, shape: Float64Array.from({ length: 7 }, () => 1) });
+    expect(reach).toBeGreaterThan(AMBIENT.crumb.radius * 0.8);
+    expect(reach).toBeLessThanOrEqual(AMBIENT.crumb.radius + 1e-9);
+    // Comparable to the ant's body (its gaster is 6 px long), and in its jaws it stays inside the ant's footprint.
+    expect(AMBIENT.crumb.radius * 2).toBeLessThan(6);
+    expect(AMBIENT.crumb.mouth + AMBIENT.crumb.radius).toBeLessThanOrEqual(AMBIENT.footprint);
+  });
+
+  it('draws a plainer crumb in Low quality, honours its fade, and leaves the context as it found it', () => {
+    const shape = Float64Array.from({ length: 7 }, () => 0.9);
+    const high = fakeContext(), low = fakeContext(), faded = fakeContext();
+    drawCrumb(high, { x: 5, y: 5, angle: 1, alpha: 1, shape }, { quality: 'high' });
+    drawCrumb(low, { x: 5, y: 5, angle: 1, alpha: 1, shape }, { quality: 'low' });
+    drawCrumb(faded, { x: 5, y: 5, alpha: 0, shape });
+    expect(low.calls.lineTo ?? 0).toBe(0);
+    expect(high.calls.lineTo).toBeGreaterThan(0);
+    expect(low.calls.fill).toBeLessThan(high.calls.fill);
+    expect(high.calls.save).toBe(high.calls.restore);
+    expect(faded.calls.save ?? 0).toBe(0); // nothing at all while invisible
   });
 
   it('allocates no per-ant arrays while drawing', () => {
@@ -917,6 +1231,120 @@ describe('the ambient layer', () => {
       for (const a of s.ants) expect(intersects(footprint(a), inflate(panel, AMBIENT.clearance - 0.01))).toBe(false);
     }
     expect(shown).toBeGreaterThan(0);
+    ambient.dispose();
+  });
+
+  /** A 1920 × 1080 page with six ants out and a crumb asked for; runs until `until(snapshot)` (or fails). */
+  function crumbPage(seed, until, quality = () => 'high') {
+    const page = fakePage({ stage: { left: 197, top: 100, width: 1526, height: 857 }, game: { left: 461, top: 100, width: 998, height: 857 }, viewport: [1920, 1080] });
+    const ambient = createAmbient({ canvas: page.layer, seed, quality });
+    untilVisible(ambient, 6);
+    run(ambient, 4);
+    ambient.crumble();
+    for (let i = 0; i < 60 * 60 && !until(ambient.snapshot()); i++) ambient.update(FRAME, PLAYING);
+    expect(until(ambient.snapshot())).toBe(true);
+    return { page, ambient };
+  }
+
+  it('draws a lying crumb under the ants and clears its spot too', () => {
+    const { page, ambient } = crumbPage(3, (s) => s.crumb?.state === 'lying' && s.crumb.alpha === 1);
+    const calls = page.context.calls;
+    ambient.update(FRAME, PLAYING);
+    const [clears, saves] = [calls.clearRect, calls.save];
+    ambient.update(FRAME, PLAYING);
+    const s = ambient.snapshot();
+    expect(s.crumb).not.toBe(null);
+    expect(calls.save - saves).toBe(s.count + 1); // every ant and the crumb
+    expect(calls.clearRect - clears).toBe(s.count + 1); // last frame's spots, the crumb's included
+    ambient.dispose();
+  });
+
+  it('holds a carried crumb still while paused or unfocused, hides it under modals, and drops it for reduced motion', () => {
+    const { page, ambient } = crumbPage(5, (s) => s.crumb?.state === 'carried');
+    const where = () => { const s = ambient.snapshot(); return [s.crumb, s.ants.map((a) => [a.slot, a.x, a.y])]; };
+    const paused = { ...PLAYING, phase: 'paused', pausedFrom: 'playing' };
+    ambient.update(FRAME, paused);
+    const here = where();
+    const before = page.context.calls.lineTo;
+    run(ambient, 1, paused);
+    expect(where()).toEqual(here);
+    expect(page.context.calls.lineTo).toBe(before); // a still scene is not redrawn
+    expect(page.layer.hidden).toBe(false);
+    page.win.dispatchEvent(new Event('blur'));
+    run(ambient, 0.5);
+    expect(where()).toEqual(here);
+    page.win.dispatchEvent(new Event('focus'));
+    run(ambient, 0.5, { ...PLAYING, blocked: true });
+    expect(page.layer.hidden).toBe(true);
+    expect(where()).toEqual(here);
+    // Back in play, the carrier walks on with it.
+    run(ambient, 0.5);
+    expect(ambient.snapshot().crumb?.state ?? 'none').not.toBe('lying');
+    page.win.media.matches = true;
+    page.win.media.dispatchEvent(Object.assign(new Event('change'), { matches: true }));
+    ambient.update(FRAME, PLAYING);
+    expect(ambient.snapshot()).toMatchObject({ crumb: null, count: 0, hidden: true });
+    ambient.crumble();
+    ambient.summon(6);
+    run(ambient, 20);
+    expect(ambient.snapshot().crumb).toBe(null);
+    ambient.dispose();
+  });
+
+  it('carries on with the crumb in a plainer look when graphics turn Low mid-carry', () => {
+    let look = 'high';
+    const { page, ambient } = crumbPage(8, (s) => s.crumb?.state === 'carried', () => look);
+    const carrier = ambient.snapshot().crumb.claim;
+    look = 'low';
+    const arcs = page.context.calls.arc ?? 0;
+    ambient.update(FRAME, PLAYING);
+    const s = ambient.snapshot();
+    expect(s.quality).toBe('low');
+    expect(s.crumb).toMatchObject({ state: 'carried', claim: carrier });
+    expect(s.ants.find((a) => a.slot === carrier).cargo).toBe(true);
+    expect(page.context.calls.arc).toBeGreaterThan(arcs); // drawn as a plain dot now
+    // It still gets home, and the colony settles to Low's two.
+    let home = false;
+    for (let t = 0; t < 40 && !home; t += FRAME) {
+      ambient.update(FRAME, PLAYING);
+      const now = ambient.snapshot();
+      home = now.crumb === null && !now.ants.some((a) => a.slot === carrier && a.cargo);
+    }
+    expect(home).toBe(true);
+    run(ambient, 30);
+    expect(ambient.snapshot().count).toBeLessThanOrEqual(2);
+    ambient.dispose();
+  });
+
+  it('drops the crumb, and its carrier, at once when a panel covers their gutter', () => {
+    const { page, ambient } = crumbPage(5, (s) => s.crumb?.state === 'carried');
+    const s = ambient.snapshot();
+    const region = s.crumb.region ?? s.ants.find((a) => a.slot === s.crumb.claim).region;
+    // A panel over the whole of that gutter.
+    page.addPanel({ left: 197 + region.x, top: 100 + region.y, width: region.w, height: region.h });
+    for (let t = 0; t < 2; t += FRAME) {
+      ambient.update(FRAME, PLAYING);
+      const now = ambient.snapshot();
+      if (now.hidden) continue;
+      expect(now.crumb).toBe(null);
+      expect(now.ants.some((a) => a.slot === s.crumb.claim)).toBe(false);
+    }
+    ambient.dispose();
+  });
+
+  it('keeps a narrow portrait desktop window empty, and lets ants back when it is widened', () => {
+    const narrow = { stage: { left: 9, top: 200, width: 394, height: 527 }, game: { left: 9, top: 300, width: 394, height: 327 }, viewport: [412, 839] };
+    const page = fakePage(narrow); // a mouse and a desktop screen: not a phone
+    const ambient = createAmbient({ canvas: page.layer, seed: 3 });
+    ambient.summon(6);
+    run(ambient, 10);
+    expect(ambient.snapshot()).toMatchObject({ shape: null, budget: 0, room: 0, count: 0, hidden: true, width: 0 });
+    expect(ambient.snapshot().space).toBeGreaterThan(0); // the geometry alone would allow some
+    page.relayout({ stage: { left: 27, top: 120, width: 1146, height: 340 }, game: { left: 410, top: 120, width: 380, height: 340 }, viewport: [1200, 480] });
+    page.win.dispatchEvent(new Event('resize'));
+    run(ambient, 0.3);
+    expect(ambient.snapshot().budget).toBeGreaterThan(2);
+    untilVisible(ambient, 2);
     ambient.dispose();
   });
 
@@ -1135,13 +1563,14 @@ describe('isolation from the game', () => {
     ambient.dispose();
   });
 
-  it('leaves seeded gameplay identical with a whole colony: state, events and random streams', () => {
+  it('leaves seeded gameplay identical with a whole colony and its crumbs: state, events and random streams', () => {
     function play(withAmbient, ambientSeed) {
       const game = createGame({ seed: 77 });
       const page = fakePage({ stage: { left: 197, top: 100, width: 1526, height: 857 }, game: { left: 461, top: 100, width: 998, height: 857 }, viewport: [1920, 1080] });
       const ambient = withAmbient ? createAmbient({ canvas: page.layer, seed: ambientSeed, ants: 12 }) : null;
       ambient?.summon(12);
       const log = [];
+      let crumbs = 0;
       game.primaryAction();
       for (let i = 0; i < 60 * 40; i++) {
         const input = { left: Math.floor(i / 80) % 2 === 0, right: Math.floor(i / 80) % 2 === 1, fire: true };
@@ -1152,7 +1581,8 @@ describe('isolation from the game', () => {
         for (const event of game.drainEvents()) log.push(`${i}:${event.type}`);
         const before = withAmbient && i % 97 === 0 ? JSON.stringify(game.state) : null;
         const s = game.state;
-        if (i % 600 === 300) ambient?.socialize();
+        if (i % 600 === 300) { ambient?.socialize(); ambient?.crumble(); }
+        if (withAmbient && i % 30 === 0 && ambient.snapshot().crumb) crumbs++;
         // Stepped a varying number of times, as a slow or fast display would.
         for (let k = 0; k < (i % 3); k++) {
           ambient?.update(FRAME, { phase: s.phase, pausedFrom: s.pausedFrom, offer: !!s.offer, blocked: false, holding: false });
@@ -1161,7 +1591,7 @@ describe('isolation from the game', () => {
       }
       const seen = ambient?.snapshot().count;
       ambient?.dispose();
-      return { state: JSON.stringify(game.state), log, seen };
+      return { state: JSON.stringify(game.state), log, seen, crumbs };
     }
     const plain = play(false);
     const decorated = play(true, 1);
@@ -1170,5 +1600,6 @@ describe('isolation from the game', () => {
     expect(decorated.state).toBe(plain.state);
     expect(otherSeed.state).toBe(plain.state);
     expect(plain.log.some((entry) => entry.endsWith(':kill'))).toBe(true);
+    expect(decorated.crumbs + otherSeed.crumbs).toBeGreaterThan(0); // crumbs came and went meanwhile
   }, 30_000);
 });

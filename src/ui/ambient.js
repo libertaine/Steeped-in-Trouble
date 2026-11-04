@@ -1,6 +1,6 @@
 // The ambient layer's page adapter: a decorative canvas over the stage on
 // which a small colony of ants now and then wanders the empty gutters beside
-// the cup.
+// the cup, and once in a while carries a crumb away.
 //
 // It is stepped by the main loop (no animation loop of its own), never
 // receives input (pointer-events: none, aria-hidden, not focusable) and only
@@ -11,7 +11,8 @@
 import { createRandom } from '../core/random.js';
 import { hasPrimaryTouch } from '../input/settings.js';
 import {
-  AMBIENT, ambientPolicy, capacity, createColony, displayBudget, drawAnt, phoneShape, populationLimit, safeRegions,
+  AMBIENT, ambientPolicy, capacity, createColony, displayBudget, drawAnt, drawCrumb, phoneShape, populationLimit,
+  safeRegions,
 } from '../rendering/ambient.js';
 
 const MAX_PIXEL_RATIO = 2;
@@ -96,8 +97,8 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
   let dirty = true;
   let settle = 0;
   let ratio = 0;
-  // Where each ant was last drawn, so only those spots are cleared.
-  const drawnAt = new Float64Array(AMBIENT.slots * 2);
+  // Where each ant (and the crumb) was last drawn, so only those spots are cleared.
+  const drawnAt = new Float64Array((AMBIENT.slots + 1) * 2);
   let drawnCount = 0;
   let drawn = false;
   let drawnQuality = null;
@@ -184,20 +185,32 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
     drawnCount = 0;
   }
 
-  // Every old spot is cleared before any ant is drawn, so neighbours are never clipped.
+  function mark(x, y) {
+    drawnAt[drawnCount * 2] = x;
+    drawnAt[drawnCount * 2 + 1] = y;
+    drawnCount++;
+  }
+
+  // Every old spot is cleared before any ant is drawn, so neighbours are never
+  // clipped. A lying crumb is drawn under the ants, a carried one in its jaws.
   function paint(moving) {
     clear();
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     drawnQuality = quality();
+    const crumb = colony.crumb;
+    if (crumb.state === 'lying') {
+      drawCrumb(ctx, crumb, { quality: drawnQuality });
+      mark(crumb.x, crumb.y);
+    }
     for (let i = 0; i < colony.ants.length; i++) {
       const ant = colony.ants[i];
       if (ant.state === 'absent') continue;
       drawAnt(ctx, { x: ant.x, y: ant.y, heading: ant.heading, gait: ant.gait,
         moving: moving && ant.state !== 'paused', twitch: ant.twitch }, { quality: drawnQuality });
-      drawnAt[drawnCount * 2] = ant.x;
-      drawnAt[drawnCount * 2 + 1] = ant.y;
-      drawnCount++;
+      mark(ant.x, ant.y);
     }
+    // Within its carrier's footprint, so the carrier's spot covers it.
+    if (crumb.state === 'carried') drawCrumb(ctx, crumb, { quality: drawnQuality });
     drawn = true;
   }
 
@@ -228,7 +241,7 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
       limit = populationLimit(room, look);
       // Low graphics keeps to plain wandering: no social moments.
       if (policy === 'run') colony.step(dt, regions, limit, { social: look !== 'low' });
-      const visible = colony.count > 0 && (policy === 'run' || policy === 'frozen');
+      const visible = (colony.count > 0 || colony.crumb.state !== 'none') && (policy === 'run' || policy === 'frozen');
       show(visible);
       if (!visible) { clear(); return; }
       // A still colony is only redrawn when uncovered or its look changes.
@@ -242,6 +255,7 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
     snapshot() {
       const box = (r) => r && { x: r.x, y: r.y, w: r.w, h: r.h };
       const slot = (ant) => colony.ants.indexOf(ant);
+      const crumb = colony.crumb;
       return {
         policy, room, space, budget, limit, shape, count: colony.count, spell: colony.spell, reduced, focused,
         drawn, quality: drawnQuality, hidden: canvas.hidden, width: canvas.width, height: canvas.height,
@@ -249,8 +263,10 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
         regions: regions.map((r) => ({ ...box(r), portals: [...r.portals] })),
         ants: colony.ants.filter((ant) => ant.state !== 'absent').map((ant) => ({
           slot: slot(ant), state: ant.state, mode: ant.mode, x: ant.x, y: ant.y, heading: ant.heading,
-          partner: ant.partner ? slot(ant.partner) : null, region: box(ant.region),
+          partner: ant.partner ? slot(ant.partner) : null, region: box(ant.region), cargo: ant.cargo,
         })),
+        crumb: crumb.state === 'none' ? null : { state: crumb.state, x: crumb.x, y: crumb.y, alpha: crumb.alpha,
+          claim: crumb.claim ? slot(crumb.claim) : null, region: box(crumb.region) },
       };
     },
 
@@ -262,6 +278,11 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
     /** ?debug only: the next social moment now ('follow' | 'greet' | 'drift' | any), once ants allow. */
     socialize(kind) {
       colony.socialize(kind);
+    },
+
+    /** ?debug only: a crumb near a wandering ant, as soon as one is free. */
+    crumble() {
+      colony.crumble();
     },
 
     dispose() {

@@ -15,6 +15,7 @@ export const AMBIENT = Object.freeze({
   lowQuality: 2, // ceiling in Low graphics
   phoneSide: 500, // a touch-first device whose whole screen's short side is at most this is a phone
   phoneLandscape: 2, // ceiling on a phone held sideways; a portrait phone has none
+  narrowPortrait: 500, // an upright viewport at most this wide has none either, whatever the device
   clearance: 8, // CSS px kept clear around every protected rectangle
   footprint: 9, // radius containing the whole animated ant, legs and antennae included
   minCorridor: 32, // narrowest gutter (CSS px) a visitor may use
@@ -29,7 +30,7 @@ export const AMBIENT = Object.freeze({
   pause: [0.4, 1.8], // seconds of an occasional stop
   pauseChance: 0.3, // per waypoint reached
   spell: [40, 80], // seconds the colony keeps turning up before it quietens
-  empty: [12, 30], // seconds of empty gutters once the last ant has gone
+  empty: [24, 48], // seconds of empty gutters once the last ant has gone
   stagger: [2, 18], // seconds after a spell starts before each later ant arrives
   arrivalGap: [1, 3], // seconds at least between two arrivals: never a procession
   social: Object.freeze({
@@ -47,6 +48,22 @@ export const AMBIENT = Object.freeze({
     reach: 200, // farthest apart (CSS px) two ants can be to start meeting or drifting
     followReach: 110, // farthest a leader can be: a follower must be able to catch up
     lose: 150, // a follower left this far behind gives up
+  }),
+  crumb: Object.freeze({
+    every: [40, 90], // seconds of an active, populated colony between chances of a crumb
+    chance: 0.5, // that a chance brings one
+    near: [45, 100], // how far from a wandering ant it turns up
+    notice: 80, // an available ant this close may notice it
+    noticeRate: 0.8, // chance per second of noticing, while that close
+    linger: [15, 25], // seconds an unnoticed crumb lies there before it is gone
+    fade: 0.6, // seconds to appear, or to disappear unclaimed
+    approach: 8, // seconds allowed to reach it before losing interest
+    investigate: [0.8, 1.8], // seconds spent looking it over
+    lift: 0.25, // seconds to lift it into the jaws: it never jumps there
+    pace: 0.75, // carrying speed, as a share of its usual pace
+    pauseChance: 0.25, // per carrying waypoint: a stop to shift its grip
+    radius: 2.4, // the crumb's outline stays within this of its centre
+    mouth: 6.2, // a carried crumb's centre, ahead of the ant's; mouth + radius stays inside the footprint
   }),
 });
 
@@ -191,16 +208,24 @@ export function phoneShape({ viewport, screen, touch = false } = {}, { phoneSide
 }
 
 /**
+ * An upright viewport no wider than a phone (`narrowPortrait` CSS px), on
+ * any device: a narrow desktop window lays the cup out as a phone does.
+ */
+export function narrowPortrait(viewport, { narrowPortrait: widest = AMBIENT.narrowPortrait } = {}) {
+  return !!viewport && viewport.h > viewport.w && viewport.w <= widest;
+}
+
+/**
  * The display's population ceiling, before region capacity: none on a
- * portrait phone, where the cup fills the width and an ant would only crowd
- * it; otherwise scaled by the total safe area, and at most two on a phone
- * held sideways. `device` is as for phoneShape(). `override` (debug
- * profiling) replaces the scaled ceiling, never the portrait rule or the
- * slot count.
+ * portrait phone or in a narrow portrait viewport, where the cup fills the
+ * width and an ant would only crowd it; otherwise scaled by the total safe
+ * area, and at most two on a phone held sideways. `device` is as for
+ * phoneShape(). `override` (debug profiling) replaces the scaled ceiling,
+ * never the portrait rules or the slot count.
  */
 export function displayBudget(regions, device, { tuning = AMBIENT, override } = {}) {
   const shape = phoneShape(device, tuning);
-  if (shape === 'portrait') return 0;
+  if (shape === 'portrait' || narrowPortrait(device?.viewport, tuning)) return 0;
   let ceiling = 0;
   if (Number.isFinite(override)) ceiling = override;
   else {
@@ -224,6 +249,7 @@ const TRAIL = 12; // recent positions kept for a follower: 12 × 0.2 s
 const TRAIL_EVERY = 0.2;
 const UNBLOCK = 0.35; // seconds stuck behind another ant before choosing something else
 const GREET_WAIT = 3; // seconds one greeter waits for the other to arrive
+const SOCIAL = new Set(['follow', 'greet', 'drift']); // modes shared with other ants
 
 /**
  * One wandering ant: absent → entering → wandering (with pauses) → leaving →
@@ -238,6 +264,10 @@ const GREET_WAIT = 3; // seconds one greeter waits for the other to arrive
  * 'drift' the same way as a few others. Every mode ends by itself and the
  * ant goes back to wandering alone, which is the default.
  *
+ * On its own it can also 'forage': walk up to a crumb the colony offers it,
+ * look it over, lift it (`cargo`) and 'carry' it home through the nearest
+ * portal at a slower pace, with the odd stop to shift its grip.
+ *
  * `random` is a private cosmetic generator ({ next, range, int }).
  */
 export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers = null } = {}) {
@@ -247,9 +277,11 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
     targetX: 0, targetY: 0, segment: 0, wobble: 0, wobbleTime: 0, twitch: 0, blocked: 0,
     mode: 'solo', partner: null, social: 0, lag: 0, meetX: 0, meetY: 0, driftX: 0, driftY: 0, waited: 0,
     trail: new Float64Array(TRAIL * 2), trailHead: 0, trailCount: 0, trailTime: 0,
+    crumb: null, cargo: false, // the crumb it is after or carrying, and whether it holds it
   };
   const others = peers ?? [];
   const social = tuning.social;
+  const crumbs = tuning.crumb;
 
   const inner = (r) => inflate(r, -tuning.footprint);
   const clampX = (x) => Math.max(ant.region.x + tuning.footprint, Math.min(ant.region.x + ant.region.w - tuning.footprint, x));
@@ -262,6 +294,17 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
       const o = others[i];
       if (o === ant || o.state === 'absent') continue;
       nearest = Math.min(nearest, Math.hypot(o.x - x, o.y - y), Math.hypot(o.targetX - x, o.targetY - y));
+    }
+    return nearest;
+  }
+
+  function nearestOther() {
+    let nearest = null, best = Infinity;
+    for (let i = 0; i < others.length; i++) {
+      const o = others[i];
+      if (o === ant || o.state === 'absent') continue;
+      const d = Math.hypot(o.x - ant.x, o.y - ant.y);
+      if (d < best) { best = d; nearest = o; }
     }
     return nearest;
   }
@@ -279,8 +322,11 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
     return false;
   }
 
+  // A carrying ant goes a little slower.
+  const pace = () => random.range(...tuning.speed) * (ant.cargo ? crumbs.pace : 1);
+
   function newSegment(seconds) {
-    ant.speed = random.range(...tuning.speed);
+    ant.speed = pace();
     ant.segment = seconds;
   }
 
@@ -336,11 +382,70 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
     if (Math.hypot(ant.targetX - ant.x, ant.targetY - ant.y) < 30) endSocial();
   }
 
+  // Where it stands to pick up its crumb: just behind it, so its jaws are over it.
+  function approachPoint() {
+    const c = ant.crumb, dx = c.x - ant.x, dy = c.y - ant.y, d = Math.hypot(dx, dy) || 1;
+    ant.targetX = clampX(c.x - (dx / d) * crumbs.mouth);
+    ant.targetY = clampY(c.y - (dy / d) * crumbs.mouth);
+    newSegment(3);
+  }
+
+  // The side of its region nearest to it, which is the way home.
+  function nearestPortal() {
+    const r = ant.region;
+    let best = r.portals[0], bestDistance = Infinity;
+    for (const p of r.portals) {
+      const d = p === 'left' ? ant.x - r.x : p === 'right' ? r.x + r.w - ant.x
+        : p === 'top' ? ant.y - r.y : r.y + r.h - ant.y;
+      if (d < bestDistance) { bestDistance = d; best = p; }
+    }
+    return best;
+  }
+
+  // A carrier's next few steps toward home, a little either side of the
+  // straight line; once the edge is near it simply walks out.
+  function carryPoint() {
+    const portal = nearestPortal();
+    const [px, py] = portalPoint(portal, vertical(portal) ? ant.y : ant.x);
+    const dx = px - ant.x, dy = py - ant.y, d = Math.hypot(dx, dy) || 1;
+    if (d < 60) { leave(); return; }
+    const ahead = Math.min(d, random.range(50, 90)), aside = random.range(-14, 14);
+    ant.targetX = clampX(ant.x + (dx / d) * ahead - (dy / d) * aside);
+    ant.targetY = clampY(ant.y + (dy / d) * ahead + (dx / d) * aside);
+    newSegment(random.range(3, 5));
+  }
+
   function pickWaypoint() {
     if (ant.mode === 'follow') trailPoint();
     else if (ant.mode === 'greet') meetPoint();
     else if (ant.mode === 'drift') driftPoint();
+    else if (ant.mode === 'forage') approachPoint();
+    else if (ant.mode === 'carry') carryPoint();
     else wander();
+  }
+
+  /** Give up on a crumb it has not picked up (out of time, crumb gone, heading home). */
+  function endForage() {
+    const c = ant.crumb;
+    if (c && c.claim === ant) c.claim = null;
+    ant.crumb = null;
+    ant.mode = 'solo';
+    if (ant.state === 'wandering' || ant.state === 'paused') { ant.state = 'wandering'; wander(); }
+  }
+
+  // Its jaws close on the crumb; the colony eases the crumb up into them.
+  function pickUp() {
+    const c = ant.crumb;
+    c.state = 'carried';
+    c.lift = 0;
+    c.fromX = c.x;
+    c.fromY = c.y;
+    c.turn = c.angle - ant.heading;
+    ant.cargo = true;
+    ant.mode = 'carry';
+    ant.stay = Math.max(ant.stay, 30); // home is where it is going now; this is only a backstop
+    ant.state = 'wandering';
+    carryPoint();
   }
 
   /** Back to wandering alone, heading away from whoever it was with. */
@@ -419,30 +524,29 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
     return enterRegion(region);
   }
 
+  // Heading home drops any plan, but a carrier keeps its crumb.
   function leave(shift = 0) {
+    if (ant.mode === 'forage') endForage();
     ant.mode = 'solo';
     ant.partner = null;
     // Home is through any of the region's portals; the nearest one reads most naturally.
-    const r = ant.region;
-    let best = r.portals[0], bestDistance = Infinity;
-    for (const p of r.portals) {
-      const d = p === 'left' ? ant.x - r.x : p === 'right' ? r.x + r.w - ant.x
-        : p === 'top' ? ant.y - r.y : r.y + r.h - ant.y;
-      if (d < bestDistance) { bestDistance = d; best = p; }
-    }
+    const best = nearestPortal();
     ant.portal = best;
     [ant.targetX, ant.targetY] = portalPoint(best, (vertical(best) ? ant.y : ant.x) + shift);
-    ant.speed = random.range(...tuning.speed);
+    ant.speed = pace();
     ant.segment = Infinity;
     ant.state = 'leaving';
   }
 
-  /** Remove the visitor at once (screen change, layout change, reduced motion). */
+  /** Remove the visitor at once (screen change, layout change, reduced motion), and anything it carries. */
   function retire(cooldown = tuning.cooldown) {
+    if (ant.crumb?.claim === ant && !ant.cargo) ant.crumb.claim = null;
     ant.state = 'absent';
     ant.region = null;
     ant.mode = 'solo';
     ant.partner = null;
+    ant.crumb = null;
+    ant.cargo = false;
     ant.timer = random.range(...cooldown);
   }
 
@@ -505,9 +609,23 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
     ant.blocked = 0;
     if (ant.state === 'entering') entryTarget(vertical(ant.portal) ? ant.y : ant.x);
     else if (ant.state === 'leaving') leave(random.range(-40, 40));
-    else if (ant.mode === 'follow') pause(random.range(0.3, 0.8)); // waiting its turn
+    else if (ant.mode === 'follow' || ant.mode === 'forage') pause(random.range(0.3, 0.8)); // waiting its turn
+    else if (ant.mode === 'carry') carryPoint(); // a way round
     else if (ant.mode !== 'solo') endSocial();
-    else wander();
+    else {
+      // Step away from whoever is in the way rather than try another path past
+      // them (a follower waiting close behind would otherwise hold it there).
+      const o = nearestOther();
+      if (o) sidestep(o); else wander();
+    }
+  }
+
+  // A few steps away from `o`, a little to one side.
+  function sidestep(o) {
+    const angle = Math.atan2(ant.y - o.y, ant.x - o.x) + random.range(-1, 1), d = random.range(30, 70);
+    ant.targetX = clampX(ant.x + Math.cos(angle) * d);
+    ant.targetY = clampY(ant.y + Math.sin(angle) * d);
+    newSegment(3);
   }
 
   function pause(seconds) {
@@ -531,7 +649,13 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
   // A social moment ends with its time, or as soon as its partner is gone
   // (a follower left far behind has lost its leader too).
   function checkSocial(dt) {
-    if (ant.mode === 'solo') return;
+    if (ant.mode === 'solo' || ant.mode === 'carry') return;
+    if (ant.mode === 'forage') {
+      // Interest lasts while it walks over, and while the crumb is still there for it.
+      if (ant.state !== 'paused') ant.social -= dt;
+      if (ant.crumb.state !== 'lying' || ant.crumb.claim !== ant || ant.social <= 0) endForage();
+      return;
+    }
     ant.social -= dt;
     const p = ant.partner;
     const lost = p && (p.state === 'absent' || p.state === 'leaving' || p.region !== ant.region
@@ -552,6 +676,18 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
       return;
     }
     if (ant.mode === 'drift') { driftPoint(); return; }
+    if (ant.mode === 'forage') {
+      // Close enough to look it over, or another step nearer.
+      const c = ant.crumb;
+      if (Math.hypot(c.x - ant.x, c.y - ant.y) <= crumbs.mouth + 4) pause(random.range(...crumbs.investigate));
+      else approachPoint();
+      return;
+    }
+    if (ant.mode === 'carry') {
+      if (random.next() < crumbs.pauseChance) pause(random.range(0.3, 0.8));
+      else carryPoint();
+      return;
+    }
     if (random.next() < tuning.pauseChance) pause(random.range(...tuning.pause));
     else wander();
   }
@@ -569,9 +705,17 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
       pickWaypoint();
     },
 
-    /** Drop any social moment and carry on alone (Low graphics, a layout change). */
+    /** Go after a crumb the colony offers it: walk over, look it over, pick it up. */
+    forage(crumb) {
+      Object.assign(ant, { mode: 'forage', partner: null, crumb, social: crumbs.approach, state: 'wandering' });
+      crumb.claim = ant;
+      ant.stay = Math.max(ant.stay, 15);
+      approachPoint();
+    },
+
+    /** Drop any social moment and carry on alone (Low graphics, a layout change); crumbs are not social. */
     calm() {
-      if (ant.mode === 'solo') return;
+      if (!SOCIAL.has(ant.mode)) return;
       ant.mode = 'solo';
       ant.partner = null;
       if (ant.state === 'wandering' || ant.state === 'paused') { ant.state = 'wandering'; wander(); }
@@ -599,6 +743,14 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
       if (ant.state === 'paused') {
         ant.twitch += dt;
         ant.stay -= dt;
+        if (ant.mode === 'forage') {
+          // Turn to the crumb, look it over, then take it once facing it.
+          const c = ant.crumb;
+          const turn = turnToward(Math.atan2(c.y - ant.y, c.x - ant.x), dt);
+          ant.timer -= dt;
+          if (ant.timer <= 0 && Math.abs(turn) < 0.3) pickUp();
+          return;
+        }
         if (ant.mode === 'greet') {
           // Face the partner, and wait (a little) for it to arrive.
           const p = ant.partner;
@@ -634,7 +786,9 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
     /**
      * After a layout change: keep the visitor only if its whole region still
      * lies inside one of the new safe regions; otherwise retire it before it
-     * can be drawn against the new layout. Any social moment ends.
+     * can be drawn against the new layout, crumb and all. Any social moment
+     * ends; a crumb it is after or carrying stays with it (the colony drops a
+     * lying crumb whose region has gone, and the forager then gives up).
      */
     relayout(regions) {
       if (ant.state === 'absent') return;
@@ -642,8 +796,9 @@ export function createVisitor({ random = createRandom(), tuning = AMBIENT, peers
       if (!home) { retire([2, 6]); return; }
       // The new region holds the old one, so the ant is already safely inside it.
       ant.region = home;
-      if (ant.mode !== 'solo') { ant.mode = 'solo'; ant.partner = null; }
+      if (SOCIAL.has(ant.mode)) { ant.mode = 'solo'; ant.partner = null; }
       if (ant.state === 'leaving') leave();
+      else if (ant.mode === 'carry' && ant.state === 'wandering') carryPoint(); // toward the nearest portal now
     },
   };
 }
@@ -660,6 +815,11 @@ const KINDS = ['follow', 'greet', 'drift'];
  * gutters stay empty for a while. Now and then two or three ants in the
  * same region share a short social moment (one follows another, two meet,
  * or a few drift the same way); one at a time, and never in Low graphics.
+ *
+ * Once in a while, too, a crumb turns up near a wandering ant: one crumb at
+ * a time, in one region. An ant on its own that passes close may notice it,
+ * walk over, look it over and carry it home; if none does, it is gone again
+ * after a while. The crumb is drawn by drawCrumb() from `crumb`.
  */
 export function createColony({ random = createRandom(), tuning = AMBIENT } = {}) {
   const ants = [];
@@ -678,6 +838,13 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
   let rush = 0; // ?debug: summoned arrivals, which come close together
   let lastLimit = -1;
   let crowded = true; // re-check population against regions and the ceiling
+  // The one crumb: 'none', 'lying' where it turned up, or 'carried' in an ant's jaws.
+  const crumb = {
+    state: 'none', x: 0, y: 0, angle: 0, alpha: 0, region: null, claim: null, life: 0,
+    lift: 1, fromX: 0, fromY: 0, turn: 0, shape: new Float64Array(CRUMB_POINTS),
+  };
+  let crumbTimer = random.range(...tuning.crumb.every);
+  let crumbForced = false; // ?debug: one now, whenever ants allow it
 
   function startSpell() {
     spell = 'active';
@@ -725,7 +892,93 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
   }
 
   const settled = (ant) => (ant.state === 'wandering' || ant.state === 'paused')
-    && ant.mode === 'solo' && ant.stay > 4;
+    && ant.mode === 'solo' && !ant.cargo && ant.stay > 4;
+
+  // Free for a crumb: settled, and nobody's leader either (a follower's
+  // moment is not interrupted).
+  function free(ant) {
+    if (!settled(ant)) return false;
+    for (let i = 0; i < ants.length; i++) if (ants[i].partner === ant) return false;
+    return true;
+  }
+
+  // A crumb turns up a little way from a free ant, well inside its region
+  // (room for the whole ant to stand over it) and clear of everyone.
+  function placeCrumb() {
+    const k = tuning.crumb;
+    const start = random.int(ants.length);
+    for (let n = 0; n < ants.length; n++) {
+      const a = ants[(start + n) % ants.length];
+      if (!free(a)) continue;
+      const box = inflate(a.region, -(tuning.footprint + k.mouth + k.radius));
+      if (box.w <= 0 || box.h <= 0) continue;
+      for (let tries = 0; tries < 6; tries++) {
+        const angle = random.next() * TAU, d = random.range(...k.near);
+        const x = a.x + Math.cos(angle) * d, y = a.y + Math.sin(angle) * d;
+        if (x < box.x || x > box.x + box.w || y < box.y || y > box.y + box.h) continue;
+        let clear = true;
+        for (let i = 0; i < ants.length && clear; i++) {
+          const o = ants[i];
+          if (o.state !== 'absent' && Math.hypot(o.x - x, o.y - y) < tuning.spacing * 2) clear = false;
+        }
+        if (!clear) continue;
+        Object.assign(crumb, { state: 'lying', x, y, angle: random.next() * TAU, alpha: 0, region: a.region,
+          claim: null, life: random.range(...k.linger), lift: 1 });
+        for (let i = 0; i < CRUMB_POINTS; i++) crumb.shape[i] = random.range(0.72, 1);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function dropCrumb() {
+    crumb.state = 'none';
+    crumb.claim = null;
+    crumb.region = null;
+  }
+
+  function stepCrumb(dt) {
+    const k = tuning.crumb;
+    if (crumb.state === 'none') {
+      // Only while the colony is out and settling in.
+      if (spell !== 'active' || count === 0) return;
+      crumbTimer -= dt;
+      if (crumbTimer > 0 && !crumbForced) return;
+      if (crumbForced || random.next() < k.chance) {
+        if (!placeCrumb()) { crumbTimer = crumbForced ? 0.5 : 3; return; }
+      }
+      crumbForced = false;
+      crumbTimer = random.range(...k.every);
+      return;
+    }
+    if (crumb.state === 'carried') {
+      const a = crumb.claim;
+      if (a.state === 'absent' || !a.cargo) { dropCrumb(); return; } // home, or gone with its carrier
+      // Held in the jaws, turning with the ant; eased up into them at first.
+      crumb.lift = Math.min(1, crumb.lift + dt / k.lift);
+      const mx = a.x + Math.cos(a.heading) * k.mouth, my = a.y + Math.sin(a.heading) * k.mouth;
+      crumb.x = crumb.fromX + (mx - crumb.fromX) * crumb.lift;
+      crumb.y = crumb.fromY + (my - crumb.fromY) * crumb.lift;
+      crumb.angle = a.heading + crumb.turn;
+      return;
+    }
+    // Lying: it fades in, waits to be noticed, and fades away if nobody comes (or the colony quietens).
+    if (!crumb.claim) {
+      crumb.life -= dt;
+      if (spell !== 'active') crumb.life = Math.min(crumb.life, 0);
+    }
+    if (crumb.life > 0 || crumb.claim) crumb.alpha = Math.min(1, crumb.alpha + dt / k.fade);
+    else {
+      crumb.alpha -= dt / k.fade;
+      if (crumb.alpha <= 0) { dropCrumb(); return; }
+    }
+    if (crumb.claim || crumb.life <= 0 || crumb.alpha < 1) return;
+    for (let i = 0; i < ants.length; i++) {
+      const a = ants[i];
+      if (a.region !== crumb.region || !free(a) || Math.hypot(a.x - crumb.x, a.y - crumb.y) > k.notice) continue;
+      if (random.next() < k.noticeRate * dt) { visitors[i].forage(crumb); return; }
+    }
+  }
 
   // The closest two settled ants sharing a region, close enough to follow;
   // whichever is ahead of the other (by its heading) leads.
@@ -790,7 +1043,7 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
   function mingle(dt, allowed) {
     let busy = false;
     for (let i = 0; i < ants.length; i++) {
-      if (ants[i].mode === 'solo') continue;
+      if (!SOCIAL.has(ants[i].mode)) continue;
       if (allowed) busy = true; else visitors[i].calm();
     }
     if (!allowed || busy) return;
@@ -806,6 +1059,7 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
 
   return {
     ants,
+    crumb,
     get count() { return count; },
     get spell() { return spell; },
 
@@ -845,17 +1099,28 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
         } else ant.timer = 0.5; // no clear way in just now
       }
       mingle(dt, social);
+      stepCrumb(dt);
     },
 
-    /** Keep ants whose region survives a layout change; retire the rest; end social moments. */
+    /**
+     * Keep ants whose region survives a layout change; retire the rest; end
+     * social moments. A lying crumb stays only if its region does; a carried
+     * one goes with its carrier.
+     */
     relayout(regions) {
       for (const visitor of visitors) visitor.relayout(regions);
+      if (crumb.state === 'lying') {
+        const home = regions.find((r) => contains(r, crumb.region));
+        if (home) crumb.region = home;
+        else dropCrumb();
+      } else if (crumb.state === 'carried' && crumb.claim.state === 'absent') dropCrumb();
       crowded = true;
     },
 
     /** Everyone gone at once (screen change, reduced motion), back after a quiet while. */
     retire() {
       for (const visitor of visitors) visitor.retire();
+      dropCrumb();
       count = 0;
       spell = 'empty';
       spellTimer = random.range(...tuning.cooldown);
@@ -877,8 +1142,15 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
       forced = KINDS.includes(kind) ? kind : true;
       socialTimer = 0;
     },
+
+    /** ?debug: a crumb now, near a wandering ant, as soon as one is free (never a second one). */
+    crumble() {
+      crumbForced = true;
+    },
   };
 }
+
+const CRUMB_POINTS = 7; // corners of a crumb's irregular outline
 
 const BODY = '#7a4a2c';
 const LEGS = '#5e3820';
@@ -938,6 +1210,49 @@ export function drawAnt(ctx, { x, y, heading, gait = 0, moving = true, twitch = 
     ctx.globalAlpha = 0.45;
     ctx.beginPath();
     ctx.ellipse(-4.3, -0.8, 1.2, 0.6, -0.2, 0, TAU);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+const CRUMB = '#c99a5b';
+const CRUMB_SHADE = '#9c6f3c';
+const CRUMB_LIGHT = '#e8c88f';
+
+/**
+ * Paint a crumb at (x, y), turned by `angle`, at `alpha`: a small irregular
+ * piece of biscuit (`shape` holds its corners' radii as shares of the
+ * crumb's radius), or a plain dot in Low quality. The whole drawing stays
+ * within AMBIENT.crumb.radius of its centre.
+ */
+export function drawCrumb(ctx, { x, y, angle = 0, alpha = 1, shape = null }, { quality = 'high', radius = AMBIENT.crumb.radius } = {}) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.globalAlpha = Math.min(1, alpha);
+  ctx.fillStyle = CRUMB;
+  ctx.strokeStyle = CRUMB_SHADE;
+  ctx.lineWidth = 0.6;
+  ctx.lineJoin = 'round'; // no mitred corner pokes past the radius
+  ctx.beginPath();
+  if (quality === 'low' || !shape) ctx.arc(0, 0, radius * 0.8, 0, TAU);
+  else {
+    // Inset by the stroke's half-width, so the outline stays inside the radius.
+    const r = radius - 0.3;
+    for (let i = 0; i < shape.length; i++) {
+      const a = (i / shape.length) * TAU, d = r * shape[i];
+      if (i === 0) ctx.moveTo(Math.cos(a) * d, Math.sin(a) * d);
+      else ctx.lineTo(Math.cos(a) * d, Math.sin(a) * d);
+    }
+    ctx.closePath();
+  }
+  ctx.fill();
+  if (quality !== 'low' && shape) {
+    ctx.stroke();
+    ctx.fillStyle = CRUMB_LIGHT;
+    ctx.beginPath();
+    ctx.arc(-0.5, -0.5, 0.55, 0, TAU);
     ctx.fill();
   }
   ctx.restore();

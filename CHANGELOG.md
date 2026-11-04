@@ -9,9 +9,11 @@ All notable changes to this project are documented here. The project uses
   empty space beside the cup and leave again, from one on a small screen to
   six on a large one (two in Low graphics, none on a phone held upright).
   Occasionally one follows another, two stop to greet each other, or a few
-  head the same way for a while. They stay out of the game and its
-  controls, hide when there is no room, and are absent when reduced motion
-  is requested. Decorative only; gameplay is unchanged.
+  head the same way for a while, and now and then one finds a crumb, looks
+  it over and carries it home. They stay out of the game and its controls,
+  hide when there is no room (and in any narrow upright window), and are
+  absent when reduced motion is requested. Decorative only; gameplay is
+  unchanged.
 
 ## [0.19.0] - 2026-11-03 — The Cup Has Gone Fungal
 
