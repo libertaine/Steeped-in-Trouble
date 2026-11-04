@@ -10,10 +10,12 @@ All notable changes to this project are documented here. The project uses
   six on a large one (two in Low graphics, none on a phone held upright).
   Occasionally one follows another, two stop to greet each other, or a few
   head the same way for a while, and now and then one finds a crumb, looks
-  it over and carries it home. They stay out of the game and its controls,
-  hide when there is no room (and in any narrow upright window), and are
-  absent when reduced motion is requested. Decorative only; gameplay is
-  unchanged.
+  it over and carries it home. Rarely, a sugar cube far too big for any one
+  of them turns up, and three or four gather round and haul it away
+  together, not always quite in step. They stay out of the game and its
+  controls, hide when there is no room (and in any narrow upright window),
+  stay put while the game is paused, and are absent when reduced motion is
+  requested. Decorative only; gameplay is unchanged.
 
 ## [0.19.0] - 2026-11-03 — The Cup Has Gone Fungal
 

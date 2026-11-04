@@ -8,10 +8,11 @@
 // load), <name>.png (the page once the scene is set) and <name>.json: when
 // the scene began (seconds into the clip), the stage's place on the page
 // when it began (ant positions are stage-local), the measured regions and a
-// timeline of the ants and any crumb (once a second, or more often for the
-// crumb scenes). Everything goes through the existing ?debug hook (summon,
-// socialize, crumble, snapshot) with a fixed ambient seed; the game itself
-// stays on its calm ready screen. Nothing here is committed.
+// timeline of the ants, any crumb and any sugar cube (once a second, or more
+// often for the crumb and cube scenes). Everything goes through the existing
+// ?debug hook (summon, socialize, crumble, sweeten, snapshot) with a fixed
+// ambient seed; the game itself stays on its calm ready screen. Nothing here
+// is committed.
 import { chromium, devices } from '@playwright/test';
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 
@@ -35,6 +36,25 @@ async function noticedCrumb(page) {
     if (!s.crumb) a.crumble();
     return s.crumb?.claim != null;
   }, null, { timeout: 90_000, polling: 100 });
+}
+
+/**
+ * Ask for a sugar cube until a team gathers round one (a team needs free
+ * ants in one gutter, and room for any newcomers), keeping the colony topped
+ * up; returns once the cube has turned up (`phase`: or once it reaches it).
+ */
+async function procession(page, { size = null, quirk = null, phase = null } = {}) {
+  await page.evaluate(() => window.__TEACUP__.ambient.summon(6));
+  await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().ants
+    .filter((a) => a.state === 'wandering' || a.state === 'paused').length >= 3, null, { timeout: 30_000 });
+  await page.waitForFunction(({ size, quirk, phase }) => {
+    const a = window.__TEACUP__.ambient, s = a.snapshot();
+    if (!s.cube) {
+      if (s.count < 3) a.summon(6);
+      a.sweeten({ size, quirk });
+    }
+    return !!s.cube && (!phase || s.cube.phase === phase);
+  }, { size, quirk, phase }, { timeout: 150_000, polling: 100 });
 }
 
 /**
@@ -80,6 +100,26 @@ const SCENARIOS = {
       await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().crumb?.state === 'carried', null, { timeout: 20_000 });
     },
     async during(page, t) { if (t === 2) await page.setViewportSize({ width: 1100, height: 720 }); } },
+  // A sugar cube turns up; nearby ants (and a newcomer or two) gather round, take hold, lift it together,
+  // carry it along the gutter, turn it at the corner and take it out of sight.
+  cube: { context: desktop(1920, 1080), query: '&view=full', seconds: 55, every: 250, start: (page) => procession(page) },
+  // The same with a team of four: one pulling in front, two at the sides, one pushing behind.
+  'cube-four': { context: desktop(1920, 1080), query: '&view=full', seconds: 55, every: 250,
+    start: (page) => procession(page, { size: 4 }) },
+  // A brief lapse early in the carrying: one carrier turns and tugs the wrong way, the cube slows, it turns back.
+  'cube-mistake': { context: desktop(1920, 1080), query: '&view=full', seconds: 30, every: 250,
+    start: (page) => procession(page, { size: 4, quirk: 'wrong-way' }) },
+  // The team stops and looks about, as if reconsidering the route.
+  'cube-reconsider': { context: desktop(1920, 1080), query: '&view=full', seconds: 30, every: 250,
+    start: (page) => procession(page, { size: 3, quirk: 'reconsider' }) },
+  // Once it is being carried, the window narrows: the gutter no longer has room, and cube and team go at once.
+  'cube-cancel': { context: desktop(1920, 1080), query: '&view=full', seconds: 8, every: 250,
+    start: (page) => procession(page, { phase: 'carry' }),
+    async during(page, t) { if (t === 2) await page.setViewportSize({ width: 1000, height: 1080 }); } },
+  // High graphics while it is being carried, then Low: a plainer cube and team, straight home, no more lapses.
+  'cube-low': { context: desktop(1920, 1080), query: '&view=full', seconds: 40, every: 250,
+    start: (page) => procession(page, { phase: 'carry' }),
+    async during(page, t) { if (t === 4) await page.locator('#graphicsBtn').evaluate((button) => button.click()); } },
 };
 
 const browser = await chromium.launch();
@@ -103,11 +143,15 @@ try {
       const t = (i * every) / 1000;
       await scenario.during?.(page, t);
       const s = await page.evaluate(() => window.__TEACUP__.ambient.snapshot());
-      const c = s.crumb;
-      timeline.push({ t, count: s.count, spell: s.spell,
+      const c = s.crumb, k = s.cube;
+      timeline.push({ t, count: s.count, spell: s.spell, quality: s.quality,
         crumb: c && `${c.state}${c.claim === null ? '' : `<${c.claim}`}@${Math.round(c.x)},${Math.round(c.y)}`,
+        cube: k && `${k.phase}${k.exiting ? '*' : ''}${k.quirk ? `!${k.quirk}` : ''}${k.hurry ? '^' : ''}<${k.members.join(',')}@${Math.round(k.x)},${Math.round(k.y)}`,
         ants: s.ants.map((a) => `${a.slot}:${a.state}/${a.mode}${a.cargo ? '*' : ''}${a.partner === null ? '' : `>${a.partner}`}@${Math.round(a.x)},${Math.round(a.y)}`) });
-      if (!shot && s.count > 0 && s.ants.some((a) => a.state !== 'entering')) {
+      // The still: the first settled ant, or for the cube scenes the procession under way.
+      const ready = name.startsWith('cube') ? ['carry', 'turn'].includes(s.cube?.phase) && t >= 1
+        : s.count > 0 && s.ants.some((a) => a.state !== 'entering');
+      if (!shot && ready) {
         await page.screenshot({ path: `${output}/${name}.png` });
         shot = true;
       }

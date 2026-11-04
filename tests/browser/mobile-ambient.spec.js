@@ -31,10 +31,11 @@ test('a short landscape phone keeps at most two ants, clear of the controls', as
     expect(state).toMatchObject({ count: 0, hidden: true });
   } else {
     await summonAnts(page, state.room);
-    await page.evaluate(() => window.__TEACUP__.ambient.summon(6));
-    const { most, hits } = await protectedOverlaps(page, { samples: 20 });
+    await page.evaluate(() => { window.__TEACUP__.ambient.summon(6); window.__TEACUP__.ambient.sweeten(); });
+    const { most, hits, cubes } = await protectedOverlaps(page, { samples: 20 });
     expect(most).toBeLessThanOrEqual(2);
     expect(hits).toEqual([]);
+    expect(cubes).toBe(0); // two ants are not a team
   }
   expect(problems).toEqual([]);
 });

@@ -1,5 +1,5 @@
 import { expect, openGame, test } from './fixtures.js';
-import { ambientState, crumbIn, protectedOverlaps, summonAnts } from './ambient.js';
+import { ambientState, crumbIn, cubeIn, protectedOverlaps, summonAnts } from './ambient.js';
 
 // The ant colony (0.20.0): decorative visitors in the measured gutters beside
 // the cup, which never cover the game or its UI, scale with the space, and
@@ -106,6 +106,47 @@ test('a layout change takes a crumb away at once, with any ant after it or carry
   expect(problems).toEqual([]);
 });
 
+test('a sugar cube is gathered round, carried and taken out of sight, clear of the game and its controls', async ({ page, problems }) => {
+  test.slow(); // a whole procession, gathering to exit, takes 30–50 s of game time
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await openGame(page, '&view=full&ambientSeed=5');
+  await summonAnts(page, 4, { settled: true });
+  await cubeIn(page, ['gather']);
+  const gathering = await ambientState(page);
+  expect(gathering.cube.size).toBeGreaterThanOrEqual(3);
+  expect(gathering.crumb).toBeNull(); // never alongside a crumb
+  // Carried by its team, all within one gutter, everyone else at the usual distance.
+  await cubeIn(page, ['carry', 'turn']);
+  const s = await ambientState(page);
+  const team = s.ants.filter((a) => s.cube.members.includes(a.slot));
+  expect(team).toHaveLength(s.cube.size);
+  expect(team.every((a) => a.mode === 'haul' && a.region.x === s.cube.region.x)).toBe(true);
+  const { hits, cubes, nearest } = await protectedOverlaps(page, { samples: 30 });
+  expect(hits).toEqual([]);
+  expect(cubes).toBeGreaterThan(10);
+  expect(nearest).toBeGreaterThanOrEqual(14);
+  // Home: cube and team gone together, out of sight.
+  await expect.poll(async () => {
+    const now = await ambientState(page);
+    return !now.cube && !now.ants.some((a) => team.some((b) => b.slot === a.slot) && a.mode === 'haul');
+  }, { timeout: 60_000 }).toBe(true);
+  expect(problems).toEqual([]);
+});
+
+test('a layout change takes a sugar cube away at once, with the carriers it no longer has room for', async ({ page, problems }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await openGame(page, '&view=full&ambientSeed=5');
+  await summonAnts(page, 4, { settled: true });
+  await cubeIn(page, ['carry', 'turn']);
+  // A narrow upright window: no gutters at all.
+  await page.setViewportSize({ width: 420, height: 900 });
+  await expect.poll(async () => ambientState(page)).toMatchObject({ cube: null, count: 0, hidden: true });
+  await page.evaluate(() => { window.__TEACUP__.ambient.summon(6); window.__TEACUP__.ambient.sweeten(); });
+  await page.waitForTimeout(1500);
+  expect(await ambientState(page)).toMatchObject({ cube: null, count: 0 });
+  expect(problems).toEqual([]);
+});
+
 test('the ants never take input: the page beneath them answers clicks and keys', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await openGame(page, '&view=full&ambientSeed=7');
@@ -124,12 +165,13 @@ test('the ants never take input: the page beneath them answers clicks and keys',
   expect(under.focusable).toBe(false);
   await page.locator('#mainBtn').click();
   await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
+  await summonAnts(page, 4, { settled: true });
   await page.keyboard.press('KeyP');
   await expect.poll(async () => page.evaluate(() => window.__TEACUP__.game.state.phase)).toBe('paused');
   // Pausing reflows the stage (the cup shrinks to make room below it), so wait
-  // until the layer has measured the paused layout: ants whose gutter changed
-  // shape are retired then, by the safe-geometry rule. Every ant still out
-  // stands still where it was.
+  // until the layer has measured the paused layout. An ant whose whole
+  // footprint still fits a paused gutter stays where it stood (only one near
+  // a gutter's new end is retired), and none moves while paused.
   await expect.poll(() => page.evaluate(() => {
     const s = window.__TEACUP__.ambient.snapshot();
     const game = document.getElementById('game').getBoundingClientRect();
@@ -141,10 +183,12 @@ test('the ants never take input: the page beneath them answers clicks and keys',
   const a = await ambientState(page);
   await page.waitForTimeout(400);
   const b = await ambientState(page);
-  if (a.count > 0) {
-    expect(b.policy).toBe('frozen');
-    expect(where(b)).toEqual(where(a));
-  }
+  expect(b.policy).toBe('frozen');
+  expect(where(b)).toEqual(where(a));
+  expect(a.count).toBeGreaterThan(0); // kept through the reflow, not all retired
+  const fits = (ant) => a.regions.some((r) => ant.x - 9 >= r.x - 0.01 && ant.x + 9 <= r.x + r.w + 0.01
+    && ant.y - 9 >= r.y - 0.01 && ant.y + 9 <= r.y + r.h + 0.01);
+  for (const ant of a.ants) if (ant.state === 'wandering' || ant.state === 'paused') expect(fits(ant)).toBe(true);
   await page.keyboard.press('KeyP');
   await expect.poll(async () => page.evaluate(() => window.__TEACUP__.game.state.phase)).toBe('playing');
   expect(problems).toEqual([]);

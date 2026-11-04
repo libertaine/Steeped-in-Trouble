@@ -1088,8 +1088,9 @@ recordings until it arrives after cup 10.
 
 A transparent `#ambientLayer` canvas fills `.stage` (absolute, out of the
 grid, `aria-hidden`, not focusable, `pointer-events: none`). Now and then a
-small colony of ants wanders the empty gutters beside the cup, and once in a
-while one carries a crumb away. It is presentation only:
+small colony of ants wanders the empty gutters beside the cup, once in a
+while one carries a crumb away, and rarely a team of three or four hauls off
+a sugar cube. It is presentation only:
 `rendering/ambient.js` has no DOM, game or storage access, and
 `ui/ambient.js` only reads `game.state.phase`, `pausedFrom` and `offer`,
 the modal `blocked` flags and `strange.holding`. It adds no input listener,
@@ -1115,10 +1116,31 @@ never meet in shared space. Its portals are only its sides on a real
 border, the playfield frame or screen edge, never a seam beside the HUD, a
 button row or a neighbouring region.
 The backing store, at a pixel ratio capped at 2, is allocated only while
-the room below is positive. A layout change keeps an ant only if its region
-lies inside a new one; otherwise it is retired before the next draw, even
-if it was already walking home: an ant never crosses newly protected space
-on its way out.
+the room below is positive.
+
+*Layout changes* (`relayout()`, 0.20.0 increment 4). An ant is kept, where
+it stands, if its whole 9 px footprint still lies inside one new region (or,
+while arriving or leaving, reaches only past a portal side that region
+still has); otherwise it is retired at once, before the next draw, even if
+it was walking home, so it never crosses newly protected space. A kept ant
+does not move: its target stays if it is still inside the new region's
+inner box, or is clamped into it (the region is a rectangle, so the straight
+way there stays inside); a leaving ant keeps its portal if the new region
+has it, or heads for the nearest one; an arriving ant that is now wholly
+inside a region without its portal simply starts wandering. Social moments,
+foragers and carriers go on (a partner that has gone ends a moment by
+itself). Where the display allows no ants at all (a portrait phone or
+narrow window), everyone is retired whatever the geometry. This replaces
+the increment 2.5 rule (keep an ant only if its old region lay inside a new
+one), which retired every ant whenever pausing reflowed the stage: the cup
+shrinks by about 59 px of height to make room below it, so every gutter
+becomes wider and shorter. Measured in the production build (Chromium), the
+gutters go from 256 × 857 to 290 × 798 at 1920 × 1080, 315 × 498 to
+349 × 439 at 1280 × 720 and 331 × 545 to 365 × 486 at 1366 × 768; now only
+an ant standing in the last few pixels of a gutter's old end is retired,
+and the rest stand frozen where they were. Movement never happens while
+paused (the policy is `frozen`, so nothing is stepped), and resuming steps
+a single frame: no elapsed time accumulates.
 
 **Population.** Three limits, all prototype values for review:
 
@@ -1186,8 +1208,9 @@ left:
 | Greet | Two ants walk to either side of their midpoint, 15 px apart (antennae just touching), turn to face each other and stand 0.8–1.6 s; the first to arrive waits up to 3 s for the other | Each then wanders off away from the other; it gives up after 6 s of approach |
 | Drift | Two or three nearby ants head the same way along the gutter's long axis, each with its own waypoints 50–110 px ahead and up to 22 px to the side | After 5–9 s, or at the end of the gutter |
 
-Any moment ends at once on a layout change or in Low graphics, and every
-ant returns to wandering alone, which is the default. A follower used to
+Any moment ends at once in Low graphics, and on a layout change that
+retires or separates its ants; every ant then returns to wandering alone,
+which is the default. A follower used to
 be paired with any ant up to 200 px away and often never caught up (in
 twelve 20-minute seeded runs at 1920 × 1080, starts had a median gap of
 120 px and only 68 % ever came within 60 px); choosing the nearest leader
@@ -1202,7 +1225,7 @@ visible once any of it is inside the stage):
 | 1920 × 1080 Full (ceiling 6) | Empty | Mean (while seen) | Moments / 10 min | Activity median / p90 | Quiet median / p90 | 4+ out | Clumps | Crumbs (carried) / 10 min |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | A: prototype, empty 12–30 s | 22 % | 3.33 (4.25) | 7.0 | 78 / 95 s | 22 / 29 s | 54 % | 8 % | 2.4 (1.6) |
-| **B: current, empty 24–48 s** | 31 % | 2.95 (4.30) | 6.5 | 76 / 94 s | 35 / 46 s | 47 % | 8 % | 1.9 (1.3) |
+| **B: current, empty 24–48 s** | 31 % | 2.96 (4.30) | 6.1 | 75 / 94 s | 33 / 46 s | 47 % | 8 % | 1.9 (1.3) |
 | C: empty 45–90 s | 47 % | 2.30 (4.29) | 5.1 | 69 / 92 s | 66 / 86 s | 37 % | 9 % | 1.5 (1.1) |
 
 At 1280 × 720 (ceiling 4) the empty shares are much the same (21 / 31 /
@@ -1213,7 +1236,11 @@ spells change how often the colony is there, not what it looks like while
 it is: the population while seen, the activity runs and the clumping stay
 put. B is the approved timing (0.20.0 increment 3); before crumbs it gave
 6.7 moments per ten minutes at 1920 × 1080, so social frequency is
-unchanged within the run-to-run spread.
+unchanged within the run-to-run spread. The B row is re-measured with
+sugar cubes in play (increment 4): no new moment starts while a cube is out
+(about 3 % of the time), and the same seeds draw differently, so moments,
+activity runs and crumbs moved by no more than that spread (6.5 → 6.1
+moments; crumbs unchanged at 1.9 per ten minutes).
 
 **Crumbs** (`AMBIENT.crumb`). One crumb at a time, carried by one ant:
 
@@ -1252,14 +1279,172 @@ The jaw point plus the crumb's radius (6.2 + 2.4 px) lies within the ant's
 its own. Crumbs never change the population or the arrival rhythm; an ant
 going after or carrying a crumb is not in a social moment, so moments go on
 as before, and Low graphics keeps crumbs (they are solo behaviour) with a
-plainer look. On a layout change a lying crumb stays only if its region
-lies inside a new one; a carrier follows the visitor rule above, and its
-crumb goes with it, at once. A crumb is also gone the moment the policy
+plainer look. On a layout change a lying crumb stays only if it still
+lies that deep inside a new region; a carrier follows the visitor rule
+above, crumb in its jaws and both exactly where they were, or is retired
+with it at once. A crumb is also gone the moment the policy
 turns `off` (reduced motion, a decision, an adventure). It is drawn by
 `drawCrumb()`: an irregular seven-cornered piece of biscuit (radii 72–100 %
 of 2.4 px, round-jointed outline, one small highlight) or, in Low quality,
 a plain dot; a lying crumb is drawn under the ants, a carried one over its
 carrier's head. Its spot is cleared like an ant's.
+
+**Sugar cube** (`AMBIENT.cube`, 0.20.0 increment 4). Rarely, a sugar cube
+turns up and a team of three or four carries it out together. It is the
+colony's one cooperative job: at most one at a time, never with a crumb
+about (neither starts while the other is out), and never in Low graphics.
+
+*Eligibility.* Only a roomy region qualifies (`cubeRoom()`): at least 96 px
+across and 220 px long, room for three ants by region capacity, and a
+portal. A gutter an ant could use (32 px) is not enough: the procession
+needs its full width, so a narrow gutter simply never has one. Measured
+gutters at 1920 × 1080, 1366 × 768, 1280 × 720, 1024 × 768 (154 × 554) and
+a 1200 × 480 window all qualify; 800 × 600, phones in landscape (two ants)
+and Low (two ants) never do.
+
+*Frequency.* An opportunity comes after 12–20 minutes (`every`, 720–1200 s)
+of eligible time: the colony is running (a calm screen, High, focused and
+visible), the frame's ceiling allows three and some region qualifies.
+Time on other screens, in Low or in cramped layouts does not count. The
+opportunity then waits up to 90 s (`window`), trying every 2 s while a
+spell is active, ants are out and no crumb is about, and is otherwise
+skipped; there is no queue. A team of four is tried half the time
+(`four`), falling back to three.
+
+*Placement and recruitment.* The cube turns up 40–120 px from a free ant
+(as for crumbs: on its own, nobody's partner or leader, at least 4 s of
+its visit left), at least 38 px (its reach plus 6) inside a qualifying
+region, at least 31 px from every ant and 40 px from every ant not called
+over. The free ants nearest it in that region, up to 400 px away, are
+called over; if they are too few, newcomers walk in through the portal
+nearest their places, one by one, as long as the population ceiling, the
+region's capacity and the free slots allow (pending newcomers are reserved
+against the ceiling). At least one ant must already be close by; social
+moments are never interrupted (only free ants are called), and no new one
+starts while a cube is out. No other ant enters its region meanwhile. Of
+eight candidate spots the one whose route length is nearest a random
+140–280 px is taken, and none longer than 280 px: a short walk is better
+than a long trek.
+
+*Formation* (`formation()`, in the cube's frame, x along the travel):
+one ant pulls in front, facing the cube (it walks backwards); two lift at
+the sides, turned in by 0.5 rad; with four, one pushes behind, facing the
+way. The cube is 20 px across (`half` 10) beside a 12 px ant, its drawing
+within 18 px of its centre (`radius`). Every place is at least 19 px from
+every other. A carrier may stray from its place by at most 6 px
+(`stumble`), and the cube sways at most 1.5 px across its route, so the
+whole procession lies within 32 px of its route point (`reach`: farthest
+place 15.5 + stray 6 + footprint 9 + sway 1.5). This is the only geometry
+the rest relies on.
+
+*Separation.* Carriers are positioned, never walked, so the colony's
+14 px rule does not apply among them; their controlled exception is that
+they keep at least 11 px apart (`spacing`; bodies, 4.4 px wide, never
+overlap). Every other ant keeps its centre at least 38 px (`clear`) from
+the procession's, which keeps it 14 px from every carrier and 20 px from
+the cube: walking ants are blocked from stepping closer (stepping away is
+always allowed), waypoints are chosen away from it, and the procession
+itself never moves closer to an ant than that. A helper walking over keeps
+25 px (`keep`) from the cube until it steps in. In 20 seeded 20-minute
+runs carriers never came closer than 14 px to each other (helpers still
+walking over keep the colony's rule), other ants never within 38 px of
+the procession or 14 px of a carrier, and the whole procession reached at
+most 30.2 of its 32 px.
+
+*Sequence.*
+
+1. *Appearing and gathering* (`gather`). The cube fades in over 0.8 s.
+   Called ants walk to a spot 27 px out on their place's side (`stage`),
+   the places assigned to make the walks shortest overall. A straight way
+   that would pass close by the cube goes round instead: out to a 41 px
+   circle, round it a sixth of a turn at a time, then in. A helper blocked
+   within 14 px of its spot steps in from there; farther off it waits and
+   side-steps by turns, so two helpers never stand in each other's way for
+   ever. At its spot it turns to face the cube, then eases into its place
+   over 0.5 s (`settle`). If the team is not complete within 24 s
+   (`gather`), the cube is given up.
+2. *Lifting* (`lift`). Together they raise it over 0.6 s: its shadow draws
+   apart, and the cube rises a pixel off it.
+3. *Carrying* (`carry`). A route (`planRoute()`) is computed once: an
+   optional first leg of 80–240 px along the portal side, then straight out
+   through the portal to a point 34 px beyond it, where the whole procession
+   is clipped. Every point but the last lies in the region shrunk by 32 px.
+   The team moves the cube at 11–16 px/s, in a heave-and-pause rhythm (about
+   a quarter slower on average), easing into corners.
+4. *Turning* (`turn`). At a corner it stops briefly (40 % of the time a
+   0.6–1.4 s pause, as though reconsidering the route), then turns the cube
+   in place at 1.1 rad/s, the carriers walking round with it. The centre
+   never moves while turning, so a turn can never swing anything outside.
+5. *Out of sight.* On the last leg the carriers are `leaving` through that
+   portal; once the route point is 34 px beyond the side, the cube and the
+   whole team are gone together.
+
+*Lapses* (`quirk`, High only, every 4–9 s a 60 % chance, one at a time,
+none while hurrying home): a carrier at the side or behind turns nearly
+about and tugs the wrong way for 1.1–1.6 s while the cube slows to 40 %
+(`wrong-way`); the team stops for 0.9–1.6 s, each looking about
+(`reconsider`); a side carrier falls up to 6 px behind and catches up over
+1.6–2.4 s (`straggler`); or the cube stops 0.6–1.0 s while they shift their
+grip by up to 1.5 px (`reposition`). Each ends with everyone back in place.
+
+*Never stuck.* The team cannot jam itself (carriers do not walk). An ant
+in the way within 38 px of where the procession is about to be makes it
+slow and stop; the ant is asked to step aside straight away and every
+0.6 s after: out to the side of the procession's line it is already on, a
+little behind, or back behind it if a wall leaves no room. That includes
+an ant arriving or on its way home, once wholly inside the gutter (a
+leaving ant then sets off home again 2–4 s later, so it does not walk
+straight back across the route); an ant blocked by a procession steps
+aside the same way by itself. Failing that it is sent home after 4 s and,
+if the way is still blocked after 12 s, the cube is given up. A 150 s
+lifetime is the last backstop. Given up, the cube fades in place over
+0.8 s while the team wanders off (any already on its way out walks on
+out).
+
+*Population and graphics.* A team counts against the ceiling like any
+ants; if the ceiling drops below the team (Low graphics, a resize), it
+heads straight home through the nearest portal with no more lapses (still
+gathering, it gives up instead), drawn plainer in Low. In seeded runs
+across the measured layouts (1920 × 1080, 1280 × 720, 1024 × 768 and a
+1200 × 480 window, with portals at the gutters' ends as well as outer
+sides, 10 seeds × 30 min each, a cube every 1–2 min), 3 of about 770
+processions were given up (each a helper unable to get round a cube near a
+gutter's corner within the gathering allowance); the longest took 56 s
+from appearing to the last carrier leaving, the slowest gathering 22 s.
+
+*Layout changes and policy.* The procession is kept, where it is, only if
+its whole 32 px reach still lies inside one new region (on its way out,
+past only a portal side that region has) and every carrier is still there;
+its route is kept if every remaining point is still inside the shrunk
+region and its portal remains, or is replaced by one straight out through
+the nearest portal. If a carrier was retired but the cube still fits, the
+cube is given up and fades; if the cube no longer fits it is gone at once
+(carriers whose footprint fits wander off; the rest were already retired).
+A paused cup's reflow keeps a procession standing still wherever it still
+fits. Reduced motion, an `off` policy or leaving the screen remove it
+immediately; pausing, blur, a hidden tab or a rewind freeze it; modals hide
+it. Gameplay, scoring, saves, input and the simulation's random streams are
+untouched (the isolation test runs cubes too).
+
+*Drawing* (`drawCube()`, under its carriers, who hold it from every side):
+a warm white square seen from above, turned with the travel heading, its
+sides toward the bottom right in a fawn shade, a thin edge, four sugar
+grains and a soft shadow that draws apart when lifted. Low quality is the
+top and one flat side colour, no shadow, edge or grains. Its spot (20 px
+radius) is cleared like an ant's.
+
+*Measured frequency* (`node tests/support/ambientPacing.js`, 20 seeds ×
+120 minutes per row, a calm screen):
+
+| Layout | Opportunities / h | Skipped | Processions / h | Carried home | Given up | Minutes between | On screen |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1920 × 1080 Full (ceiling 6) | 3.35 | 0.05 | 3.30 | 3.30 | 0.00 | 18.2 | 3 % |
+| 1280 × 720 Full (ceiling 4) | 3.35 | 0.03 | 3.33 | 3.33 | 0.00 | 18.0 | 3 % |
+
+That is one every 18 minutes of a calm screen, against about 12 crumbs
+an hour, and the colony is still away 31 % of the time. Real play has many
+ineligible minutes (decisions, adventures, bosses, Low), so a player sees
+one less often than that.
 
 **Visibility policy** (`ambientPolicy()`):
 
@@ -1288,11 +1473,17 @@ reload.
 timeline of each scene through the `?debug` hook (one ant, a full colony,
 follow, greet, drift, entry and exit, the natural rhythm with its quiet
 spells, Low graphics, a 1200 × 480 desktop window, an 844 × 390 landscape
-phone, a crumb found and carried away, and a crumb cancelled by a narrower
-window). By hand, any of these with `?debug&noOverlay&ambientSeed=7` and
+phone, a crumb found and carried away, a crumb cancelled by a narrower
+window, and the sugar cube: `cube` (it turns up, the team gathers, lifts,
+carries, turns and leaves), `cube-four`, `cube-mistake` (a carrier tugs
+the wrong way), `cube-reconsider` (the team stops to think), `cube-cancel`
+(the window narrows mid-carry) and `cube-low` (High, then Low mid-carry)).
+By hand, any of these with `?debug&noOverlay&ambientSeed=7` and
 `window.__TEACUP__.ambient.summon(n)` / `.socialize('follow' | 'greet' |
-'drift')` / `.crumble()` in the console; `&ambientAnts=1` for a single ant
-and `&graphics=low` for Low.
+'drift')` / `.crumble()` / `.sweeten({ size: 3 | 4, quirk: 'wrong-way' |
+'reconsider' | 'straggler' | 'reposition' })` in the console (a team needs
+free ants in one gutter: summon a few first, and allow up to a minute);
+`&ambientAnts=1` for a single ant and `&graphics=low` for Low.
 
 **Drawing and cost.** One pass per frame clears the last frame's ant spots
 (a 22 px square each, all before any drawing) and paints every present ant;
@@ -1315,3 +1506,34 @@ six ants and a crumb in play 98 % of the time against 13.61 ms with six
 ants and none (12.57 ms with no ants; three interleaved 10 s windows each,
 the same software rasteriser). A crumb adds one 22 px cleared spot and one
 small path a frame, and allocates nothing per frame.
+
+Sugar cubes (increment 4) cost about as much as one more ant. The
+procession's controller places three or four carriers a frame and checks
+the other ants once; its scratch arrays are allocated with the colony and
+nothing is allocated per frame. In Node, `colony.step()` took 1.4–1.9 µs
+with six ants whether a crumb, a 3- or a 4-ant procession or nothing was in
+play, and 2.9 / 3.8 µs with twelve ants without / with a procession (warm
+second round, 15 simulated minutes each). In headless Chromium (the same
+machine and software rasteriser, 1920 × 1080, on the ready screen, the
+adapter's `update()` timed on a stage-sized canvas, 1,800 frames per row,
+counting only frames in which the crumb or the procession of that size was
+in play):
+
+| Configuration | update mean / p95 / p99 (ms) | with forced rasterisation |
+| --- | --- | --- |
+| Six ants | 0.054 / 0.085 / 0.155 | 0.156 / 0.220 / 0.295 |
+| Six ants, a crumb | 0.060 / 0.090 / 0.185 | 0.168 / 0.235 / 0.330 |
+| Six ants, a 3-ant procession | 0.061 / 0.090 / 0.175 | 0.186 / 0.255 / 0.360 |
+| Six ants, a 4-ant procession | 0.063 / 0.090 / 0.180 | 0.189 / 0.260 / 0.350 |
+| Twelve ants (stress) | 0.081 / 0.130 / 0.225 | 0.252 / 0.360 / 0.425 |
+| Twelve ants, a 4-ant procession | 0.085 / 0.130 / 0.235 | 0.274 / 0.380 / 0.455 |
+
+At DPR 2 (a 3052 × 1714 backing store), mean / p95: six ants 0.061 /
+0.095 ms (0.260 / 0.355 ms rasterised), with a 4-ant procession 0.069 /
+0.100 ms (0.282 / 0.395 ms); twelve ants 0.087 / 0.140 ms (0.441 /
+0.590 ms), with a 4-ant procession 0.098 / 0.155 ms (0.479 / 0.640 ms).
+
+These are one machine, a software rasteriser and the ready screen; a GPU
+rasteriser is usually cheaper, and phones were not profiled (the cube never
+appears on one: a phone has at most two ants). Single-frame maxima of
+0.5–1.8 ms are scheduler noise, and appear in every row.

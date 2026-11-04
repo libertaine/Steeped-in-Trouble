@@ -7,7 +7,9 @@
 // moderately longer, now the default; C, much longer) under identical
 // measured layouts and seeds, from a calm screen. An ant counts as visible
 // once any of it is inside the stage (not while it stands fully clipped
-// beyond a portal).
+// beyond a portal). A second table counts sugar-cube processions at the
+// current timing: opportunities, those skipped (no free team or space in
+// their waiting window), those carried home and those given up.
 import { createRandom } from '../../src/core/random.js';
 import { AMBIENT, createColony, displayBudget, safeRegions } from '../../src/rendering/ambient.js';
 
@@ -43,7 +45,7 @@ function pace({ layout, empty, seed, seconds }) {
   const limit = Math.min(displayBudget(regions, { viewport: { w, h }, screen: { w: 1920, h: 1080 }, touch: false }), 12);
   const colony = createColony({ random: createRandom(seed), tuning: { ...AMBIENT, empty } });
   let none = 0, total = 0, frames = 0, moments = 0, busy = false, crowdedFrames = 0, closeFrames = 0, multi = 0;
-  let crumbs = 0, carries = 0, was = 'none';
+  let crumbs = 0, carries = 0, was = 'none', cubeWas = 'none', cubes = 0, home = 0, given = 0, cubeTime = 0;
   const active = [], quiet = [];
   let run = 0, gap = 0;
   for (let t = 0; t < seconds; t += FRAME) {
@@ -77,10 +79,17 @@ function pace({ layout, empty, seed, seconds }) {
     if (now === 'lying' && was === 'none') crumbs++;
     if (now === 'carried' && was === 'lying') carries++;
     was = now;
+    const phase = colony.cube.phase;
+    if (cubeWas === 'none' && phase !== 'none') cubes++;
+    if (cubeWas !== 'none' && phase === 'none') { if (cubeWas === 'fade') given++; else home++; }
+    if (phase !== 'none') cubeTime += FRAME;
+    cubeWas = phase;
   }
+  const { opportunities, skipped } = colony.opportunities;
   if (run > 0) active.push(run);
   return { limit, none: none / frames, mean: total / frames, whileSeen: total / Math.max(1, frames - none),
-    moments, crumbs, carries, active, quiet, crowded: crowdedFrames / frames, close: closeFrames / Math.max(1, multi) };
+    moments, crumbs, carries, active, quiet, crowded: crowdedFrames / frames, close: closeFrames / Math.max(1, multi),
+    opportunities, skipped, cubes, home, given, cubeTime };
 }
 
 function report() {
@@ -104,6 +113,20 @@ function report() {
         + ` | ${pct(avg('crowded'))} | ${pct(avg('close'))} | ${per10('crumbs').toFixed(1)} (${per10('carries').toFixed(1)}) |`);
     }
     console.log('');
+  }
+  // Long runs: an opportunity comes every 12–20 minutes, so a short run's edges would undercount them.
+  const cubeMinutes = minutes * 4;
+  console.log(`Sugar cubes at the current timing (opportunity every ${AMBIENT.cube.every.join('–')} s of eligible time), per hour`
+    + ` (${seeds} seeds × ${cubeMinutes} min per row):`);
+  console.log('| Layout | Opportunities | Skipped | Processions | Carried home | Given up | Minutes between processions | On screen |');
+  console.log('| --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const layout of LAYOUTS) {
+    const runs = Array.from({ length: seeds }, (_, i) => pace({ layout, empty: AMBIENT.empty, seed: i + 1, seconds: cubeMinutes * 60 }));
+    const hours = (seeds * cubeMinutes) / 60;
+    const sum = (key) => runs.reduce((a, r) => a + r[key], 0);
+    const per = (key) => (sum(key) / hours).toFixed(2);
+    console.log(`| ${layout.name} | ${per('opportunities')} | ${per('skipped')} | ${per('cubes')} | ${per('home')} | ${per('given')}`
+      + ` | ${(60 / Math.max(1e-9, sum('cubes') / hours)).toFixed(1)} | ${pct(sum('cubeTime') / (hours * 3600))} |`);
   }
 }
 

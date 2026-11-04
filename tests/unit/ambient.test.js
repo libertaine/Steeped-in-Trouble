@@ -3,8 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { createGame } from '../../src/core/game.js';
 import { createRandom } from '../../src/core/random.js';
 import {
-  AMBIENT, ambientPolicy, capacity, createColony, createVisitor, displayBudget, drawAnt, drawCrumb, inflate, intersects,
-  narrowPortrait, phoneShape, populationLimit, regionCapacity, safeRegions, subtract,
+  AMBIENT, ambientPolicy, capacity, createColony, createVisitor, cubeRoom, displayBudget, drawAnt, drawCrumb, drawCube,
+  formation, inflate, intersects, narrowPortrait, phoneShape, planRoute, populationLimit, regionCapacity, safeRegions,
+  subtract,
 } from '../../src/rendering/ambient.js';
 import { createAmbient, measureLayout } from '../../src/ui/ambient.js';
 
@@ -24,15 +25,23 @@ class Target extends EventTarget {
   get live() { return [...this.attached.values()].reduce((a, b) => a + b, 0); }
 }
 
-/** A recording 2D context: counts calls, draws nothing. */
+/** A recording 2D context: counts calls, draws nothing; remembers fill colours in order and cleared sizes. */
 function fakeContext() {
-  const calls = {};
-  return new Proxy({ calls }, {
+  const calls = {}, fills = [], cleared = [];
+  return new Proxy({ calls, fills, cleared }, {
     get(target, key) {
       if (key in target) return target[key];
-      return (...args) => { calls[key] = (calls[key] ?? 0) + 1; return args; };
+      return (...args) => {
+        calls[key] = (calls[key] ?? 0) + 1;
+        if (key === 'clearRect') cleared.push(args[2]);
+        return args;
+      };
     },
-    set(target, key, value) { target[key] = value; return true; },
+    set(target, key, value) {
+      if (key === 'fillStyle') fills.push(value);
+      target[key] = value;
+      return true;
+    },
   });
 }
 
@@ -554,24 +563,37 @@ describe('the colony', () => {
     expect(shared).toBeGreaterThan(0);
   });
 
-  it('retires at once, rather than walking out, any ant whose region a layout change cuts into', () => {
+  it('on a layout change keeps every ant that still fits where it stands, and retires at once those that do not', () => {
     const { colony } = simulate(65, 20, { tuning: LINGER, each: (c, t) => { if (t < FRAME) c.summon(6); } });
     // Half of them are already on their way home.
     colony.step(FRAME, regions, 3);
-    const out = present(colony);
-    expect(out.some((a) => a.state === 'leaving')).toBe(true);
-    // A panel now covers part of the left gutter.
-    const panel = { x: 40, y: 300, w: 160, h: 120 };
+    const out = present(colony).map((a) => ({ a, x: a.x, y: a.y, state: a.state, tx: a.targetX, ty: a.targetY, region: a.region }));
+    expect(out.some((o) => o.state === 'leaving')).toBe(true);
+    // A panel now covers the middle of the left gutter.
+    const panel = { x: 0, y: 200, w: 256, h: 300 };
     const next = safeRegions(DESKTOP.visible, [DESKTOP.game, panel]);
-    const cut = regions[0];
-    const wasThere = out.filter((a) => a.region === cut).length;
-    expect(wasThere).toBeGreaterThan(0);
+    const meets = (o) => intersects(footprint(o), inflate(panel, AMBIENT.clearance));
+    const fits = (o) => next.some((r) => o.x - AMBIENT.footprint >= r.x && o.x + AMBIENT.footprint <= r.x + r.w
+      && o.y - AMBIENT.footprint >= r.y && o.y + AMBIENT.footprint <= r.y + r.h);
     colony.relayout(next);
-    for (const a of present(colony)) {
-      expect(a.region).not.toBe(cut);
-      expect(next).toContain(a.region);
+    let kept = 0, retired = 0;
+    for (const o of out) {
+      if (meets(o)) { expect(o.a.state).toBe('absent'); retired++; continue; } // gone before it can be drawn on the panel
+      if (o.state === 'wandering' || o.state === 'paused') expect(o.a.state).toBe(fits(o) ? o.state : 'absent');
+      if (o.a.state === 'absent') continue;
+      kept++;
+      // Kept: not moved at all, in the new region holding its footprint, and still heading somewhere safe.
+      expect([o.a.x, o.a.y]).toEqual([o.x, o.y]);
+      expect(next).toContain(o.a.region);
+      if (o.a.state === 'leaving') continue;
+      const r = inflate(o.a.region, -AMBIENT.footprint);
+      const safe = (x, y) => x >= r.x - 1e-6 && x <= r.x + r.w + 1e-6 && y >= r.y - 1e-6 && y <= r.y + r.h + 1e-6;
+      expect(safe(o.a.targetX, o.a.targetY)).toBe(true);
+      if (safe(o.tx, o.ty)) expect([o.a.targetX, o.a.targetY]).toEqual([o.tx, o.ty]); // a safe target is kept
     }
-    expect(present(colony).length).toBe(out.length - wasThere);
+    expect(retired).toBeGreaterThan(0);
+    expect(kept).toBeGreaterThan(0);
+    expect(out.some((o) => o.region === regions[0] && o.a.state !== 'absent')).toBe(true); // the cut gutter keeps some
     // From here on nobody comes near it.
     for (let t = 0; t < 60; t += FRAME) {
       if (t < FRAME) colony.summon(6);
@@ -751,16 +773,27 @@ describe('the colony', () => {
     expect(colony.ants.every((a) => a.mode === 'solo')).toBe(true);
   });
 
-  it('ends social moments and retires ants whose gutter is gone on a layout change', () => {
+  it('keeps a social moment through a layout change that leaves both ants room, and retires ants whose gutter is gone', () => {
     const { colony } = simulate(92, 14, { tuning: LINGER, each: (c, t) => {
       if (t < FRAME) c.summon(6);
       if (Math.abs(t - 12) < FRAME / 2) c.socialize('greet');
     } });
+    const pair = colony.ants.filter((a) => a.mode === 'greet');
+    expect(pair).toHaveLength(2);
     colony.relayout(regions);
-    expect(colony.ants.every((a) => a.mode === 'solo')).toBe(true);
+    expect(pair.map((a) => a.mode)).toEqual(['greet', 'greet']);
     expect(colony.ants.filter((a) => a.state !== 'absent')).toHaveLength(6);
-    colony.relayout([regions[0]]); // the right gutter is covered now
-    for (const a of colony.ants) if (a.state !== 'absent') expect(a.region).toBe(regions[0]);
+    // The pair's gutter stays; the other one is covered now.
+    const kept = pair[0].region, other = regions.find((r) => r !== kept);
+    const gone = colony.ants.filter((a) => a.state !== 'absent' && a.region === other);
+    expect(gone.length).toBeGreaterThan(0);
+    colony.relayout([kept]);
+    for (const a of gone) expect(a.state).toBe('absent');
+    for (const a of colony.ants) if (a.state !== 'absent') expect(a.region).toBe(kept);
+    expect(pair.map((a) => a.mode)).toEqual(['greet', 'greet']);
+    // The moment plays out as usual.
+    for (let t = 0; t < 10; t += FRAME) colony.step(FRAME, [kept], 6);
+    expect(pair.every((a) => a.mode === 'solo' || a.state === 'absent')).toBe(true);
   });
 
   it('is reproducible from a seed, and different seeds make different scenes', () => {
@@ -893,7 +926,7 @@ describe('the colony', () => {
       expect(held).toBeGreaterThan(30);
     });
 
-    it.each([2, 3, 5, 7, 11, 12])('is carried slowly home, within the region, out through one of its portals (seed %i)', (seed) => {
+    it.each([2, 3, 5, 7, 11, 13])('is carried slowly home, within the region, out through one of its portals (seed %i)', (seed) => {
       const { frames } = story(seed, 60);
       const lifted = frames.findIndex((f) => f.crumb.state === 'carried');
       expect(lifted).toBeGreaterThan(0);
@@ -991,6 +1024,28 @@ describe('the colony', () => {
       expect(trace(3)).not.toEqual(trace(4));
     });
 
+    it('keeps a carrier and its crumb where they are through a layout change they still fit (a paused cup)', () => {
+      let checked = false;
+      crumbRun(5, 40, { each: (c) => {
+        if (checked || c.crumb.state !== 'carried' || c.crumb.lift < 1) return;
+        const a = c.crumb.claim;
+        if (a.state !== 'wandering' && a.state !== 'paused') return;
+        checked = true;
+        const before = [a.x, a.y, a.heading, a.targetX, a.targetY, c.crumb.x, c.crumb.y];
+        // The cup shrinks to make room for the paused panel below it: wider, shorter gutters.
+        const paused = safeRegions(DESKTOP.visible, [{ x: 298, y: 0, w: 930, h: 790 }, { x: 0, y: 806, w: 1526, h: 51 }]);
+        const fits = paused.some((r) => a.x - AMBIENT.footprint >= r.x && a.x + AMBIENT.footprint <= r.x + r.w
+          && a.y - AMBIENT.footprint >= r.y && a.y + AMBIENT.footprint <= r.y + r.h);
+        expect(fits).toBe(true);
+        c.relayout(paused);
+        expect(a).toMatchObject({ cargo: true, mode: 'carry' });
+        expect(c.crumb).toMatchObject({ state: 'carried', claim: a });
+        expect([a.x, a.y, a.heading, a.targetX, a.targetY, c.crumb.x, c.crumb.y]).toEqual(before);
+        expect(paused).toContain(a.region);
+      } });
+      expect(checked).toBe(true);
+    });
+
     it('goes at once with its region on a layout change, lying or carried; a surviving region keeps it', () => {
       for (const until of [(c) => c.crumb.state === 'lying' && c.crumb.claim, (c) => c.crumb.state === 'carried']) {
         // Run to that moment, then cover the crumb's gutter.
@@ -1038,6 +1093,552 @@ describe('the colony', () => {
       expect(perTen(appeared)).toBeLessThan(4);
       expect(perTen(carried)).toBeLessThan(3);
     });
+  });
+
+  describe('the sugar cube', () => {
+    const C = AMBIENT.cube;
+    const team = (colony) => [...colony.cube.members.slice(0, colony.cube.size)].map((i) => colony.ants[i]);
+    const out = (colony) => colony.cube.phase !== 'none' && colony.cube.phase !== 'fade';
+    const boxIn = (r, x, y, d, portal = null) => (x - d >= r.x - 1e-6 || portal === 'left') && (x + d <= r.x + r.w + 1e-6 || portal === 'right')
+      && (y - d >= r.y - 1e-6 || portal === 'top') && (y + d <= r.y + r.h + 1e-6 || portal === 'bottom');
+
+    /** Six lingering ants, a cube asked for at 8 s; `each(colony, t)` every frame from then on. */
+    function cubeRun(seed, seconds, { size = null, quirk = null, rooms = regions, limit = 6, social = true, tuning = LINGER, each } = {}) {
+      return simulate(seed, 8 + seconds, { tuning, rooms, limit, social, each: (colony, t) => {
+        if (t < FRAME) colony.summon(limit);
+        if (Math.abs(t - 8) < FRAME / 2) colony.sweeten({ size, quirk });
+        if (t >= 8) each?.(colony, t);
+      } });
+    }
+
+    /**
+     * Follow one procession from the request to its end: per-frame copies of
+     * the cube, its team and everyone else, from the frame it turns up to the
+     * frame after it has gone.
+     */
+    function procession(seed, { seconds = 100, ...options } = {}) {
+      const frames = [];
+      let state = 'waiting', members = null;
+      cubeRun(seed, seconds, { ...options, each: (colony, t) => {
+        const k = colony.cube;
+        if (state === 'waiting' && k.phase !== 'none') { state = 'out'; members = team(colony); }
+        if (state !== 'out') return;
+        frames.push({ t, phase: k.phase, exiting: k.exiting, hurry: k.hurry, quirk: k.quirk, px: k.px, py: k.py, x: k.x, y: k.y,
+          heading: k.heading, angle: k.angle, alpha: k.alpha, lift: k.lift, size: k.size, region: k.region, portal: k.portal,
+          route: [...k.route.slice(0, k.legs * 2)], leg: k.leg,
+          pending: [...k.pending.slice(0, k.size)],
+          members: members.map((a) => ({ x: a.x, y: a.y, heading: a.heading, state: a.state, mode: a.mode, region: a.region, portal: a.portal })),
+          others: colony.ants.filter((a) => a.state !== 'absent' && !members.includes(a))
+            .map((a) => ({ x: a.x, y: a.y, state: a.state, mode: a.mode, region: a.region })) });
+        if (k.phase === 'none') state = 'done';
+        options.each?.(colony, t);
+      } });
+      return { frames, done: state === 'done' };
+    }
+
+    // Where place m is for a frame, with the cube's sway (as the carriers see it).
+    const placeOf = (f, m) => {
+      const p = formation(f.size)[m], c = Math.cos(f.heading), s = Math.sin(f.heading);
+      return { x: f.x + c * p[0] - s * p[1], y: f.y + s * p[0] + c * p[1], facing: f.heading + p[2] };
+    };
+    const turned = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+
+    it('needs a roomy region: a corridor wide and long enough, whatever an ant on its own could use', () => {
+      for (const r of regions) expect(cubeRoom(r)).toBe(true); // 1920 × 1080: 256 × 857 gutters
+      const ok = (w, h) => cubeRoom({ x: 0, y: 0, w, h, portals: ['left'] });
+      expect(ok(315, 498)).toBe(true); // 1280 × 720
+      expect(ok(154, 554)).toBe(true); // 1024 × 768
+      expect(ok(391, 329)).toBe(true); // a 1200 × 480 window
+      expect(ok(C.corridor - 1, 857)).toBe(false); // an ant fits a 32 px gutter; a procession does not
+      expect(ok(40, 857)).toBe(false);
+      expect(ok(C.corridor, C.length - 1)).toBe(false);
+      expect(ok(C.corridor, 800)).toBe(true);
+      expect(ok(C.corridor, 600)).toBe(false); // room for two ants only
+      expect(cubeRoom({ x: 0, y: 0, w: 300, h: 600, portals: [] })).toBe(false); // no way in or out
+      // Ants wander a narrow gutter; asked for one over and over, no cube ever turns up there.
+      const narrow = [{ x: 0, y: 0, w: 90, h: 857, portals: ['left', 'top', 'bottom'] }];
+      let ants = 0;
+      simulate(3, 80, { tuning: LINGER, rooms: narrow, each: (c, t) => {
+        if (t < FRAME) c.summon(6);
+        if (Math.round(t * 60) % 120 === 0) c.sweeten();
+        expect(c.cube.phase).toBe('none');
+        ants = Math.max(ants, c.count);
+      } });
+      expect(ants).toBe(3);
+    });
+
+    it('places three or four carriers round the cube: one pulling, two lifting at the sides, one pushing; well apart and within reach', () => {
+      for (const size of [3, 4]) {
+        const places = formation(size);
+        expect(places).toHaveLength(size);
+        // In front, facing the cube (walking backwards); the sides turned in to it; behind, facing the way.
+        expect(places[0][0]).toBeGreaterThan(C.half);
+        expect(Math.abs(places[0][2])).toBeCloseTo(Math.PI, 9);
+        expect(places[1][1]).toBeGreaterThan(C.half);
+        expect(places[2][1]).toBeLessThan(-C.half);
+        expect(places[1][2]).toBeLessThan(0);
+        expect(places[2][2]).toBeGreaterThan(0);
+        if (size === 4) expect(places[3][0]).toBeLessThan(-C.half);
+        let farthest = 0;
+        for (let i = 0; i < size; i++) {
+          farthest = Math.max(farthest, Math.hypot(places[i][0], places[i][1]));
+          for (let j = i + 1; j < size; j++) {
+            // Well apart even if both stray toward each other a little.
+            expect(Math.hypot(places[i][0] - places[j][0], places[i][1] - places[j][1])).toBeGreaterThanOrEqual(19);
+          }
+          // Its body touches the cube (its head or legs at the edge), never stands on it.
+          expect(Math.max(Math.abs(places[i][0]), Math.abs(places[i][1]))).toBeGreaterThanOrEqual(C.half + 4.5);
+        }
+        // The whole procession, strays and sway included, fits its reach; others keep 14 px from every carrier.
+        expect(farthest + C.stumble + AMBIENT.footprint + C.sway).toBeLessThanOrEqual(C.reach);
+        expect(C.radius + C.sway).toBeLessThanOrEqual(C.reach);
+        expect(C.clear - (farthest + C.stumble + C.sway)).toBeGreaterThanOrEqual(AMBIENT.spacing);
+        expect(C.clear - C.radius - C.sway).toBeGreaterThan(AMBIENT.footprint);
+      }
+      // The exception is a controlled one: closer than the colony's rule, never overlapping.
+      expect(C.spacing).toBeLessThan(AMBIENT.spacing);
+      expect(C.spacing).toBeGreaterThan(2 * 2.2 + 1); // two bodies' half-widths
+    });
+
+    it('plans a way out that keeps the whole procession inside, then through a portal to beyond sight', () => {
+      const r = regions[0], route = new Float64Array(4);
+      const b = inflate(r, -C.reach);
+      for (const portal of r.portals) {
+        for (const along of [-300, -120, 0, 90, 400]) {
+          const x = b.x + b.w * 0.6, y = b.y + b.h * 0.4;
+          const n = planRoute(r, x, y, portal, along, route);
+          for (let k = 0; k < n - 1; k++) expect(boxIn(r, route[k * 2], route[k * 2 + 1], C.reach)).toBe(true);
+          const ex = route[(n - 1) * 2], ey = route[(n - 1) * 2 + 1];
+          // The last point lies beyond the portal side, so the whole reach is out of sight, and level with the region.
+          expect(boxIn(r, ex, ey, C.reach, portal)).toBe(true);
+          const beyond = { left: r.x - ex, right: ex - (r.x + r.w), top: r.y - ey, bottom: ey - (r.y + r.h) }[portal];
+          expect(beyond).toBeGreaterThanOrEqual(C.reach);
+          // Straight lines along the side, then straight out: no diagonal crossing of the region.
+          const [lx, ly] = n === 2 ? [route[0], route[1]] : [x, y];
+          if (portal === 'left' || portal === 'right') { expect(ly).toBe(ey); if (n === 2) expect(lx).toBe(x); }
+          else { expect(lx).toBe(ex); if (n === 2) expect(ly).toBe(y); }
+        }
+      }
+    });
+
+    it.each([1, 3, 4, 7])('turns up deep inside a roomy region, near a free ant, clear of everyone, and fades in (seed %i)', (seed) => {
+      const { frames } = procession(seed);
+      const first = frames[0];
+      expect(first).toBeDefined();
+      expect(first.phase).toBe('gather');
+      expect(regions).toContain(first.region);
+      expect(boxIn(first.region, first.px, first.py, C.reach + C.margin)).toBe(true);
+      expect(first.alpha).toBeLessThan(0.1);
+      for (const o of first.others) expect(Math.hypot(o.x - first.px, o.y - first.py)).toBeGreaterThanOrEqual(C.clear + 2 - 1e-6);
+      let near = 0;
+      first.members.forEach((m, i) => {
+        if (first.pending[i]) return;
+        near++;
+        expect(Math.hypot(m.x - first.px, m.y - first.py)).toBeGreaterThanOrEqual(C.keep + 6 - 1e-6);
+        expect(Math.hypot(m.x - first.px, m.y - first.py)).toBeLessThanOrEqual(C.recruit + AMBIENT.speed[1] * FRAME);
+      });
+      expect(near).toBeGreaterThanOrEqual(1); // someone close by, called over
+    });
+
+    it.each([[3, 2], [4, 3], [3, 9], [4, 4]])('gathers a team of %i: called ants walk round to their places, newcomers come in through a portal (seed %i)', (size, seed) => {
+      const { frames } = procession(seed, { size });
+      const lift = frames.findIndex((f) => f.phase === 'lift');
+      expect(lift).toBeGreaterThan(0);
+      expect(frames[0].size).toBe(size);
+      // Nobody walks over the cube: until it steps in, a gatherer keeps its distance.
+      for (const f of frames.slice(0, lift)) {
+        f.members.forEach((m, i) => {
+          if (f.pending[i] || m.mode !== 'gather') return;
+          expect(Math.hypot(m.x - f.px, m.y - f.py)).toBeGreaterThanOrEqual(C.keep - 1e-6);
+        });
+      }
+      // Every carrier ends up exactly at its place round the cube, facing its way, as it is lifted.
+      const at = frames[lift];
+      at.members.forEach((m, i) => {
+        const p = placeOf(at, i);
+        expect(m.mode).toBe('haul');
+        expect(Math.hypot(m.x - p.x, m.y - p.y)).toBeLessThan(1e-6);
+        expect(turned(m.heading, p.facing)).toBeLessThan(1e-6);
+      });
+      // Newcomers walk in from beyond a portal side, never appear in the open.
+      frames[0].pending.forEach((pending, i) => {
+        if (!pending) return;
+        const seen = frames.find((f) => !f.pending[i]);
+        const m = seen.members[i];
+        expect(m.state).toBe('entering');
+        expect(boxIn(seen.region, m.x, m.y, AMBIENT.footprint)).toBe(false); // still out of sight, partly
+      });
+      // It fades in over its time, and is fully there before it is lifted.
+      expect(at.alpha).toBe(1);
+    });
+
+    it.each([1, 3, 4, 5, 6, 7, 8])('carries it as one: every carrier at its place round the moving cube, smoothly, never jumping (seed %i)', (seed) => {
+      const { frames, done } = procession(seed);
+      expect(done).toBe(true);
+      const carrying = frames.filter((f) => ['lift', 'carry', 'turn'].includes(f.phase));
+      expect(carrying.length).toBeGreaterThan(120);
+      let moved = 0;
+      for (let i = 1; i < frames.length; i++) {
+        const [a, b] = [frames[i - 1], frames[i]];
+        if (b.phase === 'none' || a.phase === 'gather' || b.phase === 'gather' || b.phase === 'fade') continue;
+        // Shared movement: the cube's centre at most one frame's pace, turning at the team's rate.
+        expect(Math.hypot(b.px - a.px, b.py - a.py)).toBeLessThanOrEqual(C.speed[1] * FRAME + 1e-9);
+        expect(turned(b.heading, a.heading)).toBeLessThanOrEqual(C.turnRate * FRAME + 1e-9);
+        expect(turned(b.angle, a.angle)).toBeLessThan(0.05);
+        moved += Math.hypot(b.px - a.px, b.py - a.py);
+        b.members.forEach((m, k) => {
+          // Attached: at its place, give or take its small stray.
+          const p = placeOf(b, k);
+          expect(Math.hypot(m.x - p.x, m.y - p.y)).toBeLessThanOrEqual(C.stumble + 1e-6);
+          // No teleporting, and no snapping round.
+          expect(Math.hypot(m.x - a.members[k].x, m.y - a.members[k].y)).toBeLessThan(1.2);
+          expect(turned(m.heading, a.members[k].heading)).toBeLessThan(0.15);
+        });
+      }
+      expect(moved).toBeGreaterThan(80); // a journey worth the name
+    });
+
+    it.each([1, 3, 4, 5, 6, 7, 8])('keeps the whole procession inside its region, turns only standing still, and leaves through a portal (seed %i)', (seed) => {
+      const { frames, done } = procession(seed);
+      expect(done).toBe(true);
+      for (let i = 0; i < frames.length; i++) {
+        const f = frames[i];
+        if (f.phase === 'none') {
+          // Home: the cube and its whole team gone together, beyond the portal they walked out of.
+          const before = frames[i - 1];
+          expect(before.exiting).toBe(true);
+          expect(before.region.portals).toContain(before.portal);
+          expect(f.members.every((m) => m.state === 'absent')).toBe(true);
+          const r = before.region;
+          const beyond = { left: r.x - before.px, right: before.px - (r.x + r.w), top: r.y - before.py, bottom: before.py - (r.y + r.h) }[before.portal];
+          expect(beyond).toBeGreaterThanOrEqual(C.reach - 1e-6);
+          continue;
+        }
+        const r = f.region;
+        expect(boxIn(r, f.px, f.py, C.reach, f.exiting ? f.portal : null)).toBe(true);
+        expect(intersects(inflate({ x: f.x, y: f.y, w: 0, h: 0 }, C.radius), inflate(DESKTOP.game, AMBIENT.clearance - 0.01))).toBe(false);
+        f.members.forEach((m, k) => {
+          if (f.pending[k]) return;
+          expect(intersects(footprint(m), inflate(DESKTOP.game, AMBIENT.clearance - 0.01))).toBe(false);
+          if (m.state === 'leaving') expect(boxIn(r, m.x, m.y, AMBIENT.footprint, m.portal)).toBe(true);
+          else if (m.state !== 'entering') expect(boxIn(r, m.x, m.y, AMBIENT.footprint)).toBe(true);
+          expect(m.region).toBe(r);
+        });
+        if (i > 0 && f.phase === 'turn' && frames[i - 1].phase === 'turn') expect([f.px, f.py]).toEqual([frames[i - 1].px, frames[i - 1].py]);
+        if (f.exiting) expect(f.members.every((m) => m.state === 'leaving' && m.portal === f.portal)).toBe(true);
+      }
+      // It turned at least once on the way (a corner), or went straight out.
+      const legs = frames[0].route.length / 2;
+      expect(legs === 1 || frames.some((f) => f.phase === 'turn')).toBe(true);
+    });
+
+    it('keeps everyone else clear: no other ant within its berth, or 14 px of a carrier; carriers keep their own spacing', () => {
+      let checked = 0, closest = Infinity;
+      for (const seed of [1, 3, 4, 5, 7, 8, 10, 11]) {
+        const { frames } = procession(seed, { limit: 8, tuning: { ...LINGER, crumb: { ...AMBIENT.crumb, every: [1e6, 1e6] } } });
+        for (const f of frames) {
+          if (f.phase === 'none' || f.phase === 'fade') continue;
+          for (const o of f.others) {
+            expect(Math.hypot(o.x - f.px, o.y - f.py)).toBeGreaterThanOrEqual(C.clear - 1e-6);
+            for (const m of f.members) if (m.state !== 'absent') expect(Math.hypot(o.x - m.x, o.y - m.y)).toBeGreaterThanOrEqual(AMBIENT.spacing);
+            checked++;
+          }
+          for (let i = 0; i < f.size; i++) {
+            for (let j = i + 1; j < f.size; j++) {
+              if (f.pending[i] || f.pending[j]) continue;
+              const d = Math.hypot(f.members[i].x - f.members[j].x, f.members[i].y - f.members[j].y);
+              expect(d).toBeGreaterThanOrEqual(C.spacing);
+              closest = Math.min(closest, d);
+            }
+          }
+        }
+      }
+      expect(checked).toBeGreaterThan(1000); // others really were about
+      expect(closest).toBeLessThan(AMBIENT.spacing + 6); // and the team really is close-knit
+    });
+
+    it.each(['wrong-way', 'reconsider', 'straggler', 'reposition'])('now and then gets it slightly wrong (%s), and always recovers', (quirk) => {
+      const { frames, done } = procession(3, { quirk, size: 4 });
+      expect(done).toBe(true);
+      // The first time it happens, from start to finish.
+      const start = frames.findIndex((f) => f.quirk === quirk);
+      expect(start).toBeGreaterThan(0);
+      let end = start;
+      while (frames[end + 1]?.quirk === quirk) end++;
+      const during = frames.slice(start, end + 1);
+      expect(during.length).toBeGreaterThan(20);
+      const stray = (f, k) => { const p = placeOf(f, k); return { d: Math.hypot(f.members[k].x - p.x, f.members[k].y - p.y), turn: turned(f.members[k].heading, p.facing) }; };
+      const most = (fn) => Math.max(...during.map(fn));
+      if (quirk === 'wrong-way') expect(most((f) => Math.max(...f.members.map((m, k) => stray(f, k).turn)))).toBeGreaterThan(1.5);
+      if (quirk === 'straggler') expect(most((f) => Math.max(...f.members.map((m, k) => stray(f, k).d)))).toBeGreaterThan(3);
+      if (quirk === 'reconsider' || quirk === 'reposition') {
+        // The cube stops a moment while they look about or shift their grip.
+        let still = 0;
+        for (let i = start + 1; i <= end; i++) if (frames[i].px === frames[i - 1].px && frames[i].py === frames[i - 1].py) still++;
+        expect(still * FRAME).toBeGreaterThan(0.3);
+        expect(most((f) => Math.max(...f.members.map((m, k) => stray(f, k).turn)))).toBeGreaterThan(0.05);
+      }
+      // Subtle, and soon over: everyone back at their places afterwards.
+      for (const f of during) f.members.forEach((m, k) => expect(stray(f, k).d).toBeLessThanOrEqual(C.stumble + 1e-6));
+      expect((end - start) * FRAME).toBeLessThan(2.6);
+      const after = frames.slice(end + 1).find((f, i, rest) => rest.slice(i, i + 60).every((g) => !g.quirk) && f.phase !== 'none');
+      expect(after).toBeDefined();
+      const later = frames[frames.indexOf(after) + 59];
+      if (later.phase !== 'none') later.members.forEach((m, k) => expect(stray(later, k).d).toBeLessThan(0.05));
+    });
+
+    it('never waits for ever: an ant in the way is asked to step aside, and failing that the cube is given up', () => {
+      // An ant turns up on the route just ahead, standing still.
+      function obstruct(colony) {
+        const k = colony.cube;
+        const blocker = colony.ants.find((a) => a.state === 'absent' && !team(colony).includes(a));
+        const tx = k.route[k.leg * 2], ty = k.route[k.leg * 2 + 1], d = Math.hypot(tx - k.px, ty - k.py);
+        Object.assign(blocker, { state: 'paused', mode: 'solo', region: k.region, timer: 1e9, stay: 1e9, twitch: 0,
+          x: k.px + ((tx - k.px) / d) * (C.clear + 12), y: k.py + ((ty - k.py) / d) * (C.clear + 12) });
+        return { ant: blocker, x: blocker.x, y: blocker.y };
+      }
+      for (const stubborn of [false, true]) {
+        let blocker = null, held = 0, longest = 0;
+        const { frames } = procession(3, { size: 3, limit: 4, seconds: 150, each: (colony) => {
+          const k = colony.cube;
+          const ahead = Math.hypot(k.route[k.leg * 2] - k.px, k.route[k.leg * 2 + 1] - k.py);
+          if (!blocker && k.phase === 'carry' && !k.exiting && ahead > 90 && k.speed > 5) blocker = obstruct(colony);
+          // One that will not budge, whatever it is asked: pinned where it stands.
+          if (stubborn && blocker) Object.assign(blocker.ant, { state: 'paused', mode: 'solo', x: blocker.x, y: blocker.y, timer: 1e9 });
+          if (k.blocked > 0) held++;
+          longest = Math.max(longest, k.blocked);
+        } });
+        expect(blocker).not.toBe(null);
+        expect(held).toBeGreaterThan(0);
+        const fate = frames.at(-2);
+        if (stubborn) {
+          // It never moves: after a fair wait the team gives up, the cube fades and the carriers wander off.
+          const gaveUp = frames.findIndex((f) => f.phase === 'fade');
+          expect(gaveUp).toBeGreaterThan(0);
+          expect(longest).toBeGreaterThanOrEqual(C.stuck);
+          expect(longest).toBeLessThanOrEqual(C.stuck + 2 * FRAME);
+          expect(frames[gaveUp].members.every((m) => m.mode === 'solo')).toBe(true);
+          expect(frames.at(-1).phase).toBe('none');
+        } else {
+          // Asked to make way, it does, and the procession goes on home.
+          expect(frames.some((f) => f.phase === 'fade')).toBe(false);
+          expect(fate.exiting).toBe(true);
+          expect(longest).toBeLessThan(C.shoo + 1);
+        }
+      }
+    });
+
+    it('always ends, never in a deadlock: every procession in long natural runs is home or given up within its lifetime', () => {
+      let home = 0, given = 0, longest = 0, total = 0;
+      // As in the game, the gutters open only on their outer sides; and open at their ends as well.
+      const sides = safeRegions(DESKTOP.visible, [DESKTOP.game], { open: { left: true, right: true, top: false, bottom: false } });
+      for (const [seed, rooms] of [[51, regions], [52, regions], [53, sides], [54, sides], [55, sides], [56, sides]]) {
+        let start = null, faded = false;
+        simulate(seed, 30 * 60, { rooms, tuning: { ...AMBIENT, cube: { ...C, every: [60, 120] } }, each: (colony, t) => {
+          const k = colony.cube;
+          if (k.phase !== 'none' && start === null) { start = t; faded = false; }
+          if (k.phase === 'fade') faded = true;
+          if (k.phase === 'none' && start !== null) {
+            longest = Math.max(longest, t - start);
+            if (faded) given++; else home++;
+            total++;
+            start = null;
+          }
+          if (out(colony)) expect(team(colony).every((a) => a.state !== 'absent' || colony.cube.pending[team(colony).indexOf(a)])).toBe(true);
+        } });
+      }
+      expect(total).toBeGreaterThan(50);
+      expect(home + given).toBe(total);
+      expect(given).toBeLessThanOrEqual(Math.max(1, total * 0.03)); // the rare one fades away gracefully
+      expect(longest).toBeLessThanOrEqual(C.lifetime + C.fade + 0.1);
+    }, 30_000);
+
+    it('keeps the procession where it is through a layout change it still fits, with a safe route', () => {
+      let checked = false;
+      cubeRun(3, 60, { size: 4, each: (colony) => {
+        const k = colony.cube;
+        if (checked || k.phase !== 'carry' || k.exiting) return;
+        checked = true;
+        const before = { px: k.px, py: k.py, route: [...k.route], ants: team(colony).map((a) => [a.x, a.y, a.heading]) };
+        // The same layout again changes nothing.
+        colony.relayout(regions);
+        expect([k.px, k.py, [...k.route]]).toEqual([before.px, before.py, before.route]);
+        // A paused cup: the gutters become wider and shorter; the procession still fits where it stands.
+        const paused = safeRegions(DESKTOP.visible, [{ x: 298, y: 0, w: 930, h: 790 }, { x: 0, y: 806, w: 1526, h: 51 }]);
+        const fits = paused.find((r) => boxIn(r, k.px, k.py, C.reach));
+        expect(fits).toBeDefined();
+        colony.relayout(paused);
+        expect(k.phase).toBe('carry');
+        expect(k.region).toBe(fits);
+        expect(team(colony).map((a) => [a.x, a.y, a.heading])).toEqual(before.ants); // not moved
+        for (let n = k.leg; n < k.legs - 1; n++) expect(boxIn(fits, k.route[n * 2], k.route[n * 2 + 1], C.reach)).toBe(true);
+        expect(fits.portals).toContain(k.portal);
+        // And it carries on safely in the new layout.
+        let home = false;
+        for (let t = 0; t < 80 && !home; t += FRAME) {
+          colony.step(FRAME, paused, 6);
+          if (k.phase === 'none') { home = true; break; }
+          expect(boxIn(k.region, k.px, k.py, C.reach, k.exiting ? k.portal : null)).toBe(true);
+        }
+        expect(home).toBe(true);
+      } });
+      expect(checked).toBe(true);
+    });
+
+    it('cancels at once when the layout cuts into it, retiring carriers a panel covers and freeing the rest', () => {
+      for (const phase of ['gather', 'carry']) {
+        let checked = false;
+        cubeRun(4, 60, { size: 4, each: (colony) => {
+          const k = colony.cube;
+          if (checked || k.phase !== phase || (phase === 'gather' && k.alpha < 0.5)) return;
+          checked = true;
+          const members = team(colony).filter((a) => a.state !== 'absent');
+          // A panel over the cube and the carriers on one side of it.
+          const panel = { x: k.px - 4, y: k.py - 60, w: 200, h: 120 };
+          const next = safeRegions(DESKTOP.visible, [DESKTOP.game, panel]);
+          const covered = members.filter((a) => intersects(footprint(a), inflate(panel, AMBIENT.clearance)));
+          colony.relayout(next);
+          expect(k.phase).toBe('none');
+          expect(colony.ants.some((a) => a.mode === 'haul' || a.mode === 'gather')).toBe(false);
+          for (const a of covered) expect(a.state).toBe('absent');
+          for (const a of members) if (a.state !== 'absent') expect(a.mode).toBe('solo');
+          for (let t = 0; t < 20; t += FRAME) {
+            colony.step(FRAME, next, 6);
+            for (const a of present(colony)) expect(intersects(footprint(a), inflate(panel, AMBIENT.clearance - 0.01))).toBe(false);
+          }
+        } });
+        expect(checked).toBe(true);
+      }
+      // Its whole gutter gone: gone with it, team and all.
+      let gone = false;
+      cubeRun(5, 60, { each: (colony) => {
+        const k = colony.cube;
+        if (gone || k.phase !== 'carry') return;
+        gone = true;
+        const kept = regions.filter((r) => r !== k.region), members = team(colony);
+        colony.relayout(kept);
+        expect(k.phase).toBe('none');
+        expect(members.every((a) => a.state === 'absent')).toBe(true);
+      } });
+      expect(gone).toBe(true);
+    });
+
+    it('fades away, its team free again, when a carrier walking over is lost to a layout change but the cube still fits', () => {
+      let checked = false;
+      cubeRun(9, 60, { size: 3, each: (colony) => {
+        const k = colony.cube;
+        if (checked || k.phase !== 'gather') return;
+        const walker = team(colony).find((a, m) => !k.pending[m] && a.mode === 'gather' && Math.hypot(a.x - k.px, a.y - k.py) > 80);
+        if (!walker) return;
+        checked = true;
+        const panel = { x: walker.x - 20, y: walker.y - 20, w: 40, h: 40 };
+        const next = safeRegions(DESKTOP.visible, [DESKTOP.game, panel]);
+        colony.relayout(next);
+        expect(walker.state).toBe('absent');
+        expect(['fade', 'none']).toContain(k.phase);
+        expect(colony.ants.some((a) => a.mode === 'haul' || a.mode === 'gather')).toBe(false);
+      } });
+      expect(checked).toBe(true);
+    });
+
+    it('never starts in Low graphics, and heads straight home when the ceiling drops mid-carry', () => {
+      const { colony } = cubeRun(3, 40, { social: false });
+      expect(colony.cube.phase).toBe('none');
+      let dropped = false, quirksAfter = 0;
+      const { frames, done } = procession(3, { seconds: 120, each: (c) => {
+        const k = c.cube;
+        if (!dropped && k.phase === 'carry' && !k.exiting && k.leg === 0) { dropped = true; c.step(FRAME, regions, 2, { social: false }); }
+        if (dropped && k.quirk) quirksAfter++;
+      } });
+      expect(dropped).toBe(true);
+      expect(done).toBe(true);
+      const hurried = frames.find((f) => f.hurry);
+      expect(hurried).toBeDefined();
+      expect(hurried.route.length).toBe(2); // straight out
+      expect(quirksAfter).toBe(0);
+      expect(frames.some((f) => f.phase === 'fade')).toBe(false); // carried home, not dropped
+    });
+
+    it('never shares the colony with a crumb', () => {
+      let cubes = 0, crumbs = 0;
+      for (const seed of [61, 62, 63]) {
+        simulate(seed, 300, { tuning: LINGER, each: (colony, t) => {
+          if (t < FRAME) colony.summon(6);
+          if (Math.round(t * 60) % 240 === 0) { colony.crumble(); colony.sweeten(); }
+          const cube = colony.cube.phase !== 'none', crumb = colony.crumb.state !== 'none';
+          expect(cube && crumb).toBe(false);
+          if (cube) cubes++;
+          if (crumb) crumbs++;
+        } });
+      }
+      expect(cubes).toBeGreaterThan(0);
+      expect(crumbs).toBeGreaterThan(0);
+    });
+
+    it('recruits only free ants: no social moment is cut short, and no new one starts meanwhile', () => {
+      let launches = 0;
+      for (const seed of [71, 72, 73, 74]) {
+        let was = new Map(), wasOut = false;
+        simulate(seed, 240, { tuning: LINGER, each: (colony, t) => {
+          if (t < FRAME) colony.summon(6);
+          if (Math.round(t * 60) % 300 === 0) { colony.socialize(); colony.sweeten(); }
+          colony.ants.forEach((a) => {
+            const before = was.get(a);
+            if (a.mode === 'gather' && before && before !== 'gather') {
+              expect(['solo']).toContain(before);
+              launches++;
+            }
+            if (['follow', 'greet', 'drift'].includes(a.mode) && before && !['follow', 'greet', 'drift'].includes(before)) {
+              expect(wasOut).toBe(false);
+            }
+          });
+          was = new Map(colony.ants.map((a) => [a, a.state === 'absent' ? null : a.mode]));
+          wasOut = colony.cube.phase !== 'none';
+        } });
+      }
+      expect(launches).toBeGreaterThan(0);
+    });
+
+    it('stays within the population ceiling and its region\'s capacity, newcomers included', () => {
+      let seen = false;
+      for (const [seed, limit] of [[81, 3], [82, 4], [83, 6], [84, 12]]) {
+        cubeRun(seed, 80, { limit, each: (colony) => {
+          if (colony.cube.phase !== 'none') seen = true;
+          let reserved = 0;
+          for (let m = 0; m < colony.cube.size; m++) if (colony.cube.phase === 'gather') reserved += colony.cube.pending[m];
+          expect(colony.count + reserved).toBeLessThanOrEqual(limit);
+          for (const r of regions) {
+            const inside = colony.ants.filter((a) => a.state !== 'absent' && a.region === r).length;
+            expect(inside).toBeLessThanOrEqual(regionCapacity(r));
+          }
+        } });
+      }
+      expect(seen).toBe(true);
+    });
+
+    it('is reproducible from a seed, and different seeds tell different stories', () => {
+      const trace = (seed) => procession(seed).frames.filter((f, i) => i % 15 === 0)
+        .map((f) => `${f.phase}${f.quirk ?? ''}@${f.px.toFixed(3)},${f.py.toFixed(3)}:${f.members.map((m) => `${m.x.toFixed(2)},${m.y.toFixed(2)}`).join(' ')}`);
+      expect(trace(3)).toEqual(trace(3));
+      expect(trace(3)).not.toEqual(trace(4));
+    });
+
+    it('stays rare in the colony\'s own rhythm: well under one an opportunity window, a few an hour at most', () => {
+      let started = 0, home = 0;
+      for (const seed of [91, 92, 93]) {
+        let was = 'none';
+        simulate(seed, 60 * 60, { each: (colony) => {
+          const now = colony.cube.phase;
+          if (was === 'none' && now !== 'none') started++;
+          if (was !== 'none' && was !== 'fade' && now === 'none') home++;
+          was = now;
+        } });
+      }
+      // Three hours at 1920 × 1080: an opportunity every 12–20 minutes of eligible time.
+      expect(started).toBeGreaterThanOrEqual(3);
+      expect(started).toBeLessThanOrEqual(15);
+      expect(home).toBeGreaterThan(0);
+    }, 30_000);
   });
 });
 
@@ -1105,6 +1706,47 @@ describe('the ant painter', () => {
     expect(low.calls.lineTo ?? 0).toBe(0);
     expect(high.calls.lineTo).toBeGreaterThan(0);
     expect(low.calls.fill).toBeLessThan(high.calls.fill);
+    expect(high.calls.save).toBe(high.calls.restore);
+    expect(faded.calls.save ?? 0).toBe(0); // nothing at all while invisible
+  });
+
+  it('draws the sugar cube within its radius at any angle and lift, clearly bigger than an ant', () => {
+    // Records geometry through translate and rotate: drawCube translates to the cube and draws about it.
+    let reach = 0, lineWidth = 1, m = [1, 0, 0, 1, 0, 0];
+    const stack = [];
+    const see = (x, y, extra) => reach = Math.max(reach, Math.hypot(m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]) + extra);
+    const ctx = {
+      save() { stack.push([...m]); }, restore() { m = stack.pop(); },
+      translate(x, y) { m = [m[0], m[1], m[2], m[3], m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]]; },
+      rotate(a) { const c = Math.cos(a), s = Math.sin(a); m = [m[0] * c + m[2] * s, m[1] * c + m[3] * s, m[2] * c - m[0] * s, m[3] * c - m[1] * s, m[4], m[5]]; },
+      beginPath() {}, closePath() {}, fill() {}, stroke() {}, globalAlpha: 1, fillStyle: null, strokeStyle: null, lineJoin: null,
+      set lineWidth(w) { lineWidth = w; }, get lineWidth() { return lineWidth; },
+      moveTo(x, y) { see(x, y, lineWidth / 2); }, lineTo(x, y) { see(x, y, lineWidth / 2); },
+      arc(x, y, r) { see(x, y, r); },
+    };
+    for (const quality of ['high', 'low']) {
+      for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
+        for (const lift of [0, 0.3, 1]) drawCube(ctx, { x: 0, y: 0, angle, alpha: 1, lift }, { quality });
+      }
+    }
+    expect(stack).toHaveLength(0);
+    expect(reach).toBeGreaterThan(AMBIENT.cube.half * Math.SQRT2); // the measurement saw its corners
+    expect(reach).toBeLessThanOrEqual(AMBIENT.cube.radius);
+    // Comically large beside an ant (about 12 px from gaster to head), and its procession's reach holds it.
+    expect(AMBIENT.cube.half * 2).toBeGreaterThan(12);
+    expect(AMBIENT.cube.radius + AMBIENT.cube.sway).toBeLessThanOrEqual(AMBIENT.cube.reach);
+  });
+
+  it('draws a plainer cube in Low quality, honours its fade, and leaves the context as it found it', () => {
+    const high = fakeContext(), low = fakeContext(), faded = fakeContext();
+    drawCube(high, { x: 5, y: 5, angle: 0.4, alpha: 1, lift: 0.5 }, { quality: 'high' });
+    drawCube(low, { x: 5, y: 5, angle: 0.4, alpha: 1, lift: 0.5 }, { quality: 'low' });
+    drawCube(faded, { x: 5, y: 5, alpha: 0 });
+    expect(low.calls.fill).toBeLessThan(high.calls.fill); // no shadow, no grains
+    expect(low.calls.stroke ?? 0).toBe(0);
+    expect(low.calls.arc ?? 0).toBe(0);
+    expect(high.calls.arc).toBeGreaterThan(0);
+    expect(high.fills).toContain('#fbf7ee');
     expect(high.calls.save).toBe(high.calls.restore);
     expect(faded.calls.save ?? 0).toBe(0); // nothing at all while invisible
   });
@@ -1205,18 +1847,21 @@ describe('the ambient layer', () => {
     ambient.dispose();
   });
 
-  it('never draws an ant over a panel that appears in its gutter: those ants go at once, the rest stay', () => {
+  it('never draws an ant over a panel that appears in its gutter: ants it covers go at once, the rest stay', () => {
     const page = fakePage({ stage: { left: 197, top: 100, width: 1526, height: 857 }, game: { left: 461, top: 100, width: 998, height: 857 }, viewport: [1920, 1080] });
     const ambient = createAmbient({ canvas: page.layer, seed: 9 });
     untilVisible(ambient, 6);
     run(ambient, 4);
     const before = ambient.snapshot();
-    const left = before.ants.filter((a) => a.region.x < 264).map((a) => a.slot);
-    const right = before.ants.filter((a) => a.region.x >= 264 && a.state !== 'leaving').map((a) => a.slot);
-    expect(left.length).toBeGreaterThan(0);
-    expect(right.length).toBeGreaterThan(0);
     // A panel unfolds across the middle of the left gutter (no resize event: the child count changes).
-    const panel = { x: 30, y: 280, w: 200, h: 180 }; // stage-local
+    const panel = { x: 0, y: 100, w: 256, h: 200 }; // stage-local
+    const meets = (a) => intersects(footprint(a), inflate(panel, AMBIENT.clearance));
+    const covered = before.ants.filter(meets).map((a) => a.slot);
+    const stays = before.ants.filter((a) => a.region.x < 264 && !meets(a)).map((a) => a.slot);
+    const right = before.ants.filter((a) => a.region.x >= 264 && a.state !== 'leaving').map((a) => a.slot);
+    expect(covered.length).toBeGreaterThan(0);
+    expect(stays.length).toBeGreaterThan(0);
+    expect(right.length).toBeGreaterThan(0);
     page.addPanel({ left: 197 + panel.x, top: 100 + panel.y, width: panel.w, height: panel.h });
     let shown = 0;
     for (let t = 0; t < 30; t += FRAME) {
@@ -1224,9 +1869,14 @@ describe('the ambient layer', () => {
       const s = ambient.snapshot();
       if (s.hidden) continue;
       if (shown++ === 0) {
-        // The left gutter is now two smaller regions; its ants were retired, not walked out past the panel.
-        expect(s.ants.filter((a) => left.includes(a.slot))).toEqual([]);
+        // Those the panel covers were retired, not walked out past it; the rest stood still while it settled.
+        expect(s.ants.filter((a) => covered.includes(a.slot))).toEqual([]);
         expect(s.ants.filter((a) => right.includes(a.slot))).toHaveLength(right.length);
+        expect(s.ants.filter((a) => stays.includes(a.slot))).toHaveLength(stays.length); // in the cut gutter, clear of it
+        for (const a of s.ants) {
+          const was = before.ants.find((b) => b.slot === a.slot);
+          if (was) expect(Math.hypot(a.x - was.x, a.y - was.y)).toBeLessThanOrEqual(AMBIENT.speed[1] * 1.4 * FRAME + 1e-9);
+        }
       }
       for (const a of s.ants) expect(intersects(footprint(a), inflate(panel, AMBIENT.clearance - 0.01))).toBe(false);
     }
@@ -1291,6 +1941,198 @@ describe('the ambient layer', () => {
     ambient.dispose();
   });
 
+  /** A 1920 × 1080 page with six ants out and a sugar cube asked for; runs until `until(snapshot)` (or fails). */
+  function cubePage(seed, until, { quality = () => 'high', size = null, quirk = null } = {}) {
+    const page = fakePage({ stage: { left: 197, top: 100, width: 1526, height: 857 }, game: { left: 461, top: 100, width: 998, height: 857 }, viewport: [1920, 1080] });
+    const ambient = createAmbient({ canvas: page.layer, seed, quality });
+    untilVisible(ambient, 6);
+    run(ambient, 2);
+    ambient.sweeten({ size, quirk });
+    for (let i = 0; i < 60 * 90 && !until(ambient.snapshot()); i++) {
+      if (i % 600 === 599 && !ambient.snapshot().cube) { ambient.summon(6); ambient.sweeten({ size, quirk }); }
+      ambient.update(FRAME, PLAYING);
+    }
+    expect(until(ambient.snapshot())).toBe(true);
+    return { page, ambient };
+  }
+  const carrying = (s) => s.cube?.phase === 'carry' && !s.cube.exiting;
+
+  it('draws the sugar cube under its carriers, and clears its larger spot too', () => {
+    const { page, ambient } = cubePage(3, carrying);
+    const { calls, fills, cleared } = page.context;
+    ambient.update(FRAME, PLAYING);
+    const [clears, saves, from] = [calls.clearRect, calls.save, fills.length];
+    cleared.length = 0;
+    ambient.update(FRAME, PLAYING);
+    const s = ambient.snapshot();
+    expect(calls.save - saves).toBe(s.count + 1); // every ant and the cube
+    expect(calls.clearRect - clears).toBe(s.count + 1); // last frame's spots, the cube's included
+    expect(cleared).toContain((AMBIENT.cube.radius + 2) * 2);
+    const frame = fills.slice(from);
+    expect(frame.indexOf('#fbf7ee')).toBeGreaterThanOrEqual(0); // the cube's top
+    expect(frame.indexOf('#fbf7ee')).toBeLessThan(frame.indexOf('#7a4a2c')); // before any ant
+    // The whole procession, carriers and cube, is on the layer, never near the game.
+    for (const a of s.ants) expect(intersects(footprint(a), inflate({ x: 264, y: 0, w: 998, h: 857 }, AMBIENT.clearance - 0.01))).toBe(false);
+    ambient.dispose();
+  });
+
+  it('holds a procession still while paused, unfocused or hidden, hides it under modals, and drops it for reduced motion', () => {
+    const { page, ambient } = cubePage(4, carrying);
+    const where = () => { const s = ambient.snapshot(); return [s.cube, s.ants.map((a) => [a.slot, a.x, a.y, a.heading])]; };
+    const paused = { ...PLAYING, phase: 'paused', pausedFrom: 'playing' };
+    ambient.update(FRAME, paused);
+    const here = where();
+    const before = page.context.calls.lineTo;
+    run(ambient, 1, paused);
+    expect(where()).toEqual(here);
+    expect(page.context.calls.lineTo).toBe(before); // a still scene is not redrawn
+    page.win.dispatchEvent(new Event('blur'));
+    run(ambient, 0.5);
+    expect(where()).toEqual(here);
+    page.win.dispatchEvent(new Event('focus'));
+    page.doc.visibilityState = 'hidden';
+    run(ambient, 0.5);
+    expect(where()).toEqual(here);
+    page.doc.visibilityState = 'visible';
+    run(ambient, 0.5, { ...PLAYING, blocked: true });
+    expect(page.layer.hidden).toBe(true);
+    expect(where()).toEqual(here);
+    // Back in play it picks up where it left off: one frame's worth of movement, no catch-up.
+    ambient.update(FRAME, PLAYING);
+    const now = ambient.snapshot();
+    expect(Math.hypot(now.cube.x - here[0].x, now.cube.y - here[0].y)).toBeLessThanOrEqual(AMBIENT.cube.speed[1] * FRAME + AMBIENT.cube.sway);
+    for (const [slot, x, y] of here[1]) {
+      const a = now.ants.find((b) => b.slot === slot);
+      if (a) expect(Math.hypot(a.x - x, a.y - y)).toBeLessThan(1.5);
+    }
+    page.win.media.matches = true;
+    page.win.media.dispatchEvent(Object.assign(new Event('change'), { matches: true }));
+    ambient.update(FRAME, PLAYING);
+    expect(ambient.snapshot()).toMatchObject({ cube: null, count: 0, hidden: true });
+    ambient.sweeten();
+    ambient.summon(6);
+    run(ambient, 20);
+    expect(ambient.snapshot().cube).toBe(null);
+    ambient.dispose();
+  });
+
+  it('carries on, plainer and straight home, when graphics turn Low mid-carry; never starts in Low', () => {
+    let look = 'high';
+    const { page, ambient } = cubePage(3, carrying, { quality: () => look });
+    const arcs = () => page.context.calls.arc ?? 0;
+    let before = arcs();
+    ambient.update(FRAME, PLAYING);
+    expect(arcs()).toBeGreaterThan(before); // grains on the cube's top in High
+    look = 'low';
+    ambient.update(FRAME, PLAYING);
+    before = arcs();
+    ambient.update(FRAME, PLAYING);
+    const s = ambient.snapshot();
+    expect(s).toMatchObject({ quality: 'low', limit: 2 });
+    expect(s.cube).toMatchObject({ hurry: true, phase: expect.stringMatching(/carry|turn/) });
+    expect(arcs()).toBe(before); // a plain cube in Low
+    let home = false;
+    for (let t = 0; t < 60 && !home; t += FRAME) {
+      ambient.update(FRAME, PLAYING);
+      const now = ambient.snapshot();
+      expect(now.cube?.phase ?? 'none').not.toBe('fade'); // carried home, not dropped
+      home = now.cube === null;
+    }
+    expect(home).toBe(true);
+    run(ambient, 30);
+    expect(ambient.snapshot().count).toBeLessThanOrEqual(2);
+    // In Low, asking again brings no cube.
+    ambient.summon(6);
+    ambient.sweeten();
+    for (let t = 0; t < 30; t += FRAME) { ambient.update(FRAME, PLAYING); expect(ambient.snapshot().cube).toBe(null); }
+    ambient.dispose();
+  });
+
+  it('drops the procession at once when a panel covers it, and retires the carriers it covers', () => {
+    const { page, ambient } = cubePage(5, carrying);
+    const s = ambient.snapshot();
+    const panel = { x: s.cube.x - 40, y: s.cube.y - 40, w: 80, h: 80 };
+    page.addPanel({ left: 197 + panel.x, top: 100 + panel.y, width: panel.w, height: panel.h });
+    let shown = 0;
+    for (let t = 0; t < 3; t += FRAME) {
+      ambient.update(FRAME, PLAYING);
+      const now = ambient.snapshot();
+      if (now.hidden) continue;
+      shown++;
+      expect(now.cube).toBe(null);
+      for (const a of now.ants) expect(intersects(footprint(a), inflate(panel, AMBIENT.clearance - 0.01))).toBe(false);
+    }
+    expect(shown).toBeGreaterThan(0);
+    ambient.dispose();
+  });
+
+  it('keeps ants (and a procession) standing where they are through the pause reflow if they still fit, and resumes without catching up', () => {
+    const page = fakePage({ stage: { left: 197, top: 100, width: 1526, height: 857 }, game: { left: 461, top: 100, width: 998, height: 857 }, viewport: [1920, 1080] });
+    const ambient = createAmbient({ canvas: page.layer, seed: 4 });
+    untilVisible(ambient, 6);
+    run(ambient, 3);
+    const paused = { ...PLAYING, phase: 'paused', pausedFrom: 'playing' };
+    ambient.update(FRAME, paused); // paused: from here on nothing moves
+    const before = ambient.snapshot().ants;
+    // Pausing shrinks the cup to make room for a panel below it, as the real stage does (59 px shorter).
+    page.gameCanvas.box = { left: 197 + 298, top: 100, width: 930, height: 790 };
+    const below = page.addPanel({ left: 197, top: 100 + 806, width: 1526, height: 51 });
+    run(ambient, 0.5, paused);
+    const s = ambient.snapshot();
+    expect(s.policy).toBe('frozen');
+    expect(s.hidden).toBe(false);
+    expect(s.regions.every((r) => r.h < 857)).toBe(true); // the paused layout, measured
+    const fits = (a) => s.regions.some((r) => a.x - AMBIENT.footprint >= r.x - 1e-6 && a.x + AMBIENT.footprint <= r.x + r.w + 1e-6
+      && a.y - AMBIENT.footprint >= r.y - 1e-6 && a.y + AMBIENT.footprint <= r.y + r.h + 1e-6);
+    let kept = 0;
+    for (const a of before) {
+      const now = s.ants.find((b) => b.slot === a.slot);
+      if (a.state === 'wandering' || a.state === 'paused') expect(!!now).toBe(fits(a));
+      if (!now) continue;
+      kept++;
+      expect([now.x, now.y, now.heading]).toEqual([a.x, a.y, a.heading]); // exactly where it stood
+    }
+    expect(kept).toBeGreaterThan(2);
+    // However long it stays paused, nothing moves.
+    const still = JSON.stringify(ambient.snapshot().ants);
+    run(ambient, 3, paused);
+    expect(JSON.stringify(ambient.snapshot().ants)).toBe(still);
+    // Unpausing reflows back; ants still there carry on from where they were, one frame at a time.
+    page.gameCanvas.box = { left: 461, top: 100, width: 998, height: 857 };
+    page.host.children = page.host.children.filter((child) => child !== below);
+    const frozen = ambient.snapshot().ants;
+    let resumed = null;
+    for (let i = 0; i < 60 && !resumed; i++) {
+      ambient.update(FRAME, PLAYING);
+      const now = ambient.snapshot();
+      if (!now.hidden && now.policy === 'run') resumed = now;
+    }
+    expect(resumed).not.toBe(null);
+    for (const a of resumed.ants) {
+      const was = frozen.find((b) => b.slot === a.slot);
+      if (was) expect(Math.hypot(a.x - was.x, a.y - was.y)).toBeLessThanOrEqual(AMBIENT.speed[1] * 1.4 * FRAME + 1e-9);
+    }
+    // A procession under way is kept, frozen, through the same reflow if it still fits.
+    ambient.sweeten({ size: 3 });
+    for (let i = 0; i < 60 * 60 && !carrying(ambient.snapshot()); i++) {
+      if (i % 600 === 599 && !ambient.snapshot().cube) { ambient.summon(6); ambient.sweeten({ size: 3 }); }
+      ambient.update(FRAME, PLAYING);
+    }
+    expect(carrying(ambient.snapshot())).toBe(true);
+    ambient.update(FRAME, paused);
+    const cube = ambient.snapshot().cube;
+    page.gameCanvas.box = { left: 197 + 298, top: 100, width: 930, height: 790 };
+    page.addPanel({ left: 197, top: 100 + 806, width: 1526, height: 51 });
+    run(ambient, 0.5, paused);
+    const after = ambient.snapshot();
+    const room = after.regions.some((r) => cube.x - AMBIENT.cube.reach >= r.x - 2 && cube.x + AMBIENT.cube.reach <= r.x + r.w + 2
+      && cube.y - AMBIENT.cube.reach >= r.y - 2 && cube.y + AMBIENT.cube.reach <= r.y + r.h + 2);
+    expect(room).toBe(true); // it still fits the paused gutter
+    expect(after.cube).toMatchObject({ x: cube.x, y: cube.y, phase: 'carry' });
+    expect(after.ants.filter((a) => cube.members.includes(a.slot)).map((a) => a.mode)).toEqual(['haul', 'haul', 'haul']);
+    ambient.dispose();
+  });
+
   it('carries on with the crumb in a plainer look when graphics turn Low mid-carry', () => {
     let look = 'high';
     const { page, ambient } = crumbPage(8, (s) => s.crumb?.state === 'carried', () => look);
@@ -1329,6 +2171,27 @@ describe('the ambient layer', () => {
       expect(now.crumb).toBe(null);
       expect(now.ants.some((a) => a.slot === s.crumb.claim)).toBe(false);
     }
+    ambient.dispose();
+  });
+
+  it('retires every ant at once when the window narrows to an upright phone width, even ants that would fit', () => {
+    // The same stage and cup either way: bands above and below the cup that ants can use.
+    const layout = { stage: { left: 9, top: 200, width: 394, height: 600 }, game: { left: 9, top: 300, width: 394, height: 200 } };
+    const page = fakePage({ ...layout, viewport: [520, 839] });
+    const ambient = createAmbient({ canvas: page.layer, seed: 3 });
+    untilVisible(ambient, 2);
+    const before = ambient.snapshot();
+    expect(before.regions.length).toBeGreaterThan(0);
+    // Only the window's width changes: nothing moves, but the display now allows none.
+    page.relayout({ ...layout, viewport: [480, 839] });
+    page.win.dispatchEvent(new Event('resize'));
+    for (let t = 0; t < 0.5; t += FRAME) {
+      ambient.update(FRAME, PLAYING);
+      const s = ambient.snapshot();
+      if (s.budget === 0) expect(s).toMatchObject({ count: 0, hidden: true, width: 0 });
+    }
+    expect(ambient.snapshot()).toMatchObject({ budget: 0, count: 0, hidden: true });
+    expect(ambient.snapshot().regions).toEqual(before.regions); // the gutters are still there; the rule is the display's
     ambient.dispose();
   });
 
@@ -1563,14 +2426,14 @@ describe('isolation from the game', () => {
     ambient.dispose();
   });
 
-  it('leaves seeded gameplay identical with a whole colony and its crumbs: state, events and random streams', () => {
+  it('leaves seeded gameplay identical with a whole colony, its crumbs and sugar cubes: state, events and random streams', () => {
     function play(withAmbient, ambientSeed) {
       const game = createGame({ seed: 77 });
       const page = fakePage({ stage: { left: 197, top: 100, width: 1526, height: 857 }, game: { left: 461, top: 100, width: 998, height: 857 }, viewport: [1920, 1080] });
       const ambient = withAmbient ? createAmbient({ canvas: page.layer, seed: ambientSeed, ants: 12 }) : null;
       ambient?.summon(12);
       const log = [];
-      let crumbs = 0;
+      let crumbs = 0, cubes = 0;
       game.primaryAction();
       for (let i = 0; i < 60 * 40; i++) {
         const input = { left: Math.floor(i / 80) % 2 === 0, right: Math.floor(i / 80) % 2 === 1, fire: true };
@@ -1582,7 +2445,9 @@ describe('isolation from the game', () => {
         const before = withAmbient && i % 97 === 0 ? JSON.stringify(game.state) : null;
         const s = game.state;
         if (i % 600 === 300) { ambient?.socialize(); ambient?.crumble(); }
+        if (i % 900 === 450) ambient?.sweeten();
         if (withAmbient && i % 30 === 0 && ambient.snapshot().crumb) crumbs++;
+        if (withAmbient && i % 30 === 0 && ambient.snapshot().cube) cubes++;
         // Stepped a varying number of times, as a slow or fast display would.
         for (let k = 0; k < (i % 3); k++) {
           ambient?.update(FRAME, { phase: s.phase, pausedFrom: s.pausedFrom, offer: !!s.offer, blocked: false, holding: false });
@@ -1591,7 +2456,7 @@ describe('isolation from the game', () => {
       }
       const seen = ambient?.snapshot().count;
       ambient?.dispose();
-      return { state: JSON.stringify(game.state), log, seen, crumbs };
+      return { state: JSON.stringify(game.state), log, seen, crumbs, cubes };
     }
     const plain = play(false);
     const decorated = play(true, 1);
@@ -1601,5 +2466,6 @@ describe('isolation from the game', () => {
     expect(otherSeed.state).toBe(plain.state);
     expect(plain.log.some((entry) => entry.endsWith(':kill'))).toBe(true);
     expect(decorated.crumbs + otherSeed.crumbs).toBeGreaterThan(0); // crumbs came and went meanwhile
+    expect(decorated.cubes + otherSeed.cubes).toBeGreaterThan(0); // and sugar cubes
   }, 30_000);
 });
