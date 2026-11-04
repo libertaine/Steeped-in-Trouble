@@ -15,12 +15,20 @@
 // is committed.
 import { chromium, devices } from '@playwright/test';
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
+import { stageTextReading } from '../browser/textMischief.js';
 
 const [url, output, ...only] = process.argv.slice(2);
 if (!url || !output) throw new Error('Usage: node tests/support/ambientReview.js URL OUTPUT_DIRECTORY [scenario ...]');
 mkdirSync(output, { recursive: true });
 
 const desktop = (width, height) => ({ ...devices['Desktop Chrome'], viewport: { width, height } });
+
+async function textTheft(page) {
+  await page.mouse.move(0, 0);
+  await stageTextReading(page);
+  await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().text.eligible);
+  if (!await page.evaluate(() => window.__TEACUP__.ambient.stealText())) throw new Error('Text theft was ineligible');
+}
 
 /**
  * Ask for a crumb until a wandering ant notices one (an unnoticed crumb just
@@ -62,6 +70,21 @@ async function procession(page, { size = null, quirk = null, phase = null } = {}
  * runs `seconds` after it, sampled every `every` ms (1000), calling `during` at each sample.
  */
 const SCENARIOS = {
+  'text-theft': { context: desktop(1920, 1080), query: '&view=full', seconds: 16, every: 250, start: textTheft },
+  'text-carry': { context: desktop(1920, 1080), query: '&view=full', seconds: 5, every: 250,
+    async start(page) { await textTheft(page);
+      await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().text.phase === 'carry'); } },
+  'text-return': { context: desktop(1920, 1080), query: '&view=full', seconds: 10, every: 250,
+    async start(page) { await textTheft(page);
+      await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().text.phase === 'absent'); } },
+  'text-advance': { context: desktop(1920, 1080), query: '&view=full', seconds: 6, every: 250, start: textTheft,
+    async during(page, t) { if (t === 3) await page.keyboard.press('Enter'); } },
+  'text-resize': { context: desktop(1920, 1080), query: '&view=full', seconds: 6, every: 250, start: textTheft,
+    async during(page, t) { if (t === 3) await page.setViewportSize({ width: 800, height: 600 }); } },
+  'text-low': { context: desktop(1920, 1080), query: '&view=full', seconds: 6, every: 250, start: textTheft,
+    async during(page, t) { if (t === 3) await page.locator('#graphicsBtn').evaluate(e => e.click()); } },
+  'text-motion': { context: desktop(1920, 1080), query: '&view=full', seconds: 6, every: 250, start: textTheft,
+    async during(page, t) { if (t === 3) await page.emulateMedia({ reducedMotion: 'reduce' }); } },
   'one-ant': { context: desktop(1280, 720), query: '&view=full&ambientAnts=1', seconds: 20,
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(1)) },
   'full-colony': { context: desktop(1920, 1080), query: '&view=full', seconds: 25,
@@ -145,11 +168,13 @@ try {
       const s = await page.evaluate(() => window.__TEACUP__.ambient.snapshot());
       const c = s.crumb, k = s.cube;
       timeline.push({ t, count: s.count, spell: s.spell, quality: s.quality,
+        text: s.text,
         crumb: c && `${c.state}${c.claim === null ? '' : `<${c.claim}`}@${Math.round(c.x)},${Math.round(c.y)}`,
         cube: k && `${k.phase}${k.exiting ? '*' : ''}${k.quirk ? `!${k.quirk}` : ''}${k.hurry ? '^' : ''}<${k.members.join(',')}@${Math.round(k.x)},${Math.round(k.y)}`,
         ants: s.ants.map((a) => `${a.slot}:${a.state}/${a.mode}${a.cargo ? '*' : ''}${a.partner === null ? '' : `>${a.partner}`}@${Math.round(a.x)},${Math.round(a.y)}`) });
       // The still: the first settled ant, or for the cube scenes the procession under way.
-      const ready = name.startsWith('cube') ? ['carry', 'turn'].includes(s.cube?.phase) && t >= 1
+      const ready = name.startsWith('text') ? s.text?.phase === 'carry' || s.text?.phase === 'restored'
+        : name.startsWith('cube') ? ['carry', 'turn'].includes(s.cube?.phase) && t >= 1
         : s.count > 0 && s.ants.some((a) => a.state !== 'entering');
       if (!shot && ready) {
         await page.screenshot({ path: `${output}/${name}.png` });

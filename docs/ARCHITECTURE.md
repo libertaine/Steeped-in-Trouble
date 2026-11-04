@@ -1092,9 +1092,10 @@ small colony of ants wanders the empty gutters beside the cup, once in a
 while one carries a crumb away, and rarely a team of three or four hauls off
 a sugar cube. It is presentation only:
 `rendering/ambient.js` has no DOM, game or storage access, and
-`ui/ambient.js` only reads `game.state.phase`, `pausedFrom` and `offer`,
-the modal `blocked` flags and `strange.holding`. It adds no input listener,
-timer or animation frame; `main.js` steps it after `collectionUI.update()`
+`ui/ambient.js` only receives read-only scene policy (phase, offer, final-reading
+readiness and a round/fortune/tea identity), the modal `blocked` flags and
+`strange.holding`. Text mischief passively observes engagement; it never
+intercepts input or adds a timer/animation frame. `main.js` steps it after `collectionUI.update()`
 and disposes it from `stop()`.
 
 **Safe geometry.** Layout is measured only when dirty: a ResizeObserver on
@@ -1445,6 +1446,125 @@ That is one every 18 minutes of a calm screen, against about 12 crumbs
 an hour, and the colony is still away 31 % of the time. Real play has many
 ineligible minutes (decisions, adventures, bosses, Low), so a player sees
 one less often than that.
+
+### Inter-round text mischief (increment 5)
+
+`hud.update()` creates the between-round presentation from `hudText()` and
+`offerCards()`, after the Canvas leaf ceremony. The ordinary final reading
+is ready at 2.7 s; The Leaves Lie at 4.1 s (`readingReadyAt()`). The final
+panel splits the stage beside the cup in landscape and stacks beneath it in
+portrait. `.reading-copy` scrolls independently; upgrade cards occupy their
+own panel area. Enter / the main button continue a ready no-offer reading;
+upgrade hotkeys, native card buttons and focused-button Enter select offers.
+Those existing authorities and input paths are unchanged.
+
+The title, memory, fortune, quote, effect and secrets all help explain the
+cup or its next fortune. None is eligible for theft. Instead the new
+`#readingCaption` reads **“Management denies the existence of ants.”** Its
+only purpose is the joke. Its `#readingMischief` host is absolutely placed
+in the bottom 64 px of a reading panel, without reserving flex/grid space.
+It is shown only when all reading content ends at least 12 px above it,
+the copy does not scroll, the panel is fully on screen, and the caption and
+complete team fit (at least 360 px wide, with 48 px caption clearance).
+Narrow portrait, clipped, short or crowded layouts simply omit the caption.
+No reading or control is moved or shrunk to fit it.
+
+`rendering/textMischief.js` owns a bounded pure timeline and three/four-ant
+formation; `ui/textMischief.js` owns geometry, restoration and a small local
+Canvas. `createAmbient()` owns/disposes this adapter, calls it from the same
+main-loop update after HUD/layout changes, and passes the existing private
+cosmetic RNG. There is no additional loop, timer, dependency, save field or
+game command. The original gutter colony, crumbs and sugar cube retain their
+controllers and tests. The local Canvas reuses `drawAnt()`, is clipped to
+its lane, pointer-transparent, nonfocusable and `aria-hidden`. It avoids
+forcing gutter routes across a protected reading panel.
+
+Tuning is in `CONFIG.textMischief`: 12 visible, unengaged seconds after final
+reveal, one 20% opportunity per reading; 1.4 s approach, 0.45 s lift, 4.5 s
+carry, then 7 s absent. The caption returns in place without animation or an
+announcement. The carry includes a slight tilt, a short hesitation and one
+ant briefly pulling backwards. These task-requested timings supersede the
+older shorter timeline in the original planning proposal. The debug trigger
+skips only chance/dwell, never layout, settings, interaction or decision
+guards, and does not queue an ineligible request.
+
+Only the caption's opacity changes during lift/carry/absence. Its semantic
+DOM text remains accessible; no functional text, focus, accessible name or
+live region changes. Every key/pointer press, panel hover/focus/selection,
+copy scroll, phase/content/layout change, menu/decision, pause/rewind, Low,
+reduced motion and disposal restores it and clears the drawing. Passive
+listeners observe engagement without stopping input. Hidden/blurred time
+does not count or catch up; an active joke restores immediately, while an
+idle pending opportunity freezes. A consumed opportunity never repeats
+while that reading is left alone. Resize/DPR/scroll, font readiness and the
+ambient layout invalidations discard old geometry before drawing again.
+
+With `?debug&noOverlay&ambientSeed=7`, on an eligible final no-offer reading:
+
+```js
+__TEACUP__.ambient.stealText(); // false when unsafe; no queued request
+__TEACUP__.ambient.snapshot().text; // timeline, geometry and visual state
+```
+
+`tests/support/ambientReview.js` adds `text-theft`, `text-carry`, `text-return`,
+`text-advance`, `text-resize`, `text-low` and `text-motion`. For example:
+
+```sh
+node tests/support/ambientReview.js http://localhost:4195/Steeped-in-Trouble/ tmp/text-mischief-review text-theft text-carry text-return text-advance text-resize text-low text-motion
+```
+
+The helper stages a completed-cup presentation through the existing debug
+game hook and records full-page WebM, stills and a sampled JSON timeline.
+The full sequence is in ignored `tmp/text-mischief-review/text-theft.webm`;
+its scene begins about 0.9 s into the clip. Inspecting the carry still and a
+decoded mid-carry frame confirmed the line/team stay below the explanation
+and above the Continue button. This is local automated visual inspection,
+not human playtesting or hardware qualification. Temporary captures are not
+committed.
+
+**Local cost (increment 5).** On the Ryzen 9 5900X / Windows host, headless
+Chromium, an isolated adapter on the real settled reading DOM was timed
+for 1,800 updates per mode/viewport/DPR. At 1920 × 1080 and 800 × 600 Full,
+a seeded three-ant carry averaged 0.021–0.023 ms per update/draw,
+p95 0.035 ms at DPR 1/2;
+forcing rasterisation with a one-pixel read after each update gave p95
+0.105–0.130 ms. Idle/Low/reduced/hidden paths had p95 at or below 0.005 ms.
+At 844 × 390 the measured layout safely suppressed the caption. There were
+zero `getBoundingClientRect()` calls in the timed steady-state loops.
+The probe held a carry pose with zero delta to isolate drawing cost; it
+does not measure whole-game frame time or establish performance on other
+hardware. Captures and raw measurements remain under the ignored review
+directory. A first dev-server probe timed out before load; an initial
+preview probe invalidated its layout by disposing the main viewport helper
+and was discarded. The reported probe keeps the real layout and removes
+only the original ambient adapter before boot.
+
+**Validation (Windows, 2026-11-04).** Lint, the complete 55-file / 1,243-test
+unit suite and the production build pass. The final focused ambient command,
+`npx playwright test ambient --workers=2`, passed 68 executions across
+Chromium, Firefox and mobile Chromium with no retries. The earlier normal-
+permission focused run passed 66 before the disposal test was added.
+The requested `CI=1 npx playwright test --workers=2` regression passed
+**527/527** in 29.4 minutes, without failures or retries (198 Chromium,
+198 Firefox, 131 mobile Chromium). It used a fresh production preview on
+port 4198 with normal process permissions. All 118 regenerated tracked
+documentation screenshots were copied to ignored scratch space and restored;
+no captures are included in the commit. Focused/full logs remain in
+`tmp/ambient-focused-final.log` and `tmp/text-full-regression.log`.
+
+Earlier attempts are separate from those results: the first new unit run
+had 19 passes / one fixture error (`game.start()` does not exist); the
+corrected 20-test run passed before adding the scripted simulation comparison.
+The first new Chromium run had 18 passes / one idle-fixture failure. Two
+isolated diagnostic reruns reproduced it: the preceding upgrade
+acknowledgment disappeared during dwell and correctly invalidated geometry.
+The test now lets that transition finish before timing the final reading;
+the production idle guard was retained. A restricted cross-browser run had
+20 passes and 19 Firefox crashes before page creation; a minimal blank-page
+launch reproduced the subprocess failure. Normal process permissions fixed
+the environment without changing assertions. One mistyped glob was rejected
+by Playwright's regex parser before any test ran. A preview attempt on
+occupied port 4191 failed before startup; review used port 4195.
 
 **Visibility policy** (`ambientPolicy()`):
 

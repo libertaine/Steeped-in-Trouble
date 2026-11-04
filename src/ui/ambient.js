@@ -10,6 +10,7 @@
 
 import { createRandom } from '../core/random.js';
 import { hasPrimaryTouch } from '../input/settings.js';
+import { createReadingMischief } from './textMischief.js';
 import {
   AMBIENT, ambientPolicy, capacity, createColony, displayBudget, drawAnt, drawCrumb, drawCube, phoneShape,
   populationLimit, safeRegions,
@@ -84,7 +85,9 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
   let candidates = collect();
   let hiddenKey = candidates.map((element) => element.hidden);
   let childCount = -1;
-  const colony = createColony({ random: createRandom(seed) });
+  const random = createRandom(seed);
+  const colony = createColony({ random });
+  const textMischief = createReadingMischief({ doc, random });
   const override = Number.isFinite(ants) ? Math.max(0, Math.min(AMBIENT.slots, ants)) : undefined;
 
   let regions = [];
@@ -108,7 +111,7 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
   let focused = doc.hasFocus?.() ?? true;
   const bodyKey = new Array(BODY_KEYS.length).fill(null);
 
-  const markDirty = () => { dirty = true; settle = SETTLE_SECONDS; };
+  const markDirty = () => { dirty = true; settle = SETTLE_SECONDS; textMischief?.invalidate(); };
   const listeners = [];
   const listen = (target, type, handler, options) => {
     if (!target?.addEventListener) return;
@@ -122,7 +125,7 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
   listen(win, 'focus', () => { focused = true; });
   const motion = win.matchMedia?.('(prefers-reduced-motion: reduce)');
   reduced = !!motion?.matches;
-  listen(motion, 'change', (event) => { reduced = event.matches; });
+  listen(motion, 'change', (event) => { reduced = event.matches; textMischief?.invalidate(); });
   // Turning a phone changes the display's ceiling, even before any resize is
   // reported; so does a convertible switching between touch and a mouse.
   listen(win.matchMedia?.('(orientation: portrait)'), 'change', markDirty);
@@ -238,6 +241,8 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
     update(dt, scene) {
       if (layoutChanged()) markDirty();
       policy = ambientPolicy({ ...scene, reduced, focused, hidden: doc.visibilityState === 'hidden' });
+      textMischief?.update(dt, scene, { quality: quality(), reduced, focused,
+        hidden: doc.visibilityState === 'hidden', settling: dirty });
       if (policy === 'off' && colony.count > 0) colony.retire();
       if (dirty) {
         // Nothing is drawn against a layout that is still changing.
@@ -271,6 +276,7 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
       const cube = colony.cube;
       return {
         policy, room, space, budget, limit, shape, count: colony.count, spell: colony.spell, reduced, focused,
+        text: textMischief?.snapshot() ?? null,
         drawn, quality: drawnQuality, hidden: canvas.hidden, width: canvas.width, height: canvas.height,
         visible: layout?.visible ?? null, exclusions: layout?.exclusions ?? [], open: layout?.open ?? null,
         regions: regions.map((r) => ({ ...box(r), portals: [...r.portals] })),
@@ -308,9 +314,13 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
       colony.sweeten(options);
     },
 
+    /** ?debug only: one text theft, subject to reading and interaction safety. */
+    stealText: () => textMischief?.trigger() ?? false,
+
     dispose() {
       for (const remove of listeners.splice(0)) remove();
       observer?.disconnect();
+      textMischief?.dispose();
       clear();
       colony.retire();
       canvas.width = 0;

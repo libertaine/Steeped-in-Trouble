@@ -309,6 +309,7 @@ function boot() {
     // After the HUD and panels, so this frame's layout is the one measured.
     const s = game.state;
     ambient?.update(dt, { phase: s.phase, pausedFrom: s.pausedFrom, offer: !!s.offer, holding: strange.holding,
+      readingReady: document.body.dataset.readingReady === 'true', readingKey: `${s.round}:${s.nextFortune}:${s.tea}`,
       blocked: title.blocked || presentation.blocked || collectionUI.blocked || overlay.blocked });
   });
 
@@ -366,7 +367,7 @@ function boot() {
       config: CONFIG,
       ambient: ambient && { snapshot: () => ambient.snapshot(), summon: (n) => ambient.summon(n),
         socialize: (kind) => ambient.socialize(kind), crumble: () => ambient.crumble(),
-        sweeten: (options) => ambient.sweeten(options) },
+        sweeten: (options) => ambient.sweeten(options), stealText: () => ambient.stealText() },
       settings: () => ({ ...settings }),
       overlay: {
         show: (opts) => overlay.show(opts),

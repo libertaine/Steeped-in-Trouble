@@ -1581,7 +1581,7 @@ body[data-view="full"] main { padding-top: 7px; }
 /* The cup gets the entire stage until the existing reveal has finished.
    Only reading uses this split; the normal arena's budget is unchanged. */
 .reading-presentation[hidden], #upgradeAcknowledgment[hidden] { display: none; }
-.reading-presentation { min-width: 0; min-height: 0; width: 100%; height: 100%;
+.reading-presentation { position: relative; min-width: 0; min-height: 0; width: 100%; height: 100%;
   display: flex; flex-direction: column; padding: 12px; gap: 10px; }
 .reading-copy { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain;
   padding: 2px 8px 4px 2px; scrollbar-gutter: stable; }
@@ -1591,6 +1591,18 @@ body[data-view="full"] main { padding-top: 7px; }
 .reading-presentation p { margin: 4px 0 8px; }
 .next-fortune { padding: 5px 12px; border-left: 3px solid var(--gold); background: #1a293a; }
 .reading-quote { font-style: italic; color: #d4ddcf; }
+/* An optional joke in measured empty space, outside the scrollable reading.
+   No grid/flex space is reserved; the adapter hides it if the copy needs it. */
+#readingMischief { position: absolute; bottom: 12px; left: 12px; right: 12px;
+  height: 64px; overflow: hidden; pointer-events: none; }
+#readingMischief[hidden], #readingAnts[hidden] { display: none; }
+#readingMischief p { position: absolute; inset: 0; margin: 0; display: flex;
+  align-items: center; justify-content: center; white-space: nowrap;
+  font: italic 13px Georgia, serif; color: #b9c8b1; }
+#readingCaption[data-carried] { opacity: 0; }
+body[data-view] #readingAnts { position: absolute; inset: 0; width: 100%; height: 100%;
+  min-width: 0; max-width: none; aspect-ratio: auto; transform: none;
+  pointer-events: none; border: 0; border-radius: 0; background: transparent; }
 body[data-view] .reading-presentation #compactMemory,
 body[data-view] .reading-presentation #compactFortune,
 body[data-view] .reading-presentation #compactEffect { display: block; padding: 0; font-size: 14px; color: var(--ink); }
