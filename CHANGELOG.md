@@ -5,7 +5,16 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
-- **A small ant colony (prototype):** now and then a few ants wander the
+## [0.20.0] - 2026-11-04 — Tiny Heroes, Big Tea Problems
+
+*Now with More Bugs! The ants are intentional.*
+
+- **Vintage tea-adventure title screen:** original SVG artwork stars a caped
+  spoon, ants and a very demanding teacup, with responsive tea-label styling,
+  keyboard navigation and motion-aware steam.
+- **Inter-round text mischief:** occasional ants borrow a decorative caption;
+  functional reading information and controls remain available.
+- **A small ant colony:** now and then a few ants wander the
   empty space beside the cup and leave again, from one on a small screen to
   six on a large one (two in Low graphics, none on a phone held upright).
   Occasionally one follows another, two stop to greet each other, or a few
