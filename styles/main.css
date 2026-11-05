@@ -1086,6 +1086,15 @@ dialog.instruction-overlay {
   background: transparent;
   color: var(--label-green);
   overflow: visible;
+  /* The height to spare, 0 to 100px. Spacing and text follow it from their compact
+     to their full sizes, so the guide has no point where it suddenly stops fitting,
+     whichever fonts the system substitutes for Georgia. */
+  --window-height: 100vh;
+  --room-from: 640px;
+  --room: clamp(0px, var(--window-height) - var(--room-from), 100px);
+}
+@supports (height: 100dvh) {
+  dialog.instruction-overlay { --window-height: 100dvh; }
 }
 dialog.instruction-overlay[open] { display: flex; flex-direction: column; }
 dialog.instruction-overlay::backdrop { background: rgb(12 27 22 / .68); }
@@ -1097,8 +1106,8 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
   flex-direction: column;
   flex: 0 1 auto;
   min-height: 0;
-  gap: 12px;
-  padding: 20px 26px 16px;
+  gap: calc(6px + var(--room) * .06);
+  padding: calc(10px + var(--room) * .1) calc(16px + var(--room) * .1) calc(10px + var(--room) * .06);
   background: var(--label-cream);
   border: 2px solid var(--label-gold);
   box-shadow: 0 12px 40px #071f2150;
@@ -1111,8 +1120,8 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
+  margin-bottom: calc(6px + var(--room) * .06);
+  padding-bottom: calc(4px + var(--room) * .04);
   border-bottom: 1px solid var(--label-gold);
   color: var(--label-burgundy);
   font: 700 10px/1.4 ui-monospace, monospace;
@@ -1123,18 +1132,18 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
 .overlay-header { text-align: center; }
 .overlay-title {
   margin: 0;
-  font: 700 clamp(28px, 4vw, 38px)/1.12 Georgia, 'Times New Roman', serif;
+  font: 700 min(clamp(28px, 4vw, 38px), calc(28px + var(--room) * .1))/1.12 Georgia, 'Times New Roman', serif;
   letter-spacing: -.035em;
   color: var(--label-green);
 }
-.overlay-tagline { margin: 6px 0 0; font-size: 14px; font-style: italic; color: var(--label-burgundy); }
-.overlay-objective { margin: 5px 0 0; font-size: 14px; color: var(--label-green); }
+.overlay-tagline { margin: calc(3px + var(--room) * .03) 0 0; font-size: calc(13px + var(--room) * .01); font-style: italic; color: var(--label-burgundy); }
+.overlay-objective { margin: calc(3px + var(--room) * .02) 0 0; font-size: calc(13px + var(--room) * .01); color: var(--label-green); }
 .overlay-body {
   display: flex;
   flex-direction: column;
   flex: 0 1 auto;
   min-height: 0;
-  gap: 10px;
+  gap: calc(6px + var(--room) * .04);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: var(--label-gold) var(--label-cream);
@@ -1151,15 +1160,15 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
 .overlay-controls-table { width: 100%; border-collapse: collapse; }
 .overlay-controls-table th {
   width: 42%;
-  padding: 5px 4px;
-  font-size: 14px;
+  padding: calc(2px + var(--room) * .03) 4px;
+  font-size: calc(12px + var(--room) * .02);
   font-weight: 700;
   text-align: left;
   color: var(--label-green);
   vertical-align: middle;
 }
 .overlay-controls-table td {
-  padding: 5px 4px;
+  padding: calc(2px + var(--room) * .03) 4px;
   font-size: 12px;
   text-align: right;
   color: var(--label-green);
@@ -1169,11 +1178,11 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 25px;
-  min-height: 24px;
+  min-width: calc(22px + var(--room) * .03);
+  min-height: calc(21px + var(--room) * .03);
   margin: 0 1px;
   padding: 1px 5px;
-  font: 700 12px/1.4 ui-monospace, monospace;
+  font: 700 calc(11px + var(--room) * .01)/1.4 ui-monospace, monospace;
   color: var(--label-green);
   background: #fffaf0;
   border: 1px solid var(--label-gold);
@@ -1184,8 +1193,8 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
 .key-sep { margin: 0 2px; font-size: 12px; color: var(--label-burgundy); }
 .key-hint { margin-left: 3px; font-size: 12px; color: var(--label-green); }
 .overlay-notes, .overlay-touch-summary {
-  padding: 7px 10px;
-  font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
+  padding: calc(4px + var(--room) * .03) calc(8px + var(--room) * .02);
+  font: calc(12px + var(--room) * .01)/1.45 ui-sans-serif, system-ui, sans-serif;
   border-left: 2px solid var(--label-burgundy);
   background: #a4864712;
   color: var(--label-green);
@@ -1197,11 +1206,11 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
   display: block;
   width: 100%;
   min-height: 44px;
-  padding: 10px 14px;
+  padding: calc(6px + var(--room) * .04) calc(12px + var(--room) * .02);
   border: 2px solid var(--label-green);
   border-radius: 0;
   box-shadow: 3px 3px 0 var(--label-gold);
-  font: 700 13px/1.4 ui-monospace, monospace;
+  font: 700 calc(12px + var(--room) * .01)/1.4 ui-monospace, monospace;
   letter-spacing: .06em;
   cursor: pointer;
 }
@@ -1249,29 +1258,20 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
   color: #bfdbfe;
 }
 
+/* A narrow window wraps more lines, so it stays compact until it has more height. */
 @media (max-width: 480px) {
-  .instruction-card { padding: 14px 14px 12px; gap: 7px; }
-  .overlay-imprint { font-size: 9px; letter-spacing: .03em; margin-bottom: 8px; gap: 6px; }
-  .overlay-tagline { font-size: 13px; }
-  .overlay-objective { font-size: 13px; }
-  .overlay-controls-table th, .overlay-controls-table td { padding: 3px 2px; font-size: 12px; }
-  .instruction-overlay .keycap { min-width: 22px; min-height: 22px; padding: 1px 3px; font-size: 11px; }
+  dialog.instruction-overlay { --room-from: 700px; }
+  .instruction-card {
+    gap: calc(6px + var(--room) * .01);
+    padding: calc(10px + var(--room) * .04) 12px calc(10px + var(--room) * .02);
+  }
+  .overlay-imprint { font-size: 9px; letter-spacing: .03em; margin-bottom: calc(6px + var(--room) * .02); gap: 6px; }
+  .overlay-tagline, .overlay-objective { font-size: 13px; }
+  .overlay-controls-table th, .overlay-controls-table td { padding: calc(2px + var(--room) * .01) 2px; font-size: 12px; }
+  .instruction-overlay .keycap { min-width: 22px; min-height: calc(21px + var(--room) * .01); padding: 1px 3px; font-size: 11px; }
   .key-hint { font-size: 11px; }
-  .overlay-notes, .overlay-touch-summary { padding: 5px 8px; font-size: 12px; }
-  .instruction-overlay button { padding: 9px 10px; font-size: 12px; }
-}
-/* Short windows keep every instruction; only the middle needs to scroll. */
-@media (max-height: 640px) {
-  .instruction-card { padding: 10px 16px; gap: 6px; }
-  .overlay-imprint { margin-bottom: 6px; padding-bottom: 4px; }
-  .overlay-title { font-size: 28px; }
-  .overlay-tagline { margin-top: 3px; font-size: 13px; }
-  .overlay-objective { margin-top: 3px; font-size: 13px; }
-  .overlay-body { gap: 6px; }
-  .overlay-controls-table th, .overlay-controls-table td { padding: 2px 4px; font-size: 12px; }
-  .instruction-overlay .keycap { min-width: 22px; min-height: 21px; font-size: 11px; }
-  .overlay-notes, .overlay-touch-summary { padding: 4px 8px; font-size: 12px; }
-  .instruction-overlay button { padding: 6px 12px; font-size: 12px; }
+  .overlay-notes, .overlay-touch-summary { padding: calc(4px + var(--room) * .01) 8px; font-size: 12px; line-height: 1.35; }
+  .instruction-overlay button { padding: calc(6px + var(--room) * .03) 10px; font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .arcade-start-btn.nudge { animation: none; outline: 3px solid var(--label-burgundy); outline-offset: 2px; }

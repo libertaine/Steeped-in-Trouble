@@ -8,7 +8,8 @@ All notable changes to this project are documented here. The project uses
 - Restored numbered keyboard hints on upgrade and Tea Shortage choices in
   Compact View and narrow windows.
 - Aligned the instructions overlay with the vintage title screen's parchment,
-  tea-green lettering, gold borders and rectangular buttons.
+  tea-green lettering, gold borders and rectangular buttons. Its spacing now
+  follows the window's height, so it fits without Georgia installed.
 - Added privacy-friendly usage analytics to the published game: Umami's anonymous
   pageviews, plus `game_start`, `round_milestone` and `engaged_*` events. The
   tracker never loads locally, in tests or debug scenarios, with Do Not Track, or
