@@ -291,6 +291,17 @@ body[data-phase="day"][data-view] .controls-mobile, body[data-phase="day"] #main
   padding: 9px 11px;
 }
 
+.upgrade-card kbd,
+.errand-card kbd {
+  flex: none;
+}
+
+.upgrade-card > span,
+.errand-card > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .upgrade-card:hover,
 .upgrade-card:focus-visible,
 .errand-card:not(:disabled):hover,
@@ -802,10 +813,6 @@ kbd {
     padding: 6px 7px;
     gap: 6px;
   }
-  .upgrade-card kbd,
-  .errand-card kbd {
-    display: none;
-  }
   .upgrade-card strong,
   .errand-card strong {
     font-size: 13px;
@@ -892,7 +899,6 @@ body[data-view="compact"] .offer-cards { margin-top: 5px; gap: 6px; }
 body[data-view="compact"] .upgrade-card, body[data-view="compact"] .errand-card { min-height: 56px; padding: 8px; }
 body[data-view="compact"] .upgrade-card strong, body[data-view="compact"] .errand-card strong { font-size: 16px; }
 body[data-view="compact"] .upgrade-card small, body[data-view="compact"] .errand-card small { font-size: 12px; }
-body[data-view="compact"] .upgrade-card kbd, body[data-view="compact"] .errand-card kbd { display: none; }
 body[data-view="compact"] .controls-mobile { grid-row: 4; padding: 6px 8px; gap: 10px; }
 body[data-view="compact"] .controls-mobile button { min-height: 52px; font-size: 14px; }
 body[data-view="compact"] .controls-mobile .steer { min-height: 64px; font-size: 28px; }
@@ -1063,16 +1069,13 @@ body[data-view="full"] .panel .collection-entry { padding: 0; margin-top: 8px; }
 body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-size: 12px; }
 #closeCollectionTop { display: block; margin: 0 0 14px auto; font-size: 11px; }
 
-/*
- * The instruction overlay is a modal dialog in the top layer, centred in the
- * browser window (not the canvas). The page behind it is inert and dimmed
- * but still recognisable. The header and the buttons never scroll away: if
- * the window is very short, only the middle (controls and notes) scrolls.
- */
+/* A field-guide page, sharing the title's tea-label palette. Keep the actions
+ * in view; the controls and notes scroll within the modal in short windows. */
 dialog.instruction-overlay {
+  color-scheme: light;
   position: fixed;
   inset: 0;
-  width: min(540px, calc(100vw - 24px));
+  width: min(580px, calc(100vw - 24px));
   height: fit-content;
   max-width: none;
   max-height: calc(100vh - 24px);
@@ -1081,247 +1084,162 @@ dialog.instruction-overlay {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #f4efe2;
+  color: var(--label-green);
   overflow: visible;
+  /* The height to spare, 0 to 100px. Spacing and text follow it from their compact
+     to their full sizes, so the guide has no point where it suddenly stops fitting,
+     whichever fonts the system substitutes for Georgia. */
+  --window-height: 100vh;
+  --room-from: 640px;
+  --room: clamp(0px, var(--window-height) - var(--room-from), 100px);
 }
-
-dialog.instruction-overlay[open] {
-  display: flex;
-  flex-direction: column;
+@supports (height: 100dvh) {
+  dialog.instruction-overlay { --window-height: 100dvh; }
 }
-
-dialog.instruction-overlay::backdrop {
-  background: rgb(5 5 16 / 0.62);
-}
-
-body:has(#instructionOverlay[open]) {
-  overflow: hidden;
-}
-
-.arcade-start-btn[hidden],
-.arcade-secondary-btn[hidden],
-.overlay-touch-summary[hidden] {
-  display: none !important;
-}
+dialog.instruction-overlay[open] { display: flex; flex-direction: column; }
+dialog.instruction-overlay::backdrop { background: rgb(12 27 22 / .68); }
+body:has(#instructionOverlay[open]) { overflow: hidden; }
+.arcade-start-btn[hidden], .arcade-secondary-btn[hidden], .overlay-touch-summary[hidden] { display: none !important; }
 
 .instruction-card {
-  position: relative;
   display: flex;
   flex-direction: column;
   flex: 0 1 auto;
   min-height: 0;
-  gap: 10px;
-  margin: 0 6px 6px 0;
-  padding: 16px 20px 14px;
-  box-sizing: border-box;
-  background: #0e1030;
-  border: 4px solid #ffd23f;
-  box-shadow: 0 0 0 3px #050510, 6px 6px 0 3px #e8344e;
+  gap: calc(6px + var(--room) * .06);
+  padding: calc(10px + var(--room) * .1) calc(16px + var(--room) * .1) calc(10px + var(--room) * .06);
+  background: var(--label-cream);
+  border: 2px solid var(--label-gold);
+  box-shadow: 0 12px 40px #071f2150;
+  font: 14px/1.45 Georgia, 'Times New Roman', serif;
+  overflow-wrap: anywhere;
 }
-
-.overlay-header,
-.overlay-actions,
-.overlay-footer {
-  flex: none;
+.overlay-header, .overlay-actions, .overlay-footer { flex: none; }
+.overlay-imprint {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: calc(6px + var(--room) * .06);
+  padding-bottom: calc(4px + var(--room) * .04);
+  border-bottom: 1px solid var(--label-gold);
+  color: var(--label-burgundy);
+  font: 700 10px/1.4 ui-monospace, monospace;
+  letter-spacing: .09em;
+  text-align: left;
 }
-
+.overlay-version { flex: none; color: var(--label-green); letter-spacing: 0; }
+.overlay-header { text-align: center; }
+.overlay-title {
+  margin: 0;
+  font: 700 min(clamp(28px, 4vw, 38px), calc(28px + var(--room) * .1))/1.12 Georgia, 'Times New Roman', serif;
+  letter-spacing: -.035em;
+  color: var(--label-green);
+}
+.overlay-tagline { margin: calc(3px + var(--room) * .03) 0 0; font-size: calc(13px + var(--room) * .01); font-style: italic; color: var(--label-burgundy); }
+.overlay-objective { margin: calc(3px + var(--room) * .02) 0 0; font-size: calc(13px + var(--room) * .01); color: var(--label-green); }
 .overlay-body {
   display: flex;
   flex-direction: column;
   flex: 0 1 auto;
   min-height: 0;
-  gap: 10px;
+  gap: calc(6px + var(--room) * .04);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-color: var(--label-gold) var(--label-cream);
 }
-
-.overlay-version {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  font: 700 11px ui-monospace, SFMono-Regular, Consolas, monospace;
-  color: #a9b4cc;
-  letter-spacing: 0.05em;
-}
-
-.overlay-header {
-  text-align: center;
-}
-
-.overlay-title {
-  margin: 0;
-  font: 900 clamp(20px, 4vw, 27px) / 1.15 ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #ffd23f;
-  text-shadow: 2px 2px 0 #e8344e, 4px 4px 0 #050510;
-}
-
-.overlay-tagline {
-  margin: 6px 0 0;
-  font-size: 14px;
-  color: #9be7ff;
-}
-
-.overlay-objective {
-  margin: 2px 0 0;
-  font-size: 13px;
-  color: #f4efe2;
-}
-
+.overlay-body > * { flex: none; }
 .overlay-section-title {
-  margin-bottom: 4px;
-  padding-bottom: 3px;
-  font: 800 11px ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: 0.22em;
-  text-align: center;
-  color: #ffd23f;
-  border-bottom: 2px solid #2a3fa8;
+  margin: 0 0 4px;
+  padding-bottom: 5px;
+  font: 700 10px/1.4 ui-monospace, monospace;
+  letter-spacing: .15em;
+  color: var(--label-burgundy);
+  border-bottom: 1px solid var(--label-gold);
 }
-
-.overlay-controls-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
+.overlay-controls-table { width: 100%; border-collapse: collapse; }
 .overlay-controls-table th {
-  width: 38%;
-  padding: 4px 6px;
-  font-size: 13px;
+  width: 42%;
+  padding: calc(2px + var(--room) * .03) 4px;
+  font-size: calc(12px + var(--room) * .02);
   font-weight: 700;
   text-align: left;
-  color: #f4efe2;
+  color: var(--label-green);
   vertical-align: middle;
 }
-
 .overlay-controls-table td {
-  padding: 4px 6px;
+  padding: calc(2px + var(--room) * .03) 4px;
   font-size: 12px;
   text-align: right;
-  color: #a9b4cc;
+  color: var(--label-green);
   vertical-align: middle;
 }
-
-.keycap {
+.instruction-overlay .keycap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  height: 24px;
+  min-width: calc(22px + var(--room) * .03);
+  min-height: calc(21px + var(--room) * .03);
   margin: 0 1px;
-  padding: 0 5px;
-  box-sizing: border-box;
-  font: 700 12px ui-monospace, SFMono-Regular, Consolas, monospace;
-  color: #f4efe2;
-  background: #1c2156;
-  border: 2px solid #5b7be0;
-  border-bottom-width: 4px;
+  padding: 1px 5px;
+  font: 700 calc(11px + var(--room) * .01)/1.4 ui-monospace, monospace;
+  color: var(--label-green);
+  background: #fffaf0;
+  border: 1px solid var(--label-gold);
+  border-bottom-width: 3px;
   border-radius: 2px;
   vertical-align: middle;
 }
-
-.key-sep {
-  margin: 0 3px;
-  font-size: 12px;
-  color: #6b7489;
+.key-sep { margin: 0 2px; font-size: 12px; color: var(--label-burgundy); }
+.key-hint { margin-left: 3px; font-size: 12px; color: var(--label-green); }
+.overlay-notes, .overlay-touch-summary {
+  padding: calc(4px + var(--room) * .03) calc(8px + var(--room) * .02);
+  font: calc(12px + var(--room) * .01)/1.45 ui-sans-serif, system-ui, sans-serif;
+  border-left: 2px solid var(--label-burgundy);
+  background: #a4864712;
+  color: var(--label-green);
 }
-
-.key-hint {
-  margin-left: 3px;
-  font-size: 11px;
-  color: #a9b4cc;
-}
-
-.overlay-notes,
-.overlay-touch-summary {
-  padding: 6px 10px;
-  font-size: 12px;
-  line-height: 1.45;
-  background: #050510;
-  border-left: 4px solid #f29a2e;
-  color: #f4efe2;
-}
-
-.overlay-touch-summary {
-  border-left-color: #49b649;
-}
-
-.overlay-notes p,
-.overlay-touch-summary p {
-  margin: 1px 0;
-}
-
-.overlay-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.arcade-start-btn,
-.arcade-secondary-btn {
+.overlay-touch-summary { border-left-color: var(--label-green); }
+.overlay-notes p, .overlay-touch-summary p { margin: 1px 0; color: inherit; }
+.overlay-actions { display: flex; flex-direction: column; gap: 8px; padding: 3px 4px 4px; }
+.instruction-overlay button {
   display: block;
   width: 100%;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  min-height: 44px;
+  padding: calc(6px + var(--room) * .04) calc(12px + var(--room) * .02);
+  border: 2px solid var(--label-green);
   border-radius: 0;
+  box-shadow: 3px 3px 0 var(--label-gold);
+  font: 700 calc(12px + var(--room) * .01)/1.4 ui-monospace, monospace;
+  letter-spacing: .06em;
   cursor: pointer;
 }
-
-button.arcade-start-btn {
-  min-height: 46px;
-  padding: 10px 16px;
-  font-size: 14px;
-  color: #050510;
-  background: #ffd23f;
-  border: 3px solid #050510;
-  box-shadow: 0 4px 0 #b8561a;
-}
-
-button.arcade-secondary-btn {
-  min-height: 40px;
-  padding: 8px 14px;
-  font-size: 12px;
-  color: #f4efe2;
-  background: #2a3fa8;
-  border: 3px solid #050510;
-  box-shadow: 0 3px 0 #1c2156;
-}
-
-.arcade-start-btn:hover,
-.arcade-secondary-btn:hover {
-  filter: brightness(1.1);
-}
-
-.arcade-start-btn:active,
-.arcade-secondary-btn:active {
-  transform: translateY(3px);
+.instruction-overlay .arcade-start-btn { color: var(--label-cream); background: var(--label-green); }
+.instruction-overlay .arcade-secondary-btn {
+  color: var(--label-green);
+  background: transparent;
+  border-color: var(--label-gold);
   box-shadow: none;
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: .03em;
 }
+.instruction-overlay button:not(:disabled):hover { filter: brightness(1.1); }
+.instruction-overlay button:not(:disabled):active { transform: translateY(3px); box-shadow: none; }
+.instruction-overlay button:focus-visible { outline: 3px solid var(--label-burgundy); outline-offset: 2px; }
+.instruction-overlay button:disabled { opacity: .55; cursor: default; box-shadow: none; }
 
-.arcade-start-btn:focus-visible,
-.arcade-secondary-btn:focus-visible {
-  outline: 3px solid #9be7ff;
-  outline-offset: 2px;
-}
-
-/* Escape cannot skip the first screen: the start button shakes to say where to go instead. */
-.arcade-start-btn.nudge {
-  animation: startNudge 0.36s steps(6);
-}
-
+/* Preserve the existing Escape cue and its reduced-motion alternative. */
+.arcade-start-btn.nudge { animation: startNudge .36s steps(6); }
 @keyframes startNudge {
   0%, 100% { transform: translateX(0); }
   20%, 60% { transform: translateX(-5px); }
   40%, 80% { transform: translateX(5px); }
 }
-
 .overlay-footer {
   margin: 0;
-  font-size: 11px;
+  font: italic 12px/1.4 Georgia, serif;
   text-align: center;
-  color: #a9b4cc;
+  color: var(--label-green);
 }
 
 #breakControlsBtn {
@@ -1340,70 +1258,23 @@ button.arcade-secondary-btn {
   color: #bfdbfe;
 }
 
+/* A narrow window wraps more lines, so it stays compact until it has more height. */
 @media (max-width: 480px) {
+  dialog.instruction-overlay { --room-from: 700px; }
   .instruction-card {
-    padding: 14px 14px 12px;
-    gap: 8px;
+    gap: calc(6px + var(--room) * .01);
+    padding: calc(10px + var(--room) * .04) 12px calc(10px + var(--room) * .02);
   }
-  .overlay-title { font-size: 19px; }
-  .overlay-tagline { font-size: 13px; }
-  .overlay-objective { font-size: 12px; }
-  .overlay-controls-table th,
-  .overlay-controls-table td {
-    padding: 3px 4px;
-    font-size: 12px;
-  }
-  .keycap {
-    min-width: 24px;
-    height: 22px;
-    padding: 0 4px;
-    font-size: 11px;
-  }
-  button.arcade-start-btn { font-size: 13px; }
+  .overlay-imprint { font-size: 9px; letter-spacing: .03em; margin-bottom: calc(6px + var(--room) * .02); gap: 6px; }
+  .overlay-tagline, .overlay-objective { font-size: 13px; }
+  .overlay-controls-table th, .overlay-controls-table td { padding: calc(2px + var(--room) * .01) 2px; font-size: 12px; }
+  .instruction-overlay .keycap { min-width: 22px; min-height: calc(21px + var(--room) * .01); padding: 1px 3px; font-size: 11px; }
+  .key-hint { font-size: 11px; }
+  .overlay-notes, .overlay-touch-summary { padding: calc(4px + var(--room) * .01) 8px; font-size: 12px; line-height: 1.35; }
+  .instruction-overlay button { padding: calc(6px + var(--room) * .03) 10px; font-size: 12px; }
 }
-
-/* Short windows (small laptops, landscape phones): tighten everything, hide nothing. */
-@media (max-height: 640px) {
-  .instruction-card {
-    padding: 10px 16px;
-    gap: 6px;
-  }
-  .overlay-body { gap: 6px; }
-  .overlay-title { font-size: 20px; }
-  .overlay-tagline { margin-top: 3px; font-size: 12px; }
-  .overlay-objective { font-size: 12px; }
-  .overlay-controls-table th,
-  .overlay-controls-table td {
-    padding: 2px 4px;
-    font-size: 12px;
-  }
-  .keycap {
-    min-width: 22px;
-    height: 21px;
-    font-size: 11px;
-  }
-  .overlay-notes,
-  .overlay-touch-summary {
-    padding: 4px 8px;
-    font-size: 11px;
-  }
-  button.arcade-start-btn {
-    min-height: 40px;
-    padding: 6px 12px;
-    font-size: 13px;
-  }
-  button.arcade-secondary-btn {
-    min-height: 36px;
-    padding: 5px 12px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .arcade-start-btn.nudge {
-    animation: none;
-    outline: 3px solid #9be7ff;
-    outline-offset: 2px;
-  }
+  .arcade-start-btn.nudge { animation: none; outline: 3px solid var(--label-burgundy); outline-offset: 2px; }
 }
 
 /* 018-2: shared resource strip, outside the arena, within 018-1's height budget. */

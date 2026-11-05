@@ -8,7 +8,7 @@ const openTitle = async (page, query = '') => {
   if (!/[&](noOverlay|arcade|day|cup|fortune)/.test(query)) {
     await expect(page.locator('#titleContinueBtn')).toHaveCSS('background-color', 'rgb(41, 76, 59)');
     await page.locator('#titleContinueBtn').tap();
-    await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('background-color', 'rgb(255, 210, 63)');
+    await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('background-color', 'rgb(41, 76, 59)');
   }
 };
 

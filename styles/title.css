@@ -1,9 +1,11 @@
 /* Tea-label tokens are scoped here for later presentation work, never gameplay. */
-.arcade-splash {
+.arcade-splash, .instruction-overlay {
   --label-cream: #f5edd6;
   --label-green: #294c3b;
   --label-burgundy: #79363f;
   --label-gold: #a48647;
+}
+.arcade-splash {
   color-scheme: light;
   position: fixed;
   inset: 0;

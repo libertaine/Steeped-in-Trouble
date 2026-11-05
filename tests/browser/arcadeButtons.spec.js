@@ -2,7 +2,7 @@ import { expect, openGame, test } from './fixtures.js';
 import { checkpointRound } from './collection.js';
 
 for (const width of [1280, 375]) {
-  test(`arcade buttons retain their palette through hover, focus and press at ${width}px`, async ({ page, problems }, testInfo) => {
+  test(`tea-label buttons retain their palette through hover, focus and press at ${width}px`, async ({ page, problems }, testInfo) => {
     await page.setViewportSize({ width, height: width === 375 ? 667 : 720 });
     await openGame(page, '', { onboarding: true });
 
@@ -32,7 +32,7 @@ for (const width of [1280, 375]) {
         return width;
       });
       await expect(button).toHaveCSS('outline-width', outlineWidth);
-      await expect(button).toHaveCSS('outline-color', selector === '#titleContinueBtn' ? 'rgb(121, 54, 63)' : 'rgb(155, 231, 255)');
+      await expect(button).toHaveCSS('outline-color', 'rgb(121, 54, 63)');
       await expect(button).toHaveCSS('background-color', background);
       await button.hover();
       await page.mouse.down();
@@ -48,15 +48,15 @@ for (const width of [1280, 375]) {
     await page.locator('#titleContinueBtn').hover();
     await page.screenshot({ path: testInfo.outputPath('title-hover-focus.png'), animations: 'disabled' });
     await page.locator('#titleContinueBtn').click();
-    await checkStates('#overlayPrimaryBtn', 'rgb(255, 210, 63)', 'rgb(5, 5, 16)');
+    await checkStates('#overlayPrimaryBtn', 'rgb(41, 76, 59)', 'rgb(41, 76, 59)');
     await page.locator('#overlayPrimaryBtn').click();
     await checkpointRound(page);
     await page.reload();
     await expect(page.locator('#titleContinueBtn')).toBeEnabled();
     await page.locator('#titleContinueBtn').click();
     await expect(page.locator('#overlayPrimaryBtn')).toContainText('CONTINUE YOUR POT');
-    await checkStates('#overlayPrimaryBtn', 'rgb(255, 210, 63)', 'rgb(5, 5, 16)');
-    await checkStates('#overlayNewPotBtn', 'rgb(42, 63, 168)', 'rgb(5, 5, 16)');
+    await checkStates('#overlayPrimaryBtn', 'rgb(41, 76, 59)', 'rgb(41, 76, 59)');
+    await checkStates('#overlayNewPotBtn', 'rgba(0, 0, 0, 0)', 'rgb(164, 134, 71)');
     await page.locator('#overlayPrimaryBtn').hover();
     await page.screenshot({ path: testInfo.outputPath('instructions-hover-focus.png'), animations: 'disabled' });
     await page.locator('#overlayPrimaryBtn').click();

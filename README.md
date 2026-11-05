@@ -16,26 +16,17 @@ adventures and unexpected humor keep finding their way into the pot.
 does not show all current features.*
 Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
-## 0.20.0 — Tiny Heroes, Big Tea Problems
+## 0.21.0 — Keeping Count
 
-*Now with More Bugs!*
+- Numbered keyboard hints are back on upgrade and Tea Shortage choices in
+  Compact View and narrow windows.
+- The instructions now match the vintage tea-adventure title screen.
+- Cookie-free analytics now estimate visits, game starts, progress milestones
+  and active playtime. See [Privacy](#privacy), including how to turn them off.
 
-The ants are intentional.
+Gameplay and earlier saved pots are unchanged.
 
-- A small ambient colony wanders beside the cup, occasionally following or
-  greeting its neighbors. They discover crumbs, carry them home, and sometimes
-  cooperate to haul a sugar cube that clearly exceeds the job description.
-- Occasional inter-round text mischief. Keep an eye on the small print.
-- A redesigned vintage tea-adventure title screen starring the caped spoon.
-- Quick audio mute/unmute with **M** or the speaker button.
-- Subtle background palettes follow your **in-game Days**, repeating every
-  seven Days; they do not follow real-world weekdays.
-
-The ants and background colors are decorative. Ants respect available space,
-pause and graphics settings, and are absent with reduced motion.
-Earlier saved pots continue.
-
-See the [release notes](docs/releases/v0.20.0.md),
+See the [release notes](docs/releases/v0.21.0.md),
 [changelog](CHANGELOG.md) and
 [past releases](https://github.com/libertaine/Steeped-in-Trouble/releases).
 
@@ -210,11 +201,27 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-
 - [The Cup Remembers testing](docs/CUP_REMEMBERS_TESTING.md): fortune
   explanations, porcelain damage, Golden Leaves, save migration and
   playtesting instructions
+- [Analytics](docs/ANALYTICS.md): the exact event contract, privacy behavior and
+  limitations
 - [Development](DEVELOPMENT.md): principles and full Windows/Ubuntu qualification
 - [Contributing](CONTRIBUTING.md): branching, checks, and releases
 - [Reference prototype](docs/reference/README.md): the preserved original and
   its differences from 0.1.0
 - [Changelog](CHANGELOG.md)
+
+## Privacy
+
+This game uses cookie-free Umami analytics to estimate visits, game starts,
+progress milestones, and active playtime. We do not send gameplay inputs,
+scores, or saved games. The provider processes limited browser and network
+information for aggregate reporting. Add `?analytics=off` to the game URL to
+disable analytics: <https://libertaine.github.io/Steeped-in-Trouble/?analytics=off>.
+
+The tracker loads only on the published page. It stays off if your browser
+sends Do Not Track, and in local builds and automated tests. The game creates
+no analytics identifiers, and its saves and records stay in your browser. Umami's
+returning-visitor figures describe returning website visitors, not identifiable
+players. See [docs/ANALYTICS.md](docs/ANALYTICS.md) for the details.
 
 ## Feedback
 

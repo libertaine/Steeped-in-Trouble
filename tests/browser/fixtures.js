@@ -17,6 +17,19 @@ export const test = base.extend({
     });
     await use(problems);
   },
+  // Only analytics.js serves the tracker's address, always from a stub.
+  allowTrackerStub: [false, { option: true }],
+  // Every browser test, on every page: nothing may contact the analytics service.
+  noAnalyticsRequests: [async ({ context, allowTrackerStub }, use) => {
+    const requests = [];
+    context.on('request', (request) => {
+      const url = request.url();
+      if (allowTrackerStub && url === 'https://cloud.umami.is/script.js') return;
+      if (/^https?:\/\/([\w-]+\.)*umami\.(is|dev)\//.test(url)) requests.push(url);
+    });
+    await use();
+    expect(requests, 'requests to the analytics service').toEqual([]);
+  }, { auto: true }],
 });
 
 export { expect };

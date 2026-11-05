@@ -34,6 +34,11 @@ all Chromium, Firefox and mobile Chromium tests.
 - Add or update unit tests for gameplay rules.
 - Never edit `docs/reference/prototype-0.1.html`.
 - Don't add runtime dependencies, external scripts, analytics, or tracking.
+  **One explicitly approved exception:** the published game loads Umami's
+  cookie-free tracker under the conditions and event contract in
+  [docs/ANALYTICS.md](docs/ANALYTICS.md). The exception covers only that script
+  and those events; it stays out of `src/core` and `src/gameplay`, and adds no
+  identifiers. Any further script, event or property needs its own approval.
 
 ## Versioning
 

@@ -33,6 +33,7 @@ import { createInstructionOverlay } from './ui/instructionOverlay.js';
 import { createTitleScreen } from './ui/titleScreen.js';
 import { createSoundToggle } from './ui/soundToggle.js';
 import { createDayPalette } from './ui/dayPalette.js';
+import { startAnalytics } from './analytics/tracker.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -59,6 +60,9 @@ function seedFromUrl(params, name = 'seed') {
 function boot() {
   // Guard against a second initialization creating duplicate loops/listeners.
   if (window[INSTANCE_KEY]) return window[INSTANCE_KEY];
+
+  // First, so a visit counts even if the player never starts a game. Null on any untracked page.
+  const analytics = startAnalytics({ win: window, production: import.meta.env.PROD });
 
   const params = new URLSearchParams(window.location.search);
   const canvas = document.getElementById('game');
@@ -216,7 +220,11 @@ function boot() {
     progress,
     presentation,
     settleInput: () => controls.settle(true),
-    onActivate: () => game.setAutoSteam(settings.autoSteam),
+    onActivate: () => {
+      game.setAutoSteam(settings.autoSteam);
+      // Continuing a saved pot raises no game event, so it is reported here.
+      analytics?.gameStarted();
+    },
     onOpen: () => overlay.close(),
   });
 
@@ -271,6 +279,7 @@ function boot() {
 
   function handleEvents() {
     for (const event of game.drainEvents()) {
+      analytics?.handle(event, !sessions.practice && !sessions.collection);
       sessions.handle(event);
       strange.handle(event);
       // Leaving an adventure, a Space still held from it must not become steam in the cup.
@@ -299,6 +308,7 @@ function boot() {
     const blocked = title.blocked || presentation.blocked || collectionUI.blocked || overlay.blocked;
     if (!blocked && !strange.holding) game.update(dt, controls.held, controls.walk);
     handleEvents();
+    analytics?.frame(game.state.phase, !blocked && !sessions.practice);
     strange.update(dt, game.state, { blocked });
     for (const event of strange.drainEvents()) {
       if (event.type === 'strangeStart') game.noteStrange(); // the pot's plan follows its first
@@ -343,6 +353,7 @@ function boot() {
       title.dispose();
       sound.dispose();
       ambient?.dispose();
+      analytics?.dispose();
       detachScaling();
       detachViewport();
       delete window[INSTANCE_KEY];
