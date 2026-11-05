@@ -96,7 +96,9 @@ export function fieldGuideTests() {
         expect(Math.min(sizes.control, sizes.note, sizes.touch, sizes.button)).toBeGreaterThanOrEqual(12);
         expect(sizes.key).toBeGreaterThanOrEqual(11);
         for (const selector of ['#overlayPrimaryBtn', '#overlayNewPotBtn']) {
-          expect((await page.locator(selector).boundingBox()).height).toBeGreaterThanOrEqual(44);
+          const { height } = await page.locator(selector).boundingBox();
+          // Allow sub-pixel layout rounding while enforcing the 44px target.
+          expect(height).toBeGreaterThanOrEqual(44 - 0.01);
         }
         await expect(page.locator('.instruction-card')).toHaveCSS('background-color', 'rgb(245, 237, 214)');
 
