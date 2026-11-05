@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The project uses
 
 - Restored numbered keyboard hints on upgrade and Tea Shortage choices in
   Compact View and narrow windows.
+- Aligned the instructions overlay with the vintage title screen's parchment,
+  tea-green lettering, gold borders and rectangular buttons.
 
 ## [0.20.0] - 2026-11-04 — Tiny Heroes, Big Tea Problems
 

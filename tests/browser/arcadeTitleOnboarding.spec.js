@@ -109,8 +109,9 @@ test.describe('Tea packaging title and instruction overlay', () => {
     const overlay = page.locator('#instructionOverlay');
     await expect(overlay).toBeVisible();
 
-    await expect(page.locator('#instructionTitle')).toHaveText('STEEPED IN TROUBLE');
-    await expect(page.locator('#instructionSubtitle')).toHaveText('The tea is misbehaving. Contain it.');
+    await expect(page.locator('#instructionTitle')).toHaveText('Before You Brew');
+    await expect(page.locator('#instructionSubtitle')).toHaveText('A brief guide to preventing a tea-related catastrophe.');
+    await expect(page.locator('.overlay-imprint')).toContainText("THE SILVER SPOON'S FIELD GUIDE");
     await expect(page.locator('#instructionObjective')).toHaveText('Stop the leaves before they reach the rim.');
     await expect(page.locator('.overlay-section-title')).toHaveText('CONTROLS');
 
@@ -397,15 +398,18 @@ test.describe('Tea packaging title and instruction overlay', () => {
     await expect(page.locator('#hudStatus')).toHaveText('PAUSED');
 
     // Escape from the review also goes back to the Tea Break, still paused.
+    await expect(page.locator('#breakControlsBtn')).toBeFocused();
     await page.locator('#breakControlsBtn').click();
     await expect(page.locator('#instructionOverlay')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('#instructionOverlay')).toBeHidden();
     await expect(page.locator('#teaBreak')).toBeVisible();
     await expect(page.locator('#hudStatus')).toHaveText('PAUSED');
+    await expect(page.locator('#breakControlsBtn')).toBeFocused();
 
     await page.locator('#closeBreak').click();
     await expect(page.locator('#hudStatus')).toHaveText('DEFEND THE RIM');
+    await expect(page.locator('#game')).toBeFocused();
     expect(problems).toEqual([]);
   });
 
