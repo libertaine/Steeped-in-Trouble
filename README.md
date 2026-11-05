@@ -210,11 +210,27 @@ On Windows PowerShell, run `$env:BASE_URL="https://libertaine.github.io/Steeped-
 - [The Cup Remembers testing](docs/CUP_REMEMBERS_TESTING.md): fortune
   explanations, porcelain damage, Golden Leaves, save migration and
   playtesting instructions
+- [Analytics](docs/ANALYTICS.md): the exact event contract, privacy behavior and
+  limitations
 - [Development](DEVELOPMENT.md): principles and full Windows/Ubuntu qualification
 - [Contributing](CONTRIBUTING.md): branching, checks, and releases
 - [Reference prototype](docs/reference/README.md): the preserved original and
   its differences from 0.1.0
 - [Changelog](CHANGELOG.md)
+
+## Privacy
+
+This game uses cookie-free Umami analytics to estimate visits, game starts,
+progress milestones, and active playtime. We do not send gameplay inputs,
+scores, or saved games. The provider processes limited browser and network
+information for aggregate reporting. Add `?analytics=off` to the game URL to
+disable analytics: <https://libertaine.github.io/Steeped-in-Trouble/?analytics=off>.
+
+The tracker loads only on the published page. It stays off if your browser
+sends Do Not Track, and in local builds and automated tests. The game creates
+no analytics identifiers, and its saves and records stay in your browser. Umami's
+returning-visitor figures describe returning website visitors, not identifiable
+players. See [docs/ANALYTICS.md](docs/ANALYTICS.md) for the details.
 
 ## Feedback
 

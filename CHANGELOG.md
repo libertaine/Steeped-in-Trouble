@@ -9,6 +9,12 @@ All notable changes to this project are documented here. The project uses
   Compact View and narrow windows.
 - Aligned the instructions overlay with the vintage title screen's parchment,
   tea-green lettering, gold borders and rectangular buttons.
+- Added privacy-friendly usage analytics to the published game: Umami's anonymous
+  pageviews, plus `game_start`, `round_milestone` and `engaged_*` events. The
+  tracker never loads locally, in tests or debug scenarios, with Do Not Track, or
+  with `?analytics=off`. Scores, inputs, seeds and saves are not sent, and the game
+  plays the same if the tracker is blocked. See
+  [docs/ANALYTICS.md](docs/ANALYTICS.md).
 
 ## [0.20.0] - 2026-11-04 — Tiny Heroes, Big Tea Problems
 

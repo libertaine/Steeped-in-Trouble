@@ -2,7 +2,8 @@
 
 Steeped in Trouble is a static browser game. It uses vanilla JavaScript ES
 modules, Canvas 2D, and Vite for builds. There is no runtime dependency and
-no backend.
+no backend. The one external script is the conditional analytics tracker
+described in [ANALYTICS.md](ANALYTICS.md), which the game runs without.
 
 Desktop keyboard gameplay is the primary qualification target, on Chromium
 and Firefox with Windows and Ubuntu CI. Gameplay quality, desktop
@@ -15,6 +16,7 @@ and is not required for publication.
 src/
 ├── main.js              wires everything together; the only file that knows all parts
 ├── config.js            every gameplay and layout constant
+├── analytics/           anonymous usage counts: the gate, the loader, and the event adapter (ANALYTICS.md)
 ├── core/
 │   ├── game.js          simulation: phase machine + per-frame update, emits events
 │   ├── state.js         phases and the plain-data state shape

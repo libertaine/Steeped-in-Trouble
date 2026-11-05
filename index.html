@@ -327,6 +327,7 @@
     <p id="savedPotInfo"></p><button id="clearPotBtn" hidden>Clear saved pot</button>
     <p class="note">The latest completed normal round is saved. Closing mid-round returns to that checkpoint.</p>
     <p class="note">Progress and arcade records are saved in this browser on this device. Clearing browser data may erase them.</p>
+    <p class="note" id="analyticsNotice">This game uses cookie-free Umami analytics to estimate visits, game starts, progress milestones, and active playtime. We do not send gameplay inputs, scores, or saved games. The provider processes limited browser and network information for aggregate reporting. Add <code>?analytics=off</code> to the game URL to disable analytics.</p>
   </div>
   <div id="breakContent"></div>
 </dialog>
@@ -347,7 +348,7 @@
   <p id="confirmPotText">Your saved pot will be replaced. Arcade records stay.</p>
   <div class="practice-actions"><button id="cancelPotBtn" autofocus>Keep it</button><button id="confirmPotBtn">Replace pot</button></div>
 </dialog>
-<div class="bottom">Original teacup concept; all artwork procedurally drawn with HTML Canvas paths. No arcade-game assets, fonts, or external libraries.</div>
+<div class="bottom">Original teacup concept; all artwork procedurally drawn with HTML Canvas paths. No arcade-game assets, fonts, or external game libraries. Cookie-free visit analytics; add <code>?analytics=off</code> to the URL to disable them.</div>
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>
