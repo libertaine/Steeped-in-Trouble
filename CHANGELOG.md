@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+- Restored numbered keyboard hints on upgrade and Tea Shortage choices in
+  Compact View and narrow windows.
+
 ## [0.20.0] - 2026-11-04 — Tiny Heroes, Big Tea Problems
 
 *Now with More Bugs! The ants are intentional.*

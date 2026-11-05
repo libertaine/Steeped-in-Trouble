@@ -291,6 +291,17 @@ body[data-phase="day"][data-view] .controls-mobile, body[data-phase="day"] #main
   padding: 9px 11px;
 }
 
+.upgrade-card kbd,
+.errand-card kbd {
+  flex: none;
+}
+
+.upgrade-card > span,
+.errand-card > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .upgrade-card:hover,
 .upgrade-card:focus-visible,
 .errand-card:not(:disabled):hover,
@@ -802,10 +813,6 @@ kbd {
     padding: 6px 7px;
     gap: 6px;
   }
-  .upgrade-card kbd,
-  .errand-card kbd {
-    display: none;
-  }
   .upgrade-card strong,
   .errand-card strong {
     font-size: 13px;
@@ -892,7 +899,6 @@ body[data-view="compact"] .offer-cards { margin-top: 5px; gap: 6px; }
 body[data-view="compact"] .upgrade-card, body[data-view="compact"] .errand-card { min-height: 56px; padding: 8px; }
 body[data-view="compact"] .upgrade-card strong, body[data-view="compact"] .errand-card strong { font-size: 16px; }
 body[data-view="compact"] .upgrade-card small, body[data-view="compact"] .errand-card small { font-size: 12px; }
-body[data-view="compact"] .upgrade-card kbd, body[data-view="compact"] .errand-card kbd { display: none; }
 body[data-view="compact"] .controls-mobile { grid-row: 4; padding: 6px 8px; gap: 10px; }
 body[data-view="compact"] .controls-mobile button { min-height: 52px; font-size: 14px; }
 body[data-view="compact"] .controls-mobile .steer { min-height: 64px; font-size: 28px; }
