@@ -72,10 +72,10 @@ export function resourceHudTests() {
       await expect(page.locator('#resource1 b')).toHaveText('2/2');
       await expect(page.locator('.resource-cubes svg')).toHaveCount(2);
       await expect(page.locator('.catch-pips i')).toHaveCount(1);
-      await page.keyboard.press('KeyM');
+      await page.keyboard.press('KeyQ');
       await expect(page.locator('#resource0 b')).toHaveText('1/2');
       await expect(page.locator('#resourceAnnouncement')).toHaveText('Milk used');
-      await page.keyboard.press('KeyM');
+      await page.keyboard.press('KeyQ');
       await expect(page.locator('#resource0 b')).toHaveText('0/2');
       await expect(page.locator('#resource0 rect')).toHaveAttribute('height', '0');
       await page.keyboard.press('KeyE');
@@ -197,7 +197,7 @@ export function resourceHudTests() {
     await page.setViewportSize({ width: 960, height: 540 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await start(page, '&view=full&touch=classic');
-    await page.keyboard.press('KeyM');
+    await page.keyboard.press('KeyQ');
     await expect(page.locator('#resourceAnnouncement')).toHaveText('Milk used');
     expect(await page.locator('#resource0').evaluate((el) => el.getAnimations().length)).toBe(0);
     await page.locator('#menuBtn').click();

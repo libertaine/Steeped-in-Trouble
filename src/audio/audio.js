@@ -1,9 +1,16 @@
 // Optional procedural sound effects and the adaptive soundtrack (music.js).
 //
-// Sound is off by default, and the toggle covers both. The AudioContext is
-// created on the first sound after the player turns sound on (a user
-// gesture), which satisfies browser autoplay rules. Any audio failure is
-// ignored so it can never interrupt play.
+// Sound is off by default, and one switch (`enabled`) covers both: the
+// Settings toggle, the speaker buttons and the M key all flip it (see
+// ui/soundToggle.js, which also remembers the choice). Everything plays
+// through one master gain, so muting silences music and effects at once,
+// including notes already scheduled, without touching their own volumes.
+//
+// Browsers only let audio start from a user gesture. The AudioContext is
+// therefore created only once the page is `unlocked`: turning sound on is a
+// gesture, and a player whose saved choice is "on" unlocks it with their first
+// key press, click or tap. Until then nothing is created and nothing plays.
+// Any audio failure is ignored so it can never interrupt play.
 
 import { CONFIG } from '../config.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
@@ -33,7 +40,6 @@ const SOUNDS = {
   steam: [440, 0.045, 'triangle', 0.011],
   sugar: [820, 0.17, 'square', 0.018],
   escape: [130, 0.22, 'sawtooth', 0.04],
-  toggle: [550, 0.1, 'sine', 0.026],
   sugarRegen: [1320, 0.08, 'sine', 0.012],
   recoil: [310, 0.2, 'sine', 0.026],
   // Hot Chocolate Havoc.
@@ -213,24 +219,67 @@ const KILL_SOUND = {
 };
 const GOLDEN_STEAM = [660, 0.05, 'triangle', 0.012];
 
-export function createAudio() {
+/**
+ * @param {object} [options]
+ * @param {boolean} [options.enabled] start with sound on (a remembered choice); it still waits for unlock()
+ * @param {object} [options.win] where to find AudioContext (for tests)
+ */
+export function createAudio({ enabled: startEnabled = false, win = globalThis.window } = {}) {
   let context = null;
-  let enabled = false;
+  let master = null; // everything's volume: 1 while sound is on, 0 while muted
+  let level = 0; // what master was last set to (an AudioParam's own value can lag behind its automation)
+  let voices = null; // the effects' own bus into master, replaced on mute so nothing already scheduled comes back
+  let enabled = !!startEnabled;
+  let unlocked = false; // a user gesture has happened since the page loaded
   const music = createMusic();
 
-  /** The shared AudioContext, created on first use; null if sound is off or unsupported. */
-  function audioContext() {
-    if (!enabled) return null;
+  /** Create (or wake) the context. Only ever called once unlocked, so autoplay rules are respected. */
+  function wake() {
     try {
       if (!context) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const AudioContextClass = win?.AudioContext || win?.webkitAudioContext;
         if (!AudioContextClass) return null;
         context = new AudioContextClass();
+        master = context.createGain();
+        level = enabled ? 1 : 0;
+        master.gain.value = level;
+        master.connect(context.destination);
       }
-      if (context.state === 'suspended') context.resume().catch(() => {});
+      if (context.state === 'suspended') context.resume()?.catch?.(() => {});
       return context;
     } catch {
       return null;
+    }
+  }
+
+  /** The shared AudioContext; null while muted, before a gesture, or if unsupported. */
+  function audioContext() {
+    if (!enabled || !unlocked) return null;
+    return wake();
+  }
+
+  /** Where sound effects connect. */
+  function out() {
+    if (!voices) {
+      voices = context.createGain();
+      voices.connect(master);
+    }
+    return voices;
+  }
+
+  function apply() {
+    if (!context || !master) return;
+    try {
+      const now = context.currentTime;
+      master.gain.cancelScheduledValues(now);
+      master.gain.setValueAtTime(enabled ? 1 : 0, now);
+      level = enabled ? 1 : 0;
+      if (!enabled && voices) {
+        voices.disconnect();
+        voices = null;
+      }
+    } catch {
+      // Audio is optional.
     }
   }
 
@@ -251,7 +300,7 @@ export function createAudio() {
       amp.gain.exponentialRampToValueAtTime(gain, now + duration * 0.92);
       amp.gain.linearRampToValueAtTime(0, now + duration);
       osc.connect(amp);
-      amp.connect(context.destination);
+      amp.connect(out());
       osc.start(now);
       osc.stop(now + duration);
     } catch {
@@ -285,7 +334,7 @@ export function createAudio() {
       amp.gain.exponentialRampToValueAtTime(0.0001, now + length);
       source.connect(band);
       band.connect(amp);
-      amp.connect(context.destination);
+      amp.connect(out());
       source.start(now);
       source.stop(now + length);
     } catch {
@@ -305,7 +354,7 @@ export function createAudio() {
       amp.gain.setValueAtTime(gain, now);
       amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       osc.connect(amp);
-      amp.connect(context.destination);
+      amp.connect(out());
       osc.start(now);
       osc.stop(now + duration);
     } catch {
@@ -317,11 +366,41 @@ export function createAudio() {
     get enabled() {
       return enabled;
     },
-    /** Toggle sound; call from a user gesture such as a click. */
-    toggle() {
-      enabled = !enabled;
-      beep(SOUNDS.toggle);
+    /** Whether a user gesture has let audio start yet. */
+    get unlocked() {
+      return unlocked;
+    },
+    /**
+     * Turn all sound on or off. Turning it on is a user gesture, so it also
+     * unlocks audio; it makes no sound of its own, and the soundtrack fades
+     * back in where it would have been.
+     */
+    setEnabled(on) {
+      enabled = !!on;
+      if (enabled) {
+        unlocked = true;
+        wake();
+      }
+      apply();
       return enabled;
+    },
+    /** Toggle sound; call from a user gesture such as a click or key press. */
+    toggle() {
+      return this.setEnabled(!enabled);
+    },
+    /**
+     * A user gesture happened: audio may start now if sound is on. Harmless to
+     * call repeatedly; returns true once nothing more is needed.
+     */
+    unlock() {
+      unlocked = true;
+      if (!enabled) return true;
+      wake();
+      return context?.state === 'running';
+    },
+    /** For tests and tinkering: what the audio is doing, without making a sound. */
+    snapshot() {
+      return { enabled, unlocked, context: context?.state ?? null, master: master ? level : null };
     },
     /**
      * Keep the soundtrack going: call every frame.
@@ -332,7 +411,7 @@ export function createAudio() {
      */
     update(state, dt, strange = null) {
       try {
-        music.update(audioContext(), state, dt, strange);
+        music.update(audioContext(), state, dt, strange, master);
       } catch {
         // Audio is optional.
       }

@@ -5,6 +5,43 @@ All notable changes to this project are documented here. The project uses
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-11-04 — Tiny Heroes, Big Tea Problems
+
+*Now with More Bugs! The ants are intentional.*
+
+- **Vintage tea-adventure title screen:** original SVG artwork stars a caped
+  spoon, ants and a very demanding teacup, with responsive tea-label styling,
+  keyboard navigation and motion-aware steam.
+- **Inter-round text mischief:** occasional ants borrow a decorative caption;
+  functional reading information and controls remain available.
+- **A small ant colony:** now and then a few ants wander the
+  empty space beside the cup and leave again, from one on a small screen to
+  six on a large one (two in Low graphics, none on a phone held upright).
+  Occasionally one follows another, two stop to greet each other, or a few
+  head the same way for a while, and now and then one finds a crumb, looks
+  it over and carries it home. Rarely, a sugar cube far too big for any one
+  of them turns up, and three or four gather round and haul it away
+  together, not always quite in step. They stay out of the game and its
+  controls, hide when there is no room (and in any narrow upright window),
+  stay put while the game is paused, and are absent when reduced motion is
+  requested. Decorative only; gameplay is unchanged.
+- **Quick sound switch:** a speaker button on the title screen, at the top of
+  the game and in the Tea Break mutes and unmutes all sound, music and
+  effects together, and **M** does the same from anywhere (holding it, or
+  pressing it with Ctrl, Alt, Meta or Shift, does nothing). The choice is
+  remembered in this browser; a remembered "on" waits for the first key
+  press, click or tap, as browsers require. Unmuting no longer plays a chirp.
+  **M no longer pours milk**: use Q or ↑.
+- **A different shade for each Day:** the page around the cup takes on a
+  slightly different tint for each in-game Day (Warm Parchment, Sage Cream,
+  Lavender Mist, Honey Cream, Rose Beige, Blue Porcelain and Sunday Biscuit),
+  repeating every seven Days. The new shade fades in over a moment when you
+  choose how tomorrow brews, or appears at once with reduced motion or Low
+  graphics. A continued pot comes back in its own Day's shade. The cup, the
+  game area, the HUD, readings, buttons and the title screen keep their
+  colours, and the HUD's Day count is unchanged. Decorative only; gameplay
+  and saves are unchanged.
+
 ## [0.19.0] - 2026-11-03 — The Cup Has Gone Fungal
 
 *There is something growing in the tea. It has a manager.*

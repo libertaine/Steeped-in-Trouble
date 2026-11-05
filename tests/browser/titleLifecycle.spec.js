@@ -23,6 +23,8 @@ test('production title waits for an explicit gesture and each Enter advances one
   await page.waitForTimeout(3200);
   await expect(title).toBeVisible();
   await page.keyboard.press('Tab');
+  await expect(page.locator('#titleInstructionsBtn')).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
   await expect(page.locator('#titleContinueBtn')).toBeFocused();
   await page.keyboard.down('Enter');
   await expect(title).toBeHidden();
@@ -58,7 +60,7 @@ test('complete welcome and Tea Break flow uses browser keyboard and pointer inpu
   await page.keyboard.press('Space');
   await expect.poll(async () => (await state()).shots).toBeGreaterThan(0);
   const supplies = await state();
-  await page.keyboard.press('m');
+  await page.keyboard.press('q');
   await expect.poll(async () => (await state()).milk).toBe(supplies.milk - 1);
   await page.keyboard.press('s');
   await expect.poll(async () => (await state()).sugar).toBe(supplies.sugar - 1);

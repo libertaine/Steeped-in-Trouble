@@ -68,7 +68,7 @@ export async function autoplayUntilReading(page) {
         const d = target ? diff(laneAngle(target.angle), s.angle) : 0;
         hold('ArrowRight', d > 0.04);
         hold('ArrowLeft', d < -0.04);
-        if (target?.radius > 215) send('keydown', 'KeyM');
+        if (target?.radius > 215) send('keydown', 'KeyQ');
         if (s.enemies.filter((e) => e.radius > 150).length > 2) send('keydown', 'KeyS');
       }
       requestAnimationFrame(frame);

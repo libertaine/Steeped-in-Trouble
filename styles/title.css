@@ -1,0 +1,218 @@
+/* Tea-label tokens are scoped here for later presentation work, never gameplay. */
+.arcade-splash {
+  --label-cream: #f5edd6;
+  --label-green: #294c3b;
+  --label-burgundy: #79363f;
+  --label-gold: #a48647;
+  color-scheme: light;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  margin: 0;
+  border: 0;
+  padding: clamp(12px, 3vw, 48px);
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: auto;
+  color: var(--label-green);
+  background: #243f33;
+  background-image: repeating-linear-gradient(90deg, transparent 0 5px, #ffffff03 5px 6px);
+}
+.arcade-splash[hidden], .arcade-splash.dismissed { display: none; }
+.splash-content {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  grid-template-rows: auto 1fr auto auto;
+  column-gap: 12px;
+  width: min(1180px, 100%);
+  min-height: min(740px, calc(100dvh - 96px));
+  margin: max(0px, calc((100dvh - 836px) / 2)) auto 0;
+  padding: 26px 48px 20px;
+  border: 3px solid var(--label-gold);
+  outline: 1px solid var(--label-gold);
+  outline-offset: -10px;
+  background: var(--label-cream);
+  box-shadow: 0 12px 40px #071f2150;
+}
+.splash-content::before, .splash-content::after {
+  content: '✦';
+  position: absolute;
+  top: 34px;
+  color: var(--label-gold);
+  font-size: 18px;
+}
+.splash-content::before { left: 19px; }
+.splash-content::after { right: 19px; }
+.splash-imprint {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--label-gold);
+  font: 700 10px/1.4 ui-monospace, monospace;
+  letter-spacing: .16em;
+}
+.splash-copy { align-self: center; padding-top: 30px; }
+.arcade-splash p { color: var(--label-green); }
+.arcade-splash .splash-tagline { color: var(--label-burgundy); }
+.splash-edition { margin: 0 0 14px; font: italic 16px/1.4 Georgia, serif; }
+.splash-title {
+  margin: 0;
+  max-width: 9em;
+  font: 900 clamp(48px, 6.4vw, 86px)/.91 Georgia, 'Times New Roman', serif;
+  letter-spacing: -.055em;
+  text-shadow: 2px 2px var(--label-cream), 3px 3px #b4a26e;
+}
+.splash-title em { display: block; margin: 10px 0; font-size: .31em; letter-spacing: .16em; }
+.splash-subtitle { margin: 26px 0 12px; font: 700 clamp(16px, 2vw, 23px)/1.3 Georgia, serif; }
+.splash-tagline {
+  display: inline-block;
+  margin: 0;
+  padding: 6px 15px;
+  border-block: 1px solid var(--label-burgundy);
+  color: var(--label-burgundy);
+  font: italic 700 19px/1.3 Georgia, serif;
+  transform: rotate(-3deg);
+}
+.splash-description { max-width: 32ch; margin: 20px 0 0; font: 14px/1.5 Georgia, serif; }
+.splash-screen { grid-column: 2; grid-row: 2 / 4; align-self: center; position: relative; pointer-events: none; }
+.splash-screen img { display: block; width: 100%; height: auto; }
+.splash-steam { position: absolute; inset: 0; width: 100%; height: 100%; color: #61754c; transform: translateY(var(--title-steam-y, 0px)); opacity: var(--title-steam-opacity, .55); }
+.splash-menu { grid-column: 1; padding: 24px 0 20px; }
+.splash-actions { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: center; }
+.splash-actions[hidden] { display: none; }
+button.splash-continue {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  flex-basis: 100%;
+  max-width: 345px;
+  min-height: 52px;
+  padding: 13px 20px;
+  border: 2px solid var(--label-green);
+  border-radius: 0;
+  background: var(--label-green);
+  color: var(--label-cream);
+  box-shadow: 3px 3px 0 var(--label-gold);
+  font: 700 14px/1.4 ui-monospace, monospace;
+  letter-spacing: .08em;
+}
+button.splash-secondary {
+  min-height: 44px;
+  padding: 5px 0;
+  border: 0;
+  border-bottom: 1px solid var(--label-gold);
+  border-radius: 0;
+  color: var(--label-green);
+  background: transparent;
+  box-shadow: none;
+  font: 700 13px/1.4 Georgia, serif;
+}
+.splash-actions button:focus-visible { outline: 3px solid var(--label-burgundy); outline-offset: 4px; }
+.splash-actions button:hover { filter: brightness(1.1); }
+.splash-actions button:active { transform: translateY(3px); box-shadow: none; }
+.splash-hint { margin: 12px 0 0; max-width: 36ch; font: 11px/1.5 ui-monospace, monospace; }
+.splash-status { font: 700 13px/1.5 ui-monospace, monospace; }
+.splash-colophon { grid-column: 1 / -1; margin: 0; padding-top: 14px; border-top: 1px solid var(--label-gold); text-align: center; font: 9px/1.6 ui-monospace, monospace; letter-spacing: .13em; }
+@media (max-width: 900px), (max-height: 740px) {
+  .splash-content { min-height: 0; padding: 22px 32px 18px; margin-top: 0; }
+  .splash-title { font-size: clamp(44px, 6.5vw, 72px); }
+  .splash-copy { padding-top: 20px; }
+  .splash-subtitle { margin-top: 20px; }
+  .splash-description { margin-top: 14px; }
+  .splash-menu { padding: 20px 0; }
+}
+@media (max-width: 600px) and (min-height: 501px) {
+  .arcade-splash { padding: 12px; }
+  .splash-content { grid-template-columns: 1fr; gap: 0; padding: 19px 23px 16px; text-align: center; }
+  .splash-imprint { justify-content: center; font-size: 8px; }
+  .splash-imprint span:last-child { display: none; }
+  .splash-copy { padding-top: 16px; }
+  .splash-edition { font-size: 12px; margin-bottom: 10px; }
+  .splash-title { font-size: clamp(40px, 11vw, 62px); max-width: none; }
+  .splash-title em { display: inline; margin: 0 6px; vertical-align: middle; }
+  .splash-subtitle { font-size: 17px; margin: 15px 0 10px; }
+  .splash-tagline { font-size: 16px; }
+  .splash-description { display: none; }
+  .splash-screen { grid-column: 1; grid-row: 3; width: min(260px, 62vw); justify-self: center; margin: 4px 0 -8px; }
+  .splash-menu { grid-row: 4; padding: 12px 0 16px; }
+  .splash-actions { justify-content: center; gap: 8px 20px; }
+  button.splash-continue { max-width: 320px; }
+  .splash-hint { margin-inline: auto; font-size: 10px; }
+  .splash-colophon { font-size: 8px; letter-spacing: .04em; }
+}
+@media (max-height: 500px) {
+  .arcade-splash { padding: 10px; }
+  .splash-content { padding: 16px 25px 12px; grid-template-columns: 1.3fr 1fr; }
+  .splash-imprint { font-size: 8px; padding-bottom: 8px; }
+  .splash-imprint span:last-child, .splash-edition, .splash-description, .splash-colophon { display: none; }
+  .splash-copy { padding-top: 12px; }
+  .splash-title { font-size: clamp(30px, 5.4vw, 50px); }
+  .splash-title em { display: inline; margin: 0 5px; vertical-align: middle; }
+  .splash-subtitle { font-size: 16px; margin: 12px 0 8px; }
+  .splash-tagline { font-size: 14px; padding: 3px 9px; }
+  .splash-screen { max-width: 280px; justify-self: center; }
+  .splash-menu { padding: 14px 0 0; }
+  .splash-actions { gap: 5px 16px; }
+  button.splash-continue { min-height: 44px; padding: 10px 14px; }
+  .splash-hint { margin-top: 6px; font-size: 9px; }
+}
+@media (min-width: 601px) and (min-height: 501px) and (max-height: 650px) {
+  .arcade-splash { padding: 18px; }
+  .splash-content { padding: 18px 30px 14px; }
+  .splash-edition { margin-bottom: 10px; font-size: 13px; }
+  .splash-title { font-size: clamp(40px, 6vw, 60px); }
+  .splash-description { display: none; }
+  .splash-subtitle { margin: 16px 0 12px; }
+  .splash-copy { padding-top: 16px; }
+  .splash-menu { padding: 18px 0; }
+}
+@media (max-width: 600px) and (min-height: 501px) and (max-height: 720px) {
+  .splash-content { padding: 16px 20px 12px; }
+  .splash-edition, .splash-colophon { display: none; }
+  .splash-copy { padding-top: 12px; }
+  .splash-title { font-size: 40px; }
+  .splash-subtitle { font-size: 15px; margin: 12px 0 8px; }
+  .splash-tagline { font-size: 15px; padding: 4px 10px; }
+  .splash-screen { width: min(190px, 48vw); }
+  .splash-menu { padding-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-steam { transform: none; opacity: .55; }
+}
+/* The speaker: top right of the label, just under the imprint rule, as it is in the game's header.
+   An upright phone has no room there, so it joins the centred row of secondary actions instead. */
+button.splash-sound {
+  position: absolute;
+  top: 66px;
+  right: 46px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid var(--label-gold);
+  border-radius: 0;
+  color: var(--label-green);
+  background: var(--label-cream);
+  box-shadow: none;
+}
+button.splash-sound[data-muted="true"] { color: var(--label-burgundy); }
+button.splash-sound:hover { background: #ede2c3; }
+@media (max-width: 900px), (max-height: 740px) {
+  button.splash-sound { top: 62px; right: 32px; }
+}
+@media (max-height: 500px) {
+  button.splash-sound { top: 44px; right: 42px; }
+}
+@media (min-width: 601px) and (min-height: 501px) and (max-height: 650px) {
+  button.splash-sound { top: 58px; right: 32px; }
+}
+@media (max-width: 600px) and (min-height: 501px) {
+  button.splash-sound { position: static; }
+  .splash-actions { gap: 8px 16px; }
+}

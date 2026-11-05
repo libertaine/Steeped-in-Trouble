@@ -32,7 +32,7 @@ for (const width of [1280, 375]) {
         return width;
       });
       await expect(button).toHaveCSS('outline-width', outlineWidth);
-      await expect(button).toHaveCSS('outline-color', selector === '#titleContinueBtn' ? 'rgb(244, 239, 226)' : 'rgb(155, 231, 255)');
+      await expect(button).toHaveCSS('outline-color', selector === '#titleContinueBtn' ? 'rgb(121, 54, 63)' : 'rgb(155, 231, 255)');
       await expect(button).toHaveCSS('background-color', background);
       await button.hover();
       await page.mouse.down();
@@ -44,7 +44,7 @@ for (const width of [1280, 375]) {
       await page.mouse.up();
     };
 
-    await checkStates('#titleContinueBtn', 'rgb(14, 16, 48)', 'rgb(255, 210, 63)');
+    await checkStates('#titleContinueBtn', 'rgb(41, 76, 59)', 'rgb(41, 76, 59)');
     await page.locator('#titleContinueBtn').hover();
     await page.screenshot({ path: testInfo.outputPath('title-hover-focus.png'), animations: 'disabled' });
     await page.locator('#titleContinueBtn').click();

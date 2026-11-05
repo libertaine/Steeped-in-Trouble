@@ -6,7 +6,7 @@ import { expect, openGame, test } from './fixtures.js';
 const openTitle = async (page, query = '') => {
   await openGame(page, query, { onboarding: true });
   if (!/[&](noOverlay|arcade|day|cup|fortune)/.test(query)) {
-    await expect(page.locator('#titleContinueBtn')).toHaveCSS('background-color', 'rgb(14, 16, 48)');
+    await expect(page.locator('#titleContinueBtn')).toHaveCSS('background-color', 'rgb(41, 76, 59)');
     await page.locator('#titleContinueBtn').tap();
     await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('background-color', 'rgb(255, 210, 63)');
   }

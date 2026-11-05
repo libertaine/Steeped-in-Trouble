@@ -10,13 +10,23 @@
   --panel: #14221e;
 }
 
+/*
+ * Day palettes (ui/dayPalette.js holds the seven; these initial values are Day 1).
+ * Only the page ground and the header rule use them. Registered as colours so a
+ * Day choice can fade them; body[data-day-fade] is set only for that change.
+ */
+@property --day-paper { syntax: '<color>'; inherits: true; initial-value: #e6e1d5; }
+@property --day-glow { syntax: '<color>'; inherits: true; initial-value: #263e34; }
+@property --day-mid { syntax: '<color>'; inherits: true; initial-value: #13231f; }
+@property --day-deep { syntax: '<color>'; inherits: true; initial-value: #0c1716; }
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: radial-gradient(circle at 24% 8%,#263e34 0%,#13231f 43%,#0c1716 100%);
+  background: radial-gradient(circle at 24% 8%,var(--day-glow) 0%,var(--day-mid) 43%,var(--day-deep) 100%);
   color: var(--ink);
   font: 14px/1.48 ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;
   min-height: 100vh;
@@ -28,7 +38,15 @@ header {
   justify-content: space-between;
   gap: 12px;
   padding: 21px min(4vw,52px) 13px;
-  border-bottom: 1px solid #ffffff16;
+  border-bottom: 1px solid color-mix(in srgb, var(--day-paper) 12%, transparent);
+}
+
+body[data-day-fade="on"] {
+  transition: --day-paper .8s ease, --day-glow .8s ease, --day-mid .8s ease, --day-deep .8s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-day-fade="on"] { transition: none; }
 }
 
 .brand {
@@ -450,6 +468,23 @@ body[data-touch="easy"] canvas {
   display: none;
 }
 
+/* Decorative ambient life (see ui/ambient.js): fills the stage without taking
+   a grid track, never receives input, and is drawn only in measured gutters
+   beside the game canvas. The id selector outranks the generic canvas rules. */
+#ambientLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  pointer-events: none;
+  touch-action: auto;
+}
+
+#ambientLayer[hidden] {
+  display: none;
+}
+
 .touch-ring.charging {
   animation: ring-charge var(--press, 450ms) linear forwards;
 }
@@ -795,9 +830,11 @@ kbd {
   border-radius: 18px; width: min(680px, calc(100% - 20px)); max-height: calc(100dvh - 24px);
   padding: 0 14px 14px; overscroll-behavior: contain; }
 #teaBreak::backdrop { background: #06140de0; }
-.break-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+/* The buttons drop to their own line when the title's longest word and the
+   buttons cannot share one, so enlarged text never widens the dialog. */
+.break-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
   position: sticky; top: 0; z-index: 2; background: #12251f; padding: 10px 0; }
-.break-head h2 { margin: 0; }
+.break-head h2 { margin: 0; flex: 1 1 min-content; }
 #teaBreak aside { display: grid; grid-template-columns: 1fr; }
 #teaBreak details { min-width: 0; }
 #teaBreak summary { padding: 12px; min-height: 48px; cursor: pointer; font-size: 16px;
@@ -1025,110 +1062,6 @@ body[data-view="compact"] .job-card canvas { width: 100%; height: auto; }
 body[data-view="full"] .panel .collection-entry { padding: 0; margin-top: 8px; }
 body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-size: 12px; }
 #closeCollectionTop { display: block; margin: 0 0 14px auto; font-size: 11px; }
-
-/*
- * The title screen and the instruction overlay. Both borrow the splash art's
- * 16-colour palette: flat fills and hard one-colour drop shadows, no glows.
- */
-.arcade-splash {
-  margin: 0;
-  border: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  color: #f4efe2;
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: #050510;
-  transition: opacity 0.32s ease-out, visibility 0.32s ease-out;
-}
-
-.arcade-splash.dismissed {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.arcade-splash[hidden] { display: none; }
-
-/* Match the global button:hover specificity so arcade palettes win. */
-button.splash-continue {
-  max-width: 92vw;
-  padding: 12px 16px;
-  border: 2px solid #ffd23f;
-  border-radius: 0;
-  background: #0e1030;
-  color: #ffd23f;
-  font: 700 clamp(12px, 1.8vw, 18px) / 1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: 0.08em;
-  box-shadow: 4px 4px 0 #2a3fa8;
-}
-.splash-continue:focus-visible { outline: 3px solid #f4efe2; outline-offset: 4px; }
-.splash-continue:hover { filter: brightness(1.1); }
-.splash-continue:active { transform: translateY(3px); box-shadow: none; }
-
-.splash-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(8px, 2vh, 18px);
-  padding: 12px;
-}
-
-/* The picture is the hero: as large as the window allows, upscaled with hard pixels. */
-.splash-screen {
-  position: relative;
-  line-height: 0;
-  background: #0e1030;
-  border: 4px solid #2a3fa8;
-  box-shadow: 0 0 0 4px #050510, 0 0 0 8px #1c2156;
-}
-
-.splash-screen::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px);
-}
-
-.splash-screen canvas {
-  display: block;
-  width: min(calc(100vw - 40px), calc((100vh - 155px) * 1.6));
-  width: min(calc(100vw - 40px), calc((100dvh - 155px) * 1.6));
-  height: auto;
-  aspect-ratio: 256 / 160;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
-}
-
-.splash-subtitle {
-  margin: 0;
-  max-width: 92vw;
-  font: 700 clamp(11px, 1.6vw, 15px) / 1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: center;
-  color: #f4efe2;
-}
-
-.splash-status {
-  font: 700 12px ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: 0.3em;
-  color: #ffd23f;
-  animation: splashBlink 1s steps(1) infinite;
-}
-
-@keyframes splashBlink {
-  50% { opacity: 0; }
-}
 
 /*
  * The instruction overlay is a modal dialog in the top layer, centred in the
@@ -1466,8 +1399,6 @@ button.arcade-secondary-btn {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .arcade-splash { transition: none !important; }
-  .splash-status { animation: none !important; }
   .arcade-start-btn.nudge {
     animation: none;
     outline: 3px solid #9be7ff;
@@ -1564,7 +1495,7 @@ body[data-view="full"] main { padding-top: 7px; }
 /* The cup gets the entire stage until the existing reveal has finished.
    Only reading uses this split; the normal arena's budget is unchanged. */
 .reading-presentation[hidden], #upgradeAcknowledgment[hidden] { display: none; }
-.reading-presentation { min-width: 0; min-height: 0; width: 100%; height: 100%;
+.reading-presentation { position: relative; min-width: 0; min-height: 0; width: 100%; height: 100%;
   display: flex; flex-direction: column; padding: 12px; gap: 10px; }
 .reading-copy { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain;
   padding: 2px 8px 4px 2px; scrollbar-gutter: stable; }
@@ -1574,6 +1505,18 @@ body[data-view="full"] main { padding-top: 7px; }
 .reading-presentation p { margin: 4px 0 8px; }
 .next-fortune { padding: 5px 12px; border-left: 3px solid var(--gold); background: #1a293a; }
 .reading-quote { font-style: italic; color: #d4ddcf; }
+/* An optional joke in measured empty space, outside the scrollable reading.
+   No grid/flex space is reserved; the adapter hides it if the copy needs it. */
+#readingMischief { position: absolute; bottom: 12px; left: 12px; right: 12px;
+  height: 64px; overflow: hidden; pointer-events: none; }
+#readingMischief[hidden], #readingAnts[hidden] { display: none; }
+#readingMischief p { position: absolute; inset: 0; margin: 0; display: flex;
+  align-items: center; justify-content: center; white-space: nowrap;
+  font: italic 13px Georgia, serif; color: #b9c8b1; }
+#readingCaption[data-carried] { opacity: 0; }
+body[data-view] #readingAnts { position: absolute; inset: 0; width: 100%; height: 100%;
+  min-width: 0; max-width: none; aspect-ratio: auto; transform: none;
+  pointer-events: none; border: 0; border-radius: 0; background: transparent; }
 body[data-view] .reading-presentation #compactMemory,
 body[data-view] .reading-presentation #compactFortune,
 body[data-view] .reading-presentation #compactEffect { display: block; padding: 0; font-size: 14px; color: var(--ink); }
@@ -1647,3 +1590,14 @@ body[data-onscreen-controls="hidden"] .header-actions { flex-wrap: wrap; justify
   body[data-view] .reading-presentation .upgrade-card strong { font-size: 14px; }
   body[data-view] .reading-presentation .offer-head strong { font-size: 14px; }
 }
+
+/* 0.20.0: the quick sound switch. One speaker per surface that can be open (a modal makes
+   the rest inert); every copy shows the same state. M does the same from the keyboard. */
+.sound-toggle { display: inline-grid; place-items: center; flex: none; width: 44px; height: 44px;
+  min-width: 44px; min-height: 44px; padding: 0; border-radius: 999px; line-height: 0;
+  color: var(--gold); background: #1a2d25; border-color: #6a846d99; }
+.sound-toggle svg { display: block; width: 22px; height: 22px; }
+.sound-toggle[data-muted="true"] { color: #b9c2b9; }
+.sound-toggle[data-muted="true"] .sound-waves,
+.sound-toggle[data-muted="false"] .sound-cross { display: none; }
+.break-head-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }

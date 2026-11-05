@@ -11,8 +11,8 @@ export function capture(page, info, name) {
 /** In a quiet cup (no new leaves), pour milk twice with the keyboard, then finish the cup with a real steam kill. */
 export async function milkyRound(page) {
   await page.evaluate(() => { window.__TEACUP__.game.state.spawnTimer = 1000; });
-  await page.keyboard.press('KeyM');
-  await page.keyboard.press('KeyM');
+  await page.keyboard.press('KeyQ');
+  await page.keyboard.press('KeyQ');
   await finishCup(page);
 }
 

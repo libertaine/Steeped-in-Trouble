@@ -12,10 +12,11 @@ import { createDailyPour } from './gameplay/dailyPour.js';
 import { BREAKOUT_SALT, createBreakout } from './gameplay/biscuitBreakout.js';
 import { createRandom, toSeed } from './core/random.js';
 import { createControls } from './input/controls.js';
-import { initialSettings, isTouchDevice, normalize, saveSettings } from './input/settings.js';
+import { initialSettings, initialSound, isTouchDevice, normalize, saveSettings } from './input/settings.js';
 import { createAudio } from './audio/audio.js';
 import { attachCanvasScaling } from './rendering/canvas.js';
 import { attachViewportFit } from './ui/viewport.js';
+import { createAmbient } from './ui/ambient.js';
 import { createEffects } from './rendering/effects.js';
 import { createStrangeHappenings } from './rendering/strange.js';
 import { createRenderer } from './rendering/renderer.js';
@@ -28,9 +29,10 @@ import { prepareCheckpoint, prepareRecord } from './dev/collection.js';
 import { prepareCup, seedLegacyPot } from './dev/cup.js';
 import { prepareManager, prepareProgression } from './dev/manager.js';
 import { POT_SCHEMA_VERSION } from './core/checkpoint.js';
-import { drawArcadeCenterpiece } from './rendering/splashArt.js';
 import { createInstructionOverlay } from './ui/instructionOverlay.js';
 import { createTitleScreen } from './ui/titleScreen.js';
+import { createSoundToggle } from './ui/soundToggle.js';
+import { createDayPalette } from './ui/dayPalette.js';
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -46,9 +48,9 @@ function initialQuality(params) {
   }
 }
 
-/** Read an optional ?seed=<number> to replay a gameplay sequence. */
-function seedFromUrl(params) {
-  const raw = params.get('seed');
+/** Read an optional ?seed=<number> to replay a gameplay sequence (or another named seed). */
+function seedFromUrl(params, name = 'seed') {
+  const raw = params.get(name);
   if (raw === null || raw.trim() === '') return undefined;
   const seed = Number(raw);
   return Number.isFinite(seed) ? seed : undefined;
@@ -66,7 +68,8 @@ function boot() {
   const renderer = createRenderer(canvas, { quality: initialQuality(params),
     compact: () => document.body.dataset.view === 'compact' });
   const hud = createHud(document);
-  const audio = createAudio();
+  // The page ground's quiet Day tint (decoration only; see ui/dayPalette.js).
+  const dayPalette = createDayPalette(document);
 
   // Control settings: Easy or Classic Touch, and Auto Steam (see input/settings.js).
   let storage = null;
@@ -75,6 +78,10 @@ function boot() {
   } catch {
     // Storage may be unavailable; the defaults will do.
   }
+  // A remembered "on" still waits for the player's first gesture (see audio/audio.js).
+  const audio = createAudio({ enabled: initialSound(storage) });
+  // Before the title screen, so its Enter (which it keeps to itself) can still unlock audio.
+  const sound = createSoundToggle({ doc: document, audio, storage });
   // ?debug&cup=migrated: an authentic 0.16.0 pot is stored first, so Continue Your Pot migrates it (development only).
   if (import.meta.env.DEV && params.has('debug') && params.get('cup') === 'migrated') seedLegacyPot(storage);
   const progress = createLocalProgress(storage);
@@ -174,7 +181,7 @@ function boot() {
     onGesture: showRing,
     enabled: () => !title?.blocked && !presentation?.blocked && !collectionUI?.blocked && !overlay?.blocked && document.visibilityState !== 'hidden',
   });
-  title = createTitleScreen({ doc: document, onContinue: () => {
+  title = createTitleScreen({ doc: document, onGraphics: toggleGraphics, sound: document.getElementById('titleSoundBtn'), onContinue: () => {
     controls.settle(true);
     overlay.show({ hasSavedPot: !!progress.pot });
   } });
@@ -213,20 +220,18 @@ function boot() {
     onOpen: () => overlay.close(),
   });
 
-  const soundButton = document.getElementById('soundBtn');
   document.getElementById('mainBtn').addEventListener('click', () => {
     if (game.state.phase === 'reading') { game.confirm(); return; }
     if (!collectionUI.primary()) game.primaryAction();
   });
-  soundButton.addEventListener('click', () => {
-    soundButton.textContent = `Sound: ${audio.toggle() ? 'on' : 'off'}`;
-  });
 
   const graphicsButton = document.getElementById('graphicsBtn');
+  const titleGraphicsButton = document.getElementById('titleGraphicsBtn');
   const showQuality = () => {
     if (graphicsButton) graphicsButton.textContent = `Graphics: ${renderer.quality}`;
+    titleGraphicsButton.textContent = `Graphics: ${renderer.quality}`;
   };
-  graphicsButton?.addEventListener('click', () => {
+  function toggleGraphics() {
     renderer.quality = renderer.quality === 'high' ? 'low' : 'high';
     showQuality();
     try {
@@ -234,7 +239,8 @@ function boot() {
     } catch {
       // Storage may be unavailable (private mode); the choice just won't persist.
     }
-  });
+  }
+  graphicsButton?.addEventListener('click', toggleGraphics);
   showQuality();
 
   const version = document.getElementById('version');
@@ -242,6 +248,13 @@ function boot() {
 
   const detachViewport = attachViewportFit(canvas.closest('.playfield'));
   const detachScaling = attachCanvasScaling(canvas);
+  // Decorative visitors in the stage gutters: stepped below, never part of the game.
+  // With ?debug, ?ambientSeed=<number> fixes their cosmetic randomness and
+  // ?ambientAnts=<0-12> replaces the display's population ceiling (for profiling).
+  const ambientLayer = document.getElementById('ambientLayer');
+  const ambient = ambientLayer ? createAmbient({ canvas: ambientLayer, quality: () => renderer.quality,
+    seed: params.has('debug') ? seedFromUrl(params, 'ambientSeed') : undefined,
+    ants: params.has('debug') ? seedFromUrl(params, 'ambientAnts') : undefined }) : null;
 
   // Holds and half-made gestures never cross into (or out of) the shortage or the errand.
   const RESETS = new Set(['paused', 'resumed', 'matchStart', 'roundStart', 'reading', 'shortage',
@@ -268,6 +281,7 @@ function boot() {
       effects.handle(event);
       audio.handle(event);
       hud.handle(event);
+      dayPalette.handle(event);
     }
     sessions.settle();
   }
@@ -296,24 +310,22 @@ function boot() {
     const shown = strange.shown(game.state);
     renderer.draw(shown, effects.fx, dt, strange.view);
     hud.update(shown);
+    dayPalette.update(game.state, { quality: renderer.quality });
     presentation.update();
     collectionUI.update();
+    title.update(dt, renderer.quality);
+    // After the HUD and panels, so this frame's layout is the one measured.
+    const s = game.state;
+    ambient?.update(dt, { phase: s.phase, pausedFrom: s.pausedFrom, offer: !!s.offer, holding: strange.holding,
+      readingReady: document.body.dataset.readingReady === 'true', readingKey: `${s.round}:${s.nextFortune}:${s.tea}`,
+      blocked: title.blocked || presentation.blocked || collectionUI.blocked || overlay.blocked });
   });
 
   hud.update(game.state);
+  dayPalette.update(game.state, { quality: renderer.quality });
   presentation.update();
   collectionUI.update();
   loop.start();
-
-  // Draw retro arcade splash centerpiece
-  const splashCanvas = document.getElementById('splashCanvas');
-  if (splashCanvas) {
-    try {
-      drawArcadeCenterpiece(splashCanvas);
-    } catch {
-      // Graceful fallback if 2D context or canvas drawing encounters an error
-    }
-  }
 
   const isDirectScenario = params.has('arcade') || params.has('day') || params.has('cup') || params.has('fortune')
     || params.has('boss') || params.has('progress') || params.has('noOverlay');
@@ -329,6 +341,8 @@ function boot() {
       collectionUI.dispose();
       overlay.dispose();
       title.dispose();
+      sound.dispose();
+      ambient?.dispose();
       detachScaling();
       detachViewport();
       delete window[INSTANCE_KEY];
@@ -351,7 +365,12 @@ function boot() {
       },
       version: __APP_VERSION__,
       config: CONFIG,
+      ambient: ambient && { snapshot: () => ambient.snapshot(), summon: (n) => ambient.summon(n),
+        socialize: (kind) => ambient.socialize(kind), crumble: () => ambient.crumble(),
+        sweeten: (options) => ambient.sweeten(options), stealText: () => ambient.stealText() },
       settings: () => ({ ...settings }),
+      // Read only: whether sound is on, unlocked, and what the AudioContext and master volume are doing.
+      audio: () => audio.snapshot(),
       overlay: {
         show: (opts) => overlay.show(opts),
         close: () => overlay.close(),

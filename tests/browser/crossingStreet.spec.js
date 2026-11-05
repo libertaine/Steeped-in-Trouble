@@ -147,7 +147,7 @@ test('pause, Tea Break and backgrounding freeze the street; held keys never leak
   await key(page, 'Space');
   for (let i = 0; i < 10; i++) await key(page, 'Space', 'keydown', true);
   await key(page, 'Space', 'keyup');
-  await key(page, 'KeyM'); await key(page, 'KeyQ'); await key(page, 'KeyE');
+  await key(page, 'KeyQ'); await key(page, 'KeyE');
   expect(await state(page)).toMatchObject({ milkLeft, sugarLeft, shots: [] });
   expect((await street(page)).hops).toBe(0);
   await shot(page, testInfo, 'desktop-compact');

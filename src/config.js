@@ -13,6 +13,16 @@ function deepFreeze(object) {
 }
 
 export const CONFIG = deepFreeze({
+  textMischief: {
+    idle: 12, // visible, unengaged seconds after the final reading
+    chance: 0.2, // one cosmetic opportunity per reading
+    approach: 1.4,
+    lift: 0.45,
+    carry: 4.5,
+    absent: 7,
+    laneHeight: 64,
+    minWidth: 360,
+  },
   arena: {
     width: 920, // logical canvas width
     height: 790, // logical canvas height
