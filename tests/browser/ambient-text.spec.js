@@ -114,6 +114,7 @@ for (const interruption of ['menu', 'resize', 'low', 'motion', 'blur', 'hidden',
 }
 
 test('idle time freezes while hidden and returns without catch-up', async ({ page, problems }) => {
+  test.slow(); // the clock replays 30 s of frames one at a time, about 80 s of real time on a slow Windows runner
   await freezeTextClock(page);
   await openTextReading(page);
   await page.clock.runFor(3500);
