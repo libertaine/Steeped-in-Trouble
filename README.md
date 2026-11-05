@@ -16,26 +16,17 @@ adventures and unexpected humor keep finding their way into the pot.
 does not show all current features.*
 Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
-## 0.20.0 — Tiny Heroes, Big Tea Problems
+## 0.21.0 — Keeping Count
 
-*Now with More Bugs!*
+- Numbered keyboard hints are back on upgrade and Tea Shortage choices in
+  Compact View and narrow windows.
+- The instructions now match the vintage tea-adventure title screen.
+- Cookie-free analytics now estimate visits, game starts, progress milestones
+  and active playtime. See [Privacy](#privacy), including how to turn them off.
 
-The ants are intentional.
+Gameplay and earlier saved pots are unchanged.
 
-- A small ambient colony wanders beside the cup, occasionally following or
-  greeting its neighbors. They discover crumbs, carry them home, and sometimes
-  cooperate to haul a sugar cube that clearly exceeds the job description.
-- Occasional inter-round text mischief. Keep an eye on the small print.
-- A redesigned vintage tea-adventure title screen starring the caped spoon.
-- Quick audio mute/unmute with **M** or the speaker button.
-- Subtle background palettes follow your **in-game Days**, repeating every
-  seven Days; they do not follow real-world weekdays.
-
-The ants and background colors are decorative. Ants respect available space,
-pause and graphics settings, and are absent with reduced motion.
-Earlier saved pots continue.
-
-See the [release notes](docs/releases/v0.20.0.md),
+See the [release notes](docs/releases/v0.21.0.md),
 [changelog](CHANGELOG.md) and
 [past releases](https://github.com/libertaine/Steeped-in-Trouble/releases).
 

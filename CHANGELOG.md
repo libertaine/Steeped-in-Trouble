@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.21.0] - 2026-11-05 — Keeping Count
 
 - Restored numbered keyboard hints on upgrade and Tea Shortage choices in
   Compact View and narrow windows.
