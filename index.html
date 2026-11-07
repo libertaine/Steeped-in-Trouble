@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/styles/main.css" />
   <link rel="stylesheet" href="/styles/title.css" />
 </head>
-<body>
+<body class="game-ui">
 <dialog open id="arcadeSplash" class="arcade-splash" aria-labelledby="splashTitle" aria-describedby="splashSubtitle">
   <div class="splash-content">
     <div class="splash-imprint" aria-hidden="true"><span>THE TEA CUP ADVENTURE CO.</span><span>A MOST UNREASONABLE BLEND</span></div>
@@ -44,7 +44,6 @@
   </div>
   <div class="header-actions">
     <button id="headerSoundBtn" class="sound-toggle" data-sound-toggle="header" data-muted="true" aria-label="Unmute audio" title="Unmute audio (M)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="sound-waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="sound-cross" d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-    <button id="viewBtn" aria-label="Switch Compact or Full View">View: full</button>
     <div class="version" id="version">VERSION</div>
   </div>
 </header>
@@ -251,7 +250,6 @@
       <p class="note">Hold STEAM to fire continuously, or turn on Auto Steam to fire at whatever lines up with the spoon. Milk washes the leaves in its wedge back into the cup and slows them; sugar shoots three strong crystalline darts. The tea strainer catches the first leaf to escape each cup.</p>
       <p class="note">On a touch screen, <b>Easy Touch</b> gives you two big steering pads and Auto Steam: double-tap the cup to pour milk, and hold a finger on it to fire sugar. <b>Classic Touch</b> keeps a button for everything, and works with Auto Steam too.</p>
       <div class="settings">
-        <button id="breakViewBtn" class="toggle" aria-label="Choose Compact or Full View">View: full</button>
         <div class="control-visibility"><label for="onScreenControls">On-screen controls</label>
           <select id="onScreenControls" aria-describedby="onScreenControlsHelp">
             <option value="auto">Auto</option>
@@ -264,7 +262,7 @@
         <button id="soundBtn" class="toggle" aria-label="Toggle sound">Sound: off</button>
         <button id="graphicsBtn" class="toggle" aria-label="Toggle graphics quality">Graphics: high</button>
       </div>
-      <p class="note" id="onScreenControlsHelp">Auto shows gameplay buttons when the primary pointer is touch. Hide removes the buttons; steering and adventure actions then need a keyboard. Easy Touch cup gestures remain available. View, Touch, and Auto Steam keep their own settings.</p>
+      <p class="note" id="onScreenControlsHelp">Auto shows gameplay buttons when the primary pointer is touch. Hide removes the buttons; steering and adventure actions then need a keyboard. Easy Touch cup gestures remain available. Touch and Auto Steam keep their own settings.</p>
     </section>
     </details>
   </aside>

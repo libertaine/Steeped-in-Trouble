@@ -1,4 +1,5 @@
 import { expect } from './fixtures.js';
+import { expectChoiceClickable, expectChoiceText } from './choiceVisibility.js';
 
 /** Checkpoint the final cup, then let a real combat collision finish it. */
 export async function toDayReading(page, { round = 10, encounter = null } = {}) {
@@ -27,18 +28,22 @@ export async function toDayReading(page, { round = 10, encounter = null } = {}) 
 
 export async function expectDayButtons(page) {
   await expect(page.locator('#dayOffer')).toBeVisible();
-  const offer = await page.locator('#dayOffer').boundingBox();
+  // The bounded panel can scroll on small windows. Verify its viewport bounds
+  // and every word/target, rather than requiring all content at once.
+  const offer = await page.locator('#phaseChoices').boundingBox();
   const viewport = page.viewportSize();
   expect(offer.y).toBeGreaterThanOrEqual(0);
   expect(offer.y + offer.height).toBeLessThanOrEqual(viewport.height);
+  await expectChoiceText(page, '#dayOffer');
   for (const choice of ['fresh', 'keep']) {
     const button = page.locator(`[data-day="${choice}"]`);
+    await expectChoiceClickable(button);
     await expect(button).toBeInViewport();
     const b = await button.boundingBox();
     expect(b.width).toBeGreaterThanOrEqual(44);
     expect(b.height).toBeGreaterThanOrEqual(44);
-    expect(b.y).toBeGreaterThanOrEqual(0);
-    expect(b.y + b.height).toBeLessThanOrEqual(viewport.height);
+    // Entire buttons that fit the panel are checked above; oversized buttons
+    // retain all text through scrolling and at least a 44px exposed hit area.
     expect(await button.evaluate((el) => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight)).toBe(true);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

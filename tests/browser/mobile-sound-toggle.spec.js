@@ -42,7 +42,7 @@ for (const [label, size] of [['portrait', null], ['landscape', { width: 915, hei
     await page.locator('#overlayPrimaryBtn').tap();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
     await page.evaluate(() => { window.__TEACUP__.game.state.spawnTimer = 1000; });
-    await expectClear(page, '#headerSoundBtn', ['.brand', '#viewBtn', '#menuBtn', '#game', '#resourceStrip',
+    await expectClear(page, '#headerSoundBtn', ['.brand', '#menuBtn', '#game', '#resourceStrip',
       '.resource-secondary', '.controls-easy [data-hold="left"]', '.controls-easy [data-hold="right"]']);
     const before = await page.evaluate(() => JSON.stringify({ milk: window.__TEACUP__.game.state.milkLeft, sugar: window.__TEACUP__.game.state.sugarLeft, shots: window.__TEACUP__.game.state.shots.length }));
     await page.locator('#headerSoundBtn').tap();

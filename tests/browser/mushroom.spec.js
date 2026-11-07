@@ -30,7 +30,7 @@ async function stage(page) {
 const canvasShot = (page) => page.locator('#game').screenshot();
 
 test('Mushroom Tea brews puffballs that pop into spores with the ordinary steam key', { tag: '@smoke' }, async ({ page, problems }, info) => {
-  await openGame(page, '&seed=7&tea=mushroom&view=full');
+  await openGame(page, '&seed=7&tea=mushroom');
   await page.keyboard.press('Enter');
   await expect(page.locator('#teaName')).toHaveText('Mushroom Tea');
   await expect(page.locator('#hudTea')).toHaveText('☕ Mushroom Tea · puffballs');
@@ -71,7 +71,7 @@ test('a swelling puffball splits into sprouts on screen, within the leaf limit',
 
 test('Mushroom Tea stays readable in Low graphics and with reduced motion', async ({ page, problems }, info) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await openGame(page, '&seed=7&tea=mushroom&graphics=low&view=full');
+  await openGame(page, '&seed=7&tea=mushroom&graphics=low');
   await page.keyboard.press('Enter');
   await stage(page);
   await page.waitForTimeout(300);

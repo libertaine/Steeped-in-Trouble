@@ -26,7 +26,7 @@ the development server, not `npm run preview` or the published site.
 | `day=keep` | Cup 11 after the actual Keep choice: Heat 10, 32-leaf target |
 | `day=max` | Cup 41 after Keep: Heat 28 and all Heat components capped |
 
-Append `&view=full` or `&view=compact`, `&touch=easy` or `&touch=classic`,
+Append `&touch=easy` or `&touch=classic`,
 and optionally `&tea=house|herbal|earlGrey|chai|green|black` to compare teas.
 The default practice checkpoint is in Chapter 2, with unrelated encounters
 scheduled in the future. It finishes with real collision, reading, upgrade
@@ -58,7 +58,7 @@ mode above) prepares another checkpoint; it continues existing RNG streams.
    Daily Grind, Daily Pour and Biscuit Breakout. Scheduled activities come
    before the Day choice; returning from them must not skip it. Heat must
    not change side adventures. Defeating the milestone must still open Chapter 2.
-7. Try keyboard, mouse and touch in Full and Compact View, phone portrait,
+7. Try keyboard, mouse and touch on desktop, phone portrait,
    phone landscape and tablet landscape. Read every line; check both buttons
    fit, the global cup remains visible, and normal controls return afterwards.
    Try Sound off/on and the OS reduced-motion preference.
@@ -130,8 +130,7 @@ wrapping, clipping, reach and cup visibility:
 | Tablet landscape | [Day choice](images/days/tablet-landscape-keep-transition.png), [next cup](images/days/tablet-landscape-keep-gameplay.png) |
 | Short phone landscape | [Day choice](images/days/phone-landscape-keep-transition.png) |
 
-Full View places the card higher in the cup so it is reachable in a 720px-high
-desktop viewport. Compact View hides combat pads during the choice. Short
+The single layout hides combat pads during the choice. Short
 landscape gives the Day card more width than the ordinary control rail; this
 keeps the title and both complete button descriptions on screen. Other mobile
 flows retain their existing layout. These are emulated screens, not a claim of

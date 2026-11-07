@@ -2,7 +2,7 @@ import { expect, openGame, test } from './fixtures.js';
 import { FORTUNE_NAMES, capture, milkyRound, revealed } from './cup.js';
 
 test('the reading remembers the round, then names the actual next fortune and its effect', async ({ page, problems }, info) => {
-  await openGame(page, '&seed=42&view=full');
+  await openGame(page, '&seed=42');
   await page.keyboard.press('Enter');
   await milkyRound(page);
   // The cup has the stage until its reveal; the explanation follows it.
@@ -22,7 +22,7 @@ test('the reading remembers the round, then names the actual next fortune and it
 });
 
 test('a continued pot shows the same memory and the same fortune, without a reroll', { tag: '@smoke' }, async ({ page, problems }) => {
-  await openGame(page, '&seed=9&view=full');
+  await openGame(page, '&seed=9');
   await page.keyboard.press('Enter');
   await milkyRound(page);
   const fortune = await revealed(page);

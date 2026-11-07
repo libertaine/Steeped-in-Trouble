@@ -58,7 +58,7 @@ small screens, tab to a Play button and press Enter, or tap/click it.
   “Why did the spoon cross the road? Nobody knows. But apparently, it's our
   problem now.”
 
-P pauses/resumes. Tea Break still offers Full/Compact View, Easy/Classic
+P pauses/resumes. Tea Break offers Easy/Classic
 Touch, graphics and sound settings. Existing reduced-motion behavior remains.
 An active main pot waits in memory while practicing. Practice owns a separate
 state and all its own random streams: its points, currency and restocks

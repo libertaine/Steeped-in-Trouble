@@ -142,10 +142,10 @@ const OVERLAY_TEXT = {
 
 /**
  * @param {HTMLCanvasElement} canvas
- * @param {{ quality?: 'high' | 'low', compact?: () => boolean }} [options]
- *   graphics quality can be changed later via renderer.quality; compact only changes the camera
+ * @param {{ quality?: 'high' | 'low' }} [options]
+ *   graphics quality can be changed later via renderer.quality
  */
-export function createRenderer(canvas, { quality = 'high', compact = () => false } = {}) {
+export function createRenderer(canvas, { quality = 'high' } = {}) {
   const ctx = canvas.getContext('2d');
   const newspaper = createPourPainter(ctx, { compact: () => canvas.clientWidth < 560 });
   const biscuits = createBreakoutPainter(ctx, { compact: () => canvas.clientWidth < 560 });
@@ -1810,13 +1810,13 @@ export function createRenderer(canvas, { quality = 'high', compact = () => false
         errand.drawRun(run, state, time, state.phase === PHASE.PAUSED);
         return;
       }
-      // A uniform presentation camera gives the cup more room on touch screens.
+      // A uniform presentation camera gives the cup more room in the stage.
       // Simulation coordinates, hitboxes, and the runner remain unchanged. UI is
       // drawn after restoring this transform so warnings and text stay in bounds.
       ctx.save();
       const active = [PHASE.PLAYING, PHASE.CHOCOLATE, PHASE.GRIND, PHASE.MANAGER].includes(
         state.phase === PHASE.PAUSED ? state.pausedFrom : state.phase);
-      if (compact() && active) {
+      if (active) {
         ctx.translate(CX, CY);
         ctx.scale(1.16, 1.16);
         ctx.translate(-CX, -CY);

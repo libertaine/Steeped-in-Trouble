@@ -786,8 +786,10 @@ Pausing saves `pausedFrom = dailyPour` and skips all simulation ticks.
 Input routes Up/Down/Space exclusively to aim/throw in this phase, ignores
 keyboard repeats, and resets at offer, intro, play, result and return
 boundaries. The existing blur/visibility handlers pause it; Tea Break
-blocks both input and simulation. Compact/Full View reuses the existing
-choice and control placement. No new layout mode is introduced.
+blocks both input and simulation. The single responsive layout reuses the
+existing choice and control placement. No view preference is read or written;
+old `view` URL parameters are ignored. Compact's cup camera is permanent,
+while side-adventure text still adapts to the displayed canvas width.
 
 Coffee-cup collision and rendering share `CONFIG.teaRun.obstacles.coffeeCup.height`.
 The upper hitbox boundary is `clearance + height` (118 logical units), so
@@ -831,7 +833,7 @@ The existing tea/fortune cap remains a separate first step.
 
 The accessible DOM `#dayOffer` uses existing choice-card styles. `ui/hud.js`
 controls visibility and text, and `ui/presentation.js` moves it into
-`#phaseChoices` in Compact View, just like upgrade and arcade choices. Number
+`#phaseChoices` in the responsive layout, just like arcade choices. Number
 keys dispatch through the phase-validated command; repeated keydown events are
 ignored. Touch/mouse use `data-day`; hidden-page and open-menu input is blocked.
 The Day phase does not advance during pause, blur or backgrounding.

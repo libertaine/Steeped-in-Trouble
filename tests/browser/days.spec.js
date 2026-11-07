@@ -3,7 +3,7 @@ import { daySnapshot, expectDayButtons, toDayReading } from './days.js';
 
 for (const [choice, key, heat, target] of [['fresh', '1', 0, 16], ['keep', '2', 10, 32]]) {
   test(`Day 2 ${choice}: deliberate keyboard choice, Karma and exactly one advance`, async ({ page, problems }, info) => {
-    await openGame(page, '&seed=42&view=full');
+    await openGame(page, '&seed=42');
     if (info.project.name === 'chromium') {
       await page.locator('#mainBtn').click();
       await daySnapshot(page, 'day-1-gameplay');
@@ -20,11 +20,9 @@ for (const [choice, key, heat, target] of [['fresh', '1', 0, 16], ['keep', '2', 
     await page.evaluate(() => window.__TEACUP__.game.update(1000));
     expect(await page.evaluate(() => window.__TEACUP__.game.state.phase)).toBe('day');
     // Menus, visibility changes and key repeats cannot choose tomorrow.
-    await page.locator('#viewBtn').click(); // the Tea Break is the Compact View menu
     await page.locator('#menuBtn').click();
     await page.keyboard.press(key);
     await page.locator('#closeBreak').click();
-    await page.locator('#viewBtn').click();
     await page.evaluate(() => {
       Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
       document.dispatchEvent(new Event('visibilitychange'));
@@ -55,7 +53,7 @@ for (const [choice, key, heat, target] of [['fresh', '1', 0, 16], ['keep', '2', 
 }
 
 test('a scheduled paper route finishes before the Day 2 choice, then mouse selection works', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=compact');
+  await openGame(page, '&seed=42');
   await toDayReading(page, { round: 20, encounter: 'dailyPour' });
   await expect(page.locator('#arcadeOffer')).toBeVisible();
   await expect(page.locator('#dayOffer')).toBeHidden();
@@ -77,9 +75,9 @@ test('a scheduled paper route finishes before the Day 2 choice, then mouse selec
   expect(problems).toEqual([]);
 });
 
-test('desktop Compact View keeps Day choices and global progression readable', async ({ page, problems }, info) => {
+test('desktop layout keeps Day choices and global progression readable', async ({ page, problems }, info) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await openGame(page, '&seed=42&view=compact');
+  await openGame(page, '&seed=42');
   await toDayReading(page); await expectDayButtons(page);
   if (info.project.name === 'chromium') await daySnapshot(page, 'desktop-compact-transition');
   await page.locator('[data-day="keep"]').click();

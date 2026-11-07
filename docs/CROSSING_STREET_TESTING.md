@@ -40,7 +40,7 @@ development server, not `npm run preview` or the published site. Start
 | `http://localhost:5173/Steeped-in-Trouble/?debug&arcade=crossingStreet&seed=42` | A fresh practice pot, straight into the crossing's introduction (round 27, Chapter 2), through the real offer. |
 | `…?debug&arcade=crossingStreet&seed=42&crossing=late` | Already under way with 5 seconds left: for the timeout. |
 | `…?debug&arcade=crossingStreet&seed=42&crossing=last` | One attempt left: the next bump ends it. |
-| `…&view=compact&touch=easy` | Add to any of these for the phone layout and arrow pad. |
+| `…&touch=easy` | Add to any of these for Easy Touch controls and the arrow pad. |
 
 In the browser console:
 

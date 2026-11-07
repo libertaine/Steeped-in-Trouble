@@ -12,7 +12,7 @@ const key = (page, code, type = 'keydown', repeat = false) => page.evaluate(([c,
 }, [code, type, repeat]);
 
 test('the biscuit offer can be skipped by mouse or keyboard without losing anything', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full'); await toBiscuitOffer(page);
+  await openGame(page, '&seed=42'); await toBiscuitOffer(page);
   await expect(page.locator('#arcadePitch')).toHaveText('“Their demands are unclear. Their formation is not.”');
   await expect(page.locator('[data-interlude="accept"]')).toContainText('BREAK THE BISCUITS');
   await expect(page.locator('[data-interlude="skip"]')).toContainText('LEAVE THEM ALONE');
@@ -31,7 +31,7 @@ test('the biscuit offer can be skipped by mouse or keyboard without losing anyth
 
 test('desktop wall: real keys move and launch, biscuits crumble, the biscuit talks, success pays once', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await openGame(page, '&seed=42&view=full'); await toBiscuitOffer(page);
+  await openGame(page, '&seed=42'); await toBiscuitOffer(page);
   await shot(page, testInfo, 'offer');
   const before = await state(page);
   await page.locator('[data-interlude="accept"]').click();
@@ -79,7 +79,7 @@ test('desktop wall: real keys move and launch, biscuits crumble, the biscuit tal
 
 test('losing every cube ends in a failed result that costs no cup', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await openGame(page, '&seed=42&view=full'); await toBiscuitOffer(page);
+  await openGame(page, '&seed=42'); await toBiscuitOffer(page);
   const before = await state(page);
   await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
   await breakBiscuits(page, { count: 4, park: true });
@@ -107,7 +107,7 @@ test('losing every cube ends in a failed result that costs no cup', async ({ pag
 
 test('Space auto-repeat, pause, Tea Break and backgrounding never launch or leak into the cup', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await openGame(page, '&seed=42&view=compact'); await toBiscuitOffer(page);
+  await openGame(page, '&seed=42'); await toBiscuitOffer(page);
   await page.keyboard.press('Digit1');
   await page.keyboard.press('Enter');
   const { milkLeft, sugarLeft } = await state(page);
@@ -166,7 +166,7 @@ test('Space auto-repeat, pause, Tea Break and backgrounding never launch or leak
 
 test('Karma is revealed, bounces leaves once, then makes them vanish without costing a cup', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await openGame(page, '&seed=42&view=full&tea=house');
+  await openGame(page, '&seed=42&tea=house');
   await toKarmaReading(page);
   await page.waitForFunction(() => window.__TEACUP__.game.state.readingTime > 3.3);
   await expect(page.locator('#fortuneName')).toHaveText('Karma');
@@ -192,7 +192,7 @@ test('Karma is revealed, bounces leaves once, then makes them vanish without cos
   expect(problems).toEqual([]);
 });
 
-/** On a desktop the touch pads stay out of sight in Full View. */
+/** On a desktop the touch pads stay out of sight during desktop Auto. */
 async function expectBreakoutControlsHiddenOnDesktop(page) {
   await expect(page.locator('body')).toHaveAttribute('data-mode', 'breakout');
   await expect(page.locator('.controls-classic')).toBeHidden();

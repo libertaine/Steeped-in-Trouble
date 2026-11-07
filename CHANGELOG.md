@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
+## Unreleased
+
+- Made the existing Compact layout the single presentation on desktop, tablet,
+  and phone. Removed the Full/Compact switches and retired the saved view
+  preference; old view URLs still load normally. Touch and keyboard controls,
+  responsive adaptations, instructions, and readings retain their behavior.
+- Kept Day and Tea Shortage choices readable and clickable in narrow and short
+  windows: required choices scroll within their own space, narrow Day cards
+  stack, and the action dock no longer covers choice text or buttons.
+
 ## [0.21.0] - 2026-11-05 — Keeping Count
 
 - Restored numbered keyboard hints on upgrade and Tea Shortage choices in

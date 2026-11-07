@@ -46,7 +46,7 @@ const cup = (page) => page.evaluate(() => {
 });
 
 test('M mutes and unmutes once per press on the title, instructions, cup, pause and reading', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full', { onboarding: true });
+  await openGame(page, '&seed=42', { onboarding: true });
   await expect(page.locator('#titleContinueBtn')).toBeEnabled();
   await expectSound(page, false);
   await page.keyboard.press('m');
@@ -100,7 +100,7 @@ test('M mutes and unmutes once per press on the title, instructions, cup, pause 
 });
 
 test('speakers show the real state and answer pointer, Enter and Space without leaving the screen', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full', { onboarding: true });
+  await openGame(page, '&seed=42', { onboarding: true });
   await expect(page.locator('#titleContinueBtn')).toBeEnabled();
   const title = page.locator('#titleSoundBtn');
   await title.click();

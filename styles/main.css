@@ -277,7 +277,7 @@ canvas {
 .day-offer .errand-card { min-height: 100px; touch-action: manipulation; }
 .day-offer .errand-card span { min-width: 0; overflow-wrap: anywhere; }
 .day-offer [data-day="keep"] { background: #49362a; }
-body[data-phase="day"][data-view] .controls-mobile, body[data-phase="day"] #mainBtn { display: none; }
+body.game-ui[data-phase="day"] .controls-mobile, body[data-phase="day"] #mainBtn { display: none; }
 #hudDay { font-size: 10px; color: #f0d7a1; }
 
 .upgrade-card,
@@ -415,13 +415,13 @@ body[data-mode="crossing"] .controls-crossing {
 .controls-crossing [data-walk="right"] { grid-area: right; }
 .controls-mobile .walk-pad { min-height: 56px; font-size: 24px; touch-action: none; background: #34584b; color: #fff4cf; }
 .controls-mobile .walk-pad:active { background: #4f7f6b; transform: translateY(1px); }
-body[data-view="compact"][data-mode="crossing"] #compactMilk,
-body[data-view="compact"][data-mode="crossing"] #compactSugar,
-body[data-view="compact"][data-mode="breakout"] #compactMilk,
-body[data-view="compact"][data-mode="breakout"] #compactSugar,
-body[data-view="compact"][data-mode="pour"] #compactMilk,
-body[data-view="compact"][data-mode="pour"] #compactSugar,
-body[data-view="compact"][data-phase="arcadeOffer"] #mainBtn { display: none; }
+body.game-ui[data-mode="crossing"] #compactMilk,
+body.game-ui[data-mode="crossing"] #compactSugar,
+body.game-ui[data-mode="breakout"] #compactMilk,
+body.game-ui[data-mode="breakout"] #compactSugar,
+body.game-ui[data-mode="pour"] #compactMilk,
+body.game-ui[data-mode="pour"] #compactSugar,
+body.game-ui[data-phase="arcadeOffer"] #mainBtn { display: none; }
 
 .controls-easy {
   align-items: stretch;
@@ -829,7 +829,8 @@ kbd {
   }
 }
 
-/* The Pocket Teacup: the canvas owns the space between a small HUD and thumb controls.
+/* The permanent game-ui root preserves phase/mode selector priority.
+   The Pocket Teacup: the canvas owns the space between a small HUD and thumb controls.
    Container units fit BOTH dimensions, retaining the logical 920:790 aspect ratio. */
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .compact-stats, #phaseChoices, .action-dock { display: none; }
@@ -854,111 +855,110 @@ button:focus-visible { outline: 3px solid #ffe5a5; outline-offset: 2px; }
 .playfield canvas { touch-action: none; }
 .playfield button { touch-action: none; }
 
-body[data-view="compact"] { height: 100dvh; min-height: 0; display: flex; flex-direction: column;
+body.game-ui { height: 100dvh; min-height: 0; display: flex; flex-direction: column;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-body[data-view="compact"] header { padding: 6px 12px; min-height: 44px; flex: 0 0 auto; }
-body[data-view="compact"] .brand { font-size: clamp(18px, 3vw, 23px); }
-body[data-view="compact"] .kicker, body[data-view="compact"] .version,
-body[data-view="compact"] .bottom { display: none; }
-body[data-view="compact"] #viewBtn { min-height: 36px; padding: 5px 9px; font-size: 12px; }
-body[data-view="compact"] main { display: flex; width: 100%; max-width: 1500px; min-height: 0;
+body.game-ui header { padding: 6px 12px; min-height: 44px; flex: 0 0 auto; }
+body.game-ui .brand { font-size: clamp(18px, 3vw, 23px); }
+body.game-ui .kicker, body.game-ui .version,
+body.game-ui .bottom { display: none; }
+body.game-ui main { display: flex; width: 100%; max-width: 1500px; min-height: 0;
   flex: 1; padding: 5px 8px 8px; margin: 0 auto; align-items: stretch; }
-body[data-view="compact"] main > aside { display: none; }
-body[data-view="compact"] .playfield { flex: 1; min-width: 0; display: grid;
+body.game-ui main > aside { display: none; }
+body.game-ui .playfield { flex: 1; min-width: 0; display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto auto; grid-template-columns: minmax(0, 1fr); border-radius: 14px; }
-body[data-view="compact"] .hud-top { position: static; grid-row: 1; flex-wrap: wrap;
+body.game-ui .hud-top { position: static; grid-row: 1; flex-wrap: wrap;
   padding: 8px 10px; gap: 5px 8px; border-bottom: 1px solid #4f7c6650; }
-body[data-view="compact"] .hud-left { flex: 1; }
-body[data-view="compact"] .hudlabel { font-size: 11px; letter-spacing: 0; }
-body[data-view="compact"] .pill { padding: 3px 6px; }
-body[data-view="compact"] .pills { gap: 4px; }
-body[data-view="compact"] #hudTea, body[data-view="compact"] #hudOmen,
-body[data-view="compact"] #hudStrainer { display: none; }
-body[data-view="compact"] .compact-stats { display: flex; width: 100%; flex-wrap: wrap;
+body.game-ui .hud-left { flex: 1; }
+body.game-ui .hudlabel { font-size: 11px; letter-spacing: 0; }
+body.game-ui .pill { padding: 3px 6px; }
+body.game-ui .pills { gap: 4px; }
+body.game-ui #hudTea, body.game-ui #hudOmen,
+body.game-ui #hudStrainer { display: none; }
+body.game-ui .compact-stats { display: flex; width: 100%; flex-wrap: wrap;
   justify-content: space-between; gap: 4px 12px; font-size: 13px; color: #f1dfbd; }
-body[data-view="compact"] .stage { grid-row: 2; min-height: 0; min-width: 0;
+body.game-ui .stage { grid-row: 2; min-height: 0; min-width: 0;
   container-type: size; display: grid; place-items: center; }
-body[data-view="compact"] canvas { width: min(100cqw, calc(100cqh * 920 / 790)); height: auto; }
-body[data-view="compact"] #phaseChoices { display: block; grid-row: 3; }
-body[data-view="compact"] #compactFortune { margin: 0; padding: 6px 12px;
+body.game-ui canvas { width: min(100cqw, calc(100cqh * 920 / 790)); height: auto; }
+body.game-ui #phaseChoices { display: block; grid-row: 3; }
+body.game-ui #compactFortune { margin: 0; padding: 6px 12px;
   font: 700 17px/1.3 Georgia, serif; color: #f1dfbd; text-align: center; }
-body[data-view="compact"] #compactFortune:empty { display: none; }
-body[data-view="compact"] #compactMemory, body[data-view="compact"] #compactEffect { margin: 0; padding: 4px 12px 0;
+body.game-ui #compactFortune:empty { display: none; }
+body.game-ui #compactMemory, body.game-ui #compactEffect { margin: 0; padding: 4px 12px 0;
   font: italic 13px/1.3 Georgia, serif; color: #bcdbbc; text-align: center; }
-body[data-view="compact"] #compactEffect { padding: 0 12px 6px; font-style: normal; color: #f1e4c4; }
-body[data-view="compact"] #compactMemory:empty, body[data-view="compact"] #compactEffect:empty { display: none; }
-body[data-view="compact"] .upgrade-offer { position: static; transform: none; width: auto;
+body.game-ui #compactEffect { padding: 0 12px 6px; font-style: normal; color: #f1e4c4; }
+body.game-ui #compactMemory:empty, body.game-ui #compactEffect:empty { display: none; }
+body.game-ui .upgrade-offer { position: static; transform: none; width: auto;
   margin: 0 8px 5px; padding: 8px; animation: none; }
-body[data-view="compact"] .upgrade-offer[hidden] { display: none; }
-body[data-view="compact"] .offer-head em { display: none; }
-body[data-view="compact"] .day-offer .offer-head em { display: block; font-size: 12px; }
-body[data-view="compact"] .day-offer .offer-cards { grid-template-columns: 1fr 1fr; }
-body[data-view="compact"] .day-offer .errand-card { padding: 8px; gap: 5px; }
-body[data-view="compact"] .day-offer strong { font-size: 15px; }
-body[data-view="compact"] .offer-cards { margin-top: 5px; gap: 6px; }
-body[data-view="compact"] .upgrade-card, body[data-view="compact"] .errand-card { min-height: 56px; padding: 8px; }
-body[data-view="compact"] .upgrade-card strong, body[data-view="compact"] .errand-card strong { font-size: 16px; }
-body[data-view="compact"] .upgrade-card small, body[data-view="compact"] .errand-card small { font-size: 12px; }
-body[data-view="compact"] .controls-mobile { grid-row: 4; padding: 6px 8px; gap: 10px; }
-body[data-view="compact"] .controls-mobile button { min-height: 52px; font-size: 14px; }
-body[data-view="compact"] .controls-mobile .steer { min-height: 64px; font-size: 28px; }
-body[data-view="compact"] .controls-mobile .run-pad,
-body[data-view="compact"] .controls-mobile .paper-pad,
-body[data-view="compact"] .controls-mobile .launch-pad { min-height: 74px; font-size: 18px; }
-body[data-view="compact"] .controls-mobile .walk-pad { min-height: 56px; font-size: 24px; }
-body[data-view="compact"] .easy-hint { font-size: 12px; }
-body[data-view="compact"] .action-dock { display: flex; grid-row: 5; gap: 8px; padding: 0 8px 8px; }
-body[data-view="compact"] .action-dock button { min-height: 44px; font-size: 13px; }
-body[data-view="compact"] #mainBtn { margin: 0; padding: 8px; flex: 1; }
-body[data-view="compact"] #menuBtn { flex: 0 0 auto; padding: 8px 12px; }
-body[data-view="compact"][data-mode="run"] #compactMilk,
-body[data-view="compact"][data-mode="run"] #compactSugar { display: none; }
-body[data-view="compact"][data-active="true"] #mainBtn,
-body[data-view="compact"][data-phase="shortage"] #mainBtn,
-body[data-view="compact"][data-phase="reading"]:has(#upgradeOffer:not([hidden])) #mainBtn { display: none; }
+body.game-ui .upgrade-offer[hidden] { display: none; }
+body.game-ui .offer-head em { display: none; }
+body.game-ui .day-offer .offer-head em { display: block; font-size: 12px; }
+body.game-ui .day-offer .offer-cards { grid-template-columns: 1fr 1fr; }
+body.game-ui .day-offer .errand-card { padding: 8px; gap: 5px; }
+body.game-ui .day-offer strong { font-size: 15px; }
+body.game-ui .offer-cards { margin-top: 5px; gap: 6px; }
+body.game-ui .upgrade-card, body.game-ui .errand-card { min-height: 56px; padding: 8px; }
+body.game-ui .upgrade-card strong, body.game-ui .errand-card strong { font-size: 16px; }
+body.game-ui .upgrade-card small, body.game-ui .errand-card small { font-size: 12px; }
+body.game-ui .controls-mobile { grid-row: 4; padding: 6px 8px; gap: 10px; }
+body.game-ui .controls-mobile button { min-height: 52px; font-size: 14px; }
+body.game-ui .controls-mobile .steer { min-height: 64px; font-size: 28px; }
+body.game-ui .controls-mobile .run-pad,
+body.game-ui .controls-mobile .paper-pad,
+body.game-ui .controls-mobile .launch-pad { min-height: 74px; font-size: 18px; }
+body.game-ui .controls-mobile .walk-pad { min-height: 56px; font-size: 24px; }
+body.game-ui .easy-hint { font-size: 12px; }
+body.game-ui .action-dock { display: flex; grid-row: 5; gap: 8px; padding: 0 8px 8px; }
+body.game-ui .action-dock button { min-height: 44px; font-size: 13px; }
+body.game-ui #mainBtn { margin: 0; padding: 8px; flex: 1; }
+body.game-ui #menuBtn { flex: 0 0 auto; padding: 8px 12px; }
+body.game-ui[data-mode="run"] #compactMilk,
+body.game-ui[data-mode="run"] #compactSugar { display: none; }
+body.game-ui[data-active="true"] #mainBtn,
+body.game-ui[data-phase="shortage"] #mainBtn,
+body.game-ui[data-phase="reading"]:has(#upgradeOffer:not([hidden])) #mainBtn { display: none; }
 
 @media (max-width: 600px) {
-  body[data-view="compact"][data-mode="cup"][data-phase="playing"] #hudScore { display: none; }
+  body.game-ui[data-mode="cup"][data-phase="playing"] #hudScore { display: none; }
 }
 
 /* Short, wide screens use a thumb rail, freeing the full remaining height for the cup. */
 @media (orientation: landscape) and (max-height: 600px) {
-  body[data-view="compact"] header { min-height: 36px; padding: 2px 10px; }
-  body[data-view="compact"] .playfield { grid-template-columns: minmax(0, 1fr) 190px;
+  body.game-ui header { min-height: 36px; padding: 2px 10px; }
+  body.game-ui .playfield { grid-template-columns: minmax(0, 1fr) 190px;
     grid-template-rows: auto minmax(0, 1fr) auto; }
-  body[data-view="compact"] .hud-top { grid-column: 1 / -1; padding: 4px 8px; }
-  body[data-view="compact"] .compact-stats { width: auto; flex: 1; justify-content: flex-end; }
-  body[data-view="compact"] .stage { grid-row: 2 / 4; grid-column: 1; }
-  body[data-view="compact"] #phaseChoices { grid-row: 2; grid-column: 2; align-self: center; }
+  body.game-ui .hud-top { grid-column: 1 / -1; padding: 4px 8px; }
+  body.game-ui .compact-stats { width: auto; flex: 1; justify-content: flex-end; }
+  body.game-ui .stage { grid-row: 2 / 4; grid-column: 1; }
+  body.game-ui #phaseChoices { grid-row: 2; grid-column: 2; align-self: center; }
   /* The rail is narrow: the cup's memories give way once a choice needs the room. */
-  body[data-view="compact"] #compactMemory { font-size: 12px; padding: 2px 4px 0; }
-  body[data-view="compact"]:has(#phaseChoices .upgrade-offer:not([hidden])) #compactMemory,
-  body[data-view="compact"]:has(#phaseChoices .upgrade-offer:not([hidden])) #compactEffect { display: none; }
+  body.game-ui #compactMemory { font-size: 12px; padding: 2px 4px 0; }
+  body.game-ui:has(#phaseChoices .upgrade-offer:not([hidden])) #compactMemory,
+  body.game-ui:has(#phaseChoices .upgrade-offer:not([hidden])) #compactEffect { display: none; }
   /* Nothing steers during a reading, so its words may use the thumb rail. */
-  body[data-view="compact"][data-phase="reading"] .controls-mobile { display: none; }
-  body[data-view="compact"] .controls-mobile { grid-column: 2; grid-row: 2; align-self: end;
+  body.game-ui[data-phase="reading"] .controls-mobile { display: none; }
+  body.game-ui .controls-mobile { grid-column: 2; grid-row: 2; align-self: end;
     flex-wrap: wrap; border: 0; }
-  body[data-view="compact"] .easy-hint { flex-basis: 100%; order: -1; }
-  body[data-view="compact"] .controls-classic button { flex-basis: 28%; }
-  body[data-view="compact"] .controls-pour { flex-direction: column; }
-  body[data-view="compact"] .controls-breakout { flex-wrap: wrap; gap: 8px; }
-  body[data-view="compact"] .controls-breakout .launch-pad { flex-basis: 100%; order: -1; }
-  body[data-view="compact"][data-mode="crossing"] .controls-crossing {
+  body.game-ui .easy-hint { flex-basis: 100%; order: -1; }
+  body.game-ui .controls-classic button { flex-basis: 28%; }
+  body.game-ui .controls-pour { flex-direction: column; }
+  body.game-ui .controls-breakout { flex-wrap: wrap; gap: 8px; }
+  body.game-ui .controls-breakout .launch-pad { flex-basis: 100%; order: -1; }
+  body.game-ui[data-mode="crossing"] .controls-crossing {
     grid-template-columns: repeat(3, minmax(48px, 1fr)); gap: 6px; }
-  body[data-view="compact"] .controls-mobile .walk-pad { min-height: 52px; }
-  body[data-view="compact"] .action-dock { grid-column: 2; grid-row: 3; flex-direction: column; }
-  body[data-view="compact"] .offer-cards { grid-template-columns: 1fr; }
-  body[data-view="compact"] .upgrade-card small { font-size: 12px; }
-  body[data-view="compact"] .offer-head strong { font-size: 15px; }
-  body[data-view="compact"]:has(.upgrade-offer:not([hidden])) .controls-mobile { display: none; }
+  body.game-ui .controls-mobile .walk-pad { min-height: 52px; }
+  body.game-ui .action-dock { grid-column: 2; grid-row: 3; flex-direction: column; }
+  body.game-ui .offer-cards { grid-template-columns: 1fr; }
+  body.game-ui .upgrade-card small { font-size: 12px; }
+  body.game-ui .offer-head strong { font-size: 15px; }
+  body.game-ui:has(.upgrade-offer:not([hidden])) .controls-mobile { display: none; }
   /* The Day choice needs more reading room than the ordinary thumb rail. */
-  body[data-view="compact"][data-phase="day"] .playfield {
+  body.game-ui[data-phase="day"] .playfield {
     grid-template-columns: minmax(200px, .8fr) minmax(360px, 1.2fr);
   }
-  body[data-view="compact"][data-phase="day"] .day-offer .offer-head strong { font-size: 14px; }
-  body[data-view="compact"][data-phase="day"] .day-offer p { margin: 4px 0; font-size: 11px; }
-  body[data-view="compact"][data-phase="day"] .day-offer .errand-card strong { font-size: 14px; }
-  body[data-view="compact"][data-phase="day"] .day-offer .errand-card small { font-size: 11px; line-height: 1.25; }
+  body.game-ui[data-phase="day"] .day-offer .offer-head strong { font-size: 14px; }
+  body.game-ui[data-phase="day"] .day-offer p { margin: 4px 0; font-size: 11px; }
+  body.game-ui[data-phase="day"] .day-offer .errand-card strong { font-size: 14px; }
+  body.game-ui[data-phase="day"] .day-offer .errand-card small { font-size: 11px; line-height: 1.25; }
 }
 
 /* The spoon's other jobs: a small browser-local collection, not another HUD. */
@@ -994,79 +994,22 @@ body[data-view="compact"][data-phase="reading"]:has(#upgradeOffer:not([hidden]))
 .collection-entry[hidden], .practice-bar[hidden], .practice-actions [hidden],
 #personalBest[hidden], #newPotBtn[hidden], #clearPotBtn[hidden], #mainBtn[hidden] { display: none !important; }
 body[data-practice-result="true"] .controls-mobile { display: none; }
-body[data-view="compact"] .collection-entry, body[data-view="compact"] .practice-bar { grid-row: 6; }
-body[data-view="compact"] #potNotice { grid-row: 7; margin: 0 0 6px; font-size: 11px; }
-body[data-view="compact"]:not([data-phase="ready"]):not([data-phase="reading"]) #potNotice { display: none; }
+body.game-ui .collection-entry, body.game-ui .practice-bar { grid-row: 6; }
+body.game-ui #potNotice { grid-row: 7; margin: 0 0 6px; font-size: 11px; }
+body.game-ui:not([data-phase="ready"]):not([data-phase="reading"]) #potNotice { display: none; }
 @media (max-width: 540px) {
   #arcadeCollection { padding: 16px; }
   .job-cards { grid-template-columns: minmax(0, 1fr); }
   .collection-heading .eyebrow { font-size: 10px; }
 }
 @media (orientation: landscape) and (max-height: 600px) {
-  body[data-view="compact"] .collection-entry, body[data-view="compact"] .practice-bar { grid-column: 1 / -1; grid-row: 4; padding: 4px 8px; }
-  body[data-view="compact"] #potNotice { grid-column: 1 / -1; grid-row: 5; }
-  body[data-view="compact"] .practice-label { display: none; }
-  body[data-view="compact"] #personalBest { margin: 2px 0 6px; }
+  body.game-ui .collection-entry, body.game-ui .practice-bar { grid-column: 1 / -1; grid-row: 4; padding: 4px 8px; }
+  body.game-ui #potNotice { grid-column: 1 / -1; grid-row: 5; }
+  body.game-ui .practice-label { display: none; }
+  body.game-ui #personalBest { margin: 2px 0 6px; }
 }
-/* Full View keeps the same Tea Break entry as Compact View. */
-body[data-view="full"] .action-dock { display: flex; justify-content: flex-end; padding: 6px 12px; }
-/* Fit the entire arena, including the lower cup and side-adventure ground.
-   The existing HUD and controls occupy their own rows instead of covering it.
-   Full View's sidebar and footer remain available in the scrolling document. */
-body[data-view="full"] .playfield { height: var(--playfield-height);
-  display: grid; grid-template-rows: auto minmax(0, 1fr); }
-body[data-view="full"] .hud-top { position: static; grid-row: 1;
-  padding: 10px 12px; flex-wrap: wrap; }
-body[data-view="full"] .stage { grid-row: 2; min-height: 0; min-width: 0;
-  container-type: size; display: grid; place-items: center; }
-body[data-view="full"] #game { width: min(100cqw, calc(100cqh * 920 / 790)); height: auto; }
-body[data-view="full"] #mainBtn { margin: 0; width: auto; flex: 1; }
-body[data-view="full"] #menuBtn { flex: 0 0 auto; }
-body[data-view="full"] .action-dock { gap: 8px; }
-body[data-view="full"] .controls-mobile button,
-body[data-view="full"] .action-dock button { min-height: 44px; }
-body[data-view="full"] .collection-entry,
-body[data-view="full"] .practice-bar,
-body[data-view="full"] #potNotice { grid-column: 1 / -1; }
-@media (min-width: 981px) {
-  body[data-view="full"] main > aside { max-height: var(--playfield-height); overflow: auto; }
-}
-@media (orientation: landscape) {
-  /* Give the touch rail its own desktop width instead of subtracting it from
-     the original arena column. The stage still fits the viewport height. */
-  body[data-view="full"] main { max-width: 1580px; }
-  body[data-view="full"] .playfield { grid-template-columns: minmax(0, 1fr) 190px;
-    grid-template-rows: auto minmax(0, 1fr) auto; }
-  body[data-view="full"] .hud-top { grid-column: 1 / -1; }
-  body[data-view="full"] .hud-left { flex-direction: row; flex-wrap: wrap; align-items: center; }
-  body[data-view="full"] .stage { grid-column: 1; grid-row: 2 / 4; }
-  body[data-view="full"] .controls-mobile { grid-column: 2; grid-row: 2;
-    align-self: end; flex-wrap: wrap; padding: 6px 8px; gap: 8px; border: 0; }
-  body[data-view="full"] .controls-classic button { flex-basis: 28%; }
-  body[data-view="full"] .easy-hint { flex-basis: 100%; order: -1; }
-  body[data-view="full"] .controls-pour { flex-direction: column; }
-  body[data-view="full"] .controls-breakout .launch-pad { flex-basis: 100%; order: -1; }
-  body[data-view="full"] .controls-crossing { grid-template-columns: repeat(3, minmax(48px, 1fr)); gap: 6px; }
-  body[data-view="full"] .controls-mobile .walk-pad { min-height: 52px; }
-  body[data-view="full"] .action-dock { grid-column: 2; grid-row: 3; flex-direction: column; }
-}
-/* Short landscape Full View also needs room for two-row touch controls. */
-@media (orientation: landscape) and (max-height: 600px) {
-  body[data-view="full"] header { padding: 6px 12px; }
-  body[data-view="full"] .kicker { display: none; }
-  body[data-view="full"] main { padding: 5px 8px 8px; }
-  body[data-view="full"] .hud-top { padding: 4px 8px; gap: 4px 8px; }
-  body[data-view="full"] .hud-left { gap: 2px; }
-  body[data-view="full"] .pill { padding: 3px 6px; }
-  body[data-view="full"] .controls-mobile .paper-pad { min-height: 52px; font-size: 14px; padding: 6px; }
-  body[data-view="full"] .action-dock { padding: 4px 8px; }
-  body[data-view="full"] .action-dock button { min-height: 44px; font-size: 13px; padding: 8px; }
-  body[data-view="full"] .practice-bar { padding: 4px 8px; }
-  body[data-view="full"] .practice-label { display: none; }
-}
-body[data-view="compact"] .job-card canvas { width: 100%; height: auto; }
-body[data-view="full"] .panel .collection-entry { padding: 0; margin-top: 8px; }
-body[data-view="full"] .panel .collection-entry button { flex: 1 1 100%; font-size: 12px; }
+
+body.game-ui .job-card canvas { width: 100%; height: auto; }
 #closeCollectionTop { display: block; margin: 0 0 14px auto; font-size: 11px; }
 
 /* A field-guide page, sharing the title's tea-label palette. Keep the actions
@@ -1278,7 +1221,7 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
 }
 
 /* 018-2: shared resource strip, outside the arena, within 018-1's height budget. */
-body[data-view] .hud-top {
+body.game-ui .hud-top {
   display: flex; flex-direction: column; align-items: stretch; gap: 3px;
   padding: 6px 10px; min-width: 0; color: #e9e5d9;
 }
@@ -1310,14 +1253,7 @@ body[data-view] .hud-top {
 #resourceCue { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 #resourceTea, #resourceScore { flex: none; }
 .legacy-hud[hidden], #resourceProgress[hidden] { display: none !important; }
-/* Keep the existing reference panels and their pause reparenting intact. */
-body[data-view="full"] main > aside { display: none; }
-body[data-view="full"] main { grid-template-columns: minmax(0, 1fr); }
-body[data-view="full"] .playfield { max-width: 100%; }
-body[data-view] #viewBtn { min-width: 44px; min-height: 44px; }
-@media (min-width: 981px) {
-  body[data-view="full"] header { padding-top: 12px; padding-bottom: 8px; }
-}
+
 @media (max-width: 700px) {
   .resource-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; padding: 5px 6px; }
   .resource-condition { grid-column: span 4; }
@@ -1326,7 +1262,7 @@ body[data-view] #viewBtn { min-width: 44px; min-height: 44px; }
   .resource-secondary { flex-wrap: wrap; gap: 2px 6px; }
   #resourceCue { order: 2; flex-basis: 100%; }
   #resourceScore { margin-left: auto; }
-  body[data-view] .hud-top { padding: 4px 6px; }
+  body.game-ui .hud-top { padding: 4px 6px; }
   .resource-label, .resource-item small { font-size: 10px; }
 }
 @media (orientation: landscape) and (max-height: 600px) {
@@ -1338,25 +1274,24 @@ body[data-view] #viewBtn { min-width: 44px; min-height: 44px; }
   .resource-secondary { flex-wrap: nowrap; }
   #resourceCue { order: 0; flex-basis: auto; }
 }
-/* Compact cue text uses the same visible authorities as Full View. */
+/* Cue text uses the visible resource authorities. */
 .resource-secondary > span:empty { display: none; }
 #resourceGuidance { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .resource-secondary #hudTea, .resource-secondary #hudOmen,
-body[data-view="compact"] .resource-secondary #hudTea,
-body[data-view="compact"] .resource-secondary #hudOmen { display: inline; white-space: normal; }
+body.game-ui .resource-secondary #hudTea,
+body.game-ui .resource-secondary #hudOmen { display: inline; white-space: normal; }
 .resource-secondary #hudTea:empty, .resource-secondary #hudOmen:empty,
-body[data-view="compact"] .resource-secondary #hudTea:empty,
-body[data-view="compact"] .resource-secondary #hudOmen:empty { display: none; }
+body.game-ui .resource-secondary #hudTea:empty,
+body.game-ui .resource-secondary #hudOmen:empty { display: none; }
 .resource-secondary #hudStatus { font-size: 10px; }
 #resourceScore { margin-left: auto; }
-body[data-view="full"] main { padding-top: 7px; }
 @media (max-width: 700px) {
   #resourceGuidance { flex-basis: 100%; }
   .resource-secondary #hudOmen { flex-basis: 100%; }
 }
 @media (orientation: landscape) and (max-height: 600px) {
-  body[data-view] header { padding: 0 8px; min-height: 45px; }
-  body[data-view] .hud-top { padding: 2px 6px; gap: 2px; }
+  body.game-ui header { padding: 0 8px; min-height: 45px; }
+  body.game-ui .hud-top { padding: 2px 6px; gap: 2px; }
   .resource-strip { padding: 2px 6px; }
   .resource-strip .resource-item b { line-height: 1.1; }
   .resource-secondary { gap: 4px; }
@@ -1385,35 +1320,35 @@ body[data-view="full"] main { padding-top: 7px; }
   align-items: center; justify-content: center; white-space: nowrap;
   font: italic 13px Georgia, serif; color: #b9c8b1; }
 #readingCaption[data-carried] { opacity: 0; }
-body[data-view] #readingAnts { position: absolute; inset: 0; width: 100%; height: 100%;
+body.game-ui #readingAnts { position: absolute; inset: 0; width: 100%; height: 100%;
   min-width: 0; max-width: none; aspect-ratio: auto; transform: none;
   pointer-events: none; border: 0; border-radius: 0; background: transparent; }
-body[data-view] .reading-presentation #compactMemory,
-body[data-view] .reading-presentation #compactFortune,
-body[data-view] .reading-presentation #compactEffect { display: block; padding: 0; font-size: 14px; color: var(--ink); }
-body[data-view] .reading-presentation #upgradeOffer { position: static; transform: none;
+body.game-ui .reading-presentation #compactMemory,
+body.game-ui .reading-presentation #compactFortune,
+body.game-ui .reading-presentation #compactEffect { display: block; padding: 0; font-size: 14px; color: var(--ink); }
+body.game-ui .reading-presentation #upgradeOffer { position: static; transform: none;
   width: 100%; margin: 0; padding: 10px; flex: 0 0 auto; background: #132520; animation: none; }
-body[data-view] .reading-presentation #upgradeOffer[hidden] { display: none; }
-body[data-view] .reading-presentation .offer-head em { display: none; }
-body[data-view] .reading-presentation .offer-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-body[data-view] .reading-presentation .upgrade-card { min-width: 0; min-height: 64px; padding: 10px; gap: 6px;
+body.game-ui .reading-presentation #upgradeOffer[hidden] { display: none; }
+body.game-ui .reading-presentation .offer-head em { display: none; }
+body.game-ui .reading-presentation .offer-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+body.game-ui .reading-presentation .upgrade-card { min-width: 0; min-height: 64px; padding: 10px; gap: 6px;
   background: #1a293a; border-color: #899bb2; }
-body[data-view] .reading-presentation .upgrade-card strong { font-size: 16px; overflow-wrap: anywhere; }
-body[data-view] .reading-presentation .upgrade-card small { font-size: 13px; line-height: 1.35; }
-body[data-view] .reading-presentation .upgrade-card:focus-visible { outline: 3px solid #ffe5a5; outline-offset: -3px; }
-body[data-view][data-phase="reading"] .controls-mobile,
-body[data-view][data-phase="reading"] #phaseChoices,
-body[data-view][data-phase="reading"] #mainBtn:disabled { display: none; }
-body[data-view][data-phase="reading"] .playfield { grid-template-columns: minmax(0, 1fr);
+body.game-ui .reading-presentation .upgrade-card strong { font-size: 16px; overflow-wrap: anywhere; }
+body.game-ui .reading-presentation .upgrade-card small { font-size: 13px; line-height: 1.35; }
+body.game-ui .reading-presentation .upgrade-card:focus-visible { outline: 3px solid #ffe5a5; outline-offset: -3px; }
+body.game-ui[data-phase="reading"] .controls-mobile,
+body.game-ui[data-phase="reading"] #phaseChoices,
+body.game-ui[data-phase="reading"] #mainBtn:disabled { display: none; }
+body.game-ui[data-phase="reading"] .playfield { grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto; }
-body[data-view][data-phase="reading"] .stage { grid-column: 1; grid-row: 2; }
-body[data-view][data-phase="reading"] .action-dock { grid-column: 1; grid-row: 3; flex-direction: row; }
-body[data-view][data-phase="reading"] #potNotice { display: none; }
-body[data-view][data-reading-ready="true"] .stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+body.game-ui[data-phase="reading"] .stage { grid-column: 1; grid-row: 2; }
+body.game-ui[data-phase="reading"] .action-dock { grid-column: 1; grid-row: 3; flex-direction: row; }
+body.game-ui[data-phase="reading"] #potNotice { display: none; }
+body.game-ui[data-reading-ready="true"] .stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr); align-items: center; }
-body[data-view][data-reading-ready="true"] #game { grid-column: 1; grid-row: 1;
+body.game-ui[data-reading-ready="true"] #game { grid-column: 1; grid-row: 1;
   width: min(50cqw, calc(100cqh * 920 / 790)); }
-body[data-view][data-reading-ready="true"] #readingPresentation { grid-column: 2; grid-row: 1; }
+body.game-ui[data-reading-ready="true"] #readingPresentation { grid-column: 2; grid-row: 1; }
 .upgrade-acknowledgment { position: absolute; z-index: 4; bottom: 64px; left: 12px; right: 12px;
   margin: 0; padding: 8px 12px; background: #1a293a; border: 1px solid #c9d6e7; border-radius: 8px;
   text-align: center; pointer-events: none; }
@@ -1421,26 +1356,26 @@ body[data-view][data-reading-ready="true"] #readingPresentation { grid-column: 2
 #teaBreak .settings { flex-wrap: wrap; }
 #teaBreak button { min-width: 44px; }
 @media (orientation: portrait) {
-  body[data-view][data-reading-ready="true"] .stage { grid-template-columns: minmax(0, 1fr);
+  body.game-ui[data-reading-ready="true"] .stage { grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 28fr) minmax(0, 72fr); }
-  body[data-view][data-reading-ready="true"] #game { width: min(100cqw, calc(28cqh * 920 / 790)); }
-  body[data-view][data-reading-ready="true"] #readingPresentation { grid-column: 1; grid-row: 2; padding: 4px 10px; }
+  body.game-ui[data-reading-ready="true"] #game { width: min(100cqw, calc(28cqh * 920 / 790)); }
+  body.game-ui[data-reading-ready="true"] #readingPresentation { grid-column: 1; grid-row: 2; padding: 4px 10px; }
 }
 
 /* 018-4: keep gameplay buttons and their reserved rail out of keyboard play.
    The menu moves to the existing header; phase choices retain their own row. */
-body[data-view][data-onscreen-controls="hidden"] .controls-mobile { display: none; }
-body[data-view][data-onscreen-controls="hidden"]:not([data-phase="reading"]) .playfield {
+body.game-ui[data-onscreen-controls="hidden"] .controls-mobile { display: none; }
+body.game-ui[data-onscreen-controls="hidden"]:not([data-phase="reading"]) .playfield {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;
 }
-body[data-view][data-onscreen-controls="hidden"]:not([data-phase="reading"]) .stage { grid-column: 1; grid-row: 2; }
-body[data-view][data-onscreen-controls="hidden"] #phaseChoices { grid-column: 1; grid-row: 3; }
-body[data-view][data-onscreen-controls="hidden"]:not([data-phase="reading"]) .action-dock { grid-column: 1; grid-row: 4; flex-direction: row; }
-body[data-view][data-onscreen-controls="hidden"][data-active="true"] .action-dock { display: none; }
-body[data-view][data-onscreen-controls="hidden"] .collection-entry,
-body[data-view][data-onscreen-controls="hidden"] .practice-bar { grid-column: 1; grid-row: 5; }
-body[data-view][data-onscreen-controls="hidden"] #potNotice { grid-column: 1; grid-row: 6; }
+body.game-ui[data-onscreen-controls="hidden"]:not([data-phase="reading"]) .stage { grid-column: 1; grid-row: 2; }
+body.game-ui[data-onscreen-controls="hidden"] #phaseChoices { grid-column: 1; grid-row: 3; }
+body.game-ui[data-onscreen-controls="hidden"]:not([data-phase="reading"]) .action-dock { grid-column: 1; grid-row: 4; flex-direction: row; }
+body.game-ui[data-onscreen-controls="hidden"][data-active="true"] .action-dock { display: none; }
+body.game-ui[data-onscreen-controls="hidden"] .collection-entry,
+body.game-ui[data-onscreen-controls="hidden"] .practice-bar { grid-column: 1; grid-row: 5; }
+body.game-ui[data-onscreen-controls="hidden"] #potNotice { grid-column: 1; grid-row: 6; }
 body[data-onscreen-controls="hidden"] header { flex-wrap: wrap; }
 body[data-onscreen-controls="hidden"] .header-actions { flex-wrap: wrap; justify-content: flex-end; }
 .header-actions #menuBtn { min-width: 44px; min-height: 44px; }
@@ -1450,16 +1385,16 @@ body[data-onscreen-controls="hidden"] .header-actions { flex-wrap: wrap; justify
   background: #24483a; color: #e9efdf; font: inherit; }
 .control-visibility select:focus-visible { outline: 3px solid #ffe5a5; outline-offset: -3px; }
 @media (max-width: 600px), (max-height: 500px) {
-  body[data-view][data-phase="reading"] header { padding: 4px 10px; }
-  body[data-view][data-phase="reading"] .kicker,
-  body[data-view][data-phase="reading"] .version { display: none; }
-  body[data-view][data-phase="reading"] .brand { font-size: 21px; }
+  body.game-ui[data-phase="reading"] header { padding: 4px 10px; }
+  body.game-ui[data-phase="reading"] .kicker,
+  body.game-ui[data-phase="reading"] .version { display: none; }
+  body.game-ui[data-phase="reading"] .brand { font-size: 21px; }
   .reading-presentation { padding: 4px 8px; gap: 4px; }
   .reading-presentation h2 { font-size: 19px; margin-bottom: 4px; }
-  body[data-view] .reading-presentation #upgradeOffer { padding: 6px; }
-  body[data-view] .reading-presentation .upgrade-card { padding: 7px; }
-  body[data-view] .reading-presentation .upgrade-card strong { font-size: 14px; }
-  body[data-view] .reading-presentation .offer-head strong { font-size: 14px; }
+  body.game-ui .reading-presentation #upgradeOffer { padding: 6px; }
+  body.game-ui .reading-presentation .upgrade-card { padding: 7px; }
+  body.game-ui .reading-presentation .upgrade-card strong { font-size: 14px; }
+  body.game-ui .reading-presentation .offer-head strong { font-size: 14px; }
 }
 
 /* 0.20.0: the quick sound switch. One speaker per surface that can be open (a modal makes
@@ -1472,3 +1407,37 @@ body[data-onscreen-controls="hidden"] .header-actions { flex-wrap: wrap; justify
 .sound-toggle[data-muted="true"] .sound-waves,
 .sound-toggle[data-muted="false"] .sound-cross { display: none; }
 .break-head-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* Required choices may scroll in their own row; they must not paint over the
+   HUD or action dock. Keep text and native button targets at readable sizes. */
+body.game-ui:is([data-phase="day"], [data-phase="shortage"]) #phaseChoices {
+  min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding: 8px;
+}
+body.game-ui:is([data-phase="day"], [data-phase="shortage"]) #phaseChoices .errand-card {
+  touch-action: pan-y;
+}
+body.game-ui:is([data-phase="day"], [data-phase="shortage"]) #phaseChoices .errand-card:focus-visible {
+  outline: 3px solid #ffe5a5; outline-offset: -3px;
+}
+@media (orientation: portrait) and (max-width: 360px) {
+  body.game-ui[data-phase="day"] .playfield,
+  body.game-ui[data-phase="day"][data-onscreen-controls="hidden"] .playfield {
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 3fr) auto auto auto;
+  }
+  body.game-ui[data-phase="day"] .day-offer .offer-cards { grid-template-columns: minmax(0, 1fr); }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  body.game-ui:is([data-phase="day"], [data-phase="shortage"]) #phaseChoices { align-self: stretch; }
+  body.game-ui[data-phase="day"] .playfield {
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  }
+  body.game-ui:is([data-phase="day"], [data-phase="shortage"])[data-onscreen-controls="hidden"] .playfield {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 3fr) auto auto auto;
+  }
+  body.game-ui[data-phase="day"] #phaseChoices small,
+  body.game-ui[data-phase="day"] #phaseChoices p { font-size: 12px; line-height: 1.35; }
+}
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 700px) {
+  body.game-ui[data-phase="day"] .day-offer .offer-cards { grid-template-columns: minmax(0, 1fr); }
+}

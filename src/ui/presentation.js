@@ -1,27 +1,21 @@
 // Reuse the existing panels and choices: one set of buttons, one phase authority.
-import { initialView, isTouchDevice, saveView } from '../input/settings.js';
-
-export function createPresentation({ doc = document, game, params, storage, resetInput, onShowControls, onOpenMenu = () => {} }) {
+export function createPresentation({ doc = document, game, resetInput, onShowControls, onOpenMenu = () => {} }) {
   const win = doc.defaultView;
   const body = doc.body;
   const dialog = doc.getElementById('teaBreak');
   const close = doc.getElementById('closeBreak');
   const breakControls = doc.getElementById('breakControlsBtn');
   const menu = doc.getElementById('menuBtn');
-  const viewButton = doc.getElementById('viewBtn');
-  const breakView = doc.getElementById('breakViewBtn');
   const aside = doc.querySelector('aside');
   const main = doc.querySelector('main');
   const primary = doc.getElementById('mainBtn');
   const collectionEntry = doc.getElementById('collectionEntry');
   const dock = doc.getElementById('actionDock');
   const choices = doc.getElementById('phaseChoices');
-  const stage = doc.querySelector('.stage');
   const offers = ['errandOffer', 'arcadeOffer', 'dayOffer'].map((id) => doc.getElementById(id)).filter(Boolean);
   const sections = [...aside.querySelectorAll('details')];
   sections[3].querySelector('.panel').prepend(doc.querySelector('.settings'));
   sections[0].querySelector('.panel').append(doc.querySelector('.save-controls'));
-  let view = initialView({ params, storage, touchDevice: isTouchDevice(win) });
   let resumeOnClose = false;
   let resumeAfterControls = false;
 
@@ -33,21 +27,6 @@ export function createPresentation({ doc = document, game, params, storage, rese
     if (resumeOnClose && doc.visibilityState !== 'hidden') game.resume();
     resumeOnClose = false;
     doc.getElementById('game').focus({ preventScroll: true });
-  }
-
-  function applyView() {
-    body.dataset.view = view;
-    viewButton.textContent = `View: ${view}`;
-    breakView.textContent = `View: ${view}`;
-    // Starting/resuming Full View must not scroll a narrow screen to the sidebar.
-    dock.prepend(primary);
-    if (collectionEntry) doc.querySelector('.playfield').append(collectionEntry);
-    if (view === 'compact') {
-      offers.forEach((offer) => choices.append(offer));
-    } else {
-      offers.forEach((offer) => stage.append(offer));
-    }
-    resetInput();
   }
 
   function openMenu() {
@@ -64,13 +43,6 @@ export function createPresentation({ doc = document, game, params, storage, rese
     });
     dialog.showModal();
     dialog.scrollTop = 0;
-  }
-
-  function switchView() {
-    closeMenu();
-    view = view === 'compact' ? 'full' : 'compact';
-    saveView(storage, view);
-    applyView();
   }
 
   // A backgrounded app must stay paused when the sheet is later dismissed.
@@ -98,12 +70,14 @@ export function createPresentation({ doc = document, game, params, storage, rese
   menu.addEventListener('click', openMenu);
   close.addEventListener('click', closeMenu);
   breakControls?.addEventListener('click', handleBreakControls);
-  viewButton.addEventListener('click', switchView);
-  breakView.addEventListener('click', switchView);
   dialog.addEventListener('cancel', cancel);
   win.addEventListener('blur', backgrounded);
   doc.addEventListener('visibilitychange', visibility);
-  applyView();
+  // One layout: offers stay beside the cup and reference panels live in Tea Break.
+  dock.prepend(primary);
+  if (collectionEntry) doc.querySelector('.playfield').append(collectionEntry);
+  offers.forEach((offer) => choices.append(offer));
+  resetInput();
 
   return {
     openMenu,
@@ -126,8 +100,6 @@ export function createPresentation({ doc = document, game, params, storage, rese
       menu.removeEventListener('click', openMenu);
       close.removeEventListener('click', closeMenu);
       breakControls?.removeEventListener('click', handleBreakControls);
-      viewButton.removeEventListener('click', switchView);
-      breakView.removeEventListener('click', switchView);
       dialog.removeEventListener('cancel', cancel);
       win.removeEventListener('blur', backgrounded);
       doc.removeEventListener('visibilitychange', visibility);

@@ -137,7 +137,7 @@ test('idle time freezes while hidden and returns without catch-up', async ({ pag
 test('ordinary play has no debug trigger and cramped readings have no decorative overlay', async ({ page, problems }) => {
   await page.goto('./?noOverlay');
   expect(await page.evaluate(() => !!window.__TEACUP__)).toBe(false);
-  await openGame(page, '&view=compact&ambientSeed=7');
+  await openGame(page, '&ambientSeed=7');
   // 800x450: the reading's words run down into where the lane would sit.
   await page.setViewportSize({ width: 800, height: 450 });
   await watchLane(page);
@@ -155,7 +155,7 @@ test('ordinary play has no debug trigger and cramped readings have no decorative
 });
 
 test('eligibility follows the measured space: the overlay shows with room and goes as soon as room is lost', async ({ page, problems }) => {
-  await openGame(page, '&view=compact&ambientSeed=7');
+  await openGame(page, '&ambientSeed=7');
   await page.setViewportSize({ width: 800, height: 600 });
   await stageTextReading(page);
   const lane = page.locator('#readingMischief');

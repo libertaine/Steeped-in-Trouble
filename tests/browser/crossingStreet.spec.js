@@ -16,7 +16,7 @@ async function hop(page, code) {
 }
 
 test('the crossing offer can be skipped by keyboard without losing anything', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full'); await toCrossingOffer(page);
+  await openGame(page, '&seed=42'); await toCrossingOffer(page);
   await expect(page.locator('#arcadePitch')).toHaveText('“Nobody knows. But apparently, it’s our problem now.”');
   await expect(page.locator('[data-interlude="accept"]')).toContainText('CROSS THE ROAD');
   await expect(page.locator('[data-interlude="skip"]')).toContainText('STAY RIGHT HERE');
@@ -34,7 +34,7 @@ test('the crossing offer can be skipped by keyboard without losing anything', as
 
 test('desktop: real keys hop four ways, a cautious crossing is perfect, pays once, and steam still fires', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await openGame(page, '&seed=42&view=full'); await toCrossingOffer(page);
+  await openGame(page, '&seed=42'); await toCrossingOffer(page);
   await page.waitForTimeout(600);
   await shot(page, testInfo, 'offer');
   const before = await state(page);
@@ -94,7 +94,7 @@ test('desktop: real keys hop four ways, a cautious crossing is perfect, pays onc
 
 test('bumps cost an attempt, never a cup: one bump still crosses; three end the attempt', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await openGame(page, '&seed=42&view=full'); await toCrossingOffer(page);
+  await openGame(page, '&seed=42'); await toCrossingOffer(page);
   const before = await state(page);
   await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
   await bumpSpoon(page, { getUp: false });
@@ -112,7 +112,7 @@ test('bumps cost an attempt, never a cup: one bump still crosses; three end the 
   await expect(page.locator('#roundNum')).toHaveText('28');
   expect((await state(page)).lives).toBe(before.lives);
 
-  await openGame(page, '&seed=42&view=full'); await toCrossingOffer(page);
+  await openGame(page, '&seed=42'); await toCrossingOffer(page);
   const again = await state(page);
   await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
   for (let i = 0; i < 3; i++) await bumpSpoon(page);
@@ -127,7 +127,7 @@ test('bumps cost an attempt, never a cup: one bump still crosses; three end the 
 });
 
 test('the clock runs out into a failure that costs nothing', async ({ page, problems }) => {
-  await openGame(page, '&seed=7&view=full'); await toCrossingOffer(page);
+  await openGame(page, '&seed=7'); await toCrossingOffer(page);
   const before = await state(page);
   await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
   await advanceStreet(page, 42); // the result guards itself for its first moments
@@ -140,7 +140,7 @@ test('the clock runs out into a failure that costs nothing', async ({ page, prob
 
 test('pause, Tea Break and backgrounding freeze the street; held keys never leak into the cup', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await openGame(page, '&seed=42&view=compact'); await toCrossingOffer(page);
+  await openGame(page, '&seed=42'); await toCrossingOffer(page);
   await page.keyboard.press('Digit1');
   await page.keyboard.press('Enter');
   const { milkLeft, sugarLeft } = await state(page);
@@ -202,7 +202,7 @@ test('pause, Tea Break and backgrounding freeze the street; held keys never leak
 
 test('after round 30, the Day choice waits for the crossing and is applied exactly once', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await openGame(page, '&seed=42&view=full'); await toCrossingOffer(page, { round: 30, heat: 20 });
+  await openGame(page, '&seed=42'); await toCrossingOffer(page, { round: 30, heat: 20 });
   const before = await state(page);
   expect(before).toMatchObject({ dayPending: true, phase: 'arcadeOffer' });
   await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
@@ -219,7 +219,7 @@ test('after round 30, the Day choice waits for the crossing and is applied exact
 });
 
 test('after round 40, skipping the crossing still leads to the Day choice', async ({ page, problems }) => {
-  await openGame(page, '&seed=9&view=full'); await toCrossingOffer(page, { round: 40, heat: 25 });
+  await openGame(page, '&seed=9'); await toCrossingOffer(page, { round: 40, heat: 25 });
   await page.keyboard.press('Digit2');
   await expect(page.locator('#dayOffer')).toBeVisible();
   await page.locator('[data-day="keep"]').click();

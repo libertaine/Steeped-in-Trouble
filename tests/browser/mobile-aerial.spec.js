@@ -8,7 +8,7 @@ for (const [label, width, height, kind] of [
 ]) {
   test(`${label}: separate taps, a held Jump, ${kind} and safe return`, async ({ page, problems }, testInfo) => {
     await page.setViewportSize({ width, height });
-    await openGame(page, '&seed=2&view=compact');
+    await openGame(page, '&seed=2');
     await frozenRunner(page);
     const jump = page.locator('[data-run="jump"]');
     await jump.tap(); await advance(page, 0.15);

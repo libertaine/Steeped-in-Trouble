@@ -8,7 +8,7 @@ import { expect, gameState, openGame, test } from './fixtures.js';
 
 /** A quiet Mushroom Tea cup: no new leaves, three slow ones well away from the rim (and the lanes the spoon visits). */
 async function quietCup(page, query = '') {
-  await openGame(page, `&seed=7&tea=mushroom&view=full${query}`);
+  await openGame(page, `&seed=7&tea=mushroom${query}`);
   await page.keyboard.press('Enter');
   await page.evaluate(() => {
     const s = window.__TEACUP__.game.state;

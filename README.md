@@ -44,7 +44,7 @@ See the [release notes](docs/releases/v0.21.0.md),
   the last reading and pending choices; mid-round positions are not saved.
   Progress and arcade records stay in this browser on this device. Clearing
   browser data may erase them; there is no account or cloud synchronization.
-- **Room for tea:** Compact and Full View, Easy and Classic Touch, optional
+- **Room for tea:** one responsive layout, Easy and Classic Touch, optional
   Auto Steam, an illustrated resource HUD, and an adaptive synthesized score.
 
 Desktop browsers with keyboard controls are the primary experience. Phone
@@ -109,15 +109,14 @@ never costs a cup. For the complete rules and rewards (with spoilers), see
 
 ## Options
 
-- **View** chooses Compact or Full independently of controls and firing.
-  Touch-capable devices default to Compact, with the HUD above the cup,
-  reachable thumb controls, and a **Pause / Menu** button. **The Tea Break**
+- **One responsive layout** puts the HUD above the cup, with reachable
+  thumb controls and a **Pause / Menu** button. **The Tea Break**
   holds pot details, tea and fortune explanations, settings, and controls.
   Required upgrade and Buy / Run / Skip choices stay beside the game; the
-  leaf reading reveals before details become available. Full keeps the
-  desktop sidebar. The choice is remembered; `?view=compact|full` overrides
-  it for one visit. You can select Compact even in Chrome's Desktop Site
-  mode; the game cannot override that browser setting.
+  leaf reading reveals before details become available. Short landscape
+  windows use a control rail beside the cup. The former Compact layout is
+  now permanent; saved view preferences and `?view=compact|full` are ignored.
+  The game cannot override Chrome's Desktop Site setting.
 - **Touch** chooses Easy or Classic Touch; **Auto Steam** can be enabled
   with Classic Touch or a keyboard, and is always enabled with Easy Touch.
   Both choices are remembered. URL overrides for one visit are

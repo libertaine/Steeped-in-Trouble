@@ -9,7 +9,7 @@ for (const [name, viewport] of [
 ]) {
   test(`Daily Pour offer, touch pads and Tea Break fit ${name}`, async ({ page, problems }) => {
     await page.setViewportSize(viewport);
-    await openGame(page, '&seed=42&view=compact&touch=easy');
+    await openGame(page, '&seed=42&touch=easy');
     await toPaperOffer(page);
     const accept = page.locator('[data-interlude="accept"]');
     await expect(accept).toBeInViewport();
@@ -42,7 +42,7 @@ for (const [name, viewport] of [
 for (const [name, viewport] of [['phone-portrait', { width: 393, height: 851 }], ['tablet-landscape', { width: 1180, height: 820 }]]) {
   test(`the bystander's remark is readable on ${name}`, async ({ page, problems }) => {
     await page.setViewportSize(viewport);
-    await openGame(page, '&seed=42&view=compact&touch=easy');
+    await openGame(page, '&seed=42&touch=easy');
     await toPaperOffer(page);
     await page.locator('[data-interlude="accept"]').tap();
     await page.locator('#mainBtn').tap();
@@ -58,7 +58,7 @@ for (const [name, viewport] of [['phone-portrait', { width: 393, height: 851 }],
 }
 
 test('touch skipping leaves progression and resources intact', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=compact'); await toPaperOffer(page);
+  await openGame(page, '&seed=42'); await toPaperOffer(page);
   const before = await page.evaluate(() => structuredClone(window.__TEACUP__.game.state));
   await page.locator('[data-interlude="skip"]').tap();
   await expect(page.locator('#resourceProgressLabel')).toContainText('Cup 13 · Leaves');

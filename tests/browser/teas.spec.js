@@ -64,6 +64,17 @@ test('the up and down arrows pour milk and fire sugar without scrolling the page
   await page.setViewportSize({ width: 1100, height: 600 });
   await openGame(page);
   await page.keyboard.press('Enter');
+  // The responsive layout fits the viewport. Give this input-isolation test
+  // real document overflow without taking space away from the game.
+  await page.evaluate(() => {
+    const spacer = document.createElement('div');
+    spacer.setAttribute('aria-hidden', 'true');
+    spacer.style.cssText = 'position:absolute;top:100vh;width:1px;height:100vh;pointer-events:none';
+    document.body.append(spacer);
+    window.scrollTo(0, 30);
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(30);
+  await page.evaluate(() => window.scrollTo(0, 0));
   const scrolled = await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight);
   expect(scrolled).toBe(true); // the page could scroll, so the test means something
   await page.keyboard.press('ArrowUp');
