@@ -112,6 +112,9 @@ focus-cycle assertions are extended through that button before checking wraparou
 Visual review of the next candidate (`7e2fc44`) found that focusing Start Playing could
 scroll the completion heading out of the smallest touch layout. It now focuses the
 heading, all stages reset panel scroll, and layout checks assert the heading begins visible.
+Candidate `bc6513d` reached the second shared Field Guide test helper, which also still
+expected only two actions. Its focus cycle is extended through Training Cup, and its
+existing fixed-part visibility and 44px target checks now cover that button too.
 
 ## Representative captures
 
