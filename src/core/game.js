@@ -1077,7 +1077,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     fireSteam: () => {
       if (chocolate('play')) return fireFlame(havoc);
       if (bossFight()) return fireSteam(bossSim());
-      if (training && !training.allow('steam')) return false;
+      if (training && (!playing() || !training.allow('steam'))) return false;
       training?.engage();
       return playing() && fireSteam(sim);
     },
@@ -1096,7 +1096,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
       return true;
     },
     sugarBurst: () => {
-      if (training && !training.allow('sugar')) return false;
+      if (training && (!playing() || !training.allow('sugar'))) return false;
       training?.engage();
       return bossFight() ? sugarBurst(bossSim()) : playing() && sugarBurst(sim);
     },

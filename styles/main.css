@@ -1440,11 +1440,11 @@ body.game-ui:is([data-phase="day"], [data-phase="shortage"]) #phaseChoices .erra
 #trainingPanel small, #trainingHint { color: #b4e9cf; }
 .training-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
 .training-actions button { min-height: 44px; padding: 5px 8px; font-size: 11px; }
-body.game-ui[data-training="true"] #mainBtn,
 body.game-ui[data-training="true"] #collectionEntry,
 body.game-ui[data-training="true"] #breakCollectionBtn,
 body.game-ui[data-training="true"] #breakTrainingBtn,
 body.game-ui[data-training="true"] .save-controls { display: none; }
+body.game-ui[data-training="true"]:not([data-phase="paused"]) #mainBtn { display: none; }
 body.game-ui[data-training="true"] #phaseChoices { min-height: 0; overflow: auto; touch-action: pan-y; }
 body.game-ui[data-training="true"] #trainingPanel button { touch-action: pan-y; }
 body.game-ui[data-training="true"]:not([data-phase="reading"]) .playfield {

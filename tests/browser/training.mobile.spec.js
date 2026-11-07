@@ -5,6 +5,12 @@ for (const scheme of ['classic', 'easy']) {
   test(`Training Cup pointer controls and ${scheme} instructions @smoke`, async ({ page, problems }) => {
     await startTraining(page, `&touch=${scheme}&autosteam=on`);
     await layout(page);
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    await page.clock.runFor(50);
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+    await expect(page.locator('#mainBtn')).toBeVisible();
+    await page.locator('#mainBtn').tap(); await page.clock.runFor(50);
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
     async function pad(hold, time = 130) {
       const b = page.locator(`.controls-${scheme} [data-hold="${hold}"]`);
       const r = await b.boundingBox();
@@ -23,6 +29,10 @@ for (const scheme of ['classic', 'easy']) {
       await page.locator('#milkBtn').tap();
     }
     await page.clock.runFor(1100); expect((await view(page)).stage).toBe(3);
+    await page.locator('#trainingGuide').tap();
+    await page.locator('#overlayPrimaryBtn').tap(); await page.locator('#closeBreak').tap();
+    await page.clock.runFor(50);
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
     if (scheme === 'easy') {
       await expect(page.locator('#trainingInstruction')).toContainText('Hold the cup');
       const r = await page.locator('#game').boundingBox();

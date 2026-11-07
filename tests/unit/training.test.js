@@ -103,6 +103,16 @@ describe('the isolated Training Cup', () => {
     g.resume(); tick(g); expect(g.state.phase).toBe('playing');
     expect(g.state.enemies[0].radius).toBeGreaterThan(state.enemies[0].radius);
   });
+  it('actions attempted while paused do not arm an exercise that was waiting for engagement', () => {
+    const g = createTraining(); move(g);
+    const radius = g.state.enemies[0].radius;
+    g.pause();
+    expect(g.fireSteam()).toBe(false); expect(g.pourMilk()).toBe(false); expect(g.sugarBurst()).toBe(false);
+    tick(g, 1); g.resume(); tick(g, 1);
+    expect(g.training.view.engaged).toBe(false);
+    expect(g.state.enemies[0].radius).toBe(radius);
+    expect(g.state.shots).toHaveLength(0);
+  });
   it('preserves the pot, every RNG stream, storage and records; excludes all normal analytics', () => {
     const entries = new Map();
     const storage = { getItem: (k) => entries.get(k) ?? null, setItem: (k, v) => entries.set(k, v), removeItem: (k) => entries.delete(k) };

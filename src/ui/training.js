@@ -41,7 +41,7 @@ export function createTrainingUI({ doc, sessions, controls, settings, visible, p
     controls.settle(true); sessions.training?.training.retry(); el('phaseChoices').scrollTop = 0; focusCup();
   });
   on('trainingAgain', launch);
-  on('trainingGuide', () => { sessions.game.pause(); presentation.openMenu(); presentation.handleBreakControls(); });
+  on('trainingGuide', () => { presentation.openMenu(); presentation.handleBreakControls(); });
   on('trainingStart', () => {
     leave(false);
     const game = sessions.game;

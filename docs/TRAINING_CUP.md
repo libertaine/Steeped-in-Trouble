@@ -123,6 +123,15 @@ this exact font/viewport case also joins smoke CI. Windows completed with one fl
 now holds a real direction key for measured travel rather than making many tiny taps
 with idle redraws between them; every action/collision/visibility assertion and the
 90-second timeout remain unchanged. These results require fresh qualification.
+Direct touch-only review of `3d17a17` then reproduced a recovery gap: closing the
+training Field Guide could leave play paused, and background pause hid the ordinary
+Resume action. The reference now lets the existing menu own its pause/resume lifecycle;
+the ordinary primary button remains visible and functional during paused training.
+Both touch schemes test blur → tap Resume and Field Guide → return without keyboard
+assistance. The keyboard flow now asserts reference return resumes, rather than using
+P to compensate for the paused result. Pot/session behavior remains unchanged.
+Actions attempted during pause also leave an unengaged exercise waiting; a unit case
+checks that they cannot arm enemy approach for the later resume.
 
 ## Representative captures
 

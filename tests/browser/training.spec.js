@@ -26,8 +26,8 @@ test('Training Cup teaches real keyboard actions, retries, pause, reference, rep
   await milk(page); expect((await view(page)).stage).toBe(3); await capture('04-sugar');
   await page.locator('#trainingGuide').click(); await expect(page.locator('#instructionOverlay')).toBeVisible();
   await page.locator('#overlayPrimaryBtn').click(); await page.locator('#closeBreak').click();
-  // Reference can leave an already paused cup paused; P explicitly resumes it.
-  if (await page.evaluate(() => window.__TEACUP__.game.state.phase === 'paused')) await page.keyboard.press('KeyP');
+  await page.clock.runFor(50);
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
   await sugar(page); expect((await view(page)).stage).toBe(4); await capture('05-practice');
   await practice(page); await capture('06-complete'); await layout(page);
   await expect(page.locator('#trainingHeading')).toBeFocused();
@@ -77,7 +77,8 @@ test('focus loss and backgrounding pause training and discard held actions', asy
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
   await page.evaluate(() => { delete document.visibilityState; document.dispatchEvent(new Event('visibilitychange')); });
   await page.clock.runFor(1000); await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
-  await page.keyboard.press('KeyP'); await page.clock.runFor(100);
+  await expect(page.locator('#mainBtn')).toBeVisible();
+  await page.locator('#mainBtn').click(); await page.clock.runFor(100);
   expect((await view(page)).stage).toBe(1);
   await page.keyboard.press('Escape'); await expect(page.locator('#teaBreak')).toBeVisible();
   expect(problems).toEqual([]);
