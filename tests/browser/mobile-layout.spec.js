@@ -40,9 +40,9 @@ async function fits(page, selectors) {
 }
 
 for (const [width, height] of sizes) {
-  test(`Compact View fits ${width} x ${height}, including reading and required choices`, async ({ page, problems }, info) => {
+  test(`layout fits ${width} x ${height}, including reading and required choices`, async ({ page, problems }, info) => {
     await page.setViewportSize({ width, height });
-    await openGame(page, '&view=compact&seed=31');
+    await openGame(page, '&seed=31');
     await quietCup(page);
     await fits(page, ['#game', '#menuBtn', '#resource0', '#resource1', '.controls-easy']);
     const boxes = await page.evaluate(() => ['#game', '.hud-top'].map((s) => document.querySelector(s).getBoundingClientRect().toJSON()));
@@ -79,42 +79,42 @@ for (const [width, height] of sizes) {
   });
 }
 
-for (const [label, coarse, anyCoarse, points, expected] of [
-  ['coarse phone', true, true, 1, 'compact'],
-  ['wide tablet', true, true, 5, 'compact'],
-  ['mixed mouse and touch', false, true, 10, 'compact'],
-  ['desktop-style touch viewport', false, false, 5, 'compact'],
-  ['mouse desktop', false, false, 0, 'full'],
+for (const [label, coarse, anyCoarse, points] of [
+  ['coarse phone', true, true, 1],
+  ['wide tablet', true, true, 5],
+  ['mixed mouse and touch', false, true, 10],
+  ['desktop-style touch viewport', false, false, 5],
+  ['mouse desktop', false, false, 0],
 ]) {
-  test(`capabilities: ${label}`, async ({ browser, baseURL }) => {
+  test(`capabilities: ${label} keeps one layout and appropriate control defaults`, async ({ browser, baseURL }) => {
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, baseURL });
-    await context.addInitScript(({ coarse, anyCoarse, points }) => {
-      const original = window.matchMedia.bind(window);
-      window.matchMedia = (query) => query === '(pointer: coarse)' ? { matches: coarse }
-        : query === '(any-pointer: coarse)' ? { matches: anyCoarse } : original(query);
-      Object.defineProperty(navigator, 'maxTouchPoints', { value: points });
-    }, { coarse, anyCoarse, points });
-    const page = await context.newPage();
-    await openGame(page);
-    await expect(page.locator('body')).toHaveAttribute('data-view', expected);
-    await page.locator('#viewBtn').click();
-    const other = expected === 'full' ? 'compact' : 'full';
-    await expect(page.locator('body')).toHaveAttribute('data-view', other);
-    await page.reload();
-    await expect(page.locator('body')).toHaveAttribute('data-view', other);
-    await context.close();
+    try {
+      await context.addInitScript(({ coarse, anyCoarse, points }) => {
+        const original = window.matchMedia.bind(window);
+        window.matchMedia = (query) => query === '(pointer: coarse)' ? { matches: coarse }
+          : query === '(any-pointer: coarse)' ? { matches: anyCoarse } : original(query);
+        Object.defineProperty(navigator, 'maxTouchPoints', { value: points });
+      }, { coarse, anyCoarse, points });
+      const page = await context.newPage();
+      await openGame(page);
+      await expect(page.locator('main')).toHaveCSS('display', 'flex');
+      await expect(page.locator('#viewBtn, #breakViewBtn, body[data-view]')).toHaveCount(0);
+      const touch = coarse || anyCoarse || points > 0;
+      expect(await page.evaluate(() => window.__TEACUP__.settings())).toEqual({
+        touch: touch ? 'easy' : 'classic', autoSteam: touch,
+      });
+      await page.reload();
+      await expect(page.locator('main')).toHaveCSS('display', 'flex');
+    } finally { await context.close(); }
   });
 }
 
 for (const touch of ['easy', 'classic']) {
-  for (const view of ['compact', 'full']) {
-    test(`${touch} controls work independently of explicit ${view} presentation`, async ({ page }) => {
-      await openGame(page, `&touch=${touch}&view=${view}&autosteam=on`);
-      await expect(page.locator('body')).toHaveAttribute('data-view', view);
-      await expect(page.locator(`.controls-${touch}`)).toBeVisible();
-      expect(await page.evaluate(() => window.__TEACUP__.settings())).toEqual({ touch, autoSteam: true });
-    });
-  }
+  test(`${touch} controls work independently of presentation`, async ({ page }) => {
+    await openGame(page, `&touch=${touch}&autosteam=on`);
+    await expect(page.locator(`.controls-${touch}`)).toBeVisible();
+    expect(await page.evaluate(() => window.__TEACUP__.settings())).toEqual({ touch, autoSteam: true });
+  });
 }
 
 test('Tea Break pauses time, traps focus, changes settings, and dismisses without gameplay input', async ({ page, problems }, info) => {
@@ -325,10 +325,9 @@ test('game over and restart stay in the viewport', async ({ page }) => {
   expect(await page.evaluate(() => window.__TEACUP__.game.state.lives)).toBe(3);
 });
 
-test('desktop Full View keeps its reference panels in Tea Break and preserves canvas proportions', async ({ browser, baseURL }, info) => {
+test('desktop layout keeps its reference panels in Tea Break and preserves canvas proportions', async ({ browser, baseURL }, info) => {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, hasTouch: false, baseURL });
   await openGame(page);
-  await expect(page.locator('body')).toHaveAttribute('data-view', 'full');
   await expect(page.locator('main > aside')).toBeHidden();
   await quietCup(page);
   const box = await page.locator('#game').boundingBox();
@@ -340,6 +339,6 @@ test('desktop Full View keeps its reference panels in Tea Break and preserves ca
   await page.locator('#closeBreak').click();
   await expect(page.locator('#game')).toBeFocused();
   await expect(page.locator('main > aside')).toBeHidden();
-  await page.screenshot({ scale: 'css', path: info.outputPath('desktop-full.png') });
+  await page.screenshot({ scale: 'css', path: info.outputPath('desktop-layout.png') });
   await page.close();
 });

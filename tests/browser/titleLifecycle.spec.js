@@ -40,7 +40,7 @@ test('production title waits for an explicit gesture and each Enter advances one
 });
 
 test('complete welcome and Tea Break flow uses browser keyboard and pointer input', { tag: '@smoke' }, async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full', { onboarding: true });
+  await openGame(page, '&seed=42', { onboarding: true });
   await expect(page.locator('#titleContinueBtn')).toBeEnabled();
   await expect(page.locator('#arcadeSplash')).toBeVisible();
   await page.keyboard.press('Enter');
@@ -111,9 +111,9 @@ test('title and instructions isolate held steam and steering until release', { t
   expect(problems).toEqual([]);
 });
 
-for (const exit of ['click', 'Enter', 'Escape', 'controls', 'view']) {
+for (const exit of ['click', 'Enter', 'Escape', 'controls']) {
   test(`D1: Tea Break ${exit} restores cup focus and fresh steam`, async ({ page, problems }) => {
-    await openGame(page, '&view=compact');
+    await openGame(page, '');
     await page.keyboard.press('Enter');
     await page.evaluate(() => { window.__TEACUP__.game.state.spawnTimer = Infinity; });
     await page.locator('#menuBtn').click();
@@ -125,14 +125,13 @@ for (const exit of ['click', 'Enter', 'Escape', 'controls', 'view']) {
       await expect(page.locator('#breakControlsBtn')).toBeFocused();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
     }
-    if (exit === 'view') await page.getByText('Controls & Settings', { exact: true }).click();
     await page.keyboard.down('ArrowRight');
     await page.keyboard.down('Space');
     if (exit === 'Escape') await page.keyboard.press('Escape');
     else if (exit === 'Enter') {
       await page.locator('#closeBreak').focus();
       await page.keyboard.press('Enter');
-    } else await page.locator(exit === 'view' ? '#breakViewBtn' : '#closeBreak').click();
+    } else await page.locator('#closeBreak').click();
     await expect(page.locator('#game')).toBeFocused();
     const angle = await page.evaluate(() => window.__TEACUP__.game.state.angle);
     await page.keyboard.down('ArrowRight');

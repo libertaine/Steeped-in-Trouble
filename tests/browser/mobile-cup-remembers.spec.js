@@ -15,9 +15,9 @@ async function inView(page, selectors) {
 }
 
 for (const [width, height] of [[390, 844], [360, 740], [844, 390], [915, 412]]) {
-  test(`Compact View reads the memory and the next cup's effect at ${width}×${height}`, async ({ page, problems }, info) => {
+  test(`the reading panel shows the memory and the next cup's effect at ${width}×${height}`, async ({ page, problems }, info) => {
     await page.setViewportSize({ width, height });
-    await openGame(page, '&seed=42&view=compact');
+    await openGame(page, '&seed=42');
     await page.locator('#mainBtn').click();
     await milkyRound(page);
     await expect(page.locator('#readingPresentation')).toBeHidden();

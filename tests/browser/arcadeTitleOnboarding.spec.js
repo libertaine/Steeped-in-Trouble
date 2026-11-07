@@ -187,7 +187,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
   });
 
   test('the overlay is modal: the page behind it is dimmed, inert, and cannot scroll', async ({ page, problems }) => {
-    await openTitle(page, '&view=full');
+    await openTitle(page, '');
     const overlay = page.locator('#instructionOverlay');
     await expect(overlay).toBeVisible();
     expect(await overlay.evaluate((d) => d.matches(':modal'))).toBe(true);
@@ -204,7 +204,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
     // dismiss it, so use an exposed backdrop point or prove modal interception.
     const modalBox = await overlay.boundingBox();
     let backdropClicks = 0;
-    for (const id of ['mainBtn', 'menuBtn', 'viewBtn']) {
+    for (const id of ['mainBtn', 'menuBtn']) {
       const box = await page.locator(`#${id}`).boundingBox();
       if (!box) continue;
       const points = [[box.x + box.width / 2, box.y + box.height / 2],
@@ -219,7 +219,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
     await page.mouse.click(4, 4); // the backdrop
     await expect(overlay).toBeVisible();
     await expect(page.locator('#teaBreak')).toBeHidden();
-    await expect(page.locator('#viewBtn')).toHaveText('View: full');
+    await expect(page.locator('#viewBtn, #breakViewBtn')).toHaveCount(0);
     await expect(page.locator('#hudStatus')).toHaveText('READY TO BREW');
 
     // Focus stays in the overlay, and the page does not scroll underneath it.
@@ -309,7 +309,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
   });
 
   test('7 & 8: Returning player with saved pot sees Continue Pot and Brew New Pot, preserving data', async ({ page, problems }) => {
-    await openTitle(page, '&seed=42&view=full');
+    await openTitle(page, '&seed=42');
     await page.keyboard.press('Enter');
     await checkpointRound(page);
 
@@ -358,7 +358,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
   });
 
   test('Continue Your Pot resumes the saved pot with Enter, leaving the save untouched', async ({ page, problems }) => {
-    await openTitle(page, '&seed=42&view=full');
+    await openTitle(page, '&seed=42');
     await page.keyboard.press('Enter');
     await checkpointRound(page);
     const savedRaw = await page.evaluate(() => localStorage.getItem('steeped-in-trouble:pot-save'));
@@ -477,7 +477,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
     await expect(page.locator('#arcadeSplash')).toBeHidden();
 
     await page.setViewportSize({ width: 375, height: 667 });
-    await openTitle(page, '&view=compact');
+    await openTitle(page, '');
     await expect(page.locator('.instruction-card')).toBeVisible();
     expectFits(await overlayLayout(page));
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
@@ -511,7 +511,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
 
     // 2. The instructions over the cup in a 1280 x 720 window
     await page.setViewportSize({ width: 1280, height: 720 });
-    await openTitle(page, '&view=full');
+    await openTitle(page, '');
     await expect(page.locator('#instructionOverlay')).toBeVisible();
     await expect(page.locator('#arcadeSplash')).toBeHidden();
     await page.screenshot({ path: `${dir}/instruction-overlay.png` });
@@ -524,7 +524,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
 
     // 4. A narrow phone-sized window, with a saved pot and Easy Touch
     await page.setViewportSize({ width: 375, height: 667 });
-    await openTitle(page, '&view=compact&touch=easy');
+    await openTitle(page, '&touch=easy');
     await page.evaluate(() => window.__TEACUP__.overlay.show({ hasSavedPot: true }));
     await expect(page.locator('#arcadeSplash')).toBeHidden();
     await page.screenshot({ path: `${dir}/compact-narrow-overlay.png` });

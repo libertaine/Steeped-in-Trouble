@@ -15,7 +15,6 @@ import { createControls } from './input/controls.js';
 import { initialSettings, initialSound, isTouchDevice, normalize, saveSettings } from './input/settings.js';
 import { createAudio } from './audio/audio.js';
 import { attachCanvasScaling } from './rendering/canvas.js';
-import { attachViewportFit } from './ui/viewport.js';
 import { createAmbient } from './ui/ambient.js';
 import { createEffects } from './rendering/effects.js';
 import { createStrangeHappenings } from './rendering/strange.js';
@@ -69,8 +68,7 @@ function boot() {
   // ?tea=<id> brews only one variety (see gameplay/teas.js); unknown ids are ignored.
   const mainPot = createGame({ seed: seedFromUrl(params), tea: params.get('tea') ?? undefined });
   const effects = createEffects();
-  const renderer = createRenderer(canvas, { quality: initialQuality(params),
-    compact: () => document.body.dataset.view === 'compact' });
+  const renderer = createRenderer(canvas, { quality: initialQuality(params) });
   const hud = createHud(document);
   // The page ground's quiet Day tint (decoration only; see ui/dayPalette.js).
   const dayPalette = createDayPalette(document);
@@ -208,8 +206,6 @@ function boot() {
   presentation = createPresentation({
     doc: document,
     game,
-    params,
-    storage,
     resetInput: () => controls.settle(true),
     onShowControls: (returnToMenu) => overlay.show({ fromTeaBreak: true, onReturn: returnToMenu }),
     onOpenMenu: () => { if (!overlay.fromTeaBreak) overlay.close(); },
@@ -254,7 +250,6 @@ function boot() {
   const version = document.getElementById('version');
   if (version) version.textContent = `VERSION ${__APP_VERSION__}`;
 
-  const detachViewport = attachViewportFit(canvas.closest('.playfield'));
   const detachScaling = attachCanvasScaling(canvas);
   // Decorative visitors in the stage gutters: stepped below, never part of the game.
   // With ?debug, ?ambientSeed=<number> fixes their cosmetic randomness and
@@ -355,7 +350,6 @@ function boot() {
       ambient?.dispose();
       analytics?.dispose();
       detachScaling();
-      detachViewport();
       delete window[INSTANCE_KEY];
     },
   };

@@ -9,7 +9,7 @@ for (const [name, viewport] of [
 ]) {
   test(`Biscuit Breakout offer, LEFT / LAUNCH / RIGHT and Tea Break fit ${name}`, async ({ page, problems }) => {
     await page.setViewportSize(viewport);
-    await openGame(page, '&seed=42&view=compact&touch=easy');
+    await openGame(page, '&seed=42&touch=easy');
     await toBiscuitOffer(page);
     const accept = page.locator('[data-interlude="accept"]');
     await expect(accept).toBeInViewport();
@@ -51,7 +51,7 @@ for (const [name, viewport] of [
 for (const [name, viewport] of [['phone-portrait', { width: 393, height: 851 }], ['tablet-landscape', { width: 1180, height: 820 }]]) {
   test(`the talking biscuit is readable on ${name}`, async ({ page, problems }) => {
     await page.setViewportSize(viewport);
-    await openGame(page, '&seed=42&view=compact&touch=easy');
+    await openGame(page, '&seed=42&touch=easy');
     await toBiscuitOffer(page);
     await page.locator('[data-interlude="accept"]').tap();
     await page.locator('[data-biscuit="launchCube"]').tap();
@@ -64,7 +64,7 @@ for (const [name, viewport] of [['phone-portrait', { width: 393, height: 851 }],
 }
 
 test('touch skipping leaves progression and resources intact', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=compact'); await toBiscuitOffer(page);
+  await openGame(page, '&seed=42'); await toBiscuitOffer(page);
   const before = await page.evaluate(() => structuredClone(window.__TEACUP__.game.state));
   await page.locator('[data-interlude="skip"]').tap();
   await expect(page.locator('#resourceProgressLabel')).toContainText('Cup 20 · Leaves');

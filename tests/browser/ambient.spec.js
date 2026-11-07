@@ -7,7 +7,7 @@ import { ambientState, crumbIn, cubeIn, protectedOverlaps, summonAnts } from './
 
 test('a small colony wanders the wide gutters without touching the game, HUD or buttons', { tag: '@smoke' }, async ({ page, problems }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await openGame(page, '&view=full&ambientSeed=7');
+  await openGame(page, '&ambientSeed=7');
   await expect.poll(async () => (await ambientState(page)).room).toBe(4);
   await summonAnts(page, 4);
   const state = await ambientState(page);
@@ -24,7 +24,7 @@ test('a small colony wanders the wide gutters without touching the game, HUD or 
 test('a large desktop holds up to six, in both gutters, and never more', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   // Before the first cup, so an untended game can't end mid-test and send them home.
-  await openGame(page, '&view=full&ambientSeed=11');
+  await openGame(page, '&ambientSeed=11');
   await expect.poll(async () => ambientState(page)).toMatchObject({ budget: 6, room: 6 });
   await summonAnts(page, 6);
   const sides = new Set((await ambientState(page)).ants.map((a) => (a.region.x < 400 ? 'left' : 'right')));
@@ -39,7 +39,7 @@ test('a large desktop holds up to six, in both gutters, and never more', async (
 
 test('a short desktop window follows its own geometry rather than the phone rule', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1200, height: 480 });
-  await openGame(page, '&view=full&ambientSeed=13');
+  await openGame(page, '&ambientSeed=13');
   await expect.poll(async () => (await ambientState(page)).visible).not.toBeNull();
   const state = await ambientState(page);
   // A desktop screen and a mouse: not a phone held sideways, however short the window.
@@ -56,7 +56,7 @@ test('a short desktop window follows its own geometry rather than the phone rule
 
 test('social moments play out in the real layout with a fixed cosmetic seed', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await openGame(page, '&view=full&ambientSeed=5');
+  await openGame(page, '&ambientSeed=5');
   await summonAnts(page, 6, { settled: true });
   await page.evaluate(() => window.__TEACUP__.ambient.socialize('greet'));
   // A pair forms, partnered with each other, and later both carry on alone.
@@ -72,7 +72,7 @@ test('social moments play out in the real layout with a fixed cosmetic seed', as
 
 test('a crumb is found, looked over and carried out of sight, clear of the game and its controls', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await openGame(page, '&view=full&ambientSeed=5');
+  await openGame(page, '&ambientSeed=5');
   await summonAnts(page, 6, { settled: true });
   await crumbIn(page, ['lying']);
   // Noticed, approached and picked up by one ant; carried while sampled.
@@ -94,7 +94,7 @@ test('a crumb is found, looked over and carried out of sight, clear of the game 
 
 test('a layout change takes a crumb away at once, with any ant after it or carrying it', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await openGame(page, '&view=full&ambientSeed=5');
+  await openGame(page, '&ambientSeed=5');
   await summonAnts(page, 6, { settled: true });
   await crumbIn(page, ['lying', 'carried']);
   // A narrow upright window: no gutters, and no ants at all in portrait.
@@ -109,7 +109,7 @@ test('a layout change takes a crumb away at once, with any ant after it or carry
 test('a sugar cube is gathered round, carried and taken out of sight, clear of the game and its controls', async ({ page, problems }) => {
   test.slow(); // a whole procession, gathering to exit, takes 30–50 s of game time
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await openGame(page, '&view=full&ambientSeed=5');
+  await openGame(page, '&ambientSeed=5');
   await summonAnts(page, 4, { settled: true });
   await cubeIn(page, ['gather']);
   const gathering = await ambientState(page);
@@ -135,7 +135,7 @@ test('a sugar cube is gathered round, carried and taken out of sight, clear of t
 
 test('a layout change takes a sugar cube away at once, with the carriers it no longer has room for', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await openGame(page, '&view=full&ambientSeed=5');
+  await openGame(page, '&ambientSeed=5');
   await summonAnts(page, 4, { settled: true });
   await cubeIn(page, ['carry', 'turn']);
   // A narrow upright window: no gutters at all.
@@ -149,7 +149,7 @@ test('a layout change takes a sugar cube away at once, with the carriers it no l
 
 test('the ants never take input: the page beneath them answers clicks and keys', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await openGame(page, '&view=full&ambientSeed=7');
+  await openGame(page, '&ambientSeed=7');
   await summonAnts(page, 2, { settled: true });
   const under = await page.evaluate(() => {
     const s = window.__TEACUP__.ambient.snapshot();
@@ -196,7 +196,7 @@ test('the ants never take input: the page beneath them answers clicks and keys',
 
 test('resizing to a narrow layout retires the colony and frees the surface', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await openGame(page, '&view=compact&ambientSeed=3');
+  await openGame(page, '&ambientSeed=3');
   await summonAnts(page, 3);
   await page.setViewportSize({ width: 375, height: 667 });
   await expect.poll(async () => (await ambientState(page)).count).toBe(0);
@@ -214,7 +214,7 @@ test('resizing to a narrow layout retires the colony and frees the surface', asy
 
 test('Low graphics keeps at most two ants, live; reduced motion removes them all at once', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await openGame(page, '&view=full&ambientSeed=5');
+  await openGame(page, '&ambientSeed=5');
   await summonAnts(page, 5);
   expect((await ambientState(page)).quality).toBe('high');
   await page.locator('#graphicsBtn').evaluate((button) => button.click());
@@ -237,11 +237,11 @@ test('Low graphics keeps at most two ants, live; reduced motion removes them all
 
 test('nothing shows behind the title or Tea Break', async ({ page, problems }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await openGame(page, '&view=full&ambientSeed=7', { onboarding: true });
+  await openGame(page, '&ambientSeed=7', { onboarding: true });
   await page.evaluate(() => window.__TEACUP__.ambient.summon(4));
   await page.waitForTimeout(1500);
   expect(await ambientState(page)).toMatchObject({ policy: 'hidden', hidden: true });
-  await page.goto('./?debug&noOverlay&view=full&ambientSeed=7');
+  await page.goto('./?debug&noOverlay&ambientSeed=7');
   await page.waitForFunction(() => window.__TEACUP__?.game);
   await summonAnts(page, 2);
   await page.locator('#menuBtn').click();

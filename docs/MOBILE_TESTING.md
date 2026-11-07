@@ -6,17 +6,19 @@ Use `PLAYWRIGHT_PORT` for a free HTTP port when another preview is running.
 Set `CI=1` to disable server reuse and guarantee a fresh build is served.
 Do not run two suites into the same output directory simultaneously.
 
-`mobile-compact.spec.js` checks 360 × 740, 390 × 844, 800 × 1280, 1280 × 800,
+`mobile-layout.spec.js` checks 360 × 740, 390 × 844, 800 × 1280, 1280 × 800,
 844 × 390, and 1440 × 900: overflow, visible controls, canvas proportions,
 HUD separation, reading, upgrade choice, and next cup. It also covers explicit
-view/control combinations, coarse and mixed pointers, a touch-capable
-desktop-style viewport, saved preferences, modal keyboard isolation and focus,
+both control schemes, coarse and mixed pointers, a touch-capable
+desktop-style viewport, modal keyboard isolation and focus,
 pause ownership, settings, fortunes, rewards, rotation, DPR scaling, both
 graphics modes, boss/bonus encounters, and portrait/landscape Tea Run.
 Existing gesture and gameplay tests retain double-tap milk, long-press sugar,
 continuous steering, pointer cancellation, boss/bonus order, and runner results.
-The earlier tea-pill regression explicitly selects Full View, which retains
-that detailed pill; Compact moves that explanation into the Tea Break.
+The tea-pill regression checks the live resource strip. `layout.spec.js` and
+`mobile-layout-preferences.spec.js` confirm that saved Full/Compact preferences,
+corrupt or denied view storage, and old `?view=full|compact` URLs cannot change
+the single layout. See [consolidation qualification](SINGLE_LAYOUT_TESTING.md).
 
 0.17.0 adds `mobile-cup-remembers.spec.js` (the reading's memory, next cup
 and upgrade offer in Compact View at 390 × 844, 360 × 740, 844 × 390 and
@@ -26,7 +28,7 @@ orientations, and reduced motion). See
 [CUP_REMEMBERS_TESTING.md](CUP_REMEMBERS_TESTING.md).
 
 Screenshots saved in Playwright's test output cover gameplay at each size,
-the reveal, upgrades, the Tea Break, Tea Run, and desktop Full View. Inspect
+the reveal, upgrades, the Tea Break, Tea Run, and desktop layout. Inspect
 the actual composition as well as DOM geometry. Representative captures are
 in the [screenshot gallery](images/pocket-teacup/README.md).
 

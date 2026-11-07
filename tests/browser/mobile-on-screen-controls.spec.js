@@ -1,7 +1,7 @@
 import { test, expect, openGame, gameState } from './fixtures.js';
 import { expectVisibility, fits, preference, quietCup } from './onScreenControls.js';
 
-test('mobile Auto, Show and Hide persist independently of Touch and View', async ({ page, problems }) => {
+test('mobile Auto, Show and Hide persist independently of Touch', async ({ page, problems }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   await openGame(page);
   await expectVisibility(page, true, '.controls-easy');
@@ -25,8 +25,6 @@ test('mobile Auto, Show and Hide persist independently of Touch and View', async
   await page.locator('#closeBreak').click();
   await preference(page, 'show');
   await expectVisibility(page, true, '.controls-easy');
-  await page.locator('#viewBtn').click();
-  await expect(page.locator('body')).toHaveAttribute('data-view', 'full');
   await quietCup(page);
   await fits(page);
   await preference(page, 'auto');

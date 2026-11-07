@@ -1,5 +1,9 @@
 # 018-2 — Visual resource HUD and mode indicators
 
+Historical assessment: Full/Compact comparisons below describe the recorded
+baseline. The current game uses the former Compact layout exclusively; see
+[consolidation qualification](SINGLE_LAYOUT_TESTING.md).
+
 Review candidate, November 2, 2026. Application version stays **0.17.1**.
 Base: remote `main` verified at `f149f93229e5d59c3b5bc360da072806e39ddcee`
 (merged #34 / 018-1). Branch: `feature/018-2-visual-resource-hud`.

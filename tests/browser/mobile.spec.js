@@ -58,9 +58,8 @@ test('is playable with Classic Touch controls on a phone-sized screen', { tag: '
   expect(problems).toEqual([]);
 });
 
-test('Full View shows the tea on a phone without crowding the screen', { tag: '@smoke' }, async ({ page, problems }) => {
-  await openGame(page, '&tea=earlGrey&view=full');
-  await expect(page.locator('body')).toHaveAttribute('data-view', 'full');
+test('the layout shows the tea on a phone without crowding the screen', { tag: '@smoke' }, async ({ page, problems }) => {
+  await openGame(page, '&tea=earlGrey');
   await page.locator('#mainBtn').tap();
   await expect(page.locator('#hudTea')).toHaveText('☕ Earl Grey · wandering leaves');
   await expect(page.locator('#hudTea')).toBeVisible();

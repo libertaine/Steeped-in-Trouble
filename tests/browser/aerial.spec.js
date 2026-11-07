@@ -2,7 +2,7 @@ import { expect, openGame, test } from './fixtures.js';
 import { advance, capture, frozenRunner, secretAndReturn } from './aerial.js';
 
 test('fresh keyboard presses discover flight, repeats do not roll, and failure locks the chain', async ({ page, problems }, testInfo) => {
-  await openGame(page, '&seed=2&view=full');
+  await openGame(page, '&seed=2');
   await frozenRunner(page);
   // Seed 2 has successive successes in the real errand RNG after course planning.
   await page.keyboard.press('ArrowUp'); await advance(page, 0.15);
@@ -30,7 +30,7 @@ test('fresh keyboard presses discover flight, repeats do not roll, and failure l
 
 for (const kind of ['bird', 'power', 'orbit']) {
   test(`${kind} paints, pauses, backgrounds, and returns without losing state`, async ({ page, problems }, testInfo) => {
-    await openGame(page, '&seed=7&view=full');
+    await openGame(page, '&seed=7');
     await frozenRunner(page);
     await secretAndReturn(page, testInfo, kind);
     expect(problems).toEqual([]);

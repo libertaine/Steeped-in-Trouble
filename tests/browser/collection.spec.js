@@ -9,7 +9,7 @@ async function shot(page, info, name) {
 
 test('the four jobs have no prerequisites, settle records once, reload, retry, and return', async ({ page, problems }, info) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await openGame(page, '&seed=42&view=full');
+  await openGame(page, '&seed=42');
   await shot(page, info, 'initial-no-save');
   await openCollection(page); await layoutChecks(page);
   await shot(page, info, 'empty-collection');
@@ -43,7 +43,7 @@ test('the four jobs have no prerequisites, settle records once, reload, retry, a
 });
 
 test('practice preserves a paused main pot, all RNG cursors and its saved checkpoint', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full'); await page.locator('#mainBtn').click();
+  await openGame(page, '&seed=42'); await page.locator('#mainBtn').click();
   await checkpointRound(page);
   await page.evaluate(() => { const g = window.__TEACUP__.game; g.state.readingTime = 5; g.chooseUpgrade(0); g.pause(); });
   const before = await page.evaluate(() => ({ state: structuredClone(window.__TEACUP__.game.state), rng: window.__TEACUP__.game.exportRandom() }));
@@ -63,7 +63,7 @@ test('practice preserves a paused main pot, all RNG cursors and its saved checkp
 });
 
 test('Continue restores the complete saved reading; New Pot and Clear require confirmation', async ({ page, problems }, info) => {
-  await openGame(page, '&seed=42&view=full'); await checkpointRound(page);
+  await openGame(page, '&seed=42'); await checkpointRound(page);
   const saved = await read(page, 'pot-save');
   const checkpoint = JSON.parse(saved);
   await page.reload(); await expect(page.locator('#mainBtn')).toHaveText('CONTINUE YOUR POT');
@@ -93,7 +93,7 @@ test('Continue restores the complete saved reading; New Pot and Clear require co
 
 test('storage denial and invalid saves leave the collection and cup playable', { tag: '@smoke' }, async ({ page, problems }) => {
   await page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); });
-  await openGame(page, '&view=compact'); await openCollection(page);
+  await openGame(page, ''); await openCollection(page);
   await expect(page.locator('#recordNotice')).toContainText('will not be saved');
   await page.locator('[data-job="dailyPour"]').click(); await finishPractice(page, 'dailyPour', true);
   await page.locator('#backPotBtn').click(); await page.locator('#mainBtn').click();
@@ -113,7 +113,7 @@ test('invalid pot data cannot enter gameplay and does not remove arcade records'
 });
 
 test('clearing a saved pot from the initial Tea Break restores the first-cup choice', async ({ page, problems }) => {
-  await openGame(page, '&view=compact'); await checkpointRound(page); await page.reload();
+  await openGame(page, ''); await checkpointRound(page); await page.reload();
   await expect(page.locator('#mainBtn')).toHaveText('CONTINUE YOUR POT');
   await page.locator('#menuBtn').click(); await page.locator('#clearPotBtn').click();
   await page.locator('#confirmPotBtn').click(); await page.locator('#closeBreak').click();
@@ -123,7 +123,7 @@ test('clearing a saved pot from the initial Tea Break restores the first-cup cho
 });
 
 test('held input from a collection or practice never becomes steam or teacup steering', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=compact');
+  await openGame(page, '&seed=42');
   await page.locator('#mainBtn').click(); await page.evaluate(() => window.__TEACUP__.game.pause());
   await openCollection(page, 'menu');
   await page.keyboard.down('ArrowLeft'); await page.keyboard.down('Space');
@@ -143,8 +143,8 @@ test('held input from a collection or practice never becomes steam or teacup ste
   expect(problems).toEqual([]);
 });
 
-test('Compact View supports keyboard selection and game-over access without debug shortcuts', async ({ page, problems }, info) => {
-  await openGame(page, '&view=compact'); await shot(page, info, 'desktop-compact');
+test('the responsive layout supports keyboard selection and game-over access without debug shortcuts', async ({ page, problems }, info) => {
+  await openGame(page, ''); await shot(page, info, 'desktop-compact');
   await openCollection(page);
   await page.locator('[data-job="biscuitBreakout"]').focus(); await page.keyboard.press('Enter');
   await expect(page.locator('body')).toHaveAttribute('data-mode', 'breakout');

@@ -1,5 +1,5 @@
 import { expect } from './fixtures.js';
-import { expectRunnerHud, toShortage } from './errand.js';
+import { toShortage } from './errand.js';
 
 export async function frozenRunner(page) {
   await toShortage(page);
@@ -12,16 +12,13 @@ export async function frozenRunner(page) {
     game.update = () => {};
     game.state.run.opportunity = null;
   });
-  if (await page.locator('body').getAttribute('data-view') === 'full') await expectRunnerHud(page);
-  else {
-    // Compact View deliberately places its HUD outside the canvas.
-    const pills = page.locator('#resourceTitle, #resource0, #resource1, #resource2');
-    for (const pill of await pills.all()) await expect(pill).toBeInViewport();
-    const boxes = await pills.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
-    for (let i = 0; i < boxes.length; i++) for (const b of boxes.slice(i + 1)) {
-      const a = boxes[i];
-      expect(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top).toBe(true);
-    }
+  // The resource HUD stays outside the canvas.
+  const pills = page.locator('#resourceTitle, #resource0, #resource1, #resource2');
+  for (const pill of await pills.all()) await expect(pill).toBeInViewport();
+  const boxes = await pills.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
+  for (let i = 0; i < boxes.length; i++) for (const b of boxes.slice(i + 1)) {
+    const a = boxes[i];
+    expect(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top).toBe(true);
   }
   expect(await page.evaluate(() => window.__TEACUP__.previewAerial)).toBeUndefined();
 }

@@ -8,7 +8,7 @@ const sizes = {
 for (const [name, [width, height]] of Object.entries(sizes)) {
   test(`the cup's condition stays readable on ${name}`, async ({ page, problems }, info) => {
     await page.setViewportSize({ width, height });
-    await openGame(page, '&seed=42&view=compact');
+    await openGame(page, '&seed=42');
     await page.locator('#mainBtn').click();
     await quiet(page);
     await spill(page, 3);
@@ -41,7 +41,7 @@ for (const [name, [width, height]] of Object.entries(sizes)) {
 
 test('with reduced motion the warning holds steady and the cup breaks at once', async ({ page, problems }, info) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await openGame(page, '&seed=42&view=compact');
+  await openGame(page, '&seed=42');
   await page.locator('#mainBtn').click();
   await quiet(page);
   for (const lane of [3, 11]) await spill(page, lane);

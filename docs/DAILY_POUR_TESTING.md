@@ -73,7 +73,7 @@ browser fixture supplies one obstacle and uses real seeded aerial impulses.
   The remark is derived from the route clock (`pedestrianRemark()`); jump
   to it in development by riding the route, or advance the simulation to
   `CONFIG.dailyPour.pedestrian.x / speed - notice` as the browser tests do.
-- Use Desktop Full and Compact Views, phone portrait/landscape and tablet
+- Use desktop, phone portrait/landscape and tablet
   portrait/landscape. No new mobile layout is introduced. Check sound on
   and off, target clarity, button reach and clipping on real devices.
 

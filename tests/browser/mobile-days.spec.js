@@ -9,7 +9,7 @@ for (const [name, viewport] of [
   for (const choice of ['fresh', 'keep']) test(`${name} ${choice}: readable touch choice and next cup`, async ({ page, problems }) => {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await openGame(page, '&seed=42&view=compact&touch=easy');
+    await openGame(page, '&seed=42&touch=easy');
     await toDayReading(page); await expectDayButtons(page);
     await expect(page.locator('.controls-easy')).toBeHidden();
     await daySnapshot(page, `${name}-${choice}-transition`);

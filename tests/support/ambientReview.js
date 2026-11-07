@@ -70,27 +70,27 @@ async function procession(page, { size = null, quirk = null, phase = null } = {}
  * runs `seconds` after it, sampled every `every` ms (1000), calling `during` at each sample.
  */
 const SCENARIOS = {
-  'text-theft': { context: desktop(1920, 1080), query: '&view=full', seconds: 16, every: 250, start: textTheft },
-  'text-carry': { context: desktop(1920, 1080), query: '&view=full', seconds: 5, every: 250,
+  'text-theft': { context: desktop(1920, 1080), query: '', seconds: 16, every: 250, start: textTheft },
+  'text-carry': { context: desktop(1920, 1080), query: '', seconds: 5, every: 250,
     async start(page) { await textTheft(page);
       await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().text.phase === 'carry'); } },
-  'text-return': { context: desktop(1920, 1080), query: '&view=full', seconds: 10, every: 250,
+  'text-return': { context: desktop(1920, 1080), query: '', seconds: 10, every: 250,
     async start(page) { await textTheft(page);
       await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().text.phase === 'absent'); } },
-  'text-advance': { context: desktop(1920, 1080), query: '&view=full', seconds: 6, every: 250, start: textTheft,
+  'text-advance': { context: desktop(1920, 1080), query: '', seconds: 6, every: 250, start: textTheft,
     async during(page, t) { if (t === 3) await page.keyboard.press('Enter'); } },
-  'text-resize': { context: desktop(1920, 1080), query: '&view=full', seconds: 6, every: 250, start: textTheft,
+  'text-resize': { context: desktop(1920, 1080), query: '', seconds: 6, every: 250, start: textTheft,
     async during(page, t) { if (t === 3) await page.setViewportSize({ width: 800, height: 600 }); } },
-  'text-low': { context: desktop(1920, 1080), query: '&view=full', seconds: 6, every: 250, start: textTheft,
+  'text-low': { context: desktop(1920, 1080), query: '', seconds: 6, every: 250, start: textTheft,
     async during(page, t) { if (t === 3) await page.locator('#graphicsBtn').evaluate(e => e.click()); } },
-  'text-motion': { context: desktop(1920, 1080), query: '&view=full', seconds: 6, every: 250, start: textTheft,
+  'text-motion': { context: desktop(1920, 1080), query: '', seconds: 6, every: 250, start: textTheft,
     async during(page, t) { if (t === 3) await page.emulateMedia({ reducedMotion: 'reduce' }); } },
-  'one-ant': { context: desktop(1280, 720), query: '&view=full&ambientAnts=1', seconds: 20,
+  'one-ant': { context: desktop(1280, 720), query: '&ambientAnts=1', seconds: 20,
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(1)) },
-  'full-colony': { context: desktop(1920, 1080), query: '&view=full', seconds: 25,
+  'full-colony': { context: desktop(1920, 1080), query: '', seconds: 25,
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(6)) },
   ...Object.fromEntries(['follow', 'greet', 'drift'].map((kind) => [kind, {
-    context: desktop(1920, 1080), query: '&view=full', seconds: 15,
+    context: desktop(1920, 1080), query: '', seconds: 15,
     // A moment needs suitable ants close enough together (a follower's leader
     // within reach, for one), so keep the colony topped up and ask again until
     // one begins; the clip's scene starts then.
@@ -104,20 +104,20 @@ const SCENARIOS = {
       throw new Error(`No ${kind} moment began`);
     },
   }])),
-  'entry-exit': { context: desktop(1280, 720), query: '&view=full&ambientAnts=1', seconds: 30,
+  'entry-exit': { context: desktop(1280, 720), query: '&ambientAnts=1', seconds: 30,
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(1)) },
   // Nothing summoned: the colony's own rhythm, arrivals, a spell and the quiet after it.
-  quiet: { context: desktop(1280, 720), query: '&view=full', seconds: 150, start: async () => {} },
-  'low-graphics': { context: desktop(1920, 1080), query: '&view=full&graphics=low', seconds: 20,
+  quiet: { context: desktop(1280, 720), query: '', seconds: 150, start: async () => {} },
+  'low-graphics': { context: desktop(1920, 1080), query: '&graphics=low', seconds: 20,
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(6)) },
-  'narrow-desktop': { context: desktop(1200, 480), query: '&view=full', seconds: 20,
+  'narrow-desktop': { context: desktop(1200, 480), query: '', seconds: 20,
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(6)) },
   'landscape-phone': { context: { ...devices['Pixel 7'], viewport: { width: 844, height: 390 } }, query: '', seconds: 20,
     start: (page) => page.evaluate(() => window.__TEACUP__.ambient.summon(6)) },
   // A crumb noticed, approached, looked over, picked up and carried out of sight.
-  crumb: { context: desktop(1280, 720), query: '&view=full', seconds: 16, every: 250, start: noticedCrumb },
+  crumb: { context: desktop(1280, 720), query: '', seconds: 16, every: 250, start: noticedCrumb },
   // Once it is being carried, the window narrows: the gutter changes shape, and crumb and carrier go at once.
-  'crumb-cancel': { context: desktop(1280, 720), query: '&view=full', seconds: 8, every: 250,
+  'crumb-cancel': { context: desktop(1280, 720), query: '', seconds: 8, every: 250,
     async start(page) {
       await noticedCrumb(page);
       await page.waitForFunction(() => window.__TEACUP__.ambient.snapshot().crumb?.state === 'carried', null, { timeout: 20_000 });
@@ -125,22 +125,22 @@ const SCENARIOS = {
     async during(page, t) { if (t === 2) await page.setViewportSize({ width: 1100, height: 720 }); } },
   // A sugar cube turns up; nearby ants (and a newcomer or two) gather round, take hold, lift it together,
   // carry it along the gutter, turn it at the corner and take it out of sight.
-  cube: { context: desktop(1920, 1080), query: '&view=full', seconds: 55, every: 250, start: (page) => procession(page) },
+  cube: { context: desktop(1920, 1080), query: '', seconds: 55, every: 250, start: (page) => procession(page) },
   // The same with a team of four: one pulling in front, two at the sides, one pushing behind.
-  'cube-four': { context: desktop(1920, 1080), query: '&view=full', seconds: 55, every: 250,
+  'cube-four': { context: desktop(1920, 1080), query: '', seconds: 55, every: 250,
     start: (page) => procession(page, { size: 4 }) },
   // A brief lapse early in the carrying: one carrier turns and tugs the wrong way, the cube slows, it turns back.
-  'cube-mistake': { context: desktop(1920, 1080), query: '&view=full', seconds: 30, every: 250,
+  'cube-mistake': { context: desktop(1920, 1080), query: '', seconds: 30, every: 250,
     start: (page) => procession(page, { size: 4, quirk: 'wrong-way' }) },
   // The team stops and looks about, as if reconsidering the route.
-  'cube-reconsider': { context: desktop(1920, 1080), query: '&view=full', seconds: 30, every: 250,
+  'cube-reconsider': { context: desktop(1920, 1080), query: '', seconds: 30, every: 250,
     start: (page) => procession(page, { size: 3, quirk: 'reconsider' }) },
   // Once it is being carried, the window narrows: the gutter no longer has room, and cube and team go at once.
-  'cube-cancel': { context: desktop(1920, 1080), query: '&view=full', seconds: 8, every: 250,
+  'cube-cancel': { context: desktop(1920, 1080), query: '', seconds: 8, every: 250,
     start: (page) => procession(page, { phase: 'carry' }),
     async during(page, t) { if (t === 2) await page.setViewportSize({ width: 1000, height: 1080 }); } },
   // High graphics while it is being carried, then Low: a plainer cube and team, straight home, no more lapses.
-  'cube-low': { context: desktop(1920, 1080), query: '&view=full', seconds: 40, every: 250,
+  'cube-low': { context: desktop(1920, 1080), query: '', seconds: 40, every: 250,
     start: (page) => procession(page, { phase: 'carry' }),
     async during(page, t) { if (t === 4) await page.locator('#graphicsBtn').evaluate((button) => button.click()); } },
 };
