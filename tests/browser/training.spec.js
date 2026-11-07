@@ -30,7 +30,7 @@ test('Training Cup teaches real keyboard actions, retries, pause, reference, rep
   if (await page.evaluate(() => window.__TEACUP__.game.state.phase === 'paused')) await page.keyboard.press('KeyP');
   await sugar(page); expect((await view(page)).stage).toBe(4); await capture('05-practice');
   await practice(page); await capture('06-complete'); await layout(page);
-  await expect(page.locator('#trainingStart')).toBeFocused();
+  await expect(page.locator('#trainingHeading')).toBeFocused();
   await page.locator('#trainingAgain').click(); expect((await view(page)).stage).toBe(0);
   await move(page); await steam(page); await milk(page); await sugar(page); await practice(page);
   await page.locator('#trainingStart').click(); await page.clock.runFor(100);

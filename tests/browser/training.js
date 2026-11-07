@@ -47,6 +47,10 @@ export async function practice(page) {
   expect((await view(page)).complete).toBe(true);
 }
 export async function layout(page) {
+  expect(await page.locator('#trainingHeading').evaluate((node) => {
+    const r = node.getBoundingClientRect(), panel = document.getElementById('phaseChoices').getBoundingClientRect();
+    return r.top >= panel.top && r.bottom <= panel.bottom && r.top >= 0 && r.bottom <= innerHeight;
+  }), 'stage heading begins visibly inside the instruction row').toBe(true);
   const result = await page.evaluate(() => {
     const box = (node) => { const r = node.getBoundingClientRect(); return { x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height }; };
     const canvas = box(document.getElementById('game'));
@@ -85,8 +89,9 @@ export function trainingLayoutTests() {
           else await steam(page);
           expect((await view(page)).stage).toBe(2); await layout(page);
           await milk(page); await layout(page); await sugar(page); await layout(page); await practice(page);
-          await layout(page);
+          await expect(page.locator('#trainingHeading')).toBeFocused();
           if ([320, 844].includes(width)) await page.screenshot({ path: info.outputPath('completion.png') });
+          await layout(page);
           await page.locator('#trainingExit').click(); await expect(page.locator('#teaBreak')).toBeVisible();
           expect(problems).toEqual([]);
         });

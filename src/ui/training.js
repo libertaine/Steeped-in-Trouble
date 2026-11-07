@@ -37,7 +37,9 @@ export function createTrainingUI({ doc, sessions, controls, settings, visible, p
   }
   for (const id of ['trainingBtn', 'breakTrainingBtn']) on(id, launch);
   on('trainingExit', () => leave());
-  on('trainingRetry', () => { controls.settle(true); sessions.training?.training.retry(); focusCup(); });
+  on('trainingRetry', () => {
+    controls.settle(true); sessions.training?.training.retry(); el('phaseChoices').scrollTop = 0; focusCup();
+  });
   on('trainingAgain', launch);
   on('trainingGuide', () => { sessions.game.pause(); presentation.openMenu(); presentation.handleBreakControls(); });
   on('trainingStart', () => {
@@ -76,7 +78,8 @@ export function createTrainingUI({ doc, sessions, controls, settings, visible, p
     if (lastStage !== v.stage) {
       lastStage = v.stage;
       controls.settle(true);
-      if (v.complete) el('trainingStart').focus({ preventScroll: true });
+      el('phaseChoices').scrollTop = 0;
+      if (v.complete) el('trainingHeading').focus({ preventScroll: true });
     }
   }
   return { launch, update, dispose() {

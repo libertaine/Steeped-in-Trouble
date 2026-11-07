@@ -52,7 +52,8 @@ and pointer capture. The next stage gets fresh targets and no lingering projecti
 Delayed presentation events never advance exercises. Pause, reference dialogs, blur and
 visibility loss use the existing pause paths. Returning to visibility never resumes by itself.
 Stage changes announce their text without opening another modal or moving keyboard focus;
-completion focuses Start Playing. The lane/spoon emphasis uses existing static drawing,
+completion focuses its heading and resets the panel scroll position so the result text
+appears before the actions. The lane/spoon emphasis uses existing static drawing,
 and new UI introduces no independent animation, RAF, or reduced-motion exception.
 
 ## Isolation
@@ -108,6 +109,9 @@ its body and the newly added Tab stop missing from the previous focus-cycle expe
 That run was stopped after confirmed failures. The secondary actions now share a row;
 the existing geometry assertions are retained and include the tutorial button, and the
 focus-cycle assertions are extended through that button before checking wraparound.
+Visual review of the next candidate (`7e2fc44`) found that focusing Start Playing could
+scroll the completion heading out of the smallest touch layout. It now focuses the
+heading, all stages reset panel scroll, and layout checks assert the heading begins visible.
 
 ## Representative captures
 
