@@ -366,6 +366,7 @@ export function createControls({
   return {
     held,
     walk,
+    get released() { return down.size === 0 && captured.size === 0 && !gestures.pressing; },
     reset,
     /**
      * Leaving an arcade adventure: drop every hold, and ignore a Space that is

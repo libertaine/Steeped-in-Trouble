@@ -294,6 +294,9 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
    */
   function drawAimBeams(state, fx) {
     const color = aimColor(state);
+    if (state.training?.stage === 3 && state.training.preview > 0) {
+      for (const offset of [-1, 0, 1]) laneBeam(spoonLane(state) + offset, .6, AIM.sugar);
+    }
     if (aim.prev !== null && aim.fade < 1) laneBeam(aim.prev, 1 - aim.fade, color);
     if (aim.lane !== null) laneBeam(aim.lane, aim.fade, color);
     for (const pulse of fx.aimPulses ?? []) {
@@ -337,6 +340,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
 
   function drawAimMarkers(state, fx) {
     const color = aimColor(state);
+    if (state.training?.stage === 0) rimMarker(spoonLane(state), 1, AIM.steam);
     let flash = 0;
     for (const pulse of fx.aimPulses ?? []) {
       if (pulse.lanes.includes(aim.lane)) flash = Math.max(flash, pulse.time / pulse.life);
