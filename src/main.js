@@ -5,6 +5,7 @@ import { createGame } from './core/game.js';
 import { createSessions } from './core/sessions.js';
 import { createLocalProgress } from './storage/localProgress.js';
 import { createCollectionUI } from './ui/collection.js';
+import { createTrainingUI } from './ui/training.js';
 import { createLoop } from './core/timing.js';
 import { ERRANDS } from './gameplay/shortage.js';
 import { FORTUNES } from './gameplay/fortunes.js';
@@ -149,7 +150,7 @@ function boot() {
     ring.classList.add(kind === 'press' ? 'charging' : kind);
   }
 
-  let presentation, collectionUI, overlay, title;
+  let presentation, collectionUI, overlay, title, trainingUI;
   controls = createControls({
     doc: document,
     commands: {
@@ -183,13 +184,14 @@ function boot() {
     onGesture: showRing,
     enabled: () => !title?.blocked && !presentation?.blocked && !collectionUI?.blocked && !overlay?.blocked && document.visibilityState !== 'hidden',
   });
-  title = createTitleScreen({ doc: document, onGraphics: toggleGraphics, sound: document.getElementById('titleSoundBtn'), onContinue: () => {
+  title = createTitleScreen({ doc: document, onTraining: () => trainingUI.launch(), onGraphics: toggleGraphics, sound: document.getElementById('titleSoundBtn'), onContinue: () => {
     controls.settle(true);
     overlay.show({ hasSavedPot: !!progress.pot });
   } });
   overlay = createInstructionOverlay({
     doc: document,
     version: __APP_VERSION__,
+    onTraining: () => trainingUI.launch(),
     touch: () => ({ scheme: settings.touch, autoSteam: settings.autoSteam, visible: onScreen.visible }),
     onStart: ({ fromTeaBreak, isNewPot }) => {
       controls.settle(true);
@@ -223,6 +225,8 @@ function boot() {
     },
     onOpen: () => overlay.close(),
   });
+  trainingUI = createTrainingUI({ doc: document, sessions, controls, settings: () => settings,
+    visible: () => onScreen.visible, presentation, overlay, collectionUI });
 
   document.getElementById('mainBtn').addEventListener('click', () => {
     if (game.state.phase === 'reading') { game.confirm(); return; }
@@ -274,7 +278,7 @@ function boot() {
 
   function handleEvents() {
     for (const event of game.drainEvents()) {
-      analytics?.handle(event, !sessions.practice && !sessions.collection);
+      analytics?.handle(event, sessions.ordinary);
       sessions.handle(event);
       strange.handle(event);
       // Leaving an adventure, a Space still held from it must not become steam in the cup.
@@ -303,7 +307,7 @@ function boot() {
     const blocked = title.blocked || presentation.blocked || collectionUI.blocked || overlay.blocked;
     if (!blocked && !strange.holding) game.update(dt, controls.held, controls.walk);
     handleEvents();
-    analytics?.frame(game.state.phase, !blocked && !sessions.practice);
+    analytics?.frame(game.state.phase, !blocked && sessions.ordinary);
     strange.update(dt, game.state, { blocked });
     for (const event of strange.drainEvents()) {
       if (event.type === 'strangeStart') game.noteStrange(); // the pot's plan follows its first
@@ -318,6 +322,7 @@ function boot() {
     dayPalette.update(game.state, { quality: renderer.quality });
     presentation.update();
     collectionUI.update();
+    trainingUI.update();
     title.update(dt, renderer.quality);
     // After the HUD and panels, so this frame's layout is the one measured.
     const s = game.state;
@@ -344,6 +349,7 @@ function boot() {
       onScreen.dispose();
       presentation.dispose();
       collectionUI.dispose();
+      trainingUI.dispose();
       overlay.dispose();
       title.dispose();
       sound.dispose();

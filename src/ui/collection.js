@@ -116,6 +116,7 @@ export function createCollectionUI({ doc, sessions, progress, presentation, sett
     askNewPot() { ask(() => { if (sessions.newPot(true)) onActivate(); }); },
     primary() {
       if (this.blocked) return true;
+      if (sessions.training) return sessions.game.state.phase !== 'paused';
       if (!sessions.practice && sessions.game.state.phase === 'gameover' && progress.potInfo) {
         ask(() => { sessions.newPot(true); onActivate(); }); return true;
       }

@@ -46,11 +46,14 @@ export function createInstructionOverlay({
   touch = () => null,
   onStart = () => {},
   onClose = () => {},
+  onTraining = () => {},
 } = {}) {
   const dialog = doc.getElementById('instructionOverlay');
   const versionEl = doc.getElementById('overlayVersion');
   const primaryBtn = doc.getElementById('overlayPrimaryBtn');
   const newPotBtn = doc.getElementById('overlayNewPotBtn');
+  const trainingBtn = doc.getElementById('overlayTrainingBtn');
+  const train = () => { closeOverlay(); onTraining(); };
   const touchBox = doc.getElementById('overlayTouchSummary');
   const touchLabel = doc.getElementById('overlayTouchScheme');
   const touchText = doc.getElementById('overlayTouchText');
@@ -166,6 +169,7 @@ export function createInstructionOverlay({
       e.preventDefault();
       e.stopPropagation();
       if (e.repeat) return;
+      if (trainingBtn && doc.activeElement === trainingBtn) { train(); return; }
       if (doc.activeElement === newPotBtn) dismissNewPot();
       else dismissPrimary();
       return;
@@ -180,6 +184,7 @@ export function createInstructionOverlay({
     if (e.code === 'Space') {
       e.preventDefault();
       e.stopPropagation();
+      if (trainingBtn && doc.activeElement === trainingBtn) { if (!e.repeat) train(); return; }
       if (doc.activeElement === newPotBtn) dismissNewPot();
       return;
     }
@@ -224,6 +229,7 @@ export function createInstructionOverlay({
   listen(dialog, 'close', onBrowserClose);
   listen(primaryBtn, 'click', onPrimaryClick);
   listen(newPotBtn, 'click', onNewPotClick);
+  listen(trainingBtn, 'click', train);
 
   return {
     show({ fromTeaBreak = false, hasSavedPot = false, onReturn = null } = {}) {

@@ -60,7 +60,7 @@ async function openSavedPotGuide(page) {
 
 async function fixedPartsInView(page) {
   for (const selector of ['#instructionTitle', '#instructionObjective', '#overlayVersion', '#overlayPrimaryBtn',
-    '#overlayNewPotBtn', '.overlay-footer']) {
+    '#overlayNewPotBtn', '#overlayTrainingBtn', '.overlay-footer']) {
     await expect(page.locator(selector)).toBeInViewport({ ratio: 1 });
   }
 }
@@ -68,7 +68,9 @@ async function fixedPartsInView(page) {
 export function fieldGuideTests() {
   for (const [width, height] of [[1280, 720], [375, 667]]) {
     for (const [fonts, css] of [['system', ''], ['Georgia-free', WITHOUT_GEORGIA]]) {
-      test(`the saved-pot guide with touch instructions fits at ${width}x${height} with ${fonts} fonts`, async ({ page, problems }) => {
+      test(`the saved-pot guide with touch instructions fits at ${width}x${height} with ${fonts} fonts`, {
+        tag: width === 375 && fonts === 'Georgia-free' ? ['@smoke'] : [],
+      }, async ({ page, problems }) => {
         await page.setViewportSize({ width, height });
         await openSavedPotGuide(page);
         if (css) await page.addStyleTag({ content: css });
@@ -95,17 +97,19 @@ export function fieldGuideTests() {
         expect(sizes.title).toBeGreaterThanOrEqual(28);
         expect(Math.min(sizes.control, sizes.note, sizes.touch, sizes.button)).toBeGreaterThanOrEqual(12);
         expect(sizes.key).toBeGreaterThanOrEqual(11);
-        for (const selector of ['#overlayPrimaryBtn', '#overlayNewPotBtn']) {
+        for (const selector of ['#overlayPrimaryBtn', '#overlayNewPotBtn', '#overlayTrainingBtn']) {
           const { height } = await page.locator(selector).boundingBox();
           // Allow sub-pixel layout rounding while enforcing the 44px target.
           expect(height).toBeGreaterThanOrEqual(44 - 0.01);
         }
         await expect(page.locator('.instruction-card')).toHaveCSS('background-color', 'rgb(245, 237, 214)');
 
-        // The keyboard still moves between the two actions, with the visible focus ring.
+        // Every action is in the focus cycle, including the new tutorial entry.
         await expect(page.locator('#overlayPrimaryBtn')).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.locator('#overlayNewPotBtn')).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(page.locator('#overlayTrainingBtn')).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.locator('#overlayPrimaryBtn')).toBeFocused();
         await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('outline-color', 'rgb(121, 54, 63)');
@@ -173,11 +177,13 @@ export function fieldGuideTests() {
       await expect(page.locator('#overlayNewPotBtn')).toBeVisible();
       await noOverflow(page);
       await readEveryPart(page);
-      for (const selector of ['#overlayPrimaryBtn', '#overlayNewPotBtn']) {
+      for (const selector of ['#overlayPrimaryBtn', '#overlayNewPotBtn', '#overlayTrainingBtn']) {
         await expect(page.locator(selector)).toBeInViewport({ ratio: 1 });
       }
       await page.keyboard.press('Tab');
       await expect(page.locator('#overlayNewPotBtn')).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(page.locator('#overlayTrainingBtn')).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(page.locator('#overlayPrimaryBtn')).toBeFocused();
       await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('outline-color', 'rgb(121, 54, 63)');
@@ -204,6 +210,7 @@ export function fieldGuideTests() {
     await readEveryPart(page);
     await expect(page.locator('#overlayPrimaryBtn')).toBeInViewport({ ratio: 1 });
     await expect(page.locator('#overlayNewPotBtn')).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('#overlayTrainingBtn')).toBeInViewport({ ratio: 1 });
     expect(problems).toEqual([]);
   });
 }
