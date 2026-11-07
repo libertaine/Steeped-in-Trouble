@@ -42,6 +42,7 @@ function overlayLayout(page) {
       touch: '#overlayTouchSummary',
       primary: '#overlayPrimaryBtn',
       newPot: '#overlayNewPotBtn',
+      training: '#overlayTrainingBtn',
       footer: '.overlay-footer',
       version: '#overlayVersion',
     };
@@ -334,7 +335,11 @@ test.describe('Tea packaging title and instruction overlay', () => {
     await page.keyboard.press('Tab');
     await expect(newPot).toBeFocused();
     await page.keyboard.press('Tab');
+    await expect(page.locator('#overlayTrainingBtn')).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(primary).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.locator('#overlayTrainingBtn')).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(newPot).toBeFocused();
 
@@ -422,7 +427,11 @@ test.describe('Tea packaging title and instruction overlay', () => {
     await expect(primaryBtn).toBeFocused();
 
     await page.keyboard.press('Tab');
+    await expect(page.locator('#overlayTrainingBtn')).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(primaryBtn).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.locator('#overlayTrainingBtn')).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(primaryBtn).toBeFocused();
 

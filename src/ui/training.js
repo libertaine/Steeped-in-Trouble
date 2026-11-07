@@ -65,7 +65,8 @@ export function createTrainingUI({ doc, sessions, controls, settings, visible, p
     text('trainingHeading', HEADINGS[v.stage]);
     text('trainingInstruction', trainingInstruction(v.stage, { ...settings(), visible: visible() }));
     text('trainingHint', v.success ? 'Well done. Release your controls for the next exercise.'
-      : v.failures > 1 ? 'Line up the spoon with a leaf. Retry restores the targets and charges.'
+      : v.failures > 1 ? v.stage === 0 ? 'Move a little in each direction. Holding both directions cancels movement.'
+        : 'Line up the spoon with a leaf. Retry restores the targets and charges.'
       : v.complete ? '' : v.stage === 0 ? 'Waiting for movement in both directions.'
       : !v.engaged ? 'Waiting for you. Steer or try the action; the leaves will wait.'
       : v.stage === 2 && active.state.pulse > 0 ? 'Watch the leaf move back and slow down.' : 'Take your time. Retry whenever you like.');

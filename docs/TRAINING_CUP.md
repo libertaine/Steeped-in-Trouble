@@ -103,6 +103,11 @@ provided duplicate URL settings, then assumed Auto Steam cleared exactly one lea
 helper call; both harness issues were corrected. Sandboxed Firefox crashed before page
 load and sandboxed runners could not clean up preview processes; qualification uses
 normal browser process permissions, with those failures disclosed separately from product checks.
+The first full candidate (`c2a9d88`) exposed an extra Field Guide action row that squeezed
+its body and the newly added Tab stop missing from the previous focus-cycle expectations.
+That run was stopped after confirmed failures. The secondary actions now share a row;
+the existing geometry assertions are retained and include the tutorial button, and the
+focus-cycle assertions are extended through that button before checking wraparound.
 
 ## Representative captures
 
