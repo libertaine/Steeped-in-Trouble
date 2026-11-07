@@ -29,14 +29,14 @@ Counts are collected using `npx playwright test --list --reporter=json` on
 the baseline and candidate, before running the suites. These are project
 executions, not unique source declarations.
 
-| Suite | Before | After | Change |
+| Suite | v0.21.0 | Initial consolidation | With responsive correction |
 | --- | ---: | ---: | ---: |
-| Chromium | 261 | 254 | -7 |
-| Firefox | 261 | 254 | -7 |
-| Mobile Chromium | 186 | 178 | -8 |
-| Total browser executions per OS | 708 | 686 | -22 |
-| Unit tests | 1,338 | 1,333 | -5 |
-| Unit files | 59 | 59 | 0 |
+| Chromium | 261 | 254 | 262 |
+| Firefox | 261 | 254 | 262 |
+| Mobile Chromium | 186 | 178 | 186 |
+| Total browser executions per OS | 708 | 686 | 710 |
+| Unit tests | 1,338 | 1,333 | 1,333 |
+| Unit files | 59 | 59 | 59 |
 
 Deliberately removed duplicate browser executions:
 
@@ -112,3 +112,30 @@ shown touch controls, the header is 3.5px shorter and gives that height back
 to the stage. The existing reading scrolling and pinned-choice behavior is
 preserved. Historical screenshot galleries and published release artifacts
 are retained; historical Full/Compact assessments are marked as such.
+
+## Focused responsive correction
+
+The consolidation exposed two existing Compact limitations: clipped Day text
+at 320×568 with wider fallback fonts, and a disabled Tea Break button covering
+part of Skip during short-landscape Tea Shortage. Both are corrected with
+presentation CSS. Required choices scroll within their allocated grid row;
+narrow Day cards stack, short Day columns can shrink, and the action dock stays
+outside the choices. Day descriptions remain at least 12px in short landscape.
+Choice buttons allow vertical touch panning and show an inset keyboard focus
+ring. Gameplay, instructions, readings, and persistence are unchanged.
+
+The correction adds 24 distinct project executions (eight per project), taking
+the initial 686-case suite to 710. No existing test executions are removed.
+They cover Easy/Classic Touch, system and Georgia-free fallback fonts, Show/Hide,
+320×568 Day choices, and 568×320 / 844×390 landscape choices. Each rendered word
+is scrolled into view and checked against clipping and occlusion. Each exposed
+button has at least a 44×44 area and nine hit-test points, with full button
+visibility whenever it fits the panel. Tests also check panel separation from
+the HUD, canvas, and action dock; keyboard focus/Tab; real mobile touch swipes;
+and actual native button clicks/taps through both Day choices and Buy/Run/Skip.
+The two worst-case Easy Touch/fallback-font cases also run in smoke CI.
+
+Existing Day, key-hint, and mobile choice tests reveal scrollable choices before
+checking them. Their size/overflow checks are retained and supplemented with
+complete-word and unobstructed-target checks. New screenshots remain under
+ignored `tmp/responsive-choices/`; published galleries stay unchanged.

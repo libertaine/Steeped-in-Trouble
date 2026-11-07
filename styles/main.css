@@ -1407,3 +1407,37 @@ body[data-onscreen-controls="hidden"] .header-actions { flex-wrap: wrap; justify
 .sound-toggle[data-muted="true"] .sound-waves,
 .sound-toggle[data-muted="false"] .sound-cross { display: none; }
 .break-head-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* Required choices may scroll in their own row; they must not paint over the
+   HUD or action dock. Keep text and native button targets at readable sizes. */
+body.game-ui:is([data-phase="day"], [data-phase="shortage"]) #phaseChoices {
+  min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding: 8px;
+}
+body.game-ui:is([data-phase="day"], [data-phase="shortage"]) #phaseChoices .errand-card {
+  touch-action: pan-y;
+}
+body.game-ui:is([data-phase="day"], [data-phase="shortage"]) #phaseChoices .errand-card:focus-visible {
+  outline: 3px solid #ffe5a5; outline-offset: -3px;
+}
+@media (orientation: portrait) and (max-width: 360px) {
+  body.game-ui[data-phase="day"] .playfield,
+  body.game-ui[data-phase="day"][data-onscreen-controls="hidden"] .playfield {
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 3fr) auto auto auto;
+  }
+  body.game-ui[data-phase="day"] .day-offer .offer-cards { grid-template-columns: minmax(0, 1fr); }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  body.game-ui:is([data-phase="day"], [data-phase="shortage"]) #phaseChoices { align-self: stretch; }
+  body.game-ui[data-phase="day"] .playfield {
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  }
+  body.game-ui:is([data-phase="day"], [data-phase="shortage"])[data-onscreen-controls="hidden"] .playfield {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 3fr) auto auto auto;
+  }
+  body.game-ui[data-phase="day"] #phaseChoices small,
+  body.game-ui[data-phase="day"] #phaseChoices p { font-size: 12px; line-height: 1.35; }
+}
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 700px) {
+  body.game-ui[data-phase="day"] .day-offer .offer-cards { grid-template-columns: minmax(0, 1fr); }
+}

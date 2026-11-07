@@ -6,6 +6,7 @@ async function expectHints(page, selector, numbers) {
   const cards = page.locator(selector);
   await expect(cards.locator('kbd')).toHaveText(numbers);
   for (const card of await cards.all()) {
+    await card.scrollIntoViewIfNeeded();
     const hint = card.locator('kbd');
     await expect(hint).toBeVisible();
     await expect(hint).toBeInViewport({ ratio: 1 });

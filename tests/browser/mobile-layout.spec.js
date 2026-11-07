@@ -1,5 +1,6 @@
 import { expect, openGame, test } from './fixtures.js';
 import { toShortage } from './errand.js';
+import { expectChoiceClickable, expectChoiceText } from './choiceVisibility.js';
 
 const sizes = [[360, 740], [390, 844], [800, 1280], [1280, 800], [844, 390], [1440, 900]];
 
@@ -193,7 +194,11 @@ for (const [width, height] of [[360, 740], [844, 390]]) {
     await page.setViewportSize({ width, height });
     await openGame(page, '&seed=31');
     await toShortage(page);
-    await fits(page, ['[data-errand="buy"]', '[data-errand="run"]', '[data-errand="skip"]']);
+    await expectChoiceText(page, '#errandOffer');
+    for (const selector of ['[data-errand="buy"]', '[data-errand="run"]', '[data-errand="skip"]']) {
+      await expectChoiceClickable(page.locator(selector));
+      await fits(page, [selector]);
+    }
     await page.locator('[data-errand="run"]').click();
     await fits(page, ['#game', '[data-run="jump"]', '[data-run="slide"]', '#menuBtn']);
     await page.locator('[data-run="jump"]').tap();
