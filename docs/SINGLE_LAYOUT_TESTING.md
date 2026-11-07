@@ -10,6 +10,9 @@ The former Compact layout is permanent. Header and Tea Break view switches,
 view event handlers, preference loading/writing, Full-only CSS, and the Full
 View height observer are removed. The cup uses the same presentation camera
 as Compact; canvas-width adaptations in side adventures are retained.
+The permanent `game-ui` app class preserves the original CSS selector priority
+between phase visibility, touch schemes, and responsive card sizing. It is
+never toggled and carries no view preference.
 Offer placement always uses `#phaseChoices`. Reference panels still move into
 Tea Break when opened and return to the hidden sidebar when closed.
 
@@ -28,10 +31,10 @@ executions, not unique source declarations.
 
 | Suite | Before | After | Change |
 | --- | ---: | ---: | ---: |
-| Chromium | 261 | 253 | -8 |
-| Firefox | 261 | 253 | -8 |
-| Mobile Chromium | 186 | 177 | -9 |
-| Total browser executions per OS | 708 | 683 | -25 |
+| Chromium | 261 | 254 | -7 |
+| Firefox | 261 | 254 | -7 |
+| Mobile Chromium | 186 | 178 | -8 |
+| Total browser executions per OS | 708 | 686 | -22 |
 | Unit tests | 1,338 | 1,333 | -5 |
 | Unit files | 59 | 59 | 0 |
 
@@ -48,7 +51,10 @@ input method, phase, and assertion. Two desktop Tea Break dismissal executions
 that specifically switched the retired view are also retired; click, Enter,
 Escape, and controls-review focus/input isolation paths remain. Thirty new
 legacy URL/storage executions are added (ten per project), for a net reduction
-of 25. The new cases cover all combinations of absent/Full/Compact URLs with
+of 22 after adding three phase-priority executions (one per project). Those
+check that Day choices hide both touch schemes with Show, in portrait and
+landscape, and restore the appropriate pads after choosing the next Day.
+The legacy cases cover all combinations of absent/Full/Compact URLs with
 Full/Compact/corrupt stored values, reload, pause/resume, control preference
 independence, and denied view-key access without reading or writing that key.
 
@@ -67,6 +73,8 @@ The arena matrix retains 375×667, 800×600, 1280×720, 1366×768, 1920×1080,
 844×390, 800×1280, and 1280×800. Classic controls retain separate desktop
 cases; Easy Touch retains all eight sizes. Each matrix case also changes
 window height by 40px, rotates width/height, and checks simulation continuity.
+Initial viewport sizes are browser-context options, avoiding blank-page
+Firefox resize stalls while preserving all in-game resize assertions.
 Tea Run, Daily Pour, Biscuit Breakout, Crossing the Street, and boss presentation
 remain covered. Desktop Auto, manual Show/Hide, primary-pointer changes, held
 pointer release/capture, and keyboard navigation remain distinct checks.
@@ -94,7 +102,8 @@ This task does not authorize merging or publication.
 The comparison uses a separately built, preserved `v0.21.0` Compact preview
 against the candidate: Chromium and Firefox, nine sizes including 320×568,
 Auto controls explicitly Show/Hide, and system/Georgia-free fallback fonts.
-It measures gameplay and revealed reading/upgrade geometry and captures
+It measures gameplay, revealed reading/upgrades, Day choices, and Tea Shortage
+geometry and captures
 representative portrait, desktop, and short-landscape compositions. Raw local
 evidence is under ignored `tmp/single-presentation/`.
 

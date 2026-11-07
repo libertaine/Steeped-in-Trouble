@@ -1,4 +1,5 @@
 import { expect, openGame, test } from './fixtures.js';
+import { expectDayButtons, toDayReading } from './days.js';
 
 async function expectLayout(page) {
   await expect(page.locator('#viewBtn, #breakViewBtn, body[data-view]')).toHaveCount(0);
@@ -15,6 +16,28 @@ async function expectLayout(page) {
 }
 
 export function layoutTests() {
+  test('Day choices hide both control schemes with Show in portrait and landscape', { tag: '@smoke' }, async ({ page, problems }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('steeped-in-trouble:onscreen-controls', 'show');
+      localStorage.removeItem('steeped-in-trouble:pot-save');
+    });
+    for (const touch of ['easy', 'classic']) {
+      for (const [width, height] of [[375, 667], [844, 390]]) {
+        await openGame(page, `&seed=42&touch=${touch}`);
+        await page.setViewportSize({ width, height });
+        await expect(page.locator(`.controls-${touch}`)).toBeVisible();
+        await toDayReading(page);
+        await expectDayButtons(page);
+        for (const group of await page.locator('.controls-mobile').all()) await expect(group).toBeHidden();
+        await page.keyboard.press('1');
+        await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
+        await expect(page.locator(`.controls-${touch}`)).toBeVisible();
+        expect(await page.evaluate(() => window.__TEACUP__.game.state.round)).toBe(11);
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
   for (const stored of ['full', 'compact', 'broken']) {
     for (const query of ['', '&view=full', '&view=compact']) {
       test(`retired preference ${stored} and URL ${query || '(none)'} use the sole layout`, async ({ page, problems }) => {
