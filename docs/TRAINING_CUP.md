@@ -115,6 +115,14 @@ heading, all stages reset panel scroll, and layout checks assert the heading beg
 Candidate `bc6513d` reached the second shared Field Guide test helper, which also still
 expected only two actions. Its focus cycle is extended through Training Cup, and its
 existing fixed-part visibility and 44px target checks now cover that button too.
+The complete hosted `fe2a60f` run exposed a 2px middle-body shortage with Ubuntu's
+Georgia-free fonts at 375×667 (Chromium and Firefox, both repeated on retry).
+The action row now uses 4px less vertical spacing, preserving text sizes and 44px buttons;
+this exact font/viewport case also joins smoke CI. Windows completed with one flaky
+90-second timeout on the 1920×1080 mobile Easy Touch exercise. The browser aiming helper
+now holds a real direction key for measured travel rather than making many tiny taps
+with idle redraws between them; every action/collision/visibility assertion and the
+90-second timeout remain unchanged. These results require fresh qualification.
 
 ## Representative captures
 

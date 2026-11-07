@@ -68,7 +68,9 @@ async function fixedPartsInView(page) {
 export function fieldGuideTests() {
   for (const [width, height] of [[1280, 720], [375, 667]]) {
     for (const [fonts, css] of [['system', ''], ['Georgia-free', WITHOUT_GEORGIA]]) {
-      test(`the saved-pot guide with touch instructions fits at ${width}x${height} with ${fonts} fonts`, async ({ page, problems }) => {
+      test(`the saved-pot guide with touch instructions fits at ${width}x${height} with ${fonts} fonts`, {
+        tag: width === 375 && fonts === 'Georgia-free' ? ['@smoke'] : [],
+      }, async ({ page, problems }) => {
         await page.setViewportSize({ width, height });
         await openSavedPotGuide(page);
         if (css) await page.addStyleTag({ content: css });

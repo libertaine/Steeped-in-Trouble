@@ -1145,7 +1145,8 @@ body:has(#instructionOverlay[open]) { overflow: hidden; }
 .overlay-touch-summary { border-left-color: var(--label-green); }
 .overlay-notes p, .overlay-touch-summary p { margin: 1px 0; color: inherit; }
 .overlay-actions { display: flex; flex-direction: column; gap: 8px; padding: 3px 4px 4px; }
-.overlay-actions:has(#overlayTrainingBtn) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.overlay-actions:has(#overlayTrainingBtn) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px; padding-top: 1px; }
 #overlayPrimaryBtn { grid-column: 1 / -1; }
 #overlayNewPotBtn[hidden] + #overlayTrainingBtn { grid-column: 1 / -1; }
 .instruction-overlay button {

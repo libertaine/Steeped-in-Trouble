@@ -24,12 +24,15 @@ export async function move(page) {
 }
 export async function aim(page, angle) {
   for (let i = 0; i < 120; i++) {
-    const d = await page.evaluate((a) => {
+    const { d, speed } = await page.evaluate((a) => {
       const b = window.__TEACUP__.game.state.angle;
-      return Math.atan2(Math.sin(a - b), Math.cos(a - b));
+      return { d: Math.atan2(Math.sin(a - b), Math.cos(a - b)), speed: window.__TEACUP__.config.player.turnSpeed };
     }, angle);
     if (Math.abs(d) < .06) return;
-    await hold(page, d < 0 ? 'ArrowLeft' : 'ArrowRight', 16);
+    // Steer with a real held key for the measured travel time, then verify the
+    // result. Tiny taps with idle frames between them needlessly redraw the
+    // largest DPR canvas many times on a hosted runner.
+    await hold(page, d < 0 ? 'ArrowLeft' : 'ArrowRight', Math.max(16, Math.min(250, Math.abs(d) / speed * 1000)));
   }
   throw Error('could not aim');
 }
