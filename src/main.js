@@ -33,7 +33,7 @@ import { createInstructionOverlay } from './ui/instructionOverlay.js';
 import { createTitleScreen } from './ui/titleScreen.js';
 import { createSoundToggle } from './ui/soundToggle.js';
 import { createDayPalette } from './ui/dayPalette.js';
-import { startAnalytics } from './analytics/tracker.js';
+
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -61,8 +61,30 @@ function boot() {
   // Guard against a second initialization creating duplicate loops/listeners.
   if (window[INSTANCE_KEY]) return window[INSTANCE_KEY];
 
-  // First, so a visit counts even if the player never starts a game. Null on any untracked page.
-  const analytics = startAnalytics({ win: window, production: import.meta.env.PROD });
+  // Load optional analytics early without preventing the game from starting.
+  // Optional: privacy extensions may block the analytics module itself. A blocked
+  // import must never prevent gameplay from initializing.
+  let analytics = null;
+  let analyticsPending = import.meta.env.PROD;
+  let analyticsDisposed = false;
+  const pendingAnalytics = [];
+  function recordAnalytics(method, ...args) {
+    if (analyticsDisposed) return;
+    if (analytics) analytics[method](...args);
+    else if (analyticsPending && pendingAnalytics.length < 64) pendingAnalytics.push([method, args]);
+  }
+  if (analyticsPending) {
+    import('./analytics/tracker.js').then(({ startAnalytics }) => {
+      if (analyticsDisposed) return;
+      analytics = startAnalytics({ win: window, production: true });
+      analyticsPending = false;
+      if (analytics) for (const [method, args] of pendingAnalytics) analytics[method](...args);
+      pendingAnalytics.length = 0;
+    }).catch(() => {
+      analyticsPending = false;
+      pendingAnalytics.length = 0;
+    });
+  }
 
   const params = new URLSearchParams(window.location.search);
   const canvas = document.getElementById('game');
@@ -221,7 +243,7 @@ function boot() {
     onActivate: () => {
       game.setAutoSteam(settings.autoSteam);
       // Continuing a saved pot raises no game event, so it is reported here.
-      analytics?.gameStarted();
+      recordAnalytics('gameStarted');
     },
     onOpen: () => overlay.close(),
   });
@@ -278,7 +300,7 @@ function boot() {
 
   function handleEvents() {
     for (const event of game.drainEvents()) {
-      analytics?.handle(event, sessions.ordinary);
+      recordAnalytics('handle', event, sessions.ordinary);
       sessions.handle(event);
       strange.handle(event);
       // Leaving an adventure, a Space still held from it must not become steam in the cup.
@@ -354,6 +376,8 @@ function boot() {
       title.dispose();
       sound.dispose();
       ambient?.dispose();
+      analyticsDisposed = true;
+      pendingAnalytics.length = 0;
       analytics?.dispose();
       detachScaling();
       delete window[INSTANCE_KEY];
