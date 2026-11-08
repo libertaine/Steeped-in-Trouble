@@ -1,9 +1,11 @@
 # The Training Cup
 
-Tutorial feature for the eventual 0.22.0 integration. Package version remains 0.21.0.
-Stack: `feature/training-cup` targets `feature/single-presentation` (draft PR #48),
+Tutorial feature in the 0.22.0 release candidate, prepared on `release/0.22.0`.
+Development stack: `feature/training-cup` targets `feature/single-presentation` (draft PR #48),
 starting at exactly `5eb27cccb213e592241a62bf625ce6480e1fbe32`.
-Both PRs remain unmerged. This work authorizes no tag, release, Pages deployment or publication.
+Both PRs remain unmerged at this candidate. Final full regression, human Training Cup approval,
+merge and publication are separate release gates. This work authorizes no tag, release,
+Pages deployment or publication.
 
 ## Design and implementation
 

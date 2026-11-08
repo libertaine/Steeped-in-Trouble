@@ -16,17 +16,18 @@ adventures and unexpected humor keep finding their way into the pot.
 does not show all current features.*
 Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
-## 0.21.0 — Keeping Count
+## 0.22.0 — The Training Cup
 
-- Numbered keyboard hints are back on upgrade and Tea Shortage choices in
-  Compact View and narrow windows.
-- The instructions now match the vintage tea-adventure title screen.
-- Cookie-free analytics now estimate visits, game starts, progress milestones
-  and active playtime. See [Privacy](#privacy), including how to turn them off.
+- An optional Training Cup teaches movement, steam, milk and sugar, then runs
+  a short practice wave.
+- The former Compact layout is now the only responsive presentation, with
+  improved Day and Tea Shortage choices in narrow windows.
+- Analytics now load as an optional module, so blocking them cannot stop the
+  game from starting. See [Privacy](#privacy), including how to turn them off.
 
-Gameplay and earlier saved pots are unchanged.
+Normal gameplay and earlier saved pots are unchanged.
 
-See the [release notes](docs/releases/v0.21.0.md),
+See the [release notes](docs/releases/v0.22.0.md),
 [changelog](CHANGELOG.md) and
 [past releases](https://github.com/libertaine/Steeped-in-Trouble/releases).
 
