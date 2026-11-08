@@ -6,18 +6,27 @@
 
 const MAX_PIXEL_RATIO = 2;
 
-export function attachCanvasScaling(canvas) {
-  function resize() {
+export function attachCanvasScaling(canvas, redraw) {
+  /** @returns {boolean} whether the backing store was written, which clears it */
+  function fit() {
     const box = canvas.getBoundingClientRect();
-    if (!box.width) return;
+    if (!box.width) return false;
     const ratio = Math.min(MAX_PIXEL_RATIO, Math.max(1, window.devicePixelRatio || 1));
     const width = Math.round(box.width * ratio);
     const height = Math.round(box.height * ratio);
+    const changed = canvas.width !== width || canvas.height !== height;
     if (canvas.width !== width) canvas.width = width;
     if (canvas.height !== height) canvas.height = height;
+    return changed;
   }
 
-  resize();
+  // A ResizeObserver runs after the frame's draw and before its paint, so a
+  // cleared canvas would be presented empty unless it is repainted right here.
+  function resize() {
+    if (fit()) redraw?.();
+  }
+
+  fit(); // Nothing has been drawn yet; the first frame paints at this size.
   window.addEventListener('resize', resize);
   const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
   observer?.observe(canvas);

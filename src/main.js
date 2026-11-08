@@ -276,7 +276,8 @@ function boot() {
   const version = document.getElementById('version');
   if (version) version.textContent = `VERSION ${__APP_VERSION__}`;
 
-  const detachScaling = attachCanvasScaling(canvas);
+  // A resize repaints the moment already on screen: dt 0, so no time passes.
+  const detachScaling = attachCanvasScaling(canvas, () => renderer.draw(strange.shown(game.state), effects.fx, 0, strange.view));
   // Decorative visitors in the stage gutters: stepped below, never part of the game.
   // With ?debug, ?ambientSeed=<number> fixes their cosmetic randomness and
   // ?ambientAnts=<0-12> replaces the display's population ceiling (for profiling).

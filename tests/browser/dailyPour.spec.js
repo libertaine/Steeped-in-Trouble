@@ -173,6 +173,54 @@ for (const viewport of [{ width: 1440, height: 1080 }, { width: 1280, height: 80
   });
 }
 
+test('pausing and resuming the route never presents an emptied canvas', async ({ page, problems }) => {
+  // At the start of a frame the canvas still holds whatever the last frame presented.
+  await page.addInitScript(() => {
+    const probe = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    probe.canvas.width = probe.canvas.height = 4;
+    const frames = (window.__canvasFrames = { watching: false, emptied: 0 });
+    const request = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (callback) => request((time) => {
+      const canvas = document.getElementById('game');
+      if (frames.watching && canvas) {
+        probe.clearRect(0, 0, 4, 4);
+        probe.drawImage(canvas, 0, 0, 4, 4);
+        if (probe.getImageData(0, 0, 4, 4).data.every((value, i) => i % 4 !== 3 || value === 0)) frames.emptied += 1;
+      }
+      callback(time);
+    });
+  });
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await openGame(page, '&seed=42'); await toPaperOffer(page);
+  await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
+  await advancePaperRoute(page, 1.1);
+  const settled = () => page.evaluate(() => new Promise((done) => {
+    let left = 4;
+    const next = () => (--left ? requestAnimationFrame(next) : done());
+    requestAnimationFrame(next);
+  }));
+  const size = () => page.evaluate(() => { const c = document.getElementById('game'); return [c.width, c.height]; });
+  await settled();
+  const playing = await size();
+
+  await page.evaluate(() => { window.__canvasFrames.watching = true; });
+  await page.keyboard.press('KeyP');
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+  await settled();
+  // The action dock really did take its space, so this exercised a resize.
+  expect(await size()).not.toEqual(playing);
+  const frozen = await page.evaluate(() => structuredClone(window.__TEACUP__.game.state.dailyPour));
+  await settled();
+  expect(await page.evaluate(() => window.__TEACUP__.game.state.dailyPour)).toEqual(frozen);
+
+  await page.keyboard.press('KeyP');
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'dailyPour');
+  await settled();
+  expect(await size()).toEqual(playing);
+  expect(await page.evaluate(() => window.__canvasFrames.emptied)).toBe(0);
+  expect(problems).toEqual([]);
+});
+
 test('a successful aerial jump clears the actual coffee body in the existing Tea Run', async ({ page, problems }, testInfo) => {
   await openGame(page, '&seed=42'); await toShortage(page);
   await page.locator('[data-errand="run"]').click(); await page.keyboard.press('Enter');
