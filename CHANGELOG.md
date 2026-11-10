@@ -17,6 +17,9 @@ All notable changes to this project are documented here. The project uses
 - Kept Day and Tea Shortage choices readable and clickable in narrow and short
   windows: required choices scroll within their own space, narrow Day cards
   stack, and the action dock no longer covers choice text or buttons.
+- Fixed a one-frame blank canvas when a responsive layout change resized it,
+  including on pause and resume. The current scene now repaints immediately
+  after the resize; gameplay is unchanged.
 - Made the analytics module an optional, nonblocking load, so a privacy
   extension that blocks it can no longer prevent the game from starting. Event
   contracts and privacy controls are unchanged. See
