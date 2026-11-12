@@ -60,7 +60,7 @@ async function openSavedPotGuide(page) {
 
 async function fixedPartsInView(page) {
   for (const selector of ['#instructionTitle', '#instructionObjective', '#overlayVersion', '#overlayPrimaryBtn',
-    '#overlayNewPotBtn', '.overlay-footer']) {
+    '#overlayNewPotBtn', '#overlayTrainingBtn', '.overlay-footer']) {
     await expect(page.locator(selector)).toBeInViewport({ ratio: 1 });
   }
 }
@@ -68,7 +68,9 @@ async function fixedPartsInView(page) {
 export function fieldGuideTests() {
   for (const [width, height] of [[1280, 720], [375, 667]]) {
     for (const [fonts, css] of [['system', ''], ['Georgia-free', WITHOUT_GEORGIA]]) {
-      test(`the saved-pot guide with touch instructions fits at ${width}x${height} with ${fonts} fonts`, async ({ page, problems }) => {
+      test(`the saved-pot guide with touch instructions fits at ${width}x${height} with ${fonts} fonts`, {
+        tag: width === 375 && fonts === 'Georgia-free' ? ['@smoke'] : [],
+      }, async ({ page, problems }) => {
         await page.setViewportSize({ width, height });
         await openSavedPotGuide(page);
         if (css) await page.addStyleTag({ content: css });
@@ -95,17 +97,19 @@ export function fieldGuideTests() {
         expect(sizes.title).toBeGreaterThanOrEqual(28);
         expect(Math.min(sizes.control, sizes.note, sizes.touch, sizes.button)).toBeGreaterThanOrEqual(12);
         expect(sizes.key).toBeGreaterThanOrEqual(11);
-        for (const selector of ['#overlayPrimaryBtn', '#overlayNewPotBtn']) {
+        for (const selector of ['#overlayPrimaryBtn', '#overlayNewPotBtn', '#overlayTrainingBtn']) {
           const { height } = await page.locator(selector).boundingBox();
           // Allow sub-pixel layout rounding while enforcing the 44px target.
           expect(height).toBeGreaterThanOrEqual(44 - 0.01);
         }
         await expect(page.locator('.instruction-card')).toHaveCSS('background-color', 'rgb(245, 237, 214)');
 
-        // The keyboard still moves between the two actions, with the visible focus ring.
+        // Every action is in the focus cycle, including the new tutorial entry.
         await expect(page.locator('#overlayPrimaryBtn')).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.locator('#overlayNewPotBtn')).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(page.locator('#overlayTrainingBtn')).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.locator('#overlayPrimaryBtn')).toBeFocused();
         await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('outline-color', 'rgb(121, 54, 63)');
@@ -150,62 +154,63 @@ export function fieldGuideTests() {
     expect(problems).toEqual([]);
   });
 
-  for (const view of ['full', 'compact']) {
-    for (const [width, height] of [[320, 568], [844, 390], [800, 1280], [1024, 768]]) {
-      test(`field guide ${view} keeps controls and saved-pot actions accessible at ${width}x${height}`, async ({ page, problems }) => {
-        await page.setViewportSize({ width, height });
-        await page.emulateMedia({ reducedMotion: 'reduce' });
-        await page.addInitScript(() => localStorage.setItem('steeped-in-trouble:onscreen-controls', 'hide'));
-        await openGame(page, `&view=${view}&touch=classic`, { onboarding: true });
-        await page.locator('#titleInstructionsBtn').click();
-        const dialog = page.getByRole('dialog', { name: 'Before You Brew' });
-        await expect(dialog).toBeVisible();
-        await expect(dialog).toHaveAttribute('aria-describedby', 'instructionObjective');
-        await expect(page.locator('.instruction-card')).toHaveCSS('background-color', 'rgb(245, 237, 214)');
-        const controls = page.locator('.overlay-controls-table');
-        await expect(controls.getByRole('row', { name: /Turn spoon/ }).locator('kbd')).toHaveText(['←', '→', 'A', 'D']);
-        await expect(controls.getByRole('row', { name: /Fire steam/ }).locator('kbd')).toHaveText(['SPACE']);
-        await expect(controls.getByRole('row', { name: /Pour milk/ }).locator('kbd')).toHaveText(['↑', 'Q']);
-        await expect(controls.getByRole('row', { name: /Fire sugar/ }).locator('kbd')).toHaveText(['↓', 'E']);
-        await expect(controls.getByRole('row', { name: /Pause/ }).locator('kbd')).toHaveText(['P', 'M']);
-        // Exercise the taller presentation; real save/confirmation behavior is
-        // covered by arcadeTitleOnboarding, without a synthetic save here.
-        await page.evaluate(() => window.__TEACUP__.overlay.show({ hasSavedPot: true }));
-        await expect(page.locator('#overlayNewPotBtn')).toBeVisible();
-        await noOverflow(page);
-        await readEveryPart(page);
-        for (const selector of ['#overlayPrimaryBtn', '#overlayNewPotBtn']) {
-          await expect(page.locator(selector)).toBeInViewport({ ratio: 1 });
-        }
-        await page.keyboard.press('Tab');
-        await expect(page.locator('#overlayNewPotBtn')).toBeFocused();
-        await page.keyboard.press('Tab');
-        await expect(page.locator('#overlayPrimaryBtn')).toBeFocused();
-        await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('outline-color', 'rgb(121, 54, 63)');
-        await page.keyboard.press('Escape');
-        await expect(dialog).toBeVisible();
-        await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('animation-name', 'none');
-        expect(problems).toEqual([]);
-      });
-    }
-
-    test(`field guide ${view} supports enlarged text and long touch descriptions`, async ({ page, problems }) => {
-      await page.setViewportSize({ width: 375, height: 667 });
+  for (const [width, height] of [[320, 568], [844, 390], [800, 1280], [1024, 768]]) {
+    test(`field guide keeps controls and saved-pot actions accessible at ${width}x${height}`, async ({ page, problems }) => {
+      await page.setViewportSize({ width, height });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript(() => localStorage.setItem('steeped-in-trouble:onscreen-controls', 'hide'));
-      await openGame(page, `&view=${view}&touch=easy`, { onboarding: true });
-      await page.locator('#titleContinueBtn').click();
+      await openGame(page, `&touch=classic`, { onboarding: true });
+      await page.locator('#titleInstructionsBtn').click();
+      const dialog = page.getByRole('dialog', { name: 'Before You Brew' });
+      await expect(dialog).toBeVisible();
+      await expect(dialog).toHaveAttribute('aria-describedby', 'instructionObjective');
+      await expect(page.locator('.instruction-card')).toHaveCSS('background-color', 'rgb(245, 237, 214)');
+      const controls = page.locator('.overlay-controls-table');
+      await expect(controls.getByRole('row', { name: /Turn spoon/ }).locator('kbd')).toHaveText(['←', '→', 'A', 'D']);
+      await expect(controls.getByRole('row', { name: /Fire steam/ }).locator('kbd')).toHaveText(['SPACE']);
+      await expect(controls.getByRole('row', { name: /Pour milk/ }).locator('kbd')).toHaveText(['↑', 'Q']);
+      await expect(controls.getByRole('row', { name: /Fire sugar/ }).locator('kbd')).toHaveText(['↓', 'E']);
+      await expect(controls.getByRole('row', { name: /Pause/ }).locator('kbd')).toHaveText(['P', 'M']);
+      // Exercise the taller presentation; real save/confirmation behavior is
+      // covered by arcadeTitleOnboarding, without a synthetic save here.
       await page.evaluate(() => window.__TEACUP__.overlay.show({ hasSavedPot: true }));
-      // Simulate text-only enlargement, leaving the viewport and control sizes
-      // alone. Read all computed sizes before setting them to avoid compounding.
-      await page.locator('#instructionOverlay').evaluate((dialog) => {
-        const sizes = [...dialog.querySelectorAll('*')].map(el => [el, parseFloat(getComputedStyle(el).fontSize)]);
-        for (const [el, size] of sizes) el.style.fontSize = `${size * 1.5}px`;
-      });
+      await expect(page.locator('#overlayNewPotBtn')).toBeVisible();
       await noOverflow(page);
       await readEveryPart(page);
-      await expect(page.locator('#overlayPrimaryBtn')).toBeInViewport({ ratio: 1 });
-      await expect(page.locator('#overlayNewPotBtn')).toBeInViewport({ ratio: 1 });
+      for (const selector of ['#overlayPrimaryBtn', '#overlayNewPotBtn', '#overlayTrainingBtn']) {
+        await expect(page.locator(selector)).toBeInViewport({ ratio: 1 });
+      }
+      await page.keyboard.press('Tab');
+      await expect(page.locator('#overlayNewPotBtn')).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(page.locator('#overlayTrainingBtn')).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(page.locator('#overlayPrimaryBtn')).toBeFocused();
+      await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('outline-color', 'rgb(121, 54, 63)');
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeVisible();
+      await expect(page.locator('#overlayPrimaryBtn')).toHaveCSS('animation-name', 'none');
       expect(problems).toEqual([]);
     });
   }
+
+  test(`field guide supports enlarged text and long touch descriptions`, async ({ page, problems }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.addInitScript(() => localStorage.setItem('steeped-in-trouble:onscreen-controls', 'hide'));
+    await openGame(page, `&touch=easy`, { onboarding: true });
+    await page.locator('#titleContinueBtn').click();
+    await page.evaluate(() => window.__TEACUP__.overlay.show({ hasSavedPot: true }));
+    // Simulate text-only enlargement, leaving the viewport and control sizes
+    // alone. Read all computed sizes before setting them to avoid compounding.
+    await page.locator('#instructionOverlay').evaluate((dialog) => {
+      const sizes = [...dialog.querySelectorAll('*')].map(el => [el, parseFloat(getComputedStyle(el).fontSize)]);
+      for (const [el, size] of sizes) el.style.fontSize = `${size * 1.5}px`;
+    });
+    await noOverflow(page);
+    await readEveryPart(page);
+    await expect(page.locator('#overlayPrimaryBtn')).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('#overlayNewPotBtn')).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('#overlayTrainingBtn')).toBeInViewport({ ratio: 1 });
+    expect(problems).toEqual([]);
+  });
 }

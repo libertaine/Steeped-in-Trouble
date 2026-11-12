@@ -5,7 +5,7 @@ import { POT_KEY, coloursOf, dayChange, dayFadeEnds, expectPalette, fixedColours
 // The page ground's Day palette: decoration that follows the HUD's Day.
 
 test('a new pot starts on Day 1 and each Day tints only the page ground', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full');
+  await openGame(page, '&seed=42');
   await expectPalette(page, 1);
   await page.locator('#mainBtn').click();
   await expectPalette(page, 1);
@@ -25,7 +25,7 @@ test('a new pot starts on Day 1 and each Day tints only the page ground', async 
 });
 
 test('the Day choice fades to the next palette without delaying the cup', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full');
+  await openGame(page, '&seed=42');
   await toDayReading(page);
   await expect(page.locator('#dayOffer')).toBeVisible();
   await expectPalette(page, 1); // "Day 1 complete" is still Day 1
@@ -62,7 +62,7 @@ test('the Day choice fades to the next palette without delaying the cup', async 
 });
 
 test('reduced motion, including a live change, and Low graphics apply the next Day at once', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full');
+  await openGame(page, '&seed=42');
   await toDayReading(page);
   await page.emulateMedia({ reducedMotion: 'reduce' }); // changed while the game is running
   await watchDayChange(page);
@@ -72,7 +72,7 @@ test('reduced motion, including a live change, and Low graphics apply the next D
   expect(await page.evaluate(() => getComputedStyle(document.body).transitionDuration)).toBe('0s');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
 
-  await openGame(page, '&seed=42&view=full&graphics=low');
+  await openGame(page, '&seed=42&graphics=low');
   await toDayReading(page);
   await watchDayChange(page);
   await page.keyboard.press('2');
@@ -85,7 +85,7 @@ test('reduced motion, including a live change, and Low graphics apply the next D
 });
 
 test('Continue restores the saved Day, reloads are identical and a new pot returns to Day 1', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full');
+  await openGame(page, '&seed=42');
   await saveAt(page, 34); // Day 4, cup 4
   await expectPalette(page, 4);
   const saved = await page.evaluate((k) => localStorage.getItem(k), POT_KEY);
@@ -108,7 +108,7 @@ test('Continue restores the saved Day, reloads are identical and a new pot retur
 });
 
 test('the title keeps its Concept B colours and gameplay enters on the right Day', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full', { onboarding: true });
+  await openGame(page, '&seed=42', { onboarding: true });
   await expect(page.locator('#arcadeSplash')).toBeVisible();
   const title = await fixedColours(page);
   expect(title.splash).toContain('rgb(36, 63, 51)');
@@ -126,7 +126,7 @@ test('the title keeps its Concept B colours and gameplay enters on the right Day
 for (const viewport of [{ width: 1920, height: 1080 }, { width: 1280, height: 720 }, { width: 800, height: 600 }]) {
   test(`${viewport.width}x${viewport.height}: the Day ground fills the page without overflow`, async ({ page, problems }) => {
     await page.setViewportSize(viewport);
-    await openGame(page, '&seed=42&view=full');
+    await openGame(page, '&seed=42');
     await toDay(page, 3);
     await expectPalette(page, 3);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

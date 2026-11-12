@@ -60,7 +60,7 @@ secrets join the panel in their own words (one observation makes room for
 each). The Leaves Lie still claims something wonderful until it confesses;
 its effect line and remark wait for the confession.
 
-Compact View repeats the reasons and the effect as text under the cup. On
+The reading panel repeats the reasons and the effect as text under the cup. On
 short landscape screens the steering rail, idle during a reading, gives the
 text its room, and the reasons step aside once an upgrade offer needs it.
 The side panel's **The cup remembers** section carries the full text for
@@ -243,13 +243,13 @@ Production-build captures are in
 Initial project-owner playtesting is complete and publication is authorized.
 The following checklist guides broader feedback after release. Please play
 two pots on desktop, one deliberately careless, with sound on for part of it,
-and try Compact View. Optional physical tablet or phone feedback is welcome.
+and try the responsive layout. Optional physical tablet or phone feedback is welcome.
 Then tell us:
 
 1. **The reading.** Before the fortune appears, do the memories make sense?
    Do they ever claim something you did not do? When the leaves pick a
    different fortune, is it clear that your play only made it more likely?
-   Is it readable on your screen in Full and Compact View?
+   Is it readable on your screen on desktop and small screens?
 2. **A crack.** Let one leaf spill. Can you see where it went over? Does the
    crack get in the way of leaves or the spoon?
 3. **Critical.** Let a second leaf spill. Is the danger unmistakable without

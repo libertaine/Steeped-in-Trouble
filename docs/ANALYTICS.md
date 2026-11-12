@@ -12,8 +12,10 @@ Code: [src/analytics/](../src/analytics/). Tests:
 
 ## When the tracker loads
 
-`index.html` contains no tracker. `startAnalytics()` adds one script element,
-first thing in `boot()`, only when all of these hold:
+`index.html` contains no tracker. In production, `main.js` dynamically imports
+its optional analytics module without waiting for that import before booting the
+game. When the import succeeds, `startAnalytics()` adds a script only when the
+following conditions hold:
 
 | Condition | Check |
 |---|---|
@@ -48,9 +50,13 @@ Error capture (`data-errors`), performance telemetry (`data-performance`) and
 `data-umami-event`, so there are no automatic button events. Umami has no session
 replay in this script. The tracker sends its requests to `gateway.umami.is`.
 
-If the script is blocked or fails, there is no retry, the events waiting for it
-are dropped, and the game carries on. Exceptions and rejected promises from the
-tracker are swallowed.
+If the analytics module itself is blocked by a privacy extension, its import
+failure is swallowed and gameplay initializes normally. A short, bounded queue
+holds at most 64 discrete gameplay events while the module loads; early frame
+time is not backfilled. When the module is unavailable, this queue is discarded.
+If the external Umami script is blocked or fails, there is no retry; queued
+tracker events are dropped, and gameplay continues. Tracker exceptions and
+rejected promises are swallowed.
 
 ## Event contract
 

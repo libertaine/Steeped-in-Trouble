@@ -14,7 +14,7 @@ export async function stageTextReading(page, { offer = false, fortune = 'veil' }
 
 export async function openTextReading(page, options = {}) {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await openGame(page, '&view=full&seed=42&ambientSeed=7');
+  await openGame(page, '&seed=42&ambientSeed=7');
   await page.mouse.move(0, 0);
   await stageTextReading(page, options);
 }

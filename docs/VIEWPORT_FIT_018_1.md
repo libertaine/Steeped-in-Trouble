@@ -1,5 +1,9 @@
 # 018-1 — Viewport Fit
 
+Historical assessment: Full/Compact comparisons below describe the recorded
+baseline. The current game uses the former Compact layout exclusively; see
+[consolidation qualification](SINGLE_LAYOUT_TESTING.md).
+
 Implementation and measurements: November 1, 2026. Review candidate for U01;
 version remains **0.17.1**. This work does not constitute release approval or
 acceptance of 018-2, 018-3, or 018-4.

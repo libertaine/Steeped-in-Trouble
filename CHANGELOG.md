@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
+## [0.22.0] - 2026-11-08 — The Training Cup
+
+- Added the Training Cup, an optional, replayable five-stage tutorial offered
+  from the title screen, Field Guide and Tea Break. It teaches movement, steam,
+  milk, sugar and a short practice wave using the game's real movement, weapons
+  and collisions. Training stays separate from saved pots, records, normal
+  progression and analytics events. See [docs/TRAINING_CUP.md](docs/TRAINING_CUP.md).
+- Made the existing Compact layout the single presentation on desktop, tablet,
+  and phone. Removed the Full/Compact switches and retired the saved view
+  preference; old view URLs still load normally. Touch and keyboard controls,
+  responsive adaptations, instructions, and readings retain their behavior.
+- Kept Day and Tea Shortage choices readable and clickable in narrow and short
+  windows: required choices scroll within their own space, narrow Day cards
+  stack, and the action dock no longer covers choice text or buttons.
+- Fixed a one-frame blank canvas when a responsive layout change resized it,
+  including on pause and resume. The current scene now repaints immediately
+  after the resize; gameplay is unchanged.
+- Made the analytics module an optional, nonblocking load, so a privacy
+  extension that blocks it can no longer prevent the game from starting. Event
+  contracts and privacy controls are unchanged. See
+  [docs/ANALYTICS.md](docs/ANALYTICS.md).
+
 ## [0.21.0] - 2026-11-05 — Keeping Count
 
 - Restored numbered keyboard hints on upgrade and Tea Shortage choices in

@@ -3,7 +3,7 @@ import { expect, openGame, test } from './fixtures.js';
 // Deterministic presentation scenarios use real collisions for the settled
 // leaves. Only the selected fortune/time is pinned; no production fixtures.
 async function reading(page, fortune = 'veil', offer = true) {
-  await openGame(page, '&seed=42&view=full');
+  await openGame(page, '&seed=42');
   await page.keyboard.press('Enter');
   await page.evaluate(({ fortune, offer }) => {
     const { game: g } = window.__TEACUP__, s = g.state;
@@ -71,7 +71,7 @@ export function readingTeaBreakTests() {
 
   test('backgrounding controls review cancels automatic resume and retains settings', async ({ page, problems }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await openGame(page, '&view=compact');
+    await openGame(page, '');
     await page.keyboard.press('Enter');
     await page.evaluate(() => { window.__TEACUP__.game.state.spawnTimer = Infinity; });
     await page.locator('#menuBtn').click();
@@ -194,11 +194,7 @@ export function readingTeaBreakTests() {
     for (const [width, height] of [[1280, 720], [800, 600], [375, 667], [844, 390], [800, 1280]]) {
       await page.setViewportSize({ width, height });
       await page.clock.runFor(64);
-      for (const view of ['full', 'compact']) {
-        if (await page.locator('body').getAttribute('data-view') !== view) await page.locator('#viewBtn').click();
-        await page.clock.runFor(64);
-        await fits(page);
-      }
+      await fits(page);
     }
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.clock.runFor(64);
@@ -210,7 +206,7 @@ export function readingTeaBreakTests() {
     expect(problems).toEqual([]);
   });
 
-  test('a Tea Tray offer reads as one-cup treats, fits every view, and serves the next cup', async ({ page, problems }) => {
+  test('a Tea Tray offer reads as one-cup treats, fits every viewport, and serves the next cup', async ({ page, problems }) => {
     await freeze(page);
     await reading(page, 'veil', ['trayMilk', 'traySugar']);
     await page.evaluate(() => Object.assign(window.__TEACUP__.game.state.spoon, { polished: 3, quickStir: 3, sugarScoop: 2, strainer: 2 }));
@@ -221,11 +217,7 @@ export function readingTeaBreakTests() {
     for (const [width, height] of [[1280, 720], [375, 667], [844, 390]]) {
       await page.setViewportSize({ width, height });
       await page.clock.runFor(64);
-      for (const view of ['full', 'compact']) {
-        if (await page.locator('body').getAttribute('data-view') !== view) await page.locator('#viewBtn').click();
-        await page.clock.runFor(64);
-        await fits(page);
-      }
+      await fits(page);
     }
     await page.locator('#game').focus();
     await page.keyboard.press('1');

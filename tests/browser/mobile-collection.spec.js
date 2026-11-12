@@ -4,7 +4,7 @@ import { checkpointRound, finishPractice, layoutChecks, openCollection } from '.
 for (const [name, viewport] of [['phone-portrait', { width: 393, height: 851 }],
   ['phone-landscape', { width: 851, height: 393 }], ['tablet-landscape', { width: 1180, height: 820 }]]) {
   test(`${name}: collection cards, touch play, records and Continue Pot fit`, async ({ page, problems }) => {
-    await page.setViewportSize(viewport); await openGame(page, '&view=compact');
+    await page.setViewportSize(viewport); await openGame(page, '');
     await page.screenshot({ path: `docs/images/arcade-collection/${name}-initial.png`, fullPage: false, scale: 'css' });
     await openCollection(page); await layoutChecks(page);
     await page.screenshot({ path: `docs/images/arcade-collection/${name}-collection.png`, fullPage: false, scale: 'css' });

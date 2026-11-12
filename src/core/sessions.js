@@ -1,11 +1,12 @@
 import { createGame } from './game.js';
 import { randomSeed, toSeed } from './random.js';
 import { ARCADE_IDS } from '../storage/localProgress.js';
+import { createTraining } from './training.js';
 
-/** One suspended pot, one disposable practice instance. No state or RNG is shared. */
+/** One suspended pot and a disposable practice or training instance. No shared state/RNG. */
 export function createSessions(main, progress, { nextSeed = randomSeed } = {}) {
-  let pot = main, practice = null, collection = false, result = null;
-  const active = () => practice ?? pot;
+  let pot = main, practice = null, training = null, collection = false, result = null;
+  const active = () => training ?? practice ?? pot;
   // Existing input, HUD and renderer keep one stable interface. Method lookup
   // happens at invocation, so listeners cannot retain an abandoned session.
   const methods = new Map();
@@ -25,11 +26,15 @@ export function createSessions(main, progress, { nextSeed = randomSeed } = {}) {
     game,
     get main() { return pot; },
     get practice() { return practice; },
+    get training() { return training; },
+    get ordinary() { return !training && !practice && !collection; },
+    train(options) { this.back(); training = createTraining(options); return training; },
     get collection() { return collection; },
     get result() { return result; },
-    open() { practice = null; collection = true; result = null; },
+    open() { this.back(); collection = true; },
     launch(id, seed = nextSeed()) {
       if (!ARCADE_IDS.includes(id)) return false;
+      training = null;
       practice = createGame({ seed, practice: id });
       collection = false;
       result = null;
@@ -45,7 +50,7 @@ export function createSessions(main, progress, { nextSeed = randomSeed } = {}) {
       }
       return this.launch(id, seed);
     },
-    back() { practice = null; collection = false; result = null; },
+    back() { training = null; practice = null; collection = false; result = null; },
     settle() {
       if (practice && !result) result = progress.settle(practice);
       return result;
@@ -68,7 +73,7 @@ export function createSessions(main, progress, { nextSeed = randomSeed } = {}) {
       return true;
     },
     handle(event) {
-      if (practice || collection) return;
+      if (!this.ordinary) return;
       if (event.type === 'checkpoint') progress.saveCheckpoint(event.checkpoint);
       if (event.type === 'gameover') progress.clearPot();
     },

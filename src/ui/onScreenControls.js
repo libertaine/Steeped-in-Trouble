@@ -21,7 +21,7 @@ export function createOnScreenControls({ doc = document, storage, resetInput, on
     groups.forEach((group) => { group.inert = !visible; });
     doc.body.dataset.onscreenControls = visible ? 'shown' : 'hidden';
     select.value = preference;
-    // A keyboard player's menu belongs beside View; it needs no gameplay rail.
+    // A keyboard player's menu belongs in the header; it needs no gameplay rail.
     (visible ? dock : doc.querySelector('.header-actions')).append(menu);
     if (notify) onChange();
   }

@@ -5,6 +5,7 @@ import { createGame } from './core/game.js';
 import { createSessions } from './core/sessions.js';
 import { createLocalProgress } from './storage/localProgress.js';
 import { createCollectionUI } from './ui/collection.js';
+import { createTrainingUI } from './ui/training.js';
 import { createLoop } from './core/timing.js';
 import { ERRANDS } from './gameplay/shortage.js';
 import { FORTUNES } from './gameplay/fortunes.js';
@@ -15,7 +16,6 @@ import { createControls } from './input/controls.js';
 import { initialSettings, initialSound, isTouchDevice, normalize, saveSettings } from './input/settings.js';
 import { createAudio } from './audio/audio.js';
 import { attachCanvasScaling } from './rendering/canvas.js';
-import { attachViewportFit } from './ui/viewport.js';
 import { createAmbient } from './ui/ambient.js';
 import { createEffects } from './rendering/effects.js';
 import { createStrangeHappenings } from './rendering/strange.js';
@@ -33,7 +33,7 @@ import { createInstructionOverlay } from './ui/instructionOverlay.js';
 import { createTitleScreen } from './ui/titleScreen.js';
 import { createSoundToggle } from './ui/soundToggle.js';
 import { createDayPalette } from './ui/dayPalette.js';
-import { startAnalytics } from './analytics/tracker.js';
+
 
 const INSTANCE_KEY = Symbol.for('steeped-in-trouble');
 const QUALITY_KEY = 'steeped-in-trouble:graphics';
@@ -61,16 +61,37 @@ function boot() {
   // Guard against a second initialization creating duplicate loops/listeners.
   if (window[INSTANCE_KEY]) return window[INSTANCE_KEY];
 
-  // First, so a visit counts even if the player never starts a game. Null on any untracked page.
-  const analytics = startAnalytics({ win: window, production: import.meta.env.PROD });
+  // Load optional analytics early without preventing the game from starting.
+  // Optional: privacy extensions may block the analytics module itself. A blocked
+  // import must never prevent gameplay from initializing.
+  let analytics = null;
+  let analyticsPending = import.meta.env.PROD;
+  let analyticsDisposed = false;
+  const pendingAnalytics = [];
+  function recordAnalytics(method, ...args) {
+    if (analyticsDisposed) return;
+    if (analytics) analytics[method](...args);
+    else if (analyticsPending && pendingAnalytics.length < 64) pendingAnalytics.push([method, args]);
+  }
+  if (analyticsPending) {
+    import('./analytics/tracker.js').then(({ startAnalytics }) => {
+      if (analyticsDisposed) return;
+      analytics = startAnalytics({ win: window, production: true });
+      analyticsPending = false;
+      if (analytics) for (const [method, args] of pendingAnalytics) analytics[method](...args);
+      pendingAnalytics.length = 0;
+    }).catch(() => {
+      analyticsPending = false;
+      pendingAnalytics.length = 0;
+    });
+  }
 
   const params = new URLSearchParams(window.location.search);
   const canvas = document.getElementById('game');
   // ?tea=<id> brews only one variety (see gameplay/teas.js); unknown ids are ignored.
   const mainPot = createGame({ seed: seedFromUrl(params), tea: params.get('tea') ?? undefined });
   const effects = createEffects();
-  const renderer = createRenderer(canvas, { quality: initialQuality(params),
-    compact: () => document.body.dataset.view === 'compact' });
+  const renderer = createRenderer(canvas, { quality: initialQuality(params) });
   const hud = createHud(document);
   // The page ground's quiet Day tint (decoration only; see ui/dayPalette.js).
   const dayPalette = createDayPalette(document);
@@ -151,7 +172,7 @@ function boot() {
     ring.classList.add(kind === 'press' ? 'charging' : kind);
   }
 
-  let presentation, collectionUI, overlay, title;
+  let presentation, collectionUI, overlay, title, trainingUI;
   controls = createControls({
     doc: document,
     commands: {
@@ -185,13 +206,14 @@ function boot() {
     onGesture: showRing,
     enabled: () => !title?.blocked && !presentation?.blocked && !collectionUI?.blocked && !overlay?.blocked && document.visibilityState !== 'hidden',
   });
-  title = createTitleScreen({ doc: document, onGraphics: toggleGraphics, sound: document.getElementById('titleSoundBtn'), onContinue: () => {
+  title = createTitleScreen({ doc: document, onTraining: () => trainingUI.launch(), onGraphics: toggleGraphics, sound: document.getElementById('titleSoundBtn'), onContinue: () => {
     controls.settle(true);
     overlay.show({ hasSavedPot: !!progress.pot });
   } });
   overlay = createInstructionOverlay({
     doc: document,
     version: __APP_VERSION__,
+    onTraining: () => trainingUI.launch(),
     touch: () => ({ scheme: settings.touch, autoSteam: settings.autoSteam, visible: onScreen.visible }),
     onStart: ({ fromTeaBreak, isNewPot }) => {
       controls.settle(true);
@@ -208,8 +230,6 @@ function boot() {
   presentation = createPresentation({
     doc: document,
     game,
-    params,
-    storage,
     resetInput: () => controls.settle(true),
     onShowControls: (returnToMenu) => overlay.show({ fromTeaBreak: true, onReturn: returnToMenu }),
     onOpenMenu: () => { if (!overlay.fromTeaBreak) overlay.close(); },
@@ -223,10 +243,12 @@ function boot() {
     onActivate: () => {
       game.setAutoSteam(settings.autoSteam);
       // Continuing a saved pot raises no game event, so it is reported here.
-      analytics?.gameStarted();
+      recordAnalytics('gameStarted');
     },
     onOpen: () => overlay.close(),
   });
+  trainingUI = createTrainingUI({ doc: document, sessions, controls, settings: () => settings,
+    visible: () => onScreen.visible, presentation, overlay, collectionUI });
 
   document.getElementById('mainBtn').addEventListener('click', () => {
     if (game.state.phase === 'reading') { game.confirm(); return; }
@@ -254,8 +276,8 @@ function boot() {
   const version = document.getElementById('version');
   if (version) version.textContent = `VERSION ${__APP_VERSION__}`;
 
-  const detachViewport = attachViewportFit(canvas.closest('.playfield'));
-  const detachScaling = attachCanvasScaling(canvas);
+  // A resize repaints the moment already on screen: dt 0, so no time passes.
+  const detachScaling = attachCanvasScaling(canvas, () => renderer.draw(strange.shown(game.state), effects.fx, 0, strange.view));
   // Decorative visitors in the stage gutters: stepped below, never part of the game.
   // With ?debug, ?ambientSeed=<number> fixes their cosmetic randomness and
   // ?ambientAnts=<0-12> replaces the display's population ceiling (for profiling).
@@ -279,7 +301,7 @@ function boot() {
 
   function handleEvents() {
     for (const event of game.drainEvents()) {
-      analytics?.handle(event, !sessions.practice && !sessions.collection);
+      recordAnalytics('handle', event, sessions.ordinary);
       sessions.handle(event);
       strange.handle(event);
       // Leaving an adventure, a Space still held from it must not become steam in the cup.
@@ -308,7 +330,7 @@ function boot() {
     const blocked = title.blocked || presentation.blocked || collectionUI.blocked || overlay.blocked;
     if (!blocked && !strange.holding) game.update(dt, controls.held, controls.walk);
     handleEvents();
-    analytics?.frame(game.state.phase, !blocked && !sessions.practice);
+    analytics?.frame(game.state.phase, !blocked && sessions.ordinary);
     strange.update(dt, game.state, { blocked });
     for (const event of strange.drainEvents()) {
       if (event.type === 'strangeStart') game.noteStrange(); // the pot's plan follows its first
@@ -323,6 +345,7 @@ function boot() {
     dayPalette.update(game.state, { quality: renderer.quality });
     presentation.update();
     collectionUI.update();
+    trainingUI.update();
     title.update(dt, renderer.quality);
     // After the HUD and panels, so this frame's layout is the one measured.
     const s = game.state;
@@ -349,13 +372,15 @@ function boot() {
       onScreen.dispose();
       presentation.dispose();
       collectionUI.dispose();
+      trainingUI.dispose();
       overlay.dispose();
       title.dispose();
       sound.dispose();
       ambient?.dispose();
+      analyticsDisposed = true;
+      pendingAnalytics.length = 0;
       analytics?.dispose();
       detachScaling();
-      detachViewport();
       delete window[INSTANCE_KEY];
     },
   };

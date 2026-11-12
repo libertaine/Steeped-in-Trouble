@@ -88,12 +88,12 @@ export const readingReadyAt = (state) => state.nextFortune === 'lie' ? lieRetrac
 const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
 
 /**
- * @param {{ seed?: number, random?: ReturnType<typeof createRandom>, tea?: string, checkpoint?: object, practice?: string }} [options]
+ * @param {{ seed?: number, random?: ReturnType<typeof createRandom>, tea?: string, checkpoint?: object, practice?: string, training?: object }} [options]
  *   Pass a seed (or a generator) to reproduce an exact gameplay sequence.
  *   Pass a tea id (see TEAS) to brew only that variety, every cup, as if it
  *   had been on tap from the first; the chapters run as usual around it.
  */
-export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, practice = null } = {}) {
+export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, practice = null, training = null } = {}) {
   // Older saves are migrated (and validated) first; the caller's copy is never changed.
   const checkpoint = saved ? migrateCheckpoint(saved) : null;
   if (saved && !checkpoint) throw new TypeError('Invalid pot checkpoint');
@@ -101,6 +101,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     throw new TypeError('Unknown practice adventure');
   }
   if (practice && checkpoint) throw new TypeError('Practice cannot restore a pot');
+  if (training && (practice || saved || random)) throw new TypeError('Training requires a fresh isolated game');
   const restoreRandom = (id, fallback) => checkpoint
     ? createRandom(checkpoint.random[id].seed, checkpoint.random[id].state) : fallback();
   const rng = restoreRandom('normal', () => random ?? createRandom(seed));
@@ -136,7 +137,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     : typeof onlyTea === 'string' && Object.hasOwn(TEAS, onlyTea) ? onlyTea : null;
   const randomStreams = { normal: rng, chocolate: treats, boss: brew, tea: steep,
     teaRun: errand, dailyPour: papers, biscuitBreakout: crumbs, crossingStreet: traffic, goldenLeaf: gilt, manager: office };
-  const exportCheckpoint = () => practice ? null : captureCheckpoint(state, randomStreams, pinnedTea);
+  const exportCheckpoint = () => practice || training ? null : captureCheckpoint(state, randomStreams, pinnedTea);
   const playing = () => state.phase === PHASE.PLAYING;
   const chocolate = (stage) => state.phase === PHASE.CHOCOLATE && (!stage || state.chocolate.stage === stage);
   const grinding = (stage) => state.phase === PHASE.GRIND && (!stage || state.grind.stage === stage);
@@ -686,6 +687,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
   /** One more leaf off the round's list, by a kill or by Karma. Starts the reading at the target. */
   function clearLeaf() {
     state.kills++;
+    if (training) return;
     if (state.kills >= state.target) readLeaves();
   }
 
@@ -704,6 +706,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     if (inMilk) state.roundStats.milkKills++;
     if (shot.volley) state.roundStats.steamKills++;
     state.score += killScore(shot, state.modifiers, giggling ? CONFIG.spores.scoreBonus : 1);
+    training?.hit(shot);
     if (enemy.kind === 'puffball') releaseSpores(sim, enemy);
     clearLeaf();
   }
@@ -717,7 +720,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     const splashed = []; // Double Gilt: leaves to splash once the loop is done
     for (let i = enemies.length - 1; i >= 0; i--) {
       const enemy = enemies[i];
-      advanceEnemy(enemy, sim, dt);
+      if (!training?.frozen) advanceEnemy(enemy, sim, dt);
       if (enemy.puff?.stage === 'burst') {
         // Mushroom Tea: a ripe puffball splits. Its sprouts join the end of the list, so they move from the next frame.
         enemies.splice(i, 1);
@@ -731,6 +734,11 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
         continue;
       }
       if (hasEscaped(enemy)) {
+        if (training) {
+          enemies.splice(i, 1);
+          training.missed();
+          continue;
+        }
         if (state.modifiers.karma) {
           if (karmaRim(enemy)) continue;
           enemies.splice(i, 1);
@@ -817,6 +825,9 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
       return;
     }
     if (!playing()) return;
+    // Training controls only the exercise boundaries. The ordinary simulation
+    // below still owns movement, weapons, milk effects and collisions.
+    training?.before(dt, input);
     state.graceTime = Math.max(0, state.graceTime - dt);
     if (state.goldenSpoon > 0) {
       state.goldenSpoon = Math.max(0, state.goldenSpoon - dt);
@@ -826,9 +837,9 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state.wake = tornadoWake(state);
     if (state.wake) discover(sim, 'silverTornado');
     state.shotCooldown -= dt;
-    if (input.fire || (state.autoSteam && autoSteamWanted(state))) fireSteam(sim);
+    if ((!training || training.allow('steam')) && (input.fire || (state.autoSteam && !training?.frozen && autoSteamWanted(state)))) fireSteam(sim);
     updateSugarRegen(sim, dt);
-    updateSpawning(sim, dt);
+    if (!training) updateSpawning(sim, dt);
     updateCurrent(sim, dt);
     updateClouds(state, dt);
     updateSpores(state, dt);
@@ -837,6 +848,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     updatePrismatic(sim, dt);
     updateGoldenLeaf(leafSim, dt);
     updateEnemies(dt);
+    training?.after(dt, input);
   }
 
   function pause() {
@@ -917,6 +929,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
   }
 
   if (checkpoint) Object.assign(state, structuredClone(checkpoint.state));
+  if (training) training.init(sim);
   if (practice === 'teaRun') startRun();
   else if (practice) {
     state.phase = PHASE.ARCADE_OFFER;
@@ -928,6 +941,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state,
     seed: rng.seed,
     practice,
+    training,
     practiceMission,
     exportCheckpoint,
     exportRandom: () => Object.fromEntries(Object.entries(randomStreams).map(([id, stream]) =>
@@ -1063,6 +1077,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     fireSteam: () => {
       if (chocolate('play')) return fireFlame(havoc);
       if (bossFight()) return fireSteam(bossSim());
+      if (training && (!playing() || !training.allow('steam'))) return false;
+      training?.engage();
       return playing() && fireSteam(sim);
     },
     /** Down / M: pour milk. In a normal round the whole cup gets a recovery pulse as well. */
@@ -1073,11 +1089,17 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
         return poured;
       }
       if (managing('fight')) return pourMilk(managerSim); // the cloud itself stops roots and slows memos
+      if (training && !training.allow('milk')) return false;
       if (!playing() || !pourMilk(sim)) return false;
       milkPulse(sim);
+      training?.milk();
       return true;
     },
-    sugarBurst: () => (bossFight() ? sugarBurst(bossSim()) : playing() && sugarBurst(sim)),
+    sugarBurst: () => {
+      if (training && (!playing() || !training.allow('sugar'))) return false;
+      training?.engage();
+      return bossFight() ? sugarBurst(bossSim()) : playing() && sugarBurst(sim);
+    },
     /**
      * Presentation reports that Mushroom Tea's first Strange Happening of the
      * pot has begun (rendering/strange.js plans the rest from that cup). Only

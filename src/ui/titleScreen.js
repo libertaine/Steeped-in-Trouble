@@ -1,10 +1,12 @@
 // Title -> instructions -> cup. Only an explicit, fresh activation leaves title.
-export function createTitleScreen({ doc = document, onContinue, onGraphics, sound = null }) {
+export function createTitleScreen({ doc = document, onContinue, onGraphics, onTraining = () => {}, sound = null }) {
   const dialog = doc.getElementById('arcadeSplash');
   const button = doc.getElementById('titleContinueBtn');
   const status = dialog.querySelector('[role="status"]');
   const actions = dialog.querySelector('.splash-actions');
   const instructions = doc.getElementById('titleInstructionsBtn');
+  const training = doc.getElementById('titleTrainingBtn');
+  const train = () => { if (open && ready) { hide(); onTraining(); } };
   const graphics = doc.getElementById('titleGraphicsBtn');
   const win = doc.defaultView;
   const motion = win.matchMedia('(prefers-reduced-motion: reduce)');
@@ -38,16 +40,22 @@ export function createTitleScreen({ doc = document, onContinue, onGraphics, soun
       e.preventDefault();
       e.stopImmediatePropagation();
       if (open && ready && !wasHeld && !e.repeat) {
-        if (doc.activeElement === graphics || (sound && doc.activeElement === sound)) doc.activeElement.click();
+        if ([graphics, training, sound].filter(Boolean).includes(doc.activeElement)) doc.activeElement.click();
         else proceed();
       }
     } else if (open && e.code === 'Space') {
+      if (ready && training && doc.activeElement === training) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (!wasHeld && !e.repeat) train();
+        return;
+      }
       // Space is steam, never a shortcut past title. On the speaker it is that button's own activation.
       if (!sound || doc.activeElement !== sound) e.preventDefault();
     } else if (open && e.code === 'Tab') {
       e.preventDefault();
       if (ready) {
-        const buttons = [button, instructions, graphics, sound].filter(Boolean);
+        const buttons = [button, instructions, training, graphics, sound].filter(Boolean);
         const index = buttons.indexOf(doc.activeElement);
         buttons[(index + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus({ preventScroll: true });
       }
@@ -60,6 +68,7 @@ export function createTitleScreen({ doc = document, onContinue, onGraphics, soun
   dialog.addEventListener('cancel', cancel);
   button.addEventListener('click', proceed);
   instructions.addEventListener('click', proceed);
+  training?.addEventListener('click', train);
   graphics.addEventListener('click', onGraphics);
   return {
     get blocked() { return open; },
@@ -93,6 +102,7 @@ export function createTitleScreen({ doc = document, onContinue, onGraphics, soun
       dialog.removeEventListener('cancel', cancel);
       button.removeEventListener('click', proceed);
       instructions.removeEventListener('click', proceed);
+      training?.removeEventListener('click', train);
       graphics.removeEventListener('click', onGraphics);
       if (open) hide();
     },

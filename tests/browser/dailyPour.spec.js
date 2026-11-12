@@ -12,7 +12,7 @@ async function shot(page, testInfo, name) {
 }
 
 test('optional paper offer can be skipped by mouse or keyboard without losing anything', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full'); await toPaperOffer(page);
+  await openGame(page, '&seed=42'); await toPaperOffer(page);
   const before = await page.evaluate(() => structuredClone(window.__TEACUP__.game.state));
   await page.locator('[data-interlude="skip"]').click();
   await expect(page.locator('#roundNum')).toHaveText('13');
@@ -27,7 +27,7 @@ test('optional paper offer can be skipped by mouse or keyboard without losing an
 test('desktop route shows real misses, deliveries, the angry neighbor and a result', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
   await showOnScreenControls(page);
-  await openGame(page, '&seed=42&view=full'); await toPaperOffer(page);
+  await openGame(page, '&seed=42'); await toPaperOffer(page);
   await page.keyboard.press('Digit1');
   await expectPourControls(page);
   await shot(page, testInfo, 'introduction');
@@ -67,7 +67,7 @@ test('desktop route shows real misses, deliveries, the angry neighbor and a resu
 });
 
 test('perfect route rewards once and returns to the pending fortune and next normal cup', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full'); await toPaperOffer(page);
+  await openGame(page, '&seed=42'); await toPaperOffer(page);
   const before = await page.evaluate(() => structuredClone(window.__TEACUP__.game.state));
   await page.locator('[data-interlude="accept"]').click();
   await page.keyboard.press('KeyP');
@@ -93,7 +93,7 @@ test('perfect route rewards once and returns to the pending fortune and next nor
 
 test('paper keys, auto-repeat, pause, Tea Break and backgrounding cannot leak gameplay', async ({ page, problems }, testInfo) => {
   await showOnScreenControls(page);
-  await openGame(page, '&seed=42&view=compact'); await toPaperOffer(page);
+  await openGame(page, '&seed=42'); await toPaperOffer(page);
   await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
   await expectPourControls(page);
   await page.keyboard.press('ArrowUp'); await expect(page.locator('#aimPaperBtn')).toHaveText('AIM: PORCH');
@@ -125,17 +125,17 @@ test('paper keys, auto-repeat, pause, Tea Break and backgrounding cannot leak ga
   expect(problems).toEqual([]);
 });
 
-for (const [view, viewport] of [['full', { width: 1440, height: 1080 }], ['compact', { width: 1280, height: 800 }]]) {
-  test(`the bystander's remark appears, pauses and leaves the route untouched in ${view} view`, async ({ page, problems }, testInfo) => {
+for (const viewport of [{ width: 1440, height: 1080 }, { width: 1280, height: 800 }]) {
+  test(`the bystander's remark appears, pauses and leaves the route untouched at ${viewport.width}x${viewport.height}`, async ({ page, problems }, testInfo) => {
     await page.setViewportSize(viewport);
-    await openGame(page, `&seed=42&view=${view}`); await toPaperOffer(page);
+    await openGame(page, `&seed=42`); await toPaperOffer(page);
     await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
     const start = await remarkStart(page);
     await advancePaperRoute(page, start - 0.5);
     expect(await bubbleShown(page)).toBe(false);
     await advancePaperRoute(page, start + 0.5);
     expect(await bubbleShown(page)).toBe(true);
-    await shot(page, testInfo, `pedestrian-${view}`);
+    await shot(page, testInfo, `pedestrian-${viewport.width}x${viewport.height}`);
     // Paused mid-sentence: route, bubble timing and pixels all hold still.
     await page.keyboard.press('KeyP');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
@@ -173,8 +173,56 @@ for (const [view, viewport] of [['full', { width: 1440, height: 1080 }], ['compa
   });
 }
 
+test('pausing and resuming the route never presents an emptied canvas', async ({ page, problems }) => {
+  // At the start of a frame the canvas still holds whatever the last frame presented.
+  await page.addInitScript(() => {
+    const probe = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    probe.canvas.width = probe.canvas.height = 4;
+    const frames = (window.__canvasFrames = { watching: false, emptied: 0 });
+    const request = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (callback) => request((time) => {
+      const canvas = document.getElementById('game');
+      if (frames.watching && canvas) {
+        probe.clearRect(0, 0, 4, 4);
+        probe.drawImage(canvas, 0, 0, 4, 4);
+        if (probe.getImageData(0, 0, 4, 4).data.every((value, i) => i % 4 !== 3 || value === 0)) frames.emptied += 1;
+      }
+      callback(time);
+    });
+  });
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await openGame(page, '&seed=42'); await toPaperOffer(page);
+  await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
+  await advancePaperRoute(page, 1.1);
+  const settled = () => page.evaluate(() => new Promise((done) => {
+    let left = 4;
+    const next = () => (--left ? requestAnimationFrame(next) : done());
+    requestAnimationFrame(next);
+  }));
+  const size = () => page.evaluate(() => { const c = document.getElementById('game'); return [c.width, c.height]; });
+  await settled();
+  const playing = await size();
+
+  await page.evaluate(() => { window.__canvasFrames.watching = true; });
+  await page.keyboard.press('KeyP');
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+  await settled();
+  // The action dock really did take its space, so this exercised a resize.
+  expect(await size()).not.toEqual(playing);
+  const frozen = await page.evaluate(() => structuredClone(window.__TEACUP__.game.state.dailyPour));
+  await settled();
+  expect(await page.evaluate(() => window.__TEACUP__.game.state.dailyPour)).toEqual(frozen);
+
+  await page.keyboard.press('KeyP');
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'dailyPour');
+  await settled();
+  expect(await size()).toEqual(playing);
+  expect(await page.evaluate(() => window.__canvasFrames.emptied)).toBe(0);
+  expect(problems).toEqual([]);
+});
+
 test('a successful aerial jump clears the actual coffee body in the existing Tea Run', async ({ page, problems }, testInfo) => {
-  await openGame(page, '&seed=42&view=full'); await toShortage(page);
+  await openGame(page, '&seed=42'); await toShortage(page);
   await page.locator('[data-errand="run"]').click(); await page.keyboard.press('Enter');
   await page.evaluate(() => {
     const { game, config } = window.__TEACUP__;

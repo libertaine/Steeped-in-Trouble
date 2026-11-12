@@ -12,7 +12,7 @@ try {
   for (const [width, height] of [[1280, 720], [375, 667]]) {
     for (const scene of ['ordinary', 'depleted', 'bonus', 'grind', 'chocolate', 'teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet']) {
       const page = await browser.newPage({ viewport: { width, height } });
-      await page.goto(`${url}?debug&noOverlay&seed=42&view=full&touch=classic`);
+      await page.goto(`${url}?debug&noOverlay&seed=42&touch=classic`);
       await page.waitForFunction(() => window.__TEACUP__?.game);
       if (['teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet'].includes(scene)) {
         await page.locator('#collectionBtn').click();

@@ -25,10 +25,7 @@ export function isTouchDevice(win = globalThis.window) {
   }
 }
 
-// Presentation is stored separately so changing controls never resets the view.
-export const VIEW_KEY = 'steeped-in-trouble:view';
-
-// Visibility is independent of both the touch scheme and View. Older control
+// Visibility is independent of the touch scheme. Older control
 // preferences keep their exact shape; neither saves nor checkpoints change.
 export const ONSCREEN_KEY = 'steeped-in-trouble:onscreen-controls';
 const validVisibility = (value) => ['auto', 'show', 'hide'].includes(value);
@@ -56,23 +53,6 @@ export function hasPrimaryTouch(win = globalThis.window) {
       || win?.matchMedia?.('(any-pointer: fine)').matches) return false;
   } catch { /* Older browsers can fall back to touch capability. */ }
   return (win?.navigator?.maxTouchPoints ?? 0) > 0;
-}
-
-export function initialView({ params = new URLSearchParams(), storage, touchDevice = false } = {}) {
-  const valid = (value) => value === 'compact' || value === 'full';
-  const override = params.get('view');
-  if (valid(override)) return override;
-  try {
-    const saved = storage?.getItem(VIEW_KEY);
-    if (valid(saved)) return saved;
-  } catch { /* Use capability defaults when storage is unavailable. */ }
-  return touchDevice ? 'compact' : 'full';
-}
-
-export function saveView(storage, view) {
-  try {
-    if (view === 'compact' || view === 'full') storage?.setItem(VIEW_KEY, view);
-  } catch { /* The current visit still works in private mode or when storage is full. */ }
 }
 
 /** Keep the rules in one place: Easy Touch always steams by itself. */

@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/styles/main.css" />
   <link rel="stylesheet" href="/styles/title.css" />
 </head>
-<body>
+<body class="game-ui">
 <dialog open id="arcadeSplash" class="arcade-splash" aria-labelledby="splashTitle" aria-describedby="splashSubtitle">
   <div class="splash-content">
     <div class="splash-imprint" aria-hidden="true"><span>THE TEA CUP ADVENTURE CO.</span><span>A MOST UNREASONABLE BLEND</span></div>
@@ -29,6 +29,7 @@
       <div class="splash-actions" hidden>
         <button id="titleContinueBtn" class="splash-continue" disabled>START / CONTINUE <span aria-hidden="true">→</span></button>
         <button id="titleInstructionsBtn" class="splash-secondary">How to play</button>
+        <button id="titleTrainingBtn" class="splash-secondary">TRAINING CUP</button>
         <button id="titleGraphicsBtn" class="splash-secondary">Graphics: high</button>
         <button id="titleSoundBtn" class="splash-sound sound-toggle" data-sound-toggle="title" data-muted="true" aria-label="Unmute audio" title="Unmute audio (M)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="sound-waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="sound-cross" d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       </div>
@@ -44,7 +45,6 @@
   </div>
   <div class="header-actions">
     <button id="headerSoundBtn" class="sound-toggle" data-sound-toggle="header" data-muted="true" aria-label="Unmute audio" title="Unmute audio (M)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="sound-waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="sound-cross" d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-    <button id="viewBtn" aria-label="Switch Compact or Full View">View: full</button>
     <div class="version" id="version">VERSION</div>
   </div>
 </header>
@@ -132,7 +132,20 @@
       <span class="sr-only" id="resourceAnnouncement" role="status" aria-live="polite"></span>
     </div>
     <p id="cupStatus" class="sr-only" role="status">Cup condition: Cup stable.</p>
-    <div id="phaseChoices"></div>
+    <div id="phaseChoices">
+      <section id="trainingPanel" aria-label="Training Cup" hidden>
+        <div id="trainingPrompt" role="status" aria-live="polite" aria-atomic="true">
+          <small id="trainingStep"></small><h2 id="trainingHeading" tabindex="-1"></h2>
+          <p id="trainingInstruction"></p><p id="trainingHint"></p>
+        </div>
+        <div class="training-actions">
+          <button id="trainingRetry">RETRY</button><button id="trainingGuide">FIELD GUIDE</button>
+          <button id="trainingStart" hidden>START PLAYING</button>
+          <button id="trainingAgain" hidden>PRACTICE AGAIN</button>
+          <button id="trainingExit">BACK TO GAME MENU</button>
+        </div>
+      </section>
+    </div>
     <p id="readingAnnouncement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
     <p id="upgradeAcknowledgment" class="upgrade-acknowledgment" role="status" hidden></p>
     <div class="controls-mobile controls-classic">
@@ -171,6 +184,7 @@
     </div>
     <div class="collection-entry" id="collectionEntry">
       <button id="collectionBtn" aria-haspopup="dialog">THE SPOON'S OTHER JOBS</button>
+      <button id="trainingBtn">TRAINING CUP</button>
       <button id="newPotBtn" hidden>BREW A NEW POT</button>
     </div>
     <div id="practiceBar" class="practice-bar" hidden>
@@ -251,7 +265,6 @@
       <p class="note">Hold STEAM to fire continuously, or turn on Auto Steam to fire at whatever lines up with the spoon. Milk washes the leaves in its wedge back into the cup and slows them; sugar shoots three strong crystalline darts. The tea strainer catches the first leaf to escape each cup.</p>
       <p class="note">On a touch screen, <b>Easy Touch</b> gives you two big steering pads and Auto Steam: double-tap the cup to pour milk, and hold a finger on it to fire sugar. <b>Classic Touch</b> keeps a button for everything, and works with Auto Steam too.</p>
       <div class="settings">
-        <button id="breakViewBtn" class="toggle" aria-label="Choose Compact or Full View">View: full</button>
         <div class="control-visibility"><label for="onScreenControls">On-screen controls</label>
           <select id="onScreenControls" aria-describedby="onScreenControlsHelp">
             <option value="auto">Auto</option>
@@ -264,7 +277,7 @@
         <button id="soundBtn" class="toggle" aria-label="Toggle sound">Sound: off</button>
         <button id="graphicsBtn" class="toggle" aria-label="Toggle graphics quality">Graphics: high</button>
       </div>
-      <p class="note" id="onScreenControlsHelp">Auto shows gameplay buttons when the primary pointer is touch. Hide removes the buttons; steering and adventure actions then need a keyboard. Easy Touch cup gestures remain available. View, Touch, and Auto Steam keep their own settings.</p>
+      <p class="note" id="onScreenControlsHelp">Auto shows gameplay buttons when the primary pointer is touch. Hide removes the buttons; steering and adventure actions then need a keyboard. Easy Touch cup gestures remain available. Touch and Auto Steam keep their own settings.</p>
     </section>
     </details>
   </aside>
@@ -316,6 +329,7 @@
     <div class="overlay-actions">
       <button id="overlayPrimaryBtn" class="arcade-start-btn">PRESS ENTER OR CLICK TO START</button>
       <button id="overlayNewPotBtn" class="arcade-secondary-btn" hidden>BREW A NEW POT</button>
+      <button id="overlayTrainingBtn" class="arcade-secondary-btn">TRAINING CUP</button>
     </div>
     <p class="overlay-footer">You can review controls again any time in Tea Break.</p>
   </div>
@@ -323,6 +337,7 @@
 <dialog id="teaBreak" aria-labelledby="teaBreakTitle">
   <div class="break-head"><h2 id="teaBreakTitle">The Tea Break</h2><div class="break-head-actions"><button id="breakSoundBtn" class="sound-toggle" data-sound-toggle="break" data-muted="true" aria-label="Unmute audio" title="Unmute audio (M)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="sound-waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="sound-cross" d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><button id="closeBreak" autofocus>Back to cup</button></div></div>
   <button id="breakCollectionBtn">THE SPOON'S OTHER JOBS</button>
+  <button id="breakTrainingBtn">TRAINING CUP</button>
   <div class="save-controls">
     <p id="savedPotInfo"></p><button id="clearPotBtn" hidden>Clear saved pot</button>
     <p class="note">The latest completed normal round is saved. Closing mid-round returns to that checkpoint.</p>

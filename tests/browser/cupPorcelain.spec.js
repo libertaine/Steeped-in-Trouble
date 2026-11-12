@@ -11,7 +11,7 @@ const snapshot = (page) => page.evaluate(() => ({
 
 test('the porcelain cracks, warns, mends with gold, and finally breaks', async ({ page, problems }, info) => {
   const shot = (name) => capture(page, info, `desktop-${name}`);
-  await openGame(page, '&seed=42&view=full');
+  await openGame(page, '&seed=42');
   await page.keyboard.press('Enter');
   await quiet(page);
   const lives = page.locator('#hudLives');
@@ -62,7 +62,7 @@ test('the porcelain cracks, warns, mends with gold, and finally breaks', async (
 });
 
 test('a continued pot keeps its cracks and gold seams', { tag: '@smoke' }, async ({ page, problems }) => {
-  await openGame(page, '&seed=7&view=full');
+  await openGame(page, '&seed=7');
   await page.keyboard.press('Enter');
   await quiet(page);
   await spill(page, 2);
@@ -90,7 +90,7 @@ test('an authentic 0.16.0 save continues, cracked, with its reading and upgrade 
       localStorage.setItem('steeped-in-trouble:pot-save', raw);
     }
   }, JSON.stringify(v1));
-  await openGame(page, '&view=full');
+  await openGame(page, '');
   await expect(page.locator('#mainBtn')).toHaveText('CONTINUE YOUR POT');
   expect(JSON.parse(await read(page)).schemaVersion).toBe(1); // reading it changes nothing
   await page.locator('#mainBtn').click();
@@ -124,7 +124,7 @@ test('an authentic 0.16.0 save continues, cracked, with its reading and upgrade 
 });
 
 test('the Arcade Collection leaves a cracked cup exactly as it was', async ({ page, problems }) => {
-  await openGame(page, '&seed=42&view=full');
+  await openGame(page, '&seed=42');
   await page.keyboard.press('Enter');
   await quiet(page);
   await spill(page, 5);
@@ -140,9 +140,9 @@ test('the Arcade Collection leaves a cracked cup exactly as it was', async ({ pa
   expect(problems).toEqual([]);
 });
 
-test('Compact View on a desktop shows the condition and the cracks', async ({ page, problems }, info) => {
+test('the responsive layout on a desktop shows the condition and the cracks', async ({ page, problems }, info) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await openGame(page, '&seed=42&view=compact');
+  await openGame(page, '&seed=42');
   await page.locator('#mainBtn').click();
   await quiet(page);
   await spill(page, 3);

@@ -24,7 +24,7 @@ export function resourceHudTests() {
   for (const reducedMotion of ['no-preference', 'reduce']) {
     test(`consecutive Milk, Sugar and Strainer events each notify with motion ${reducedMotion}`, async ({ page, problems }) => {
       await page.emulateMedia({ reducedMotion });
-      await start(page, '&view=compact&touch=classic');
+      await start(page, '&touch=classic');
       await expect(page.locator('#resourceAnnouncement')).toHaveAttribute('role', 'status');
       await expect(page.locator('#resourceAnnouncement')).toHaveAttribute('aria-live', 'polite');
       await page.evaluate(() => {
@@ -64,47 +64,45 @@ export function resourceHudTests() {
     });
   }
 
-  for (const view of ['full', 'compact']) {
-    test(`${view} resource illustrations follow real use, catches, spills and repairs`, { tag: '@smoke' }, async ({ page, problems }, info) => {
-      await start(page, `&view=${view}&touch=classic`);
-      await expect(page.locator('#resource0 b')).toHaveText('2/2');
-      await expect(page.locator('#resource0')).toHaveAccessibleName('Milk: 2 available, 2 normal capacity');
-      await expect(page.locator('#resource1 b')).toHaveText('2/2');
-      await expect(page.locator('.resource-cubes svg')).toHaveCount(2);
-      await expect(page.locator('.catch-pips i')).toHaveCount(1);
-      await page.keyboard.press('KeyQ');
-      await expect(page.locator('#resource0 b')).toHaveText('1/2');
-      await expect(page.locator('#resourceAnnouncement')).toHaveText('Milk used');
-      await page.keyboard.press('KeyQ');
-      await expect(page.locator('#resource0 b')).toHaveText('0/2');
-      await expect(page.locator('#resource0 rect')).toHaveAttribute('height', '0');
-      await page.keyboard.press('KeyE');
-      await expect(page.locator('.resource-cubes svg')).toHaveCount(1);
-      await expect(page.locator('#resource1 b')).toHaveText('1/2');
-      await page.keyboard.press('KeyE');
-      await expect(page.locator('#resource1 b')).toHaveText('0/2');
-      await expect(page.locator('.resource-cubes svg path').first()).toHaveAttribute('fill', 'none');
-      await page.evaluate(() => {
-        const { game: g, config } = window.__TEACUP__;
-        g.state.enemies.push({ angle: g.state.angle + Math.PI, radius: config.arena.rimRadius - 1, speed: 100, wiggle: 0, shifted: false, size: 10, alpha: 1 });
-      });
-      await expect(page.locator('#resource2 b')).toHaveText('0/1');
-      await expect(page.locator('.catch-pips i')).toHaveCount(0);
-      await expect(page.locator('#resource2')).toContainText('exhausted');
-      await expect(page.locator('#resourceAnnouncement')).toHaveText('Leaf caught');
-      await spill(page, 4); await spill(page, 9);
-      await expect(page.locator('#spillMargin')).toHaveText('Next spill breaks');
-      await expect(page.locator('#resourceStrip')).toHaveAttribute('data-condition', 'critical');
-      await offerLeaf(page); await steamLeaf(page);
-      await expect(page.locator('#spillMargin')).toHaveText('2 spills to break');
-      await visibleStrip(page);
-      await page.screenshot({ path: info.outputPath('depleted-and-repaired.png') });
-      expect(problems).toEqual([]);
+  test(`resource illustrations follow real use, catches, spills and repairs`, { tag: '@smoke' }, async ({ page, problems }, info) => {
+    await start(page, `&touch=classic`);
+    await expect(page.locator('#resource0 b')).toHaveText('2/2');
+    await expect(page.locator('#resource0')).toHaveAccessibleName('Milk: 2 available, 2 normal capacity');
+    await expect(page.locator('#resource1 b')).toHaveText('2/2');
+    await expect(page.locator('.resource-cubes svg')).toHaveCount(2);
+    await expect(page.locator('.catch-pips i')).toHaveCount(1);
+    await page.keyboard.press('KeyQ');
+    await expect(page.locator('#resource0 b')).toHaveText('1/2');
+    await expect(page.locator('#resourceAnnouncement')).toHaveText('Milk used');
+    await page.keyboard.press('KeyQ');
+    await expect(page.locator('#resource0 b')).toHaveText('0/2');
+    await expect(page.locator('#resource0 rect')).toHaveAttribute('height', '0');
+    await page.keyboard.press('KeyE');
+    await expect(page.locator('.resource-cubes svg')).toHaveCount(1);
+    await expect(page.locator('#resource1 b')).toHaveText('1/2');
+    await page.keyboard.press('KeyE');
+    await expect(page.locator('#resource1 b')).toHaveText('0/2');
+    await expect(page.locator('.resource-cubes svg path').first()).toHaveAttribute('fill', 'none');
+    await page.evaluate(() => {
+      const { game: g, config } = window.__TEACUP__;
+      g.state.enemies.push({ angle: g.state.angle + Math.PI, radius: config.arena.rimRadius - 1, speed: 100, wiggle: 0, shifted: false, size: 10, alpha: 1 });
     });
-  }
+    await expect(page.locator('#resource2 b')).toHaveText('0/1');
+    await expect(page.locator('.catch-pips i')).toHaveCount(0);
+    await expect(page.locator('#resource2')).toContainText('exhausted');
+    await expect(page.locator('#resourceAnnouncement')).toHaveText('Leaf caught');
+    await spill(page, 4); await spill(page, 9);
+    await expect(page.locator('#spillMargin')).toHaveText('Next spill breaks');
+    await expect(page.locator('#resourceStrip')).toHaveAttribute('data-condition', 'critical');
+    await offerLeaf(page); await steamLeaf(page);
+    await expect(page.locator('#spillMargin')).toHaveText('2 spills to break');
+    await visibleStrip(page);
+    await page.screenshot({ path: info.outputPath('depleted-and-repaired.png') });
+    expect(problems).toEqual([]);
+  });
 
   test('bonus sugar stays unclamped, large counts stay compact, and regeneration updates immediately', async ({ page, problems }, info) => {
-    await start(page, '&view=compact');
+    await start(page, '');
     await page.evaluate(() => { window.__TEACUP__.game.state.sugarLeft = 3; });
     await expect(page.locator('#resource1 b')).toHaveText('3/2');
     await expect(page.locator('#resource1')).toHaveAccessibleName('Sugar: 3 available, 2 normal capacity, + bonus');
@@ -125,7 +123,7 @@ export function resourceHudTests() {
   });
 
   test('boss and Havoc substitute their own fight status through pause, resume and return', { tag: '@smoke' }, async ({ page, problems }, info) => {
-    await start(page, '&view=full');
+    await start(page, '');
     for (const mode of ['grind', 'chocolate']) {
       await page.evaluate((mode) => {
         const g = window.__TEACUP__.game;
@@ -170,7 +168,7 @@ export function resourceHudTests() {
   test('all four adventures hide suspended inventory, preserve pause mode and return the main HUD', async ({ page, problems }, info) => {
     const labels = { teaRun: 'Stumbles left', dailyPour: 'Deliveries', biscuitBreakout: 'Cubes', crossingStreet: 'Attempts' };
     for (const [mode, label] of Object.entries(labels)) {
-      await openGame(page, '&view=compact&seed=42');
+      await openGame(page, '&seed=42');
       await page.locator('#collectionBtn').click();
       await page.locator(`[data-job="${mode}"]`).click();
       await expect(page.locator('#resourceStrip')).toHaveAttribute('data-normal', 'false');
@@ -196,7 +194,7 @@ export function resourceHudTests() {
     // that reflow plus the separate DPR backing-store check below.
     await page.setViewportSize({ width: 960, height: 540 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await start(page, '&view=full&touch=classic');
+    await start(page, '&touch=classic');
     await page.keyboard.press('KeyQ');
     await expect(page.locator('#resourceAnnouncement')).toHaveText('Milk used');
     expect(await page.locator('#resource0').evaluate((el) => el.getAnimations().length)).toBe(0);

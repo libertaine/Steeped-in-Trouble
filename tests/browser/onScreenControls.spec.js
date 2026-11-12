@@ -2,26 +2,20 @@ import { test, expect, openGame, gameState } from './fixtures.js';
 import { expectVisibility, fits, geometry, preference, primaryPointer, quietCup } from './onScreenControls.js';
 
 for (const [width, height] of [[1920, 1080], [1366, 768], [1280, 720], [800, 600], [375, 667], [844, 390], [800, 1280], [1280, 800]]) {
-  test(`desktop Auto stays hidden at ${width}x${height} in both Views`, async ({ page, problems }) => {
+  test(`desktop Auto stays hidden at ${width}x${height}`, async ({ page, problems }) => {
     await page.setViewportSize({ width, height });
-    await openGame(page, '&seed=42&view=full');
+    await openGame(page, '&seed=42');
     await quietCup(page);
     await expectVisibility(page, false);
     await fits(page);
-    const full = await gameState(page);
-    await page.locator('#viewBtn').click();
-    await expect(page.locator('body')).toHaveAttribute('data-view', 'compact');
-    await expectVisibility(page, false);
-    await fits(page);
-    expect((await gameState(page)).round).toBe(full.round);
     expect(problems).toEqual([]);
   });
 }
 
 test('Show restores the rail; Hide reclaims it and survives reload independently', async ({ page, problems }) => {
-  // Near-square landscape is width-limited with the old 190px rail, making
-  // the recovered canvas size measurable as well as the larger stage width.
-  await page.setViewportSize({ width: 1024, height: 1000 });
+  // Short landscape uses the maintained 190px rail. Near-square dimensions
+  // make the recovered canvas size measurable as well as the stage width.
+  await page.setViewportSize({ width: 610, height: 600 });
   await page.addInitScript(() => {
     if (!localStorage.getItem('steeped-in-trouble:controls')) {
       localStorage.setItem('steeped-in-trouble:controls', '{"touch":"easy","autoSteam":true}');
@@ -45,16 +39,20 @@ test('Show restores the rail; Hide reclaims it and survives reload independently
   await page.reload();
   await expectVisibility(page, false);
   expect(await page.evaluate(() => localStorage.getItem('steeped-in-trouble:onscreen-controls'))).toBe('hide');
-  await page.locator('#viewBtn').click();
   await quietCup(page);
+  // Taller windows put pads below the cup: Hide must reclaim their height too.
+  await page.setViewportSize({ width: 1024, height: 1000 });
+  const tallHidden = await geometry(page);
   await preference(page, 'show');
   await expectVisibility(page, true, '.controls-easy');
+  const tallShown = await geometry(page);
+  expect(tallHidden.stage.height).toBeGreaterThan(tallShown.stage.height + 64);
+  expect(tallHidden.canvas.width).toBeGreaterThan(tallShown.canvas.width + 100);
   await fits(page);
   await preference(page, 'hide');
   await fits(page);
   expect(await page.evaluate(() => window.__TEACUP__.settings())).toEqual(settings);
   await page.reload();
-  await expect(page.locator('body')).toHaveAttribute('data-view', 'compact');
   await expectVisibility(page, false);
   expect(await page.evaluate(() => window.__TEACUP__.settings())).toEqual(settings);
   expect(problems).toEqual([]);
@@ -158,7 +156,7 @@ test('keyboard-only gameplay, settings navigation, pause and focus work with but
 
 test('touchscreen laptop uses primary fine pointer; capability changes release a held pad', async ({ page, problems }) => {
   await primaryPointer(page);
-  await openGame(page, '&touch=classic&view=full');
+  await openGame(page, '&touch=classic');
   await quietCup(page);
   await expectVisibility(page, false);
   await page.setViewportSize({ width: 375, height: 667 });
@@ -212,7 +210,7 @@ test('malformed and unavailable storage default to Auto and permit manual overri
 
 test('normal and special modes preserve appropriate controls and required choices', async ({ page, problems }) => {
   for (const [id, selector] of [['teaRun', '.controls-run'], ['dailyPour', '.controls-pour'], ['biscuitBreakout', '.controls-breakout'], ['crossingStreet', '.controls-crossing']]) {
-    await openGame(page, '&seed=42&view=full');
+    await openGame(page, '&seed=42');
     await page.locator('#collectionBtn').click();
     await page.locator(`[data-job="${id}"]`).click();
     await page.waitForFunction(id => window.__TEACUP__.game.practice === id, id);

@@ -25,7 +25,7 @@ Themes:
 The game is desktop-first. Priorities are gameplay quality, desktop
 presentation and keyboard controls, then performance and reliability.
 Tablet compatibility and phone compatibility follow as best effort, in
-that order. Existing touch and Compact View accommodations remain supported
+that order. Existing touch and responsive layout accommodations remain supported
 by automated tests; physical-device testing is not a publication gate.
 
 ## Implemented in 0.1.0
@@ -807,17 +807,16 @@ and statistics; it never steers or chooses milk/sugar. Hot chocolate remains
 manual (hold the cup for flames in Easy Touch). Runner pads replace cup
 input for the errand, and unfinished gestures never carry between phases.
 
-### Compact View and the Tea Break (0.11.0)
+### Responsive layout and the Tea Break
 
-Presentation, controls, and firing are separate choices: Compact / Full,
-Easy / Classic Touch, and Auto / Manual Steam. Easy Touch still requires
+The former Compact layout is the single presentation on every device.
+Controls and firing remain separate choices: Easy / Classic Touch and
+Auto / Manual Steam. Easy Touch still requires
 Auto Steam because it has no steam button; its relaxed difficulty is intentional.
 No combat tuning changes accompany the mobile presentation.
 
-Touch-capable devices default to Compact, including large and desktop-site
-tablets. A saved choice wins; a visible switch and a visit-only `view` URL
-override let mouse or hybrid devices use either view. Full retains the sidebar.
-Compact uses available viewport height as well as width: a small HUD sits
+Saved view preferences and the old `view` URL parameter are ignored.
+The layout uses available viewport height as well as width: a small HUD sits
 above an undistorted canvas, thumb controls and actions below it. Short
 landscape screens use a right-hand control rail. Safe areas and dynamic
 viewport units protect the bottom actions without forcing rotation or fullscreen.
@@ -829,7 +828,7 @@ dismissing resumes only a game it paused itself, unless backgrounded meanwhile.
 An existing pause remains paused. Escape and the visible close button dismiss it.
 The leaf-reading animation remains unobscured before reveal. Upgrade offers
 and Tea Shortage choices remain directly reachable outside the canvas in
-Compact View, with their existing ordering and consequences.
+the responsive layout, with their existing ordering and consequences.
 
 Context menus and text selection are suppressed only on the gameplay surface.
 Normal document text and links retain browser behavior. Chrome's Desktop Site

@@ -163,7 +163,7 @@ export function analyticsTests() {
       await page.goto(SITE);
       await page.locator('#titleContinueBtn').click();
       await expect(page.locator('#overlayPrimaryBtn')).toBeVisible();
-      expect(await calls(page)).toEqual([]); // the instructions are not a start
+      await expect.poll(() => calls(page)).toEqual([]); // the instructions are not a start
       await page.locator('#overlayPrimaryBtn').click();
       await page.waitForFunction(() => document.body.dataset.phase === 'playing');
       await expect.poll(() => calls(page)).toEqual([['game_start'], ['round_milestone', { round: 1 }]]);
@@ -275,6 +275,28 @@ export function analyticsTests() {
   });
 
   test.describe('a blocked tracker', () => {
+    test('blocking the analytics module cannot strand startup @smoke', async ({ page, baseURL }) => {
+      const seen = await publish(page, baseURL);
+      const modules = [];
+      // A production dynamic import is its own chunk. Block it as a privacy
+      // extension would, leaving the application entry module untouched.
+      await page.route(/\/assets\/tracker-[^/]+\.js(?:\?.*)?$/, (route) => {
+        modules.push(route.request().url());
+        return route.abort('blockedbyclient');
+      });
+      await page.goto(SITE);
+      await expect(page.locator('#titleContinueBtn')).toBeVisible();
+      await startGame(page);
+      await page.waitForFunction(() => document.body.dataset.phase === 'playing');
+      await page.keyboard.press('KeyP');
+      await page.waitForFunction(() => document.body.dataset.phase === 'paused');
+      await page.keyboard.press('KeyP');
+      await page.waitForFunction(() => document.body.dataset.phase === 'playing');
+      expect(modules).toHaveLength(1);
+      expect(seen.tracker).toEqual([]);
+      expect(seen.service).toEqual([]);
+      expect(seen.errors).toEqual([]);
+    });
     test('the game starts, plays and saves anyway, with no second attempt', async ({ page, baseURL }) => {
       const seen = await publish(page, baseURL, { tracker: 'blocked' });
       await page.goto(SITE);
