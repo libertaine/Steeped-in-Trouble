@@ -72,7 +72,7 @@ test('a continued pot keeps its cracks and gold seams', { tag: '@smoke' }, async
   await finishCup(page);
   await page.waitForFunction(() => localStorage.getItem('steeped-in-trouble:pot-save'));
   const saved = JSON.parse(await read(page));
-  expect(saved.schemaVersion).toBe(5);
+  expect(saved.schemaVersion).toBe(6);
   expect(saved.state.porcelain.fractures.map((f) => f.kind)).toEqual(['crack', 'seam']);
   await page.reload();
   await page.locator('#mainBtn').click();

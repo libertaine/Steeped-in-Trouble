@@ -84,7 +84,7 @@ test('steers with a held pad while Auto Steam clears whatever the spoon turns on
   expect(after.angle).not.toBeCloseTo(start, 1);
   expect(after.kills).toBeGreaterThanOrEqual(3);
   expect(after.volleys).toBeLessThanOrEqual(after.kills + 2); // shots at leaves, not a stream
-  expect([after.milk, after.sugar]).toEqual([2, 2]); // never milk or sugar by itself
+  expect([after.milk, after.sugar]).toEqual([2, 1]); // never milk or sugar by itself
   expect(problems).toEqual([]);
 });
 
@@ -105,7 +105,7 @@ test('double-tapping the cup pours milk once, steering taps never do, and the pa
   await expect(page.locator('#milkCount')).toHaveText('1');
   await page.waitForTimeout(500);
   await expect(page.locator('#milkCount')).toHaveText('1');
-  await expect(page.locator('#sugarCount')).toHaveText('2');
+  await expect(page.locator('#sugarCount')).toHaveText('1');
   expect(await viewport(page)).toEqual(before);
   expect(problems).toEqual([]);
 });
@@ -119,9 +119,16 @@ test('a long press on the cup fires one sugar burst; a short one does nothing', 
   const short = await touchHold(page, p, 60);
   expect(short).toBeLessThan(longPress); // (if not, the machine is too busy for this test to mean anything)
   await page.waitForTimeout(400);
-  await expect(page.locator('#sugarCount')).toHaveText('2');
+  await expect(page.locator('#sugarCount')).toHaveText('1');
+  expect(await page.evaluate(() => window.__TEACUP__.game.state.roundStats.sugarUses)).toBe(0);
+  expect(await touchHold(page, p, 1200)).toBeGreaterThan(longPress);
+  await expect(page.locator('#sugarCount')).toHaveText('0');
+  expect(await page.evaluate(() => window.__TEACUP__.game.state.roundStats.sugarUses)).toBe(1);
+  // With a spare charge available, a held finger must still fire only once.
+  await page.evaluate(() => { window.__TEACUP__.game.state.sugarLeft = 2; });
   expect(await touchHold(page, p, 1200)).toBeGreaterThan(longPress);
   await expect(page.locator('#sugarCount')).toHaveText('1');
+  expect(await page.evaluate(() => window.__TEACUP__.game.state.roundStats.sugarUses)).toBe(2);
   await expect(page.locator('#milkCount')).toHaveText('2');
   expect(await viewport(page)).toEqual(before);
   expect(problems).toEqual([]);

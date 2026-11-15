@@ -80,7 +80,7 @@ test('the up and down arrows pour milk and fire sugar without scrolling the page
   await page.keyboard.press('ArrowUp');
   await expect(page.locator('#milkCount')).toHaveText('1');
   await page.keyboard.press('ArrowDown');
-  await expect(page.locator('#sugarCount')).toHaveText('1');
+  await expect(page.locator('#sugarCount')).toHaveText('0');
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
   expect(problems).toEqual([]);
 });
