@@ -201,12 +201,12 @@ describe('roots', () => {
     expect(game.drainEvents().filter((e) => e.type === 'rootCut').at(-1)).toMatchObject({ lane: 3, cleared: true });
   });
 
-  it('are cleared three lanes at a time by sugar', () => {
+  it('are cleared seven lanes at a time by sugar', () => {
     const game = arena();
     const m = game.state.manager;
-    m.roots = [root(4, 250), root(5, 250), root(6, 250), root(8, 250)];
+    m.roots = [root(2, 250), root(4, 250), root(5, 250), root(6, 250), root(8, 250), root(9, 250)];
     shoot(game, 5, { sugar: true });
-    expect(m.roots.map((r) => r.lane)).toEqual([8]);
+    expect(m.roots.map((r) => r.lane)).toEqual([9]);
   });
 
   it('stop growing under milk while the cloud lasts', () => {
@@ -394,6 +394,70 @@ describe('the twists', () => {
     step(game, 0.3);
     expect(m.roots).toHaveLength(0);
     expect(m.memos.map((x) => x.lane)).toContain(10);
+  });
+});
+
+describe('Synergy accounting per Sugar burst', () => {
+  for (const staggered of [false, true]) {
+    it(`caps a whole ${staggered ? 'staggered' : 'equal'}-depth burst at two memos deterministically`, () => {
+      const run = () => {
+        const game = arena({ appearance: 4 });
+        const { state: s } = game, m = s.manager;
+        s.angle = laneAngle(3);
+        m.roots = Array.from({ length: 7 }, (_, lane) => root(lane, staggered ? 100 + lane * 20 : 200));
+        const score = s.score, health = m.health;
+        expect(game.sugarBurst()).toBe(true);
+        const frames = [];
+        for (let frame = 0; frame < 60; frame++) {
+          game.update(1 / 60);
+          for (const e of game.drainEvents()) frames.push({ frame, ...e });
+        }
+        const cuts = frames.filter((e) => e.type === 'rootCut');
+        expect(cuts).toHaveLength(7);
+        const hitFrames = new Set(cuts.map((e) => e.frame)).size;
+        if (staggered) expect(hitFrames).toBeGreaterThan(1);
+        else expect(hitFrames).toBe(1);
+        expect(frames.filter((e) => e.type === 'memo' && e.synergy)).toHaveLength(2);
+        expect(m.roots).toHaveLength(0);
+        expect(m.tally.roots).toBe(7);
+        expect(m.tally.memos).toBe(0);
+        expect(m.health).toBe(health);
+        expect(s.score).toBe(score + 7 * M.rootPoints);
+        expect(s.shots).toHaveLength(0);
+        return frames;
+      };
+      expect(run()).toEqual(run());
+    });
+  }
+
+  it('keeps overlapping bursts independent, even when their hits share a frame', () => {
+    const game = arena({ appearance: 4 });
+    const s = game.state, m = s.manager;
+    s.sugarLeft = 2;
+    s.angle = laneAngle(3);
+    expect(game.sugarBurst()).toBe(true);
+    s.angle = laneAngle(11);
+    expect(game.sugarBurst()).toBe(true);
+    m.roots = [0, 1, 2, 3, 8, 9, 10, 11].map((lane) => root(lane, 200));
+    step(game, 0.6);
+    expect(game.drainEvents().filter((e) => e.type === 'memo' && e.synergy)).toHaveLength(4);
+    expect(m.tally.roots).toBe(8);
+  });
+
+  it('does not cap ordinary Steam root clears in one frame', () => {
+    const game = arena({ appearance: 4 });
+    const s = game.state, m = s.manager;
+    m.roots = [0, 1, 2].map((lane) => root(lane, M.bodyRadius + 1));
+    for (const lane of [0, 1, 2]) {
+      s.angle = laneAngle(lane);
+      s.shotCooldown = 0;
+      expect(game.fireSteam()).toBe(true);
+      s.shots.at(-1).radius = M.bodyRadius + 1;
+    }
+    game.update(1 / 60);
+    expect(game.drainEvents().filter((e) => e.type === 'memo' && e.synergy)).toHaveLength(3);
+    expect(m.tally.roots).toBe(3);
+    expect(m.health).toBe(M.health);
   });
 });
 

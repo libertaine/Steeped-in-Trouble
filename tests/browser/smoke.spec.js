@@ -43,7 +43,7 @@ test('starts, steers, fires, pauses, and resumes from the keyboard', { tag: '@sm
   await page.keyboard.press('q');
   await expect(page.locator('#milkCount')).toHaveText('1');
   await page.keyboard.press('s');
-  await expect(page.locator('#sugarCount')).toHaveText('1');
+  await expect(page.locator('#sugarCount')).toHaveText('0');
 
   await page.keyboard.press('p');
   await expect(page.locator('#hudStatus')).toHaveText('PAUSED');
@@ -216,7 +216,7 @@ test('The Daily Grind can be met, fought with Q and E, and escaped without endin
   await page.keyboard.press('q');
   await expect(page.locator('#milkCount')).toHaveText('1');
   await page.keyboard.press('e');
-  await expect(page.locator('#sugarCount')).toHaveText('1');
+  await expect(page.locator('#sugarCount')).toHaveText('0');
 
   await page.evaluate(() => { window.__TEACUP__.game.state.grind.left = 0.05; });
   await expect(page.locator('#hudStatus')).toHaveText('THE MACHINE ESCAPES');

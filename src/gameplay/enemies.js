@@ -105,7 +105,8 @@ export function updateSpawning(sim, dt) {
   state.spawnTimer -= dt;
   if (state.spawnTimer > 0 || state.enemies.length >= E.maxActive) return;
   const chapter = currentChapter(state.progress);
-  const floor = CONFIG.days.minSpawnInterval;
+  const modeFloor = (CONFIG.modes[state.mode] ?? CONFIG.modes[CONFIG.defaultMode]).minSpawnInterval;
+  const floor = modeFloor ?? CONFIG.days.minSpawnInterval;
   const rush = state.rush;
   if (rush?.left > 0) {
     // The rest arrive a third of the way round, one each way.

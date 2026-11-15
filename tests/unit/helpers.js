@@ -9,8 +9,8 @@ export const IDLE = Object.freeze({ left: false, right: false, fire: false });
  * only the House Blend unless a `tea` is given, so tests of other rules play
  * every cup with the same neutral tea.
  */
-export function playingGame({ seed = 1, spawning = false, tea = 'house' } = {}) {
-  const game = createGame({ seed, tea });
+export function playingGame({ seed = 1, spawning = false, tea = 'house', mode = 'arcade' } = {}) {
+  const game = createGame({ seed, tea, mode });
   game.primaryAction();
   if (!spawning) game.state.spawnTimer = Infinity;
   game.drainEvents();

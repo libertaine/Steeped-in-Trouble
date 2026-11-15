@@ -8,7 +8,7 @@ export function trainingInstruction(stage, { touch, autoSteam, visible }) {
     autoSteam ? 'Aim at the leaf. Steam fires automatically when aligned with a target. Start by steering.'
       : `Aim at the leaf and fire steam with SPACE${visible ? ' or STEAM' : ''}.`,
     `Aim at the leaf. ${touch === 'easy' ? 'Double-tap the cup (or press Q)' : visible ? 'Tap MILK (or press Q)' : 'Press Q'} to push leaves back and slow them down.`,
-    `Aim between the leaves. ${touch === 'easy' ? 'Hold the cup (or press E)' : visible ? 'Tap SUGAR (or press E)' : 'Press E'} to fire across three lanes.`,
+    `Aim between the leaves. ${touch === 'easy' ? 'Hold the cup (or press E)' : visible ? 'Tap SUGAR (or press E)' : 'Press E'} to fire across seven lanes.`,
     'Stop the leaves before they reach the rim. Five ordinary leaves; mistakes cost no lives.',
     'The leaves have requested a different instructor. Normal cups lead to readings, fortunes and upgrades.',
   ][stage];

@@ -414,26 +414,25 @@ describe('spoon upgrades', () => {
     expect(normalizeAngle(game.state.angle - start)).toBeCloseTo(CONFIG.player.turnSpeed * 1.15 * 0.5, 5);
   });
 
-  it('Sugar Scoop: one more burst every cup, which Sugar Rush respects', () => {
+  it('Sugar Scoop: one more burst capacity per level, which Sugar Rush respects', () => {
     const game = upgradedGame({ sugarScoop: 1 });
     completeRound(game);
     game.state.nextFortune = 'sugarRush';
     brewNext(game);
     game.state.spawnTimer = Infinity;
-    expect(sugarCapacity(game.state)).toBe(CONFIG.sugar.perRound + 1);
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound + 1);
-    game.sugarBurst();
-    game.sugarBurst();
+    expect(sugarCapacity(game.state)).toBe(CONFIG.sugar.max + 1);
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.starting);
     step(game, CONFIG.fortunes.sugarRushInterval * 5);
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound + 1); // regrown up to the scoop, no further
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.max + 1); // regrown up to the scoop, no further
   });
 
   it('Sugar Scoop stacks with The Crown', () => {
     const game = upgradedGame({ sugarScoop: 2 });
+    game.state.sugarLeft = CONFIG.sugar.max + 1;
     completeRound(game);
     game.state.nextFortune = 'crown';
     brewNext(game);
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound + 2 + CONFIG.fortunes.crownBonusSugar);
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.max + 1 + CONFIG.fortunes.crownBonusSugar);
   });
 
   it('are kept between rounds and separate from fortunes', () => {

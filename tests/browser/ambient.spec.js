@@ -1,5 +1,6 @@
 import { expect, openGame, test } from './fixtures.js';
-import { ambientState, crumbIn, cubeIn, protectedOverlaps, summonAnts } from './ambient.js';
+import { advanceAmbientUntil, ambientState, crumbIn, cubeIn, protectedOverlaps, summonAnts } from './ambient.js';
+import { freezeTextClock } from './textMischief.js';
 
 // The ant colony (0.20.0): decorative visitors in the measured gutters beside
 // the cup, which never cover the game or its UI, scale with the space, and
@@ -71,24 +72,35 @@ test('social moments play out in the real layout with a fixed cosmetic seed', as
 });
 
 test('a crumb is found, looked over and carried out of sight, clear of the game and its controls', async ({ page, problems }) => {
+  await freezeTextClock(page);
   await page.setViewportSize({ width: 1920, height: 1080 });
   await openGame(page, '&ambientSeed=5');
-  await summonAnts(page, 6, { settled: true });
-  await crumbIn(page, ['lying']);
-  // Noticed, approached and picked up by one ant; carried while sampled.
-  await crumbIn(page, ['carried']);
-  const carried = await ambientState(page);
+  await page.evaluate(() => window.__TEACUP__.ambient.summon(6));
+  await advanceAmbientUntil(page, (s) => s.ants.filter((a) => ['wandering', 'paused'].includes(a.state)).length === 6);
+  await page.evaluate(() => window.__TEACUP__.ambient.crumble());
+  await advanceAmbientUntil(page, (s) => s.crumb?.state === 'lying');
+  const lying = await protectedOverlaps(page, { samples: 1, interval: 0 });
+  expect(lying.crumbs.lying).toBe(1);
+  expect(lying.hits).toEqual([]);
+  const carried = await advanceAmbientUntil(page, (s) => s.crumb?.state === 'carried');
   const carrier = carried.ants.find((a) => a.slot === carried.crumb.claim);
   expect(carrier.cargo).toBe(true);
   expect(carried.ants.filter((a) => a.cargo)).toHaveLength(1);
-  const { hits, crumbs } = await protectedOverlaps(page, { samples: 15 });
-  expect(hits).toEqual([]);
+  // Sample the observed carried frame before advancing time. #51: a later
+  // window has no guaranteed sightings once a short journey has ended.
+  let sightings = 0;
+  for (let i = 0; i < 15; i++) {
+    const sample = await protectedOverlaps(page, { samples: 1, interval: 0 });
+    expect(sample.hits).toEqual([]);
+    sightings += sample.crumbs.carried;
+    await page.clock.runFor(100);
+  }
+  expect(sightings).toBeGreaterThan(0);
   // Home: the crumb is gone with it.
-  await expect.poll(async () => {
-    const s = await ambientState(page);
-    return !s.crumb && !s.ants.some((a) => a.cargo);
-  }, { timeout: 30_000 }).toBe(true);
-  expect(crumbs.carried + crumbs.lying).toBeGreaterThan(0);
+  await advanceAmbientUntil(page, (s) => !s.crumb && !s.ants.some((a) => a.cargo), { maxMs: 30_000 });
+  // Regression: deliberate sampling after disappearance legitimately sees zero.
+  const later = await protectedOverlaps(page, { samples: 1, interval: 0 });
+  expect(later.crumbs).toEqual({ lying: 0, carried: 0 });
   expect(problems).toEqual([]);
 });
 

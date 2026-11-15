@@ -13,7 +13,7 @@ import { completeRound, finishBonus, placeEnemy, playingGame, step } from './hel
 import { finishNormal, resolveReading, simulateDays } from '../support/daySimulation.js';
 
 function boundary(round = 10, heat = 9) {
-  const g = createGame({ seed: 1 });
+  const g = createGame({ seed: 1, mode: 'chill' });
   g.primaryAction();
   Object.assign(g.state, { round, heat, grindAfter: null, lastGrind: round,
     havocAfter: null, lastHavoc: round, shortageAfter: 1000 });
@@ -40,7 +40,7 @@ describe('Day completion and deliberate choices', () => {
     expect(g.chooseDay(choice)).toBe(true);
     expect(g.chooseDay(choice)).toBe(false);
     expect(g.state).toMatchObject({ round: 11, heat: choice === 'fresh' ? 0 : 10,
-      target: choice === 'fresh' ? 16 : 32, phase: 'playing', dayPending: false, fortune: 'karma' });
+      target: choice === 'fresh' ? 16 : 26, phase: 'playing', dayPending: false, fortune: 'karma' });
     expect(g.state.modifiers.karma).toBe(true);
     // Karma still bounces then puffs at the rim, with no lost cups or score.
     const before = { score: g.state.score, lives: g.state.lives };
@@ -73,7 +73,7 @@ describe('Day completion and deliberate choices', () => {
     expect(teasOnTap(s.progress, 21)).toHaveLength(6);
     for (const [tea, last] of Object.entries(history)) expect(s.teaServed[tea]).toBe(tea === s.tea ? 21 : last);
     expect(s.teaAge).toBeGreaterThan(1);
-    expect(s.sugarLeft).toBeGreaterThanOrEqual(CONFIG.sugar.perRound + 1);
+    expect(s.sugarLeft).toBeGreaterThanOrEqual(CONFIG.sugar.starting + 1);
   });
 
   it.each([10, 20])('resolves every encounter before the choice after round %i', (round) => {
@@ -164,31 +164,31 @@ describe('bounded combat pressure', () => {
 
 describe('sixty completed normal rounds', () => {
   it.each([['fresh'], ['keep'], ['keep', 'fresh'], ['fresh', 'keep']])('supports the repeating %j policy', (...choices) => {
-    const { rows, game } = simulateDays(choices);
+    const { rows, game } = simulateDays(choices, 60, 'chill');
     let expected = 0;
     for (let i = 0; i < rows.length; i++) {
       if (i && i % 10 === 0 && choices[(i / 10 - 1) % choices.length] === 'fresh') expected = 0;
-      else if (i) expected = Math.min(MAX_HEAT, expected + 1);
+      else if (i) expected = Math.min(CONFIG.modes.chill.maxHeat, expected + 1);
       expect(rows[i].heat).toBe(expected);
-      expect(rows[i].target).toBe(Math.min(32, 16 + 2 * expected));
+      expect(rows[i].target).toBe(Math.min(26, 16 + 2 * Math.floor((expected + 1) / 2)));
       expect(rows[i].day).toBe(Math.floor(i / 10) + 1);
     }
     expect(game.state.round).toBe(61); expect(game.state.progress.chapter).toBe(3);
   });
 
   it('keeps chapter unlocks, tea selection and adventure scheduling identical across policies', () => {
-    const a = simulateDays(['fresh']), b = simulateDays(['keep']);
+    const a = simulateDays(['fresh'], 60, 'chill'), b = simulateDays(['keep'], 60, 'chill');
     expect(a.offers).toEqual(b.offers);
     expect(a.rows.map(({ tea, age, chapter, fortune }) => ({ tea, age, chapter, fortune })))
       .toEqual(b.rows.map(({ tea, age, chapter, fortune }) => ({ tea, age, chapter, fortune })));
     expect(a.offers.some((x) => x.arcade === 'dailyPour')).toBe(true);
     expect(a.offers.some((x) => x.arcade === 'biscuitBreakout')).toBe(true);
-    expect(simulateDays(['keep']).rows).toEqual(b.rows);
+    expect(simulateDays(['keep'], 60, 'chill').rows).toEqual(b.rows);
   });
 
   it('reports implemented Day values and deterministic jitter in representative cups', () => {
-    const fresh = simulateDays(['fresh']).rows, keep = simulateDays(['keep']).rows;
-    const mixed = simulateDays(['keep', 'fresh']).rows;
+    const fresh = simulateDays(['fresh'], 60, 'chill').rows, keep = simulateDays(['keep']).rows;
+    const mixed = simulateDays(['keep', 'fresh'], 60, 'chill').rows;
     const rows = [['Day 1', keep[0]], ['Day 2 Fresh', fresh[10]], ['Day 2 Keep', keep[10]],
       ['Day 3 Keep', keep[20]], ['Day 3 reset', mixed[20]], ['Day 5 maximum', keep[40]]];
     console.table(rows.map(([scenario, r]) => ({ scenario, ...r,
@@ -198,14 +198,14 @@ describe('sixty completed normal rounds', () => {
 });
 
 it('provides real development practice transitions and a truthful HUD', () => {
-  const g = playingGame();
+  const g = playingGame({ mode: 'chill' });
   for (const mode of ['near', 'end', 'fresh', 'keep', 'max']) {
     expect(prepareDayPractice(g, mode)).toBe(true);
     if (mode === 'near') { completeRound(g); expect(g.state.phase).toBe('reading'); }
     if (mode === 'end') expect(g.state.phase).toBe('day');
     if (mode === 'fresh') expect(g.state).toMatchObject({ round: 11, heat: 0, target: 16 });
-    if (mode === 'keep') expect(g.state).toMatchObject({ round: 11, heat: 10, target: 32 });
-    if (mode === 'max') expect(hudText(g.state).hudDay).toBe('DAY 5 · CUP 1/10 · HEAT 28 MAX');
+    if (mode === 'keep') expect(g.state).toMatchObject({ round: 11, heat: 10, target: 26 });
+    if (mode === 'max') expect(hudText(g.state).hudDay).toBe('DAY 5 · CUP 1/10 · HEAT 14 MAX');
   }
   expect(prepareDayPractice(g, 'invalid')).toBe(false);
 });

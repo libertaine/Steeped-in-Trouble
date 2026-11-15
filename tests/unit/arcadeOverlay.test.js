@@ -433,6 +433,10 @@ describe('instruction overlay controller', () => {
     expect(easy.text).toMatch(/hold a finger on the cup for sugar/);
     expect(easy.text).not.toMatch(/MILK|SUGAR|STEAM/);
 
+    const easyManual = touchSummary({ scheme: 'easy', autoSteam: false });
+    expect(easyManual.text).toMatch(/Hold STEAM to fire/);
+    expect(easyManual.text).not.toMatch(/fires by itself/);
+
     const classic = touchSummary({ scheme: 'classic', autoSteam: false });
     expect(classic.label).toBe('Classic Touch:');
     expect(classic.text).toMatch(/STEAM to fire/);

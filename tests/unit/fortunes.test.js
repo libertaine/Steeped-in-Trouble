@@ -186,7 +186,7 @@ describe('applying and expiring fortune effects', () => {
   });
 
   it('The Crown grants one extra sugar burst', () => {
-    expect(gameWithFortune('crown').state.sugarLeft).toBe(3);
+    expect(gameWithFortune('crown').state.sugarLeft).toBe(CONFIG.sugar.starting + CONFIG.fortunes.crownBonusSugar);
   });
 
   it('The Veil makes milk clouds last 2.5 s longer', () => {
@@ -230,7 +230,7 @@ describe('applying and expiring fortune effects', () => {
     step(game, 0.05);
     brewNext(game);
     expect(game.state.fortune).toBeNull();
-    expect(game.state.sugarLeft).toBe(2);
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.starting);
   });
 });
 
@@ -240,23 +240,24 @@ describe('Sugar Rush', () => {
   it('regrows one sugar burst per interval', () => {
     const game = gameWithFortune('sugarRush');
     game.sugarBurst();
-    expect(game.state.sugarLeft).toBe(1);
+    expect(game.state.sugarLeft).toBe(0);
     step(game, interval - 0.5);
-    expect(game.state.sugarLeft).toBe(1);
+    expect(game.state.sugarLeft).toBe(0);
     step(game, 0.6);
-    expect(game.state.sugarLeft).toBe(2);
+    expect(game.state.sugarLeft).toBe(1);
     expect(game.drainEvents().some((e) => e.type === 'sugarRegen')).toBe(true);
   });
 
   it('never regrows beyond the normal capacity, and the clock waits while full', () => {
     const game = gameWithFortune('sugarRush');
+    game.state.sugarLeft = CONFIG.sugar.max;
     step(game, interval * 3);
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound);
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.max);
     game.sugarBurst();
     step(game, interval * 0.5);
     expect(game.state.sugarLeft).toBe(1); // a full interval, not a leftover one
     step(game, interval * 4);
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound);
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.max);
   });
 
   it('stops after its round', () => {
@@ -267,7 +268,7 @@ describe('Sugar Rush', () => {
     game.state.spawnTimer = Infinity;
     game.sugarBurst();
     step(game, interval * 2);
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound - 1);
+    expect(game.state.sugarLeft).toBe(0);
   });
 });
 
@@ -404,7 +405,7 @@ describe('The Leaves Lie', () => {
   it('changes nothing about how the next round plays', () => {
     const game = gameWithFortune('lie');
     expect(game.state.modifiers).toEqual(BASE_MODIFIERS);
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound);
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.starting);
   });
 });
 
@@ -419,7 +420,7 @@ describe('a restart clears every new fortune', () => {
       game.restart();
       expect(game.state.fortune).toBeNull();
       expect(game.state.modifiers).toEqual(BASE_MODIFIERS);
-      expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound);
+      expect(game.state.sugarLeft).toBe(CONFIG.sugar.starting);
       game.fireSteam();
       expect(game.state.shots).toHaveLength(1);
     });

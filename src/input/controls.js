@@ -197,8 +197,11 @@ export function createControls({
     let handled = false;
     if (JUMP_KEYS.has(code)) commands.jump?.();
     else if (SLIDE_KEYS.has(code)) commands.slide?.();
+    // Q / E (and ↑ / ↓ / S) only ever pour milk or fire sugar; supplies are B / N.
     if (MILK_KEYS.has(code)) commands.milk();
     else if (SUGAR_KEYS.has(code)) commands.sugar();
+    else if (code === 'KeyB') handled = !!commands.buySupply?.('milk');
+    else if (code === 'KeyN') handled = !!commands.buySupply?.('sugar');
     else if (code === 'Enter') handled = commands.confirm();
     else if (code === 'KeyP') commands.togglePause();
     else if (code === 'KeyR') commands.restart();
@@ -310,6 +313,9 @@ export function createControls({
   }
   for (const button of doc.querySelectorAll('[data-day]')) {
     listen(button, 'click', () => { if (enabled() && doc.visibilityState !== 'hidden') commands.day?.(button.dataset.day); });
+  }
+  for (const button of doc.querySelectorAll('[data-supply]')) {
+    listen(button, 'click', () => { if (enabled()) commands.buySupply?.(button.dataset.supply); });
   }
 
   // Easy Touch: gestures on the cup.

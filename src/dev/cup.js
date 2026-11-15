@@ -6,6 +6,7 @@
 // Only the waiting is skipped (no new leaves arrive, and a Golden Leaf can be
 // called up at once instead of waiting for its 15% chance).
 import { CONFIG } from '../config.js';
+import { excludeScenario } from '../core/recordEligibility.js';
 import { laneAngle } from '../gameplay/arena.js';
 import { POT_KEY } from '../storage/localProgress.js';
 import legacy from '../../tests/fixtures/pot-0.16.0.json';
@@ -55,6 +56,7 @@ function steamLeaf(game) {
 /** A fresh pot from this seed's generators, brewed straight into cup 1 with no leaves arriving. */
 export function prepareCup(game, mode) {
   if (!CUP_MODES.includes(mode)) return false;
+  excludeScenario(game);
   game.state.phase = 'gameover';
   game.restart();
   hush(game.state);
@@ -80,15 +82,11 @@ export function prepareCup(game, mode) {
 }
 
 /**
- * ?cup=migrated: before the save is read, store an authentic 0.16.0 pot (a
- * critical cup with an upgrade pending), so Continue Your Pot migrates it.
- * This replaces any pot saved in this browser.
+ * ?cup=migrated: an authentic 0.16.0 pot in a disposable in-memory store.
+ * Continue Your Pot exercises migration without replacing the browser's pot.
  */
-export function seedLegacyPot(storage) {
-  try {
-    storage?.setItem(POT_KEY, JSON.stringify(legacy.checkpoints.critical));
-    return true;
-  } catch {
-    return false;
-  }
+export function seedLegacyPot() {
+  const entries = new Map([[POT_KEY, JSON.stringify(legacy.checkpoints.critical)]]);
+  return { getItem: (key) => entries.get(key) ?? null,
+    setItem: (key, value) => entries.set(key, value), removeItem: (key) => entries.delete(key) };
 }

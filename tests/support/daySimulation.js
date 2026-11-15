@@ -20,8 +20,8 @@ export function resolveReading(game) {
   game.chooseInterlude(false);
 }
 
-export function simulateDays(choices, rounds = 60) {
-  const game = createGame({ seed: 42 });
+export function simulateDays(choices, rounds = 60, mode = 'arcade') {
+  const game = createGame({ seed: 42, mode });
   game.primaryAction();
   const rows = [], offers = [];
   for (let i = 0; i < rounds; i++) {

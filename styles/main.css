@@ -428,6 +428,10 @@ body.game-ui[data-phase="arcadeOffer"] #mainBtn { display: none; }
   gap: 12px;
 }
 
+.easy-steam { display: none; }
+body[data-touch="easy"][data-game-mode="arcade"] .easy-steam { display: block; }
+body[data-touch="easy"][data-game-mode="arcade"] .easy-hint { display: none; }
+
 .controls-mobile .steer {
   min-height: 74px;
   font-size: 30px;
@@ -939,6 +943,7 @@ body.game-ui[data-phase="reading"]:has(#upgradeOffer:not([hidden])) #mainBtn { d
   body.game-ui .controls-mobile { grid-column: 2; grid-row: 2; align-self: end;
     flex-wrap: wrap; border: 0; }
   body.game-ui .easy-hint { flex-basis: 100%; order: -1; }
+  body.game-ui .controls-easy .easy-steam { flex-basis: 100%; order: -1; }
   body.game-ui .controls-classic button { flex-basis: 28%; }
   body.game-ui .controls-pour { flex-direction: column; }
   body.game-ui .controls-breakout { flex-wrap: wrap; gap: 8px; }
@@ -1482,4 +1487,68 @@ body.game-ui[data-training="true"]:not([data-phase="reading"]) .playfield {
 }
 @media (orientation: landscape) and (max-height: 600px) and (max-width: 700px) {
   body.game-ui[data-phase="day"] .day-offer .offer-cards { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 0.23.0: Chill / Arcade mode badges, mode selectors, and between-round Tea Cash supply restock. */
+.hud-mode {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid #b4e9cf88;
+  background: #142a22;
+  color: #b4e9cf;
+  font: 700 10px/1.3 ui-monospace, monospace;
+  letter-spacing: 0.08em;
+}
+body[data-game-mode="chill"] .hud-mode {
+  border-color: #93c5fd99;
+  color: #bfdbfe;
+  background: #17253a;
+}
+[data-select-mode][aria-pressed="true"],
+[data-select-mode].is-selected {
+  background: #35614a;
+  border-color: #f0d7a1;
+  color: #fff4cf;
+  box-shadow: inset 0 0 0 1px #f0d7a188;
+}
+.mode-confirm-picker {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+.mode-confirm-picker button {
+  flex: 1;
+}
+.restock-offer[hidden] {
+  display: none !important;
+}
+.restock-offer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.restock-cash {
+  font: 700 12px/1.2 ui-monospace, monospace;
+  color: var(--gold);
+  padding: 0 4px;
+}
+.restock-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: #1d362c;
+  border-color: #a9c7a4aa;
+}
+.restock-btn kbd {
+  min-width: 20px;
+  padding: 1px 4px;
+  font-size: 10px;
+}
+body.game-ui[data-training="true"] #restockOffer {
+  display: none !important;
 }

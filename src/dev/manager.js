@@ -7,8 +7,10 @@
 //     done: finish it and the real reading, the Manager, Chapter 3 and its
 //     first cup of Mushroom Tea follow exactly as they would in a pot.
 import { difficultyAt } from '../gameplay/days.js';
+import { excludeScenario } from '../core/recordEligibility.js';
 
 function freshPot(game) {
+  excludeScenario(game);
   game.state.phase = 'gameover';
   game.restart();
   return game.state;

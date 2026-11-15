@@ -1,7 +1,7 @@
 import { test, expect, openGame } from './fixtures.js';
 import { daySnapshot, expectDayButtons, toDayReading } from './days.js';
 
-for (const [choice, key, heat, target] of [['fresh', '1', 0, 16], ['keep', '2', 10, 32]]) {
+for (const [choice, key, heat, target] of [['fresh', '1', 0, 16], ['keep', '2', 10, 26]]) {
   test(`Day 2 ${choice}: deliberate keyboard choice, Karma and exactly one advance`, async ({ page, problems }, info) => {
     await openGame(page, '&seed=42');
     if (info.project.name === 'chromium') {

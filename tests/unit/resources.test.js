@@ -51,23 +51,21 @@ describe('milk', () => {
 });
 
 describe('sugar', () => {
-  it('starts each round with two bursts and spends one per use', () => {
+  it('starts a match with one burst and spends one per use', () => {
     const game = playingGame();
-    expect(game.state.sugarLeft).toBe(2);
-    game.sugarBurst();
+    expect(game.state.sugarLeft).toBe(1);
     game.sugarBurst();
     expect(game.state.sugarLeft).toBe(0);
     expect(game.sugarBurst()).toBe(false);
-    expect(game.state.shots).toHaveLength(6);
+    expect(game.state.shots).toHaveLength(7);
   });
 
-  it('fires three darts across the spoon lane and both neighbours, wrapping lane 0', () => {
+  it('fires seven darts across [-3..+3] around the spoon lane, wrapping lane 0', () => {
     const game = playingGame(); // spoon at lane 0
     game.sugarBurst();
     const angles = game.state.shots.map((s) => s.angle);
-    expect(angles[0]).toBeCloseTo(laneAngle(15));
-    expect(angles[1]).toBeCloseTo(laneAngle(0));
-    expect(angles[2]).toBeCloseTo(laneAngle(1));
+    expect(angles).toHaveLength(7);
+    for (const [i, lane] of [13, 14, 15, 0, 1, 2, 3].entries()) expect(angles[i]).toBeCloseTo(laneAngle(lane));
     expect(game.state.shots.every((s) => s.sugar && s.speed === CONFIG.sugar.speed)).toBe(true);
   });
 
@@ -77,14 +75,15 @@ describe('sugar', () => {
     expect(game.sugarBurst()).toBe(true);
   });
 
-  it('refills milk and sugar at the start of the next round', () => {
+  it('carries resources between normal rounds without an automatic full refill', () => {
     const game = playingGame();
     game.pourMilk();
     game.sugarBurst();
     completeRound(game);
     expect(game.state.phase).toBe('reading');
+    game.state.nextFortune = 'star';
     brewNext(game);
-    expect(game.state.milkLeft).toBe(2);
-    expect(game.state.sugarLeft).toBeGreaterThanOrEqual(2);
+    expect(game.state.milkLeft).toBe(1);
+    expect(game.state.sugarLeft).toBe(0);
   });
 });

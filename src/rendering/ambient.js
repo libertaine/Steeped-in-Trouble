@@ -33,6 +33,13 @@ export const AMBIENT = Object.freeze({
   empty: [24, 48], // seconds of empty gutters once the last ant has gone
   stagger: [2, 18], // seconds after a spell starts before each later ant arrives
   arrivalGap: [1, 3], // seconds at least between two arrivals: never a procession
+  betweenCup: Object.freeze({
+    firstVisit: [2, 3], // plus the first ant's 0–1 s entry delay
+    empty: [8, 16],
+    stagger: [2, 6],
+    socialEvery: [3, 7],
+    crumbEvery: [25, 55],
+  }),
   social: Object.freeze({
     every: [6, 14], // seconds between chances of a social moment
     chance: 0.6, // that a chance becomes one; otherwise everyone just wanders
@@ -156,7 +163,8 @@ export function planRoute(region, x, y, portal, along, out, tuning = AMBIENT) {
   return n + 1;
 }
 
-// Scenes calm enough for a visitor. Decisions, adventures, bosses and game over are not.
+// Scenes calm enough for a visitor. Reading decisions use measured safe space;
+// adventures, bosses and game over still have none.
 const CALM = new Set(['ready', 'playing', 'reading']);
 
 /**
@@ -166,11 +174,11 @@ const CALM = new Set(['ready', 'playing', 'reading']);
  *   'frozen' — paused, unfocused, hidden tab or a rewind: draw it standing still.
  *   'run'    — animate.
  */
-export function ambientPolicy({ phase, pausedFrom = null, offer = false, reduced = false,
+export function ambientPolicy({ phase, pausedFrom = null, reduced = false,
   blocked = false, holding = false, hidden = false, focused = true } = {}) {
   if (reduced) return 'off';
   const scene = phase === 'paused' ? pausedFrom : phase;
-  if (!CALM.has(scene) || (scene === 'reading' && offer)) return 'off';
+  if (!CALM.has(scene)) return 'off';
   if (blocked) return 'hidden';
   if (hidden || !focused || holding || phase === 'paused') return 'frozen';
   return 'run';
@@ -1153,6 +1161,35 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
   };
   let crumbTimer = random.range(...tuning.crumb.every);
   let crumbForced = false; // ?debug: one now, whenever ants allow it
+  const ordinary = { firstVisit: tuning.firstVisit, empty: tuning.empty, stagger: tuning.stagger,
+    socialEvery: tuning.social.every, crumbEvery: tuning.crumb.every };
+  let activity = 'ordinary';
+  let schedule = ordinary;
+
+  function setActivity(next) {
+    if (next === activity) return;
+    const previous = schedule;
+    activity = next;
+    schedule = next === 'between-cups' ? tuning.betweenCup : ordinary;
+    // Preserve progress toward opportunities; never restart an interaction or
+    // speed up movement, stays, crumb lifetimes or the rare cube clock.
+    const scale = (a, b) => (a[0] + a[1]) / (b[0] + b[1]);
+    socialTimer *= scale(schedule.socialEvery, previous.socialEvery);
+    crumbTimer *= scale(schedule.crumbEvery, previous.crumbEvery);
+    if (spell === 'empty') {
+      if (next === 'between-cups') spellTimer = Math.min(spellTimer, random.range(...schedule.firstVisit));
+      else spellTimer *= scale(schedule.empty, previous.empty);
+    } else if (next === 'between-cups' && spell === 'quiet' && count === 0) {
+      spell = 'empty';
+      spellTimer = random.range(...schedule.firstVisit);
+    } else if (next === 'between-cups' && spell === 'active' && count === 0) {
+      // All current visits may have ended while the spell is still active.
+      // Bring only the next opportunity forward, without summoning a crowd.
+      let first = ants[0];
+      for (const ant of ants) if (ant.timer < first.timer) first = ant;
+      first.timer = Math.min(first.timer, random.range(...schedule.firstVisit));
+    }
+  }
 
   function startSpell() {
     spell = 'active';
@@ -1160,7 +1197,7 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
     // One ant turns up almost at once; the rest at their own moments.
     const first = random.int(ants.length);
     for (let i = 0; i < ants.length; i++) {
-      if (ants[i].state === 'absent') ants[i].timer = i === first ? random.range(0, 1) : random.range(...tuning.stagger);
+      if (ants[i].state === 'absent') ants[i].timer = i === first ? random.range(0, 1) : random.range(...schedule.stagger);
     }
   }
 
@@ -1261,7 +1298,7 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
         if (!placeCrumb()) { crumbTimer = crumbForced ? 0.5 : 3; return; }
       }
       crumbForced = false;
-      crumbTimer = random.range(...k.every);
+      crumbTimer = random.range(...schedule.crumbEvery);
       return;
     }
     if (crumb.state === 'carried') {
@@ -1951,7 +1988,7 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
     // Nobody suitable about: look again shortly.
     if (go && !gather(kind)) { socialTimer = 2; return; }
     forced = null;
-    socialTimer = random.range(...tuning.social.every);
+    socialTimer = random.range(...schedule.socialEvery);
   }
 
   return {
@@ -1962,12 +1999,14 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
     /** Sugar-cube opportunities so far, and those skipped for want of free ants or space (pacing report). */
     get opportunities() { return { opportunities, skipped }; },
     get spell() { return spell; },
+    get scheduling() { return { activity, spell: spellTimer, social: socialTimer, crumb: crumbTimer, cube: cubeTimer }; },
 
     /**
      * Advance by dt seconds. `limit` is this frame's population ceiling (it
      * already includes region capacity, the display budget and quality).
      */
-    step(dt, regions, limit, { social = true } = {}) {
+    step(dt, regions, limit, { social = true, activity = 'ordinary' } = {}) {
+      setActivity(activity === 'between-cups' ? activity : 'ordinary');
       if (limit !== lastLimit) { lastLimit = limit; crowded = true; }
       if (crowded) { crowded = false; enforce(limit, regions); }
       if (spell === 'empty') {
@@ -1980,7 +2019,7 @@ export function createColony({ random = createRandom(), tuning = AMBIENT } = {})
         if (spellTimer <= 0) spell = 'quiet';
       } else if (count === 0) {
         spell = 'empty';
-        spellTimer = random.range(...tuning.empty);
+        spellTimer = random.range(...schedule.empty);
       }
       count = 0;
       for (let i = 0; i < ants.length; i++) if (ants[i].state !== 'absent') count++;

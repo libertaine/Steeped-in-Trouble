@@ -133,8 +133,8 @@ describe('when the tea runs out', () => {
     expect(game.state.round).toBe(10);
     expect(game.state.shortageAfter).toBe(16);
     answerShortage(game, 'skip'); finishBonus(game, { win: true });
-    expect(game.state.phase).toBe('day');
-    game.chooseDay('keep');
+    expect(game.state.phase).toBe('playing'); // Arcade carries Heat automatically after the shortage
+    expect(game.chooseDay('fresh')).toBe(false);
     expect(game.state.round).toBe(11);
   });
 
@@ -167,7 +167,7 @@ describe('when the tea runs out', () => {
 describe('the three answers', () => {
   it('buy: spends Tea Cash, never points, and adds a sugar burst to the next normal cup', () => {
     const game = atShortage(6);
-    const { teaCash, score } = game.state;
+    const { teaCash, score, sugarLeft: beforeSugar } = game.state;
     expect(teaCash).toBeGreaterThanOrEqual(S.teaPrice);
     expect(game.chooseErrand('buy')).toBe(true);
     expect(game.state.teaCash).toBe(teaCash - S.teaPrice);
@@ -175,7 +175,7 @@ describe('the three answers', () => {
     expect(game.chooseErrand('buy')).toBe(false); // no double payment or second restock
     expect(game.state.teaCash).toBe(teaCash - S.teaPrice);
     expect(game.state.phase).toBe('playing');
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound + game.state.modifiers.bonusSugar + S.restockSugar);
+    expect(game.state.sugarLeft).toBe(Math.min(CONFIG.sugar.max, beforeSugar + game.state.modifiers.bonusSugar + S.restockSugar));
   });
 
   it('buy: is refused without enough Tea Cash, and the other answers still work', () => {
@@ -191,10 +191,10 @@ describe('the three answers', () => {
 
   it('skip: carries on as normal, with nothing gained or lost', () => {
     const game = atShortage(6);
-    const { teaCash, score, lives } = game.state;
+    const { teaCash, score, lives, sugarLeft: beforeSugar } = game.state;
     game.chooseErrand('skip');
     expect(game.state).toMatchObject({ phase: 'playing', teaCash, score, lives, extraSugar: 0 });
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound + game.state.modifiers.bonusSugar);
+    expect(game.state.sugarLeft).toBe(Math.min(CONFIG.sugar.max, beforeSugar + game.state.modifiers.bonusSugar));
   });
 
   it('run: sets off for the shop', () => {
@@ -212,13 +212,14 @@ describe('the three answers', () => {
 
   it('keeps a restock for the next normal cup, even with a coffee boss in between', () => {
     const game = atShortage(1); // round 9's reading also wants a rematch
+    const beforeSugar = game.state.sugarLeft;
     expect(game.state.grindDue).toBe(true);
     game.chooseErrand('buy');
     expect(game.state.phase).toBe('grind');
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound); // the boss brings its own sugar
+    expect(game.state.sugarLeft).toBe(beforeSugar);
     finishBonus(game);
     expect(game.state.phase).toBe('playing');
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound + game.state.modifiers.bonusSugar + S.restockSugar);
+    expect(game.state.sugarLeft).toBe(Math.min(CONFIG.sugar.max, beforeSugar + game.state.modifiers.bonusSugar + S.restockSugar));
     expect(game.state.extraSugar).toBe(0);
   });
 });

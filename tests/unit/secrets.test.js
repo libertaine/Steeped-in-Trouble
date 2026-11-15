@@ -6,7 +6,6 @@ import { laneAngle } from '../../src/gameplay/arena.js';
 import { modifiersFor } from '../../src/gameplay/fortunes.js';
 import { spawnPrismatic } from '../../src/gameplay/prismatic.js';
 import { findSecrets } from '../../src/gameplay/secrets.js';
-import { sugarCapacity } from '../../src/gameplay/weapons.js';
 import { brewNext, completeRound, killOne, placeEnemy, playingGame, step } from './helpers.js';
 
 const S = CONFIG.secrets;
@@ -60,6 +59,7 @@ describe('steam shots', () => {
   it('leave sugar and the Steam Nova out of the count', () => {
     const game = playingGame();
     game.sugarBurst();
+    step(game, 0.8);
     placeEnemy(game.state, { lane: 4, radius: 200 });
     spawnPrismatic({ state: game.state, rng: createRandom(2), emit: () => {} });
     game.state.angle = game.state.prismatic.angle;
@@ -126,11 +126,12 @@ describe('secrets', () => {
     game.state.nextFortune = 'star';
     brewNext(game);
     expect(game.state.secrets).toEqual([]);
-    expect(game.state.sugarLeft).toBe(sugarCapacity(game.state) + S.perfectSugar);
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.starting + S.perfectSugar);
+    game.sugarBurst();
     completeRound(game);
     game.state.nextFortune = 'star';
     brewNext(game);
-    expect(game.state.sugarLeft).toBe(sugarCapacity(game.state)); // only once
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.starting); // only once
   });
 
   it('say nothing after a round with a wasted shot', () => {

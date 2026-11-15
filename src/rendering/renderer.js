@@ -5,7 +5,7 @@
 
 import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
-import { LANES, LANE_STEP, TAU, laneAngle, toCanvasPoint as polar } from '../gameplay/arena.js';
+import { LANES, LANE_STEP, TAU, laneAngle, toCanvasPoint as polar, wrapLane } from '../gameplay/arena.js';
 import { FORTUNES, glyphPoint } from '../gameplay/fortunes.js';
 import { readingReadyAt } from '../core/game.js';
 import { COMBOS } from '../gameplay/combos.js';
@@ -295,7 +295,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
   function drawAimBeams(state, fx) {
     const color = aimColor(state);
     if (state.training?.stage === 3 && state.training.preview > 0) {
-      for (const offset of [-1, 0, 1]) laneBeam(spoonLane(state) + offset, .6, AIM.sugar);
+      for (const offset of CONFIG.sugar.laneOffsets) laneBeam(wrapLane(spoonLane(state) + offset), .6, AIM.sugar);
     }
     if (aim.prev !== null && aim.fade < 1) laneBeam(aim.prev, 1 - aim.fade, color);
     if (aim.lane !== null) laneBeam(aim.lane, aim.fade, color);
@@ -1573,13 +1573,20 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
       circle(p.x, p.y, 4.5, `hsl(${hue}, 100%, 88%)`, 0, true, 1);
       circle(p.x, p.y, 9, `hsl(${hue}, 100%, 65%)`, 1.2, false, 0.6);
     } else if (s.sugar) {
+      line(p, polar(Math.min(OUTER - 8, s.radius + 26), s.angle), '#ffe694', 3.4, 0.52);
+      circle(p.x, p.y, 11, '#f5c74a', 1.4, false, 0.55);
       ctx.save();
       ctx.translate(p.x, p.y);
-      ctx.rotate(Math.PI / 4);
-      ctx.fillStyle = '#faf1cc';
-      ctx.shadowColor = '#fff3a9';
-      ctx.shadowBlur = 13;
-      ctx.fillRect(-5, -5, 10, 10);
+      ctx.rotate(s.angle + Math.PI / 4 + time * 4);
+      ctx.fillStyle = '#fff9df';
+      ctx.strokeStyle = '#f2c13e';
+      ctx.lineWidth = 1.4;
+      ctx.shadowColor = '#ffe484';
+      ctx.shadowBlur = 16;
+      ctx.fillRect(-5.5, -5.5, 11, 11);
+      ctx.strokeRect(-5.5, -5.5, 11, 11);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-2.4, -2.4, 4.8, 4.8);
       ctx.restore();
     } else {
       // Polished Spoon: brighter darts with luminous trails.

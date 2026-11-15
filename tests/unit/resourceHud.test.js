@@ -6,6 +6,7 @@ import { createGrind } from '../../src/gameplay/grind.js';
 import { createHavoc } from '../../src/gameplay/chocolate.js';
 import { awardGolden } from '../../src/gameplay/golden.js';
 import { restoreLife } from '../../src/gameplay/porcelain.js';
+import { milkCapacity } from '../../src/gameplay/weapons.js';
 import { hudText } from '../../src/ui/hud.js';
 import { resourceView } from '../../src/ui/resources.js';
 import { playingGame, placeEnemy, step, completeRound, brewNext, killOne } from './helpers.js';
@@ -16,15 +17,59 @@ const counts = (game) => view(game).items.map((item) => item.value);
 describe('live resource projection', () => {
   it('reads the initial cup and real milk/sugar consumption and jackpot refill', () => {
     const g = playingGame();
-    expect(counts(g)).toEqual(['2/2', '2/2', '1/1']);
+    expect(counts(g)).toEqual(['2/3', '1/2', '1/1']);
     expect(view(g).score).toBe('Score 0');
     g.pourMilk(); g.sugarBurst();
-    expect(counts(g)).toEqual(['1/2', '1/2', '1/1']);
-    g.pourMilk(); g.sugarBurst();
-    expect(counts(g)).toEqual(['0/2', '0/2', '1/1']);
+    expect(counts(g)).toEqual(['1/3', '0/2', '1/1']);
+    g.pourMilk();
+    expect(counts(g)).toEqual(['0/3', '0/2', '1/1']);
+    // A jackpot promises "full milk": the mode's Milk capacity (3 since v0.23.0), not v0.22.0's per-cup 2.
     awardGolden({ state: g.state, rng: { next: () => 0 }, emit: () => {} });
-    expect(counts(g)[0]).toBe('2/2');
+    expect(g.state.milkLeft).toBe(milkCapacity(g.state));
+    expect(counts(g)[0]).toBe('3/3');
     expect(view(g).items[1].current).toBe(g.state.sugarLeft);
+  });
+
+  // [round 2 milk, round 3 milk] after pouring both starting charges in cup 1.
+  for (const [mode, schedule] of [['chill', [1, 2]], ['arcade', [0, 1]]]) {
+    it(`keeps ${mode} Milk HUD equal to state through cups, a reading purchase and checkpoint restore`, () => {
+      let g = playingGame({ mode });
+      const milk = () => view(g).items[0];
+      const agrees = (n) => {
+        expect(g.state.milkLeft).toBe(n);
+        expect(milk()).toMatchObject({ value: `${n}/3`, current: g.state.milkLeft });
+      };
+      agrees(2);
+      g.pourMilk(); g.pourMilk();
+      agrees(0);
+      completeRound(g); brewNext(g);
+      agrees(schedule[0]);
+      completeRound(g);
+      g.state.readingTime = 10; g.state.teaCash = 10;
+      expect(g.buySupply('milk')).toBe(true);
+      agrees(schedule[0] + 1);
+      // Reopening the saved reading (twice) neither replenishes nor loses the purchase.
+      for (let i = 0; i < 2; i++) {
+        g = createGame({ checkpoint: JSON.parse(JSON.stringify(g.exportCheckpoint())) });
+        expect(g.state.phase).toBe('reading');
+        agrees(schedule[0] + 1);
+      }
+      brewNext(g);
+      expect(g.state.round).toBe(3);
+      agrees(schedule[1] + 1);
+    });
+  }
+
+  it('caps Milk at capacity in state and HUD when replenishment and purchase would overflow', () => {
+    const g = playingGame({ mode: 'chill' });
+    completeRound(g);
+    g.state.readingTime = 10; g.state.teaCash = 30;
+    expect(g.buySupply('milk')).toBe(true);
+    expect(g.buySupply('milk')).toBe(false);
+    expect(g.state.teaCash).toBe(20);
+    brewNext(g); // Chill's +1 would make 4
+    expect(g.state.milkLeft).toBe(3);
+    expect(view(g).items[0]).toMatchObject({ value: '3/3', note: '' });
   });
 
   it('retains overcapacity and upgraded regeneration limits', () => {
@@ -32,6 +77,7 @@ describe('live resource projection', () => {
     g.state.sugarLeft = 3;
     expect(view(g).items[1]).toMatchObject({ value: '3/2', note: '+ bonus' });
     g.state.spoon.sugarScoop = 2;
+    g.state.sugarLeft = 4;
     completeRound(g); g.state.nextFortune = 'sugarRush'; brewNext(g);
     g.state.spawnTimer = Infinity;
     expect(view(g).items[1]).toMatchObject({ value: '4/4' });
@@ -83,12 +129,12 @@ describe('live resource projection', () => {
     Object.assign(g.state.grind, { stage: 'fight', health: 7, scalds: 2 });
     g.state.grind.valve.stage = 'open';
     expect(view(g)).toMatchObject({ normal: false, progress: [7, CONFIG.grind.health], progressLabel: 'Machine health' });
-    expect(counts(g)).toEqual(['1/2', '0/2', `2/${CONFIG.grind.scalds}`]);
+    expect(counts(g)).toEqual(['1/3', '0/2', `2/${CONFIG.grind.scalds}`]);
     expect(view(g).cue).toContain('Valve open: shoot');
     expect(view(g).score).toBe('');
     g.pause();
     expect(view(g).score).toBe('');
-    expect(counts(g)).toEqual(['1/2', '0/2', `2/${CONFIG.grind.scalds}`]);
+    expect(counts(g)).toEqual(['1/3', '0/2', `2/${CONFIG.grind.scalds}`]);
     expect(view(g).items.some((i) => i.kind === 'strainer')).toBe(false);
     g.resume();
     expect(view(g).progressLabel).toBe('Machine health');

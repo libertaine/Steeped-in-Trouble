@@ -1,5 +1,6 @@
 // Imported only by the DEV branch in main.js; Vite removes it from production.
 import { CONFIG } from '../config.js';
+import { excludeScenario } from '../core/recordEligibility.js';
 import { createRandom, toSeed } from '../core/random.js';
 import { CROSSING_SALT, createCrossing, planCrossing, startCrossing } from '../gameplay/crossingStreet.js';
 
@@ -13,6 +14,7 @@ const TICK = 1 / 120;
  */
 export function prepareCrossingPractice(game, seed, mode = 'start') {
   if (!['start', 'late', 'last'].includes(mode)) return false;
+  excludeScenario(game);
   game.state.phase = 'gameover';
   game.restart();
   Object.assign(game.state, { round: CONFIG.arcade.crossingStreet.firstAfter, progress: { chapter: 2, starts: [1, 6] },
@@ -42,6 +44,7 @@ export function crossForMe(game) {
   const first = m.ticks + 1;
   const moves = planCrossing(m.lanes, first * TICK, { col: s.col, row: s.row, margin: 14 });
   if (!moves) return false;
+  excludeScenario(game);
   const every = Math.round(P.repeat / TICK);
   let next = 0;
   const hits = m.hits;

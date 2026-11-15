@@ -127,7 +127,7 @@ describe('palettes and the real game', () => {
   it('advances on the Day choice, resets on a new pot and never touches the simulation or its RNG', () => {
     const { doc, body } = fakeDoc();
     const palette = createDayPalette(doc);
-    const g = createGame({ seed: 42 });
+    const g = createGame({ seed: 42, mode: 'chill' });
     const sync = () => {
       for (const event of g.drainEvents()) palette.handle(event);
       const before = { state: structuredClone(g.state), random: g.exportRandom() };

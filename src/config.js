@@ -13,6 +13,51 @@ function deepFreeze(object) {
 }
 
 export const CONFIG = deepFreeze({
+  defaultMode: 'arcade',
+  modes: {
+    chill: {
+      id: 'chill',
+      name: 'Chill',
+      label: 'CHILL MODE',
+      short: 'CHILL',
+      tagline: 'Relaxed pacing · Auto Steam optional · Forgiving milk recovery',
+      description: 'Gentler leaf speeds and round targets, optional Auto Steam, and +1 Milk after every normal cup.',
+      autoSteamAllowed: true,
+      maxHeat: 14,
+      maxTarget: 26,
+      enemySpeedFactor: 0.88,
+      spawnIntervalFactor: 1.12,
+      maxOverallSpeed: 1.6,
+      minSpawnInterval: 0.62,
+      startingMilk: 2,
+      startingSugar: 1,
+      maxMilk: 3,
+      maxSugar: 2,
+      passiveMilkEvery: 1,
+      passiveSugarEvery: 0,
+    },
+    arcade: {
+      id: 'arcade',
+      name: 'Arcade',
+      label: 'ARCADE MODE',
+      short: 'ARCADE',
+      tagline: 'Classic progression · Manual steam only · Scarce supplies',
+      description: 'Full arcade challenge with manual steam firing and +1 Milk only every 2 normal cups.',
+      autoSteamAllowed: false,
+      maxHeat: 28,
+      maxTarget: 32,
+      enemySpeedFactor: 1,
+      spawnIntervalFactor: 1,
+      maxOverallSpeed: 2.0,
+      minSpawnInterval: 0.45,
+      startingMilk: 2,
+      startingSugar: 1,
+      maxMilk: 3,
+      maxSugar: 2,
+      passiveMilkEvery: 2,
+      passiveSugarEvery: 0,
+    },
+  },
   textMischief: {
     idle: 12, // visible, unengaged seconds after the final reading
     chance: 0.2, // one cosmetic opportunity per reading
@@ -62,13 +107,17 @@ export const CONFIG = deepFreeze({
   },
 
   sugar: {
+    starting: 1,
+    max: 2,
     perRound: 2,
     speed: 560,
     spawnInset: 12,
-    laneOffsets: [-1, 0, 1], // three darts: left, centre, right lane
+    laneOffsets: [-3, -2, -1, 0, 1, 2, 3], // seven darts across [-3..+3] lanes
   },
 
   milk: {
+    starting: 2,
+    max: 3,
     perRound: 2,
     duration: 5.2,
     slowFactor: 0.31, // enemies in a cloud move at 31% speed
@@ -203,7 +252,8 @@ export const CONFIG = deepFreeze({
     starSteamMultiplier: 1.35,
 
     // 0.3 fortunes. Each lasts only the round after its reading.
-    sugarRushInterval: 6, // Sugar Rush: seconds per regenerated sugar burst (up to the round's capacity)
+    sugarRushInterval: 9, // Sugar Rush: seconds per regenerated sugar burst (up to the round's capacity)
+    sugarRushMaxPerRound: 2, // at most two regenerated bursts in a single cup
     twinSpreadRate: 0.45, // Double Trouble: radians per second each twin dart veers away from the other
     tempestEnemySpeed: 1.18, // Tempestuous Tea: leaves move this much faster
     revealAt: 2.1, // reading seconds before the fortune is revealed
@@ -256,7 +306,7 @@ export const CONFIG = deepFreeze({
     jackpotChance: 0.06, // points + full sugar and milk + the Golden Spoon
     goldenSpoonChance: 0.24, // the Golden Spoon
     lifeChance: 0.12, // an extra cup (up to lives + 1)
-    sugarChance: 0.28, // refill sugar, plus one
+    sugarChance: 0.28, // +1 sugar if there is room; with sugar full, bonus points instead
   },
 
   // The Prismatic Sugar Cube: rarer and quicker than the golden one, under
@@ -618,7 +668,10 @@ export const CONFIG = deepFreeze({
   teaCash: {
     round: 5, // each normal round completed
     milestone: 15, // beating a chapter's milestone boss
+    rematch: 10, // beating a boss rematch
     runBonus: 5, // reaching the shop in the Tea Run
+    milkPrice: 10, // Milk refill price per charge
+    sugarPrice: 25, // Sugar refill price per charge
   },
 
   // The Tea Shortage: an emergency between rounds (gameplay/shortage.js).

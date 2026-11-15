@@ -1,0 +1,1734 @@
+{
+ "version": "0.22.0",
+ "commit": "a5e74bab4e777d3812ad4cefd158e861f518c386",
+ "checkpoints": {
+  "earlyAuto": {
+   "schemaVersion": 5,
+   "state": {
+    "phase": "reading",
+    "pausedFrom": "playing",
+    "round": 2,
+    "heat": 1,
+    "dayPending": false,
+    "score": 20,
+    "lives": 3,
+    "kills": 18,
+    "target": 18,
+    "milkLeft": 1,
+    "sugarLeft": 3,
+    "strainerLeft": 2,
+    "graceTime": 0,
+    "porcelain": {
+     "serial": 0,
+     "fractures": []
+    },
+    "progress": {
+     "chapter": 1,
+     "starts": [
+      1
+     ]
+    },
+    "spoon": {
+     "polished": 0,
+     "quickStir": 0,
+     "sugarScoop": 0,
+     "strainer": 1
+    },
+    "goldenSpoon": 0,
+    "offer": null,
+    "fortune": "crown",
+    "nextFortune": "doubleTrouble",
+    "modifiers": {
+     "bonusSugar": 1,
+     "milkDurationBonus": 1,
+     "steamSpeedMultiplier": 1,
+     "scoreMultiplier": 1,
+     "laneDrift": false,
+     "sugarRegenInterval": 0,
+     "twinSteam": false,
+     "enemySpeedMultiplier": 0.88,
+     "goldenCube": false,
+     "stormyMilk": false,
+     "karma": false,
+     "spawnIntervalMultiplier": 1.06,
+     "dartChance": 0,
+     "wanderChance": 0,
+     "spiceCurrents": false,
+     "puffballChance": 0
+    },
+    "tea": "herbal",
+    "teaAge": 2,
+    "teaServed": {
+     "house": 1,
+     "herbal": 2
+    },
+    "current": null,
+    "angle": 4.71238898038469,
+    "shotCooldown": 0.09000000000000002,
+    "spawnTimer": 999999.8999999997,
+    "readingTime": 0,
+    "sugarRegenTimer": 0,
+    "goldenTimer": null,
+    "golden": null,
+    "prismaticTimer": null,
+    "prismatic": null,
+    "goldenLeafTimer": null,
+    "goldenLeaf": null,
+    "extraSugar": 0,
+    "tray": null,
+    "secrets": [],
+    "discovered": [],
+    "stir": {
+     "dir": 0,
+     "time": 0
+    },
+    "wake": null,
+    "volleys": {},
+    "havocAfter": 3,
+    "lastHavoc": 0,
+    "havocDue": false,
+    "chocolate": null,
+    "grindAfter": 5,
+    "lastGrind": 0,
+    "grindDue": false,
+    "grind": null,
+    "managerAfter": null,
+    "lastManager": 0,
+    "managerVisits": 0,
+    "managerDue": false,
+    "manager": null,
+    "mushroomCups": 0,
+    "strangeFirst": 0,
+    "teaCash": 10,
+    "shortageAfter": 9,
+    "aerialDiscoveries": [],
+    "shortageDue": false,
+    "shortage": null,
+    "run": null,
+    "arcade": {
+     "after": {
+      "dailyPour": 12,
+      "biscuitBreakout": 19,
+      "crossingStreet": 27
+     },
+     "offeredAt": null
+    },
+    "arcadeDue": null,
+    "interlude": null,
+    "dailyPour": null,
+    "biscuitBreakout": null,
+    "crossingStreet": null,
+    "autoSteam": true,
+    "shots": [],
+    "enemies": [],
+    "clouds": [],
+    "pulse": 0,
+    "spores": [],
+    "rush": null,
+    "residue": [
+     {
+      "lane": 0,
+      "radius": 65.90572557412088,
+      "angle": -1.5257811111982467,
+      "spin": 0.3356734560802579,
+      "size": 6.487740967189893
+     }
+    ],
+    "roundStats": {
+     "milkKills": 1,
+     "milkUses": 1,
+     "sugarUses": 0,
+     "escapes": 0,
+     "nearMisses": 0,
+     "motionTime": 0,
+     "volleys": 1,
+     "wastedVolleys": 0,
+     "steamKills": 1,
+     "karmaBounces": 0,
+     "karmaPuffs": 0
+    }
+   },
+   "random": {
+    "normal": {
+     "seed": 77,
+     "state": 4167084979
+    },
+    "chocolate": {
+     "seed": 1592639629,
+     "state": 3424205442
+    },
+    "boss": {
+     "seed": 12648355,
+     "state": 12648355
+    },
+    "tea": {
+     "seed": 8300455,
+     "state": 3039596411
+    },
+    "teaRun": {
+     "seed": 5963827,
+     "state": 5963827
+    },
+    "dailyPour": {
+     "seed": 3658592330,
+     "state": 3658592330
+    },
+    "biscuitBreakout": {
+     "seed": 2975596856,
+     "state": 2975596856
+    },
+    "crossingStreet": {
+     "seed": 203445664,
+     "state": 203445664
+    },
+    "goldenLeaf": {
+     "seed": 1612573186,
+     "state": 1612573186
+    },
+    "manager": {
+     "seed": 1830564183,
+     "state": 1830564183
+    }
+   },
+   "pinnedTea": null
+  },
+  "chapter2Auto": {
+   "schemaVersion": 5,
+   "state": {
+    "phase": "reading",
+    "pausedFrom": "playing",
+    "round": 8,
+    "heat": 7,
+    "dayPending": false,
+    "score": 443,
+    "lives": 3,
+    "kills": 30,
+    "target": 30,
+    "milkLeft": 1,
+    "sugarLeft": 4,
+    "strainerLeft": 2,
+    "graceTime": 0,
+    "porcelain": {
+     "serial": 1,
+     "fractures": [
+      {
+       "id": 0,
+       "kind": "chip",
+       "angle": 0.3926990816987246,
+       "seed": 2654435046
+      }
+     ]
+    },
+    "progress": {
+     "chapter": 2,
+     "starts": [
+      1,
+      6
+     ]
+    },
+    "spoon": {
+     "polished": 1,
+     "quickStir": 1,
+     "sugarScoop": 1,
+     "strainer": 1
+    },
+    "goldenSpoon": 10.549999999999928,
+    "offer": null,
+    "fortune": "crown",
+    "nextFortune": "golden",
+    "modifiers": {
+     "bonusSugar": 1,
+     "milkDurationBonus": 0,
+     "steamSpeedMultiplier": 1,
+     "scoreMultiplier": 1,
+     "laneDrift": false,
+     "sugarRegenInterval": 0,
+     "twinSteam": false,
+     "enemySpeedMultiplier": 1.1,
+     "goldenCube": false,
+     "stormyMilk": false,
+     "karma": false,
+     "spawnIntervalMultiplier": 1,
+     "dartChance": 0.1,
+     "wanderChance": 0,
+     "spiceCurrents": false,
+     "puffballChance": 0
+    },
+    "tea": "green",
+    "teaAge": 1,
+    "teaServed": {
+     "house": 5,
+     "herbal": 4,
+     "earlGrey": 7,
+     "chai": 6,
+     "green": 8
+    },
+    "current": null,
+    "angle": 4.71238898038469,
+    "shotCooldown": 0.01166666666666668,
+    "spawnTimer": 999999.9166666664,
+    "readingTime": 0,
+    "sugarRegenTimer": 0,
+    "goldenTimer": null,
+    "golden": null,
+    "prismaticTimer": null,
+    "prismatic": null,
+    "goldenLeafTimer": null,
+    "goldenLeaf": null,
+    "extraSugar": 0,
+    "tray": null,
+    "secrets": [],
+    "discovered": [],
+    "stir": {
+     "dir": 0,
+     "time": 0
+    },
+    "wake": null,
+    "volleys": {},
+    "havocAfter": null,
+    "lastHavoc": 4,
+    "havocDue": false,
+    "chocolate": null,
+    "grindAfter": null,
+    "lastGrind": 5,
+    "grindDue": false,
+    "grind": null,
+    "managerAfter": 10,
+    "lastManager": 0,
+    "managerVisits": 0,
+    "managerDue": false,
+    "manager": null,
+    "mushroomCups": 0,
+    "strangeFirst": 0,
+    "teaCash": 55,
+    "shortageAfter": 9,
+    "aerialDiscoveries": [],
+    "shortageDue": false,
+    "shortage": null,
+    "run": null,
+    "arcade": {
+     "after": {
+      "dailyPour": 12,
+      "biscuitBreakout": 19,
+      "crossingStreet": 27
+     },
+     "offeredAt": null
+    },
+    "arcadeDue": null,
+    "interlude": null,
+    "dailyPour": null,
+    "biscuitBreakout": null,
+    "crossingStreet": null,
+    "autoSteam": true,
+    "shots": [],
+    "enemies": [],
+    "clouds": [],
+    "pulse": 0,
+    "spores": [],
+    "rush": null,
+    "residue": [
+     {
+      "lane": 0,
+      "radius": 103.86112962663174,
+      "angle": -1.558965298065685,
+      "spin": 0.946504314430058,
+      "size": 7.265271571232006
+     }
+    ],
+    "roundStats": {
+     "milkKills": 1,
+     "milkUses": 1,
+     "sugarUses": 0,
+     "escapes": 0,
+     "nearMisses": 0,
+     "motionTime": 0,
+     "volleys": 1,
+     "wastedVolleys": 0,
+     "steamKills": 1,
+     "karmaBounces": 0,
+     "karmaPuffs": 0
+    }
+   },
+   "random": {
+    "normal": {
+     "seed": 2222,
+     "state": 688202789
+    },
+    "chocolate": {
+     "seed": 1592641646,
+     "state": 2032653725
+    },
+    "boss": {
+     "seed": 12646208,
+     "state": 12646208
+    },
+    "tea": {
+     "seed": 8302404,
+     "state": 3543551636
+    },
+    "teaRun": {
+     "seed": 5966032,
+     "state": 5966032
+    },
+    "dailyPour": {
+     "seed": 3658594473,
+     "state": 3658594473
+    },
+    "biscuitBreakout": {
+     "seed": 2975599067,
+     "state": 2975599067
+    },
+    "crossingStreet": {
+     "seed": 203447619,
+     "state": 203447619
+    },
+    "goldenLeaf": {
+     "seed": 1612571361,
+     "state": 1612571361
+    },
+    "manager": {
+     "seed": 1830566324,
+     "state": 1830566324
+    }
+   },
+   "pinnedTea": null
+  },
+  "earlyManual": {
+   "schemaVersion": 5,
+   "state": {
+    "phase": "reading",
+    "pausedFrom": "playing",
+    "round": 2,
+    "heat": 1,
+    "dayPending": false,
+    "score": 20,
+    "lives": 3,
+    "kills": 18,
+    "target": 18,
+    "milkLeft": 1,
+    "sugarLeft": 3,
+    "strainerLeft": 2,
+    "graceTime": 0,
+    "porcelain": {
+     "serial": 0,
+     "fractures": []
+    },
+    "progress": {
+     "chapter": 1,
+     "starts": [
+      1
+     ]
+    },
+    "spoon": {
+     "polished": 0,
+     "quickStir": 0,
+     "sugarScoop": 0,
+     "strainer": 1
+    },
+    "goldenSpoon": 0,
+    "offer": null,
+    "fortune": "crown",
+    "nextFortune": "doubleTrouble",
+    "modifiers": {
+     "bonusSugar": 1,
+     "milkDurationBonus": 1,
+     "steamSpeedMultiplier": 1,
+     "scoreMultiplier": 1,
+     "laneDrift": false,
+     "sugarRegenInterval": 0,
+     "twinSteam": false,
+     "enemySpeedMultiplier": 0.88,
+     "goldenCube": false,
+     "stormyMilk": false,
+     "karma": false,
+     "spawnIntervalMultiplier": 1.06,
+     "dartChance": 0,
+     "wanderChance": 0,
+     "spiceCurrents": false,
+     "puffballChance": 0
+    },
+    "tea": "herbal",
+    "teaAge": 2,
+    "teaServed": {
+     "house": 1,
+     "herbal": 2
+    },
+    "current": null,
+    "angle": 4.71238898038469,
+    "shotCooldown": 0.09000000000000002,
+    "spawnTimer": 999999.8999999997,
+    "readingTime": 0,
+    "sugarRegenTimer": 0,
+    "goldenTimer": null,
+    "golden": null,
+    "prismaticTimer": null,
+    "prismatic": null,
+    "goldenLeafTimer": null,
+    "goldenLeaf": null,
+    "extraSugar": 0,
+    "tray": null,
+    "secrets": [],
+    "discovered": [],
+    "stir": {
+     "dir": 0,
+     "time": 0
+    },
+    "wake": null,
+    "volleys": {},
+    "havocAfter": 3,
+    "lastHavoc": 0,
+    "havocDue": false,
+    "chocolate": null,
+    "grindAfter": 5,
+    "lastGrind": 0,
+    "grindDue": false,
+    "grind": null,
+    "managerAfter": null,
+    "lastManager": 0,
+    "managerVisits": 0,
+    "managerDue": false,
+    "manager": null,
+    "mushroomCups": 0,
+    "strangeFirst": 0,
+    "teaCash": 10,
+    "shortageAfter": 9,
+    "aerialDiscoveries": [],
+    "shortageDue": false,
+    "shortage": null,
+    "run": null,
+    "arcade": {
+     "after": {
+      "dailyPour": 12,
+      "biscuitBreakout": 19,
+      "crossingStreet": 27
+     },
+     "offeredAt": null
+    },
+    "arcadeDue": null,
+    "interlude": null,
+    "dailyPour": null,
+    "biscuitBreakout": null,
+    "crossingStreet": null,
+    "autoSteam": false,
+    "shots": [],
+    "enemies": [],
+    "clouds": [],
+    "pulse": 0,
+    "spores": [],
+    "rush": null,
+    "residue": [
+     {
+      "lane": 0,
+      "radius": 65.90572557412088,
+      "angle": -1.5257811111982467,
+      "spin": 0.3356734560802579,
+      "size": 6.487740967189893
+     }
+    ],
+    "roundStats": {
+     "milkKills": 1,
+     "milkUses": 1,
+     "sugarUses": 0,
+     "escapes": 0,
+     "nearMisses": 0,
+     "motionTime": 0,
+     "volleys": 1,
+     "wastedVolleys": 0,
+     "steamKills": 1,
+     "karmaBounces": 0,
+     "karmaPuffs": 0
+    }
+   },
+   "random": {
+    "normal": {
+     "seed": 77,
+     "state": 4167084979
+    },
+    "chocolate": {
+     "seed": 1592639629,
+     "state": 3424205442
+    },
+    "boss": {
+     "seed": 12648355,
+     "state": 12648355
+    },
+    "tea": {
+     "seed": 8300455,
+     "state": 3039596411
+    },
+    "teaRun": {
+     "seed": 5963827,
+     "state": 5963827
+    },
+    "dailyPour": {
+     "seed": 3658592330,
+     "state": 3658592330
+    },
+    "biscuitBreakout": {
+     "seed": 2975596856,
+     "state": 2975596856
+    },
+    "crossingStreet": {
+     "seed": 203445664,
+     "state": 203445664
+    },
+    "goldenLeaf": {
+     "seed": 1612573186,
+     "state": 1612573186
+    },
+    "manager": {
+     "seed": 1830564183,
+     "state": 1830564183
+    }
+   },
+   "pinnedTea": null
+  },
+  "chapter2Manual": {
+   "schemaVersion": 5,
+   "state": {
+    "phase": "reading",
+    "pausedFrom": "playing",
+    "round": 8,
+    "heat": 7,
+    "dayPending": false,
+    "score": 443,
+    "lives": 3,
+    "kills": 30,
+    "target": 30,
+    "milkLeft": 1,
+    "sugarLeft": 4,
+    "strainerLeft": 2,
+    "graceTime": 0,
+    "porcelain": {
+     "serial": 1,
+     "fractures": [
+      {
+       "id": 0,
+       "kind": "chip",
+       "angle": 0.3926990816987246,
+       "seed": 2654435046
+      }
+     ]
+    },
+    "progress": {
+     "chapter": 2,
+     "starts": [
+      1,
+      6
+     ]
+    },
+    "spoon": {
+     "polished": 1,
+     "quickStir": 1,
+     "sugarScoop": 1,
+     "strainer": 1
+    },
+    "goldenSpoon": 10.549999999999928,
+    "offer": null,
+    "fortune": "crown",
+    "nextFortune": "golden",
+    "modifiers": {
+     "bonusSugar": 1,
+     "milkDurationBonus": 0,
+     "steamSpeedMultiplier": 1,
+     "scoreMultiplier": 1,
+     "laneDrift": false,
+     "sugarRegenInterval": 0,
+     "twinSteam": false,
+     "enemySpeedMultiplier": 1.1,
+     "goldenCube": false,
+     "stormyMilk": false,
+     "karma": false,
+     "spawnIntervalMultiplier": 1,
+     "dartChance": 0.1,
+     "wanderChance": 0,
+     "spiceCurrents": false,
+     "puffballChance": 0
+    },
+    "tea": "green",
+    "teaAge": 1,
+    "teaServed": {
+     "house": 5,
+     "herbal": 4,
+     "earlGrey": 7,
+     "chai": 6,
+     "green": 8
+    },
+    "current": null,
+    "angle": 4.71238898038469,
+    "shotCooldown": 0.01166666666666668,
+    "spawnTimer": 999999.9166666664,
+    "readingTime": 0,
+    "sugarRegenTimer": 0,
+    "goldenTimer": null,
+    "golden": null,
+    "prismaticTimer": null,
+    "prismatic": null,
+    "goldenLeafTimer": null,
+    "goldenLeaf": null,
+    "extraSugar": 0,
+    "tray": null,
+    "secrets": [],
+    "discovered": [],
+    "stir": {
+     "dir": 0,
+     "time": 0
+    },
+    "wake": null,
+    "volleys": {},
+    "havocAfter": null,
+    "lastHavoc": 4,
+    "havocDue": false,
+    "chocolate": null,
+    "grindAfter": null,
+    "lastGrind": 5,
+    "grindDue": false,
+    "grind": null,
+    "managerAfter": 10,
+    "lastManager": 0,
+    "managerVisits": 0,
+    "managerDue": false,
+    "manager": null,
+    "mushroomCups": 0,
+    "strangeFirst": 0,
+    "teaCash": 55,
+    "shortageAfter": 9,
+    "aerialDiscoveries": [],
+    "shortageDue": false,
+    "shortage": null,
+    "run": null,
+    "arcade": {
+     "after": {
+      "dailyPour": 12,
+      "biscuitBreakout": 19,
+      "crossingStreet": 27
+     },
+     "offeredAt": null
+    },
+    "arcadeDue": null,
+    "interlude": null,
+    "dailyPour": null,
+    "biscuitBreakout": null,
+    "crossingStreet": null,
+    "autoSteam": false,
+    "shots": [],
+    "enemies": [],
+    "clouds": [],
+    "pulse": 0,
+    "spores": [],
+    "rush": null,
+    "residue": [
+     {
+      "lane": 0,
+      "radius": 103.86112962663174,
+      "angle": -1.558965298065685,
+      "spin": 0.946504314430058,
+      "size": 7.265271571232006
+     }
+    ],
+    "roundStats": {
+     "milkKills": 1,
+     "milkUses": 1,
+     "sugarUses": 0,
+     "escapes": 0,
+     "nearMisses": 0,
+     "motionTime": 0,
+     "volleys": 1,
+     "wastedVolleys": 0,
+     "steamKills": 1,
+     "karmaBounces": 0,
+     "karmaPuffs": 0
+    }
+   },
+   "random": {
+    "normal": {
+     "seed": 2222,
+     "state": 688202789
+    },
+    "chocolate": {
+     "seed": 1592641646,
+     "state": 2032653725
+    },
+    "boss": {
+     "seed": 12646208,
+     "state": 12646208
+    },
+    "tea": {
+     "seed": 8302404,
+     "state": 3543551636
+    },
+    "teaRun": {
+     "seed": 5966032,
+     "state": 5966032
+    },
+    "dailyPour": {
+     "seed": 3658594473,
+     "state": 3658594473
+    },
+    "biscuitBreakout": {
+     "seed": 2975599067,
+     "state": 2975599067
+    },
+    "crossingStreet": {
+     "seed": 203447619,
+     "state": 203447619
+    },
+    "goldenLeaf": {
+     "seed": 1612571361,
+     "state": 1612571361
+    },
+    "manager": {
+     "seed": 1830566324,
+     "state": 1830566324
+    }
+   },
+   "pinnedTea": null
+  }
+ },
+ "continuations": {
+  "earlyAuto": [
+   {
+    "round": 3,
+    "nextFortune": "star",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "earlGrey",
+    "score": 30,
+    "lives": 3,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 2,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 1639742299
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 3424205442
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 12648355
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 2407760741
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     },
+     "goldenLeaf": {
+      "seed": 1612573186,
+      "state": 1612573186
+     },
+     "manager": {
+      "seed": 1830564183,
+      "state": 1830564183
+     }
+    }
+   },
+   {
+    "round": 4,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "house",
+    "score": 40,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 3,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 4039202585
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 201085895
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 12648355
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 1775925071
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     },
+     "goldenLeaf": {
+      "seed": 1612573186,
+      "state": 1612573186
+     },
+     "manager": {
+      "seed": 1830564183,
+      "state": 1830564183
+     }
+    }
+   },
+   {
+    "round": 5,
+    "nextFortune": "crown",
+    "offer": [
+     "quickStir",
+     "polished"
+    ],
+    "tea": "herbal",
+    "score": 50,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 4,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 1511859905
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 201085895
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 12648355
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 1144089401
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     },
+     "goldenLeaf": {
+      "seed": 1612573186,
+      "state": 1612573186
+     },
+     "manager": {
+      "seed": 1830564183,
+      "state": 1830564183
+     }
+    }
+   },
+   {
+    "round": 6,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 420,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 5,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 3911320191
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 2032651708
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 12648355
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 512253731
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     },
+     "goldenLeaf": {
+      "seed": 1612573186,
+      "state": 1612573186
+     },
+     "manager": {
+      "seed": 1830564183,
+      "state": 1830564183
+     }
+    }
+   }
+  ],
+  "chapter2Auto": [
+   {
+    "round": 9,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "sugarScoop",
+     "strainer"
+    ],
+    "tea": "herbal",
+    "score": 453,
+    "lives": 3,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 8,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2222,
+      "state": 4287393218
+     },
+     "chocolate": {
+      "seed": 1592641646,
+      "state": 3864219538
+     },
+     "boss": {
+      "seed": 12646208,
+      "state": 12646208
+     },
+     "tea": {
+      "seed": 8302404,
+      "state": 2911715966
+     },
+     "teaRun": {
+      "seed": 5966032,
+      "state": 5966032
+     },
+     "dailyPour": {
+      "seed": 3658594473,
+      "state": 3658594473
+     },
+     "biscuitBreakout": {
+      "seed": 2975599067,
+      "state": 2975599067
+     },
+     "crossingStreet": {
+      "seed": 203447619,
+      "state": 203447619
+     },
+     "goldenLeaf": {
+      "seed": 1612571361,
+      "state": 1612571361
+     },
+     "manager": {
+      "seed": 1830566324,
+      "state": 1830566324
+     }
+    }
+   },
+   {
+    "round": 10,
+    "nextFortune": "karma",
+    "offer": null,
+    "tea": "black",
+    "score": 466,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 9,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2222,
+      "state": 4223452021
+     },
+     "chocolate": {
+      "seed": 1592641646,
+      "state": 3104501474
+     },
+     "boss": {
+      "seed": 12646208,
+      "state": 1844212021
+     },
+     "tea": {
+      "seed": 8302404,
+      "state": 2279880296
+     },
+     "teaRun": {
+      "seed": 5966032,
+      "state": 5966032
+     },
+     "dailyPour": {
+      "seed": 3658594473,
+      "state": 3658594473
+     },
+     "biscuitBreakout": {
+      "seed": 2975599067,
+      "state": 2975599067
+     },
+     "crossingStreet": {
+      "seed": 203447619,
+      "state": 203447619
+     },
+     "goldenLeaf": {
+      "seed": 1612571361,
+      "state": 1612571361
+     },
+     "manager": {
+      "seed": 1830566324,
+      "state": 1830566324
+     }
+    }
+   },
+   {
+    "round": 11,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "strainer",
+     "quickStir"
+    ],
+    "tea": "green",
+    "score": 836,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 10,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2222,
+      "state": 1696109341
+     },
+     "chocolate": {
+      "seed": 1592641646,
+      "state": 3104501474
+     },
+     "boss": {
+      "seed": 12646208,
+      "state": 1844212021
+     },
+     "tea": {
+      "seed": 8302404,
+      "state": 1648044626
+     },
+     "teaRun": {
+      "seed": 5966032,
+      "state": 5966032
+     },
+     "dailyPour": {
+      "seed": 3658594473,
+      "state": 3658594473
+     },
+     "biscuitBreakout": {
+      "seed": 2975599067,
+      "state": 2975599067
+     },
+     "crossingStreet": {
+      "seed": 203447619,
+      "state": 203447619
+     },
+     "goldenLeaf": {
+      "seed": 1612571361,
+      "state": 1612571361
+     },
+     "manager": {
+      "seed": 1830566324,
+      "state": 1830566324
+     }
+    }
+   },
+   {
+    "round": 12,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 846,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 11,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2222,
+      "state": 4095569627
+     },
+     "chocolate": {
+      "seed": 1592641646,
+      "state": 641099991
+     },
+     "boss": {
+      "seed": 12646208,
+      "state": 1844212021
+     },
+     "tea": {
+      "seed": 8302404,
+      "state": 1016208956
+     },
+     "teaRun": {
+      "seed": 5966032,
+      "state": 5966032
+     },
+     "dailyPour": {
+      "seed": 3658594473,
+      "state": 3658594473
+     },
+     "biscuitBreakout": {
+      "seed": 2975599067,
+      "state": 2975599067
+     },
+     "crossingStreet": {
+      "seed": 203447619,
+      "state": 203447619
+     },
+     "goldenLeaf": {
+      "seed": 1612571361,
+      "state": 1612571361
+     },
+     "manager": {
+      "seed": 1830566324,
+      "state": 1830566324
+     }
+    }
+   }
+  ],
+  "earlyManual": [
+   {
+    "round": 3,
+    "nextFortune": "star",
+    "offer": [
+     "strainer",
+     "polished"
+    ],
+    "tea": "earlGrey",
+    "score": 30,
+    "lives": 3,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 2,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 1639742299
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 3424205442
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 12648355
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 2407760741
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     },
+     "goldenLeaf": {
+      "seed": 1612573186,
+      "state": 1612573186
+     },
+     "manager": {
+      "seed": 1830564183,
+      "state": 1830564183
+     }
+    }
+   },
+   {
+    "round": 4,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "house",
+    "score": 40,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 3,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 4039202585
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 201085895
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 12648355
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 1775925071
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     },
+     "goldenLeaf": {
+      "seed": 1612573186,
+      "state": 1612573186
+     },
+     "manager": {
+      "seed": 1830564183,
+      "state": 1830564183
+     }
+    }
+   },
+   {
+    "round": 5,
+    "nextFortune": "crown",
+    "offer": [
+     "quickStir",
+     "polished"
+    ],
+    "tea": "herbal",
+    "score": 50,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 4,
+    "chapter": 1,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 1511859905
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 201085895
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 12648355
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 1144089401
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     },
+     "goldenLeaf": {
+      "seed": 1612573186,
+      "state": 1612573186
+     },
+     "manager": {
+      "seed": 1830564183,
+      "state": 1830564183
+     }
+    }
+   },
+   {
+    "round": 6,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "chai",
+    "score": 420,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 5,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 77,
+      "state": 3911320191
+     },
+     "chocolate": {
+      "seed": 1592639629,
+      "state": 2032651708
+     },
+     "boss": {
+      "seed": 12648355,
+      "state": 12648355
+     },
+     "tea": {
+      "seed": 8300455,
+      "state": 512253731
+     },
+     "teaRun": {
+      "seed": 5963827,
+      "state": 5963827
+     },
+     "dailyPour": {
+      "seed": 3658592330,
+      "state": 3658592330
+     },
+     "biscuitBreakout": {
+      "seed": 2975596856,
+      "state": 2975596856
+     },
+     "crossingStreet": {
+      "seed": 203445664,
+      "state": 203445664
+     },
+     "goldenLeaf": {
+      "seed": 1612573186,
+      "state": 1612573186
+     },
+     "manager": {
+      "seed": 1830564183,
+      "state": 1830564183
+     }
+    }
+   }
+  ],
+  "chapter2Manual": [
+   {
+    "round": 9,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "sugarScoop",
+     "strainer"
+    ],
+    "tea": "herbal",
+    "score": 453,
+    "lives": 3,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": true,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 8,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2222,
+      "state": 4287393218
+     },
+     "chocolate": {
+      "seed": 1592641646,
+      "state": 3864219538
+     },
+     "boss": {
+      "seed": 12646208,
+      "state": 12646208
+     },
+     "tea": {
+      "seed": 8302404,
+      "state": 2911715966
+     },
+     "teaRun": {
+      "seed": 5966032,
+      "state": 5966032
+     },
+     "dailyPour": {
+      "seed": 3658594473,
+      "state": 3658594473
+     },
+     "biscuitBreakout": {
+      "seed": 2975599067,
+      "state": 2975599067
+     },
+     "crossingStreet": {
+      "seed": 203447619,
+      "state": 203447619
+     },
+     "goldenLeaf": {
+      "seed": 1612571361,
+      "state": 1612571361
+     },
+     "manager": {
+      "seed": 1830566324,
+      "state": 1830566324
+     }
+    }
+   },
+   {
+    "round": 10,
+    "nextFortune": "karma",
+    "offer": null,
+    "tea": "black",
+    "score": 466,
+    "lives": 3,
+    "havocDue": false,
+    "grindDue": true,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": true,
+    "heat": 9,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2222,
+      "state": 4223452021
+     },
+     "chocolate": {
+      "seed": 1592641646,
+      "state": 3104501474
+     },
+     "boss": {
+      "seed": 12646208,
+      "state": 1844212021
+     },
+     "tea": {
+      "seed": 8302404,
+      "state": 2279880296
+     },
+     "teaRun": {
+      "seed": 5966032,
+      "state": 5966032
+     },
+     "dailyPour": {
+      "seed": 3658594473,
+      "state": 3658594473
+     },
+     "biscuitBreakout": {
+      "seed": 2975599067,
+      "state": 2975599067
+     },
+     "crossingStreet": {
+      "seed": 203447619,
+      "state": 203447619
+     },
+     "goldenLeaf": {
+      "seed": 1612571361,
+      "state": 1612571361
+     },
+     "manager": {
+      "seed": 1830566324,
+      "state": 1830566324
+     }
+    }
+   },
+   {
+    "round": 11,
+    "nextFortune": "doubleTrouble",
+    "offer": [
+     "strainer",
+     "quickStir"
+    ],
+    "tea": "green",
+    "score": 836,
+    "lives": 4,
+    "havocDue": false,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 10,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2222,
+      "state": 1696109341
+     },
+     "chocolate": {
+      "seed": 1592641646,
+      "state": 3104501474
+     },
+     "boss": {
+      "seed": 12646208,
+      "state": 1844212021
+     },
+     "tea": {
+      "seed": 8302404,
+      "state": 1648044626
+     },
+     "teaRun": {
+      "seed": 5966032,
+      "state": 5966032
+     },
+     "dailyPour": {
+      "seed": 3658594473,
+      "state": 3658594473
+     },
+     "biscuitBreakout": {
+      "seed": 2975599067,
+      "state": 2975599067
+     },
+     "crossingStreet": {
+      "seed": 203447619,
+      "state": 203447619
+     },
+     "goldenLeaf": {
+      "seed": 1612571361,
+      "state": 1612571361
+     },
+     "manager": {
+      "seed": 1830566324,
+      "state": 1830566324
+     }
+    }
+   },
+   {
+    "round": 12,
+    "nextFortune": "crown",
+    "offer": null,
+    "tea": "earlGrey",
+    "score": 846,
+    "lives": 4,
+    "havocDue": true,
+    "grindDue": false,
+    "shortageDue": false,
+    "arcadeDue": null,
+    "dayPending": false,
+    "heat": 11,
+    "chapter": 2,
+    "random": {
+     "normal": {
+      "seed": 2222,
+      "state": 4095569627
+     },
+     "chocolate": {
+      "seed": 1592641646,
+      "state": 641099991
+     },
+     "boss": {
+      "seed": 12646208,
+      "state": 1844212021
+     },
+     "tea": {
+      "seed": 8302404,
+      "state": 1016208956
+     },
+     "teaRun": {
+      "seed": 5966032,
+      "state": 5966032
+     },
+     "dailyPour": {
+      "seed": 3658594473,
+      "state": 3658594473
+     },
+     "biscuitBreakout": {
+      "seed": 2975599067,
+      "state": 2975599067
+     },
+     "crossingStreet": {
+      "seed": 203447619,
+      "state": 203447619
+     },
+     "goldenLeaf": {
+      "seed": 1612571361,
+      "state": 1612571361
+     },
+     "manager": {
+      "seed": 1830566324,
+      "state": 1830566324
+     }
+    }
+   }
+  ]
+ }
+}

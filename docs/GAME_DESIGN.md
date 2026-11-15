@@ -3,8 +3,8 @@
 ## Creative direction
 
 The silver spoon is the hero: defender of a temperamental cup and reluctant
-star of increasingly unreasonable adventures. The 0.14.0 Days let
-players choose a comfortable continuation or sustained challenge.
+star of increasingly unreasonable adventures. Chill offers a comfortable
+continuation; Arcade always carries its Heat into the next Day.
 
 **Steeped in Trouble is a circular arcade survival game in which the player's
 actions influence the tea-leaf patterns remaining after each round. Those
@@ -27,6 +27,114 @@ presentation and keyboard controls, then performance and reliability.
 Tablet compatibility and phone compatibility follow as best effort, in
 that order. Existing touch and responsive layout accommodations remain supported
 by automated tests; physical-device testing is not a publication gate.
+
+## 0.23.0 integration candidate: modes and supplies
+
+This section describes the accepted local candidate, which is not published
+or production qualified. Sections explicitly labeled with earlier versions
+describe their historical rules; this section supersedes their Sugar width,
+resource refill, boss reward, Sugar Rush, Sugar Scoop, Golden Cube sugar,
+Mycelium Manager sugar and Arcade Day-choice descriptions.
+
+Choose **Chill** or **Arcade** before a pot. Mode locks while the pot is active;
+Continue Your Pot restores the saved mode. The preference also accepts
+`?mode=chill|arcade`. Without a mode preference, an Auto Steam control setup
+starts in Chill; a manual setup starts in Arcade.
+
+| Rule | Chill | Arcade |
+| --- | --- | --- |
+| Auto Steam | Available; Easy Touch uses it | Disabled, including Easy Touch; hold STEAM |
+| Day boundary | Choose Fresh Brew (Heat 0) or Keep the Kettle On | Automatic Keep the Kettle On; no Fresh Brew |
+| Heat ceiling | 14 | 28 |
+| Normal target ceiling | 26 | 32 |
+| Passive Milk | +1 after each completed normal cup | +1 after every 2 completed normal cups |
+
+Chill retains its accepted slower enemy speeds, longer spawn intervals and
+difficulty caps. Arcade retains its existing full curve and ceilings.
+Days remain ten normal cups; chapters, milestone bosses, encounters, upgrades
+and fortunes keep their own progression. The reading and pending encounters
+resolve before a new Day begins. Arcade consumes the shared Day transition
+once with `keep`, then starts the next cup and briefly announces
+**ARCADE — KEEP THE KETTLE ON**. Engine calls to select `fresh` are rejected.
+Restored Arcade boundary readings follow the same path without a hidden choice.
+
+Sugar now fires **seven darts**, down the spoon's lane and offsets -3 to +3.
+This also applies to boss encounters that use the Sugar weapon. Milk retains
+its existing washback, slowdown and recovery effects.
+
+Both modes start a pot with **2 Milk and 1 Sugar**. Inventory carries between
+cups instead of resetting to full. Milk capacity is 3; Sugar capacity is 2
+plus Sugar Scoop levels. Passive Milk arrives on entry to the next normal
+cup, subject to capacity. Sugar has no passive per-cup refill. Rewards now
+add to the carried inventory within these capacities, as set out below.
+
+### Rewards and capacity (0.23.0)
+
+Every Milk and Sugar award is capped at capacity. Awards promised for the
+next normal cup (fortune bonus Sugar, Hot Chocolate, secrets, the Tea
+Shortage restock, Tea Tray treats) are added when that cup starts and then
+clamped, so any excess is lost if the inventory is already full.
+
+- **Bosses enter with the carried inventory.** The Daily Grind and The
+  Mycelium Manager no longer refill Milk and Sugar on arrival; whatever is
+  carried (within capacity) is what the fight has.
+- **Boss victories:** a milestone victory pays **15 Tea Cash**, +1 Sugar and
+  +1 Milk; a rematch victory pays **10 Tea Cash** and +1 Sugar. Each award is
+  capped and paid once. Escapes pay nothing. Bonus points and the Golden
+  Spoon are unchanged.
+- **Sugar Rush** regrows one burst every **9 seconds** while Sugar is below
+  capacity (the clock waits while full), at most **2 bursts per cup**.
+- **Sugar Scoop** raises Sugar capacity by 1 per level (up to 2 levels,
+  capacity 4) and adds 1 Sugar at once when chosen, within the new capacity.
+- **Golden Cube:** the jackpot fills Milk and Sugar to capacity, with its
+  points and the Golden Spoon. The Sugar reward adds 1 Sugar only when there
+  is room; with Sugar full, that roll pays the ordinary bonus points instead.
+- **Hot Chocolate Havoc** is unchanged: good and great grades (5 and 9
+  perfect marshmallows) both earn one Sugar for the next cup; modest earns none.
+- **The Mycelium Manager:** each dart, steam or sugar, is spent on the first
+  thing it meets in its lane: a memo beyond the root's tip, the root tip, or
+  the Manager. A sugar dart clears the whole root it reaches; it no longer
+  carries on to pop a memo behind it. A seven-lane burst can therefore clear
+  up to seven roots, but **Synergy** drops a memo for at most **two** of the
+  roots one burst clears. Steam is not limited.
+- **The Daily Grind:** sugar still crunches through beans; only the dart in
+  the open valve's lane damages the valve, so one burst deals one dart's damage.
+
+### Buying supplies
+
+Spend Tea Cash at a normal cup's reading, once the reading is ready and the
+supply bar appears beside the upgrade choice: **10 for +1 Milk**, **25 for
++1 Sugar** (keyboard **B** / **N**, or the bar's buttons). Choosing an upgrade
+or continuing ends the reading, so buy first. Purchases require enough cash
+and free capacity, and the engine refuses them at any other time, including
+before the bar appears, during play, Tea Shortages, Day choices and bosses.
+Q and E always remain Milk and Sugar. Each purchase saves an updated
+checkpoint, with no additional completed-cup statistic.
+
+Best score, best round, completed normal cups and finished-pot play counts
+are stored separately for Chill and Arcade in the browser-local mode book.
+The Spoon's Other Jobs retains its separate adventure records. Training
+and development-injected scenarios cannot write legitimate results or
+overwrite/clear a normal saved pot; ordinary `?debug` play remains eligible.
+Injected-state provenance is runtime-only and survives restarting the same
+instance. A fresh ordinary pot or restoration of a legitimate saved pot is
+eligible again. These controls cover provided shortcuts, not arbitrary
+manual edits to the writable debug object or browser storage. Previously
+contaminated records cannot be distinguished reliably and are not deleted.
+
+Checkpoint **schema 6** adds mode. Schema 1-5 migration retains the pending
+reading, fortune, upgrades, chapters, encounters, resource inventory and RNG
+cursors. Earlier pots with Auto Steam become Chill; others become Arcade.
+Migration is in memory until a successful new checkpoint replaces the stored
+save. Legacy inventory is retained at the restored reading and clamped to
+current capacity on the next normal cup. The development `cup=migrated`
+fixture uses an isolated in-memory store, leaving browser saves intact.
+
+Between-cup ants can remain active during reading upgrade and supply
+decisions, with shorter cosmetic opportunity schedules in measured safe
+space. Movement, population limits and sugar-cube timing remain as accepted.
+Pause, hidden/unfocused tabs, rewinds, modal dialogs, reduced motion, Low
+graphics and narrow layouts retain their existing restrictions.
 
 ## Implemented in 0.1.0
 
@@ -798,10 +906,11 @@ The next fortune and the ordinary random sequences stay unchanged.
 
 ### Touch and Auto Steam
 
-Phones default to Easy Touch: two steering pads, Auto Steam, double-tap the
+Phones default to Easy Touch: two steering pads, Auto Steam in Chill, double-tap the
 cup for milk, and hold 450 ms for sugar. Taps may be up to 300 ms apart;
 drags and steering-pad taps do not count. Classic Touch keeps dedicated
-buttons and can use manual or automatic steam. Preferences persist.
+buttons and can use manual steam, or Auto Steam in Chill. Arcade adds a manual
+STEAM button to Easy Touch. Preferences persist.
 Auto Steam targets only the spoon's current lane, using ordinary cooldowns
 and statistics; it never steers or chooses milk/sugar. Hot chocolate remains
 manual (hold the cup for flames in Easy Touch). Runner pads replace cup
@@ -811,8 +920,8 @@ input for the errand, and unfinished gestures never carry between phases.
 
 The former Compact layout is the single presentation on every device.
 Controls and firing remain separate choices: Easy / Classic Touch and
-Auto / Manual Steam. Easy Touch still requires
-Auto Steam because it has no steam button; its relaxed difficulty is intentional.
+Auto / Manual Steam in Chill. Chill Easy Touch uses Auto Steam; Arcade Easy
+Touch has a manual STEAM button and disables Auto Steam.
 No combat tuning changes accompany the mobile presentation.
 
 Saved view preferences and the old `view` URL parameter are ignored.
@@ -1100,6 +1209,10 @@ permanent upgrades, larger economy, online scores, mobile redesign or
 physics library. More biscuit characters and secrets may come later.
 
 ## Days and Heat (0.14.0)
+
+Historical 0.14.0 rules and tuning follow. In 0.23.0, only Chill offers both
+Day choices, with its own gentler limits; Arcade always takes Keep the Kettle
+On automatically. See [the current mode rules](#0230-integration-candidate-modes-and-supplies).
 
 **Days control difficulty. Chapters control content.** A Day is exactly ten
 completed normal teacup rounds. Derive Day as `floor((round - 1) / 10) + 1`

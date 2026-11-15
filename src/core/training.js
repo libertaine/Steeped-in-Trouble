@@ -94,6 +94,6 @@ export function createTraining({ released = () => true } = {}) {
     retry() { if (stage >= 5) return; failures++; prepare(true); },
   };
   // The ordinary simulation owns all weapons, movement, collisions and visual events.
-  const game = createGame({ seed: TRAINING_SEED, training: policy });
+  const game = createGame({ seed: TRAINING_SEED, training: policy, mode: 'chill' });
   return game;
 }

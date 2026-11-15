@@ -97,6 +97,7 @@ describe('HUD text', () => {
     game.state.nextFortune = 'sugarRush';
     expect(hudText(game.state).hudOmen).toBe('');
     brewNext(game);
+    game.state.sugarLeft = 2;
     expect(hudText(game.state).hudOmen).toBe('✦ Sugar Rush · sugar regrows · this cup');
     game.sugarBurst();
     expect(hudText(game.state).hudOmen).toMatch(/next lump \ds$/);

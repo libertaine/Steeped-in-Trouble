@@ -88,7 +88,7 @@ describe('analytics gate', () => {
   });
 
   it('knows every URL parameter the game reads: a new one must choose a side', () => {
-    const preferences = ['analytics', 'view', 'touch', 'autosteam', 'graphics'];
+    const preferences = ['analytics', 'view', 'touch', 'autosteam', 'graphics', 'mode'];
     const files = readdirSync('src', { recursive: true }).filter((file) => file.endsWith('.js'));
     const read = new Set();
     for (const file of files) {

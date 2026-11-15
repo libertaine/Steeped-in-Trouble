@@ -1,9 +1,12 @@
 // Imported only into the existing ?debug + development gate. These fixtures
 // drive real settlement/checkpoint paths; no fixture is shipped to production.
+import { excludeScenario } from '../core/recordEligibility.js';
+
 export function prepareRecord(sessions) {
   if (!sessions.practice) return false;
   const game = sessions.game, m = game.practiceMission();
   if (m.stage !== 'intro') return false;
+  excludeScenario(game);
   game.primaryAction();
   switch (game.practice) {
     case 'teaRun': m.obstacles = []; m.pickups = []; m.distance = m.finish - 1; m.coins = 8; break;
@@ -21,6 +24,7 @@ export function prepareCheckpoint(sessions) {
   const game = sessions.game, s = game.state;
   if (s.phase === 'ready') game.primaryAction();
   if (s.phase !== 'playing') return false;
+  excludeScenario(game);
   s.spawnTimer = 1000; s.current = null; s.modifiers.laneDrift = false; s.kills = s.target - 1;
   s.enemies = [{ angle: s.angle, radius: 180, speed: 0, wiggle: 0, shifted: false, size: 10, alpha: 1 }];
   s.shots = [{ angle: s.angle, radius: 180, speed: 0, sugar: false, veer: 0, golden: false }];

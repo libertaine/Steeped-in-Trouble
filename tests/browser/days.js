@@ -3,10 +3,12 @@ import { expectChoiceClickable, expectChoiceText } from './choiceVisibility.js';
 
 /** Checkpoint the final cup, then let a real combat collision finish it. */
 export async function toDayReading(page, { round = 10, encounter = null } = {}) {
+  // Deliberate Day choices belong to Chill; Arcade now advances automatically.
+  await page.evaluate(() => window.__TEACUP__.game.setMode('chill'));
   await page.locator('#mainBtn').click();
   await page.evaluate(([r, adventure]) => {
     const s = window.__TEACUP__.game.state;
-    Object.assign(s, { round: r, heat: Math.min(28, r - 1), target: 32, kills: 31,
+    Object.assign(s, { round: r, heat: Math.min(14, r - 1), target: 26, kills: 25,
       progress: { chapter: 2, starts: [1, 6] }, grindAfter: null, lastGrind: r,
       havocAfter: null, lastHavoc: r, shortageAfter: 1000, spawnTimer: Infinity, current: null });
     s.arcade.after.dailyPour = adventure === 'dailyPour' ? r : r + 2;

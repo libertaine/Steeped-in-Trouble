@@ -6,8 +6,8 @@
 // 'shortage', or 'run'), so the stylesheet can show the right touch controls.
 
 import { CONFIG } from '../config.js';
-import { DAY_CAPTIONS, MAX_HEAT, cupOfDay, dayOf } from '../gameplay/days.js';
-import { readingReadyAt } from '../core/game.js';
+import { DAY_CAPTIONS, cupOfDay, dayOf, maxHeatFor } from '../gameplay/days.js';
+import { readingReadyAt, restockOpen } from '../core/game.js';
 import { PHASE } from '../core/state.js';
 import { havocInProgress } from '../gameplay/chocolate.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
@@ -24,7 +24,7 @@ import { TEAS } from '../gameplay/teas.js';
 import { UPGRADES, strainerCapacity } from '../gameplay/upgrades.js';
 import { TRAY } from '../gameplay/teaTray.js';
 import { cupCondition } from '../gameplay/porcelain.js';
-import { sugarCapacity } from '../gameplay/weapons.js';
+import { milkCapacity, modeConfig, sugarCapacity } from '../gameplay/weapons.js';
 import { createResources } from './resources.js';
 
 const COPY = {
@@ -190,7 +190,7 @@ const MANAGER = {
   button: { intro: 'Skip the entrance →', fight: 'Pause / resume (P)', outro: 'Back to the tea →' },
   tip: {
     intro: 'Middle management has arrived.',
-    fight: 'Pop the memos: their spores are the only thing that hurts it. Steam root tips to cut them back (sugar clears three lanes; milk stops them growing). At an all-hands meeting, leave the invited lanes or cut their roots. Three scalds and it gets away, but it can’t cost you a cup.',
+    fight: 'Pop the memos: their spores are the only thing that hurts it. Steam root tips to cut them back (sugar clears seven lanes; milk stops them growing). At an all-hands meeting, leave the invited lanes or cut their roots. Three scalds and it gets away, but it can’t cost you a cup.',
     outro: 'Your cups, your spoon, and the next fortune are exactly as you left them.',
   },
   milestone: {
@@ -334,6 +334,31 @@ export function errandView(state) {
   };
 }
 
+/**
+ * Between-round Tea Cash supply restock view (Milk: 10 Tea Cash, Sugar: 25 Tea Cash),
+ * or null outside a ready reading (the engine's restockOpen rule).
+ */
+export function restockView(state) {
+  if (!restockOpen(state)) return null;
+  const milkPrice = CONFIG.teaCash.milkPrice;
+  const sugarPrice = CONFIG.teaCash.sugarPrice;
+  const milkCap = milkCapacity(state);
+  const sugarCap = sugarCapacity(state);
+  const milkFull = state.milkLeft >= milkCap;
+  const sugarFull = state.sugarLeft >= sugarCap;
+  return {
+    cash: state.teaCash,
+    milk: {
+      enabled: !milkFull && state.teaCash >= milkPrice,
+      label: milkFull ? `Milk full (${state.milkLeft}/${milkCap})` : `+Milk · ${milkPrice} Cash`,
+    },
+    sugar: {
+      enabled: !sugarFull && state.teaCash >= sugarPrice,
+      label: sugarFull ? `Sugar full (${state.sugarLeft}/${sugarCap})` : `+Sugar · ${sugarPrice} Cash`,
+    },
+  };
+}
+
 /** All HUD text for a state, keyed by element id. Pure, for easy testing. */
 export function hudText(state) {
   const havoc = havocInProgress(state);
@@ -353,9 +378,13 @@ export function hudText(state) {
   const tea = TEAS[state.tea];
   const fresh = state.round > 1 && state.teaAge === 1 ? 'New on the shelf! ' : '';
   const teaTip = state.phase === PHASE.PLAYING && tea.id !== 'house' ? `${fresh}${tea.name}: ${tea.info}` : null;
+  const modeLabel = modeConfig(state).label;
   const values = {
+    hudMode: modeLabel.toUpperCase(),
+    potMode: modeLabel,
+    headerModeBtn: `MODE: ${modeLabel.toUpperCase()}`,
     hudStatus: statusText(state),
-    hudDay: `DAY ${dayOf(state.round)} · CUP ${cupOfDay(state.round)}/${CONFIG.days.length} · HEAT ${state.heat}${state.heat === MAX_HEAT ? ' MAX' : ''}`,
+    hudDay: `DAY ${dayOf(state.round)} · CUP ${cupOfDay(state.round)}/${CONFIG.days.length} · HEAT ${state.heat}${state.heat >= maxHeatFor(state.mode) ? ' MAX' : ''}`,
     dayCompleted: `Day ${dayOf(state.round)} complete. Choose how tomorrow brews.`,
     dayCaption: DAY_CAPTIONS[(dayOf(state.round) - 1) % DAY_CAPTIONS.length],
     hudScore: `SCORE ${pad(state.score, 4)}`,
@@ -598,6 +627,29 @@ export function createHud(doc = document) {
     }
   }
 
+  const restock = doc.getElementById('restockOffer');
+  const restockCash = doc.getElementById('restockCash');
+  const restockButtons = restock ? [...restock.querySelectorAll('[data-supply]')] : [];
+  let shownRestock = null;
+
+  /** Show, fill, or hide the between-round Tea Cash supply restock bar. */
+  function updateRestock(state) {
+    const view = doc.body?.dataset.training === 'true' ? null : restockView(state);
+    const key = view ? JSON.stringify(view) : null;
+    if (!restock || key === shownRestock) return;
+    shownRestock = key;
+    restock.hidden = !view;
+    if (!view) return;
+    if (restockCash) restockCash.textContent = `Cash: ${view.cash}`;
+    for (const button of restockButtons) {
+      const item = view[button.dataset.supply];
+      if (!item) continue;
+      button.disabled = !item.enabled;
+      const span = button.querySelector('span');
+      if (span) span.textContent = item.label;
+    }
+  }
+
   return {
     handle(event) {
       resources.handle(event);
@@ -612,10 +664,12 @@ export function createHud(doc = document) {
     update(state) {
       updateOffer(state);
       updateErrand(state);
+      updateRestock(state);
       if (arcade) arcade.hidden = state.phase !== PHASE.ARCADE_OFFER;
-      if (day) day.hidden = state.phase !== PHASE.DAY;
+      if (day) day.hidden = state.phase !== PHASE.DAY || state.mode === 'arcade';
       const mode = pageMode(state);
       if (doc.body && doc.body.dataset.mode !== mode) doc.body.dataset.mode = mode;
+      if (doc.body && doc.body.dataset.gameMode !== state.mode) doc.body.dataset.gameMode = state.mode;
       const values = hudText(state);
       const ready = state.phase === PHASE.READING && state.readingTime >= readingReadyAt(state);
       const presentation = doc.getElementById('readingPresentation');

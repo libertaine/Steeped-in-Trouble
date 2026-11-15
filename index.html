@@ -128,7 +128,7 @@
         <div class="resource-item" id="resource1" role="group"></div>
         <div class="resource-item" id="resource2" role="group"></div>
       </div>
-      <div class="resource-secondary"><span id="hudTea"></span><span id="hudStatus">READY TO BREW</span><span id="resourceGuidance"></span><span id="hudOmen"></span><span id="hudAuto"></span><span id="resourceScore"></span></div>
+      <div class="resource-secondary"><span id="hudMode" class="hud-mode">ARCADE</span><span id="hudTea"></span><span id="hudStatus">READY TO BREW</span><span id="resourceGuidance"></span><span id="hudOmen"></span><span id="hudAuto"></span><span id="resourceScore"></span></div>
       <span class="sr-only" id="resourceAnnouncement" role="status" aria-live="polite"></span>
     </div>
     <p id="cupStatus" class="sr-only" role="status">Cup condition: Cup stable.</p>
@@ -158,6 +158,7 @@
     <div class="controls-mobile controls-easy">
       <button class="steer" data-hold="left" aria-label="Rotate counterclockwise">◀</button>
       <p class="easy-hint" id="easyHint">Double-tap: milk<br />Hold: sugar</p>
+      <button class="easy-steam" data-hold="fire" aria-label="Shoot steam">STEAM ↑</button>
       <button class="steer" data-hold="right" aria-label="Rotate clockwise">▶</button>
     </div>
     <div class="controls-mobile controls-run">
@@ -180,9 +181,16 @@
       <button class="walk-pad" data-walk="right" aria-label="Hop right">▶</button>
     </div>
     <div id="actionDock" class="action-dock">
+      <div id="restockOffer" class="restock-offer" role="group" aria-label="Tea Cash Supplies" hidden>
+        <span class="restock-cash" id="restockCash">Cash: 0</span>
+        <button type="button" class="restock-btn" data-supply="milk" aria-label="Buy 1 milk charge for 10 Tea Cash"><kbd>B</kbd> <span>+Milk · 10 Cash</span></button>
+        <button type="button" class="restock-btn" data-supply="sugar" aria-label="Buy 1 sugar charge for 25 Tea Cash"><kbd>N</kbd> <span>+Sugar · 25 Cash</span></button>
+      </div>
       <button id="menuBtn" aria-haspopup="dialog">Pause / Menu</button>
     </div>
     <div class="collection-entry" id="collectionEntry">
+      <button id="chillModeBtn" type="button" data-select-mode="chill" aria-pressed="false">CHILL MODE</button>
+      <button id="arcadeModeBtn" type="button" data-select-mode="arcade" aria-pressed="true">ARCADE MODE</button>
       <button id="collectionBtn" aria-haspopup="dialog">THE SPOON'S OTHER JOBS</button>
       <button id="trainingBtn">TRAINING CUP</button>
       <button id="newPotBtn" hidden>BREW A NEW POT</button>
@@ -207,15 +215,17 @@
       <p id="hudDay">DAY 1 · CUP 1/10 · HEAT 0</p>
       <p id="hudScore">SCORE 0000</p>
       <p id="referenceResources"></p>
+      <div class="statrow"><span>Mode</span><strong id="potMode">Arcade</strong></div>
       <div class="statrow"><span>Round</span><strong id="roundNum">01</strong></div>
       <div class="statrow"><span>The tea</span><strong id="teaName">House Blend</strong></div>
       <div class="statrow"><span id="killLabel">Leaves cleared</span><strong id="killCount">0 / 16</strong></div>
       <div class="statrow"><span>Milk pours</span><strong id="milkCount">2</strong></div>
-      <div class="statrow"><span>Sugar bursts</span><strong id="sugarCount">2</strong></div>
+      <div class="statrow"><span>Sugar bursts</span><strong id="sugarCount">1</strong></div>
       <div class="statrow"><span>Strainer catches</span><strong id="strainerCount">1 / 1</strong></div>
       <div class="statrow"><span>Tea Cash</span><strong id="teaCash">0</strong></div>
       <div class="statrow"><span>Chapter</span><strong id="chapterNum">1</strong></div>
       <p id="potScore" class="note"></p>
+      <p id="modeRecord" class="note"></p>
       <button id="mainBtn" class="action">Brew the first cup →</button>
       <p class="note" id="gameTip">Defend the rim. Where the leaves settle determines the fortune of your next cup.</p>
     </section>
@@ -255,15 +265,18 @@
       <div class="keyrow"><span>Move the silver spoon</span><span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></span></div>
       <div class="keyrow"><span>Fire steam inward</span><span><kbd>Space</kbd></span></div>
       <div class="keyrow"><span>Milk: slow a wedge</span><span><kbd>Q</kbd> / <kbd>↑</kbd></span></div>
-      <div class="keyrow"><span>Sugar: triple shot</span><span><kbd>E</kbd> / <kbd>↓</kbd> / <kbd>S</kbd></span></div>
+      <div class="keyrow"><span>Sugar: seven-lane burst</span><span><kbd>E</kbd> / <kbd>↓</kbd> / <kbd>S</kbd></span></div>
+      <div class="keyrow"><span>Restock Milk / Sugar (at a reading)</span><span><kbd>B</kbd> (10) · <kbd>N</kbd> (25)</span></div>
       <div class="keyrow"><span>Pause / next cup</span><span><kbd>P</kbd> / <kbd>Enter</kbd></span></div>
       <div class="keyrow"><span>Mute / Unmute Audio</span><span><kbd>M</kbd></span></div>
       <div class="keyrow"><span>Pick a spoon upgrade</span><span><kbd>1</kbd> / <kbd>2</kbd></span></div>
       <div class="keyrow"><span>Tea Run: jump / slide</span><span><kbd>Space</kbd> / <kbd>↑</kbd> · <kbd>↓</kbd></span></div>
       <div class="keyrow"><span>Biscuit Breakout: move / launch</span><span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> · <kbd>Space</kbd></span></div>
       <div class="keyrow"><span>Crossing the Street: hop</span><span><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> / <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></span></div>
-      <p class="note">Hold STEAM to fire continuously, or turn on Auto Steam to fire at whatever lines up with the spoon. Milk washes the leaves in its wedge back into the cup and slows them; sugar shoots three strong crystalline darts. The tea strainer catches the first leaf to escape each cup.</p>
-      <p class="note">On a touch screen, <b>Easy Touch</b> gives you two big steering pads and Auto Steam: double-tap the cup to pour milk, and hold a finger on it to fire sugar. <b>Classic Touch</b> keeps a button for everything, and works with Auto Steam too.</p>
+      <p class="note">Hold STEAM to fire continuously, or turn on Auto Steam in Chill Mode to fire at whatever lines up with the spoon. Milk washes the leaves in its wedge back into the cup and slows them; sugar shoots seven strong crystalline darts across a wide arc. The tea strainer catches the first leaf to escape each cup.</p>
+      <p class="note">Milk and Sugar carry between cups. Chill restores 1 Milk after each normal cup; Arcade after every 2. At a reading, once the supply bar appears, buy +1 Milk for 10 Tea Cash or +1 Sugar for 25, before choosing an upgrade. Sugar has no automatic per-cup refill.</p>
+      <p class="note"><b>Chill</b> offers Fresh Brew or Keep the Kettle On each Day; <b>Arcade</b> always keeps the kettle on and carries Heat automatically. Chapters and encounters keep their own progress.</p>
+      <p class="note">On a touch screen, <b>Easy Touch</b> gives you two big steering pads: double-tap the cup to pour milk, and hold a finger on it to fire sugar. Auto Steam is available in Chill; Arcade uses the STEAM button. <b>Classic Touch</b> keeps a button for everything.</p>
       <div class="settings">
         <div class="control-visibility"><label for="onScreenControls">On-screen controls</label>
           <select id="onScreenControls" aria-describedby="onScreenControlsHelp">
@@ -272,6 +285,7 @@
             <option value="hide">Hide</option>
           </select>
         </div>
+        <button id="modeBtn" class="toggle" aria-label="Choose gameplay mode">Mode: Arcade</button>
         <button id="touchBtn" class="toggle" aria-label="Choose the touch controls">Touch: classic</button>
         <button id="autoSteamBtn" class="toggle" aria-label="Toggle Auto Steam">Auto Steam: off</button>
         <button id="soundBtn" class="toggle" aria-label="Toggle sound">Sound: off</button>
@@ -320,7 +334,7 @@
       </div>
       <div class="overlay-notes">
         <p>Milk pushes leaves back and slows them.</p>
-        <p>Sugar fires a three-lane burst.</p>
+        <p>Sugar fires a seven-lane burst.</p>
       </div>
       <div class="overlay-touch-summary" id="overlayTouchSummary" hidden>
         <p><strong id="overlayTouchScheme"></strong> <span id="overlayTouchText"></span></p>
@@ -361,6 +375,10 @@
 <dialog id="potConfirmation" aria-labelledby="confirmPotTitle">
   <h2 id="confirmPotTitle">Replace your saved pot?</h2>
   <p id="confirmPotText">Your saved pot will be replaced. Arcade records stay.</p>
+  <div class="mode-confirm-picker" role="group" aria-label="Mode for new pot">
+    <button type="button" data-select-mode="chill" aria-pressed="false">Chill Mode</button>
+    <button type="button" data-select-mode="arcade" aria-pressed="true">Arcade Mode</button>
+  </div>
   <div class="practice-actions"><button id="cancelPotBtn" autofocus>Keep it</button><button id="confirmPotBtn">Replace pot</button></div>
 </dialog>
 <div class="bottom">Original teacup concept; all artwork procedurally drawn with HTML Canvas paths. No arcade-game assets, fonts, or external game libraries. Cookie-free visit analytics; add <code>?analytics=off</code> to the URL to disable them.</div>

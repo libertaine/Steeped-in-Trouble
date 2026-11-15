@@ -13,9 +13,20 @@ export const MAX_HEAT = Math.max(
   D.length - 1 + Math.ceil(D.maxSpeedBonus / D.speedPerHeat),
   D.length - 1 + Math.ceil(D.maxSpawnReduction / D.spawnReductionPerHeat),
 );
-export const nextHeat = (heat) => Math.min(MAX_HEAT, heat + 1);
+export const maxHeatFor = (mode = CONFIG.defaultMode) => (mode === 'chill' ? CONFIG.modes.chill.maxHeat : MAX_HEAT);
+export const nextHeat = (heat, mode = CONFIG.defaultMode) => Math.min(maxHeatFor(mode), heat + 1);
 
-export function difficultyAt(heat) {
+export function difficultyAt(heat, mode = CONFIG.defaultMode) {
+  if (mode === 'chill') {
+    const m = CONFIG.modes.chill;
+    const h = Math.max(0, Math.min(m.maxHeat, heat));
+    const extra = Math.max(0, h - (D.length - 1));
+    return {
+      target: Math.min(m.maxTarget, CONFIG.rounds.baseTarget + Math.floor((h + 1) / 2) * CONFIG.rounds.targetPerRound),
+      speed: Number((m.enemySpeedFactor * (1 + Math.min(0.08, extra * D.speedPerHeat * 0.5))).toFixed(6)),
+      interval: Number((m.spawnIntervalFactor * (1 - Math.min(0.06, extra * D.spawnReductionPerHeat * 0.5))).toFixed(6)),
+    };
+  }
   const h = Math.max(0, Math.min(MAX_HEAT, heat));
   const extra = Math.max(0, h - (D.length - 1));
   return {
@@ -26,11 +37,12 @@ export function difficultyAt(heat) {
 }
 
 /** Called only for normal cups, after the existing tea/fortune safety cap. */
-export function withHeat(modifiers, heat, chapter) {
-  const d = difficultyAt(heat);
+export function withHeat(modifiers, heat, chapter, mode = CONFIG.defaultMode) {
+  const d = difficultyAt(heat, mode);
+  const maxOverall = mode === 'chill' ? CONFIG.modes.chill.maxOverallSpeed : D.maxOverallSpeed;
   return {
     ...modifiers,
-    enemySpeedMultiplier: Math.min(D.maxOverallSpeed / chapter.enemySpeed, modifiers.enemySpeedMultiplier * d.speed),
+    enemySpeedMultiplier: Math.min(maxOverall / chapter.enemySpeed, modifiers.enemySpeedMultiplier * d.speed),
     spawnIntervalMultiplier: modifiers.spawnIntervalMultiplier * d.interval,
   };
 }

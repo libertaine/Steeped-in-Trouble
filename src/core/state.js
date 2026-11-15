@@ -44,8 +44,10 @@ export function createRoundStats() {
  * The complete simulation state. Plain data only, with no DOM or canvas
  * references, so it can be inspected, tested, and rendered by anything.
  */
-export function createInitialState() {
+export function createInitialState(mode = CONFIG.defaultMode) {
+  const modeConfig = CONFIG.modes[mode] ?? CONFIG.modes[CONFIG.defaultMode];
   return {
+    mode: modeConfig.id,
     phase: PHASE.READY,
     pausedFrom: PHASE.PLAYING,
     round: 1,
@@ -55,8 +57,8 @@ export function createInitialState() {
     lives: CONFIG.lives,
     kills: 0, // leaves cleared this round towards its target: kills, plus any Karma removes
     target: CONFIG.rounds.baseTarget,
-    milkLeft: CONFIG.milk.perRound,
-    sugarLeft: CONFIG.sugar.perRound,
+    milkLeft: modeConfig.startingMilk,
+    sugarLeft: modeConfig.startingSugar,
     strainerLeft: CONFIG.strainer.perRound, // escaping leaves the strainer can still catch this round
     graceTime: 0, // seconds left in which the cup is recovering from a spill
     porcelain: createPorcelain(), // the cup's cracks, chips and gold seams; see gameplay/porcelain.js

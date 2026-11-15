@@ -202,13 +202,13 @@ test('pause, Tea Break and backgrounding freeze the street; held keys never leak
 
 test('after round 30, the Day choice waits for the crossing and is applied exactly once', async ({ page, problems }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await openGame(page, '&seed=42'); await toCrossingOffer(page, { round: 30, heat: 20 });
+  await openGame(page, '&seed=42&mode=chill'); await toCrossingOffer(page, { round: 30, heat: 14 });
   const before = await state(page);
   expect(before).toMatchObject({ dayPending: true, phase: 'arcadeOffer' });
   await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
   await crossSafely(page);
   await advanceStreet(page, 1.6);
-  expect(await state(page)).toMatchObject({ round: 30, heat: 20, dayPending: true });
+  expect(await state(page)).toMatchObject({ round: 30, heat: 14, dayPending: true });
   await page.keyboard.press('Enter');
   await expect(page.locator('#dayOffer')).toBeVisible();
   await shot(page, testInfo, 'day-after-crossing');
@@ -219,11 +219,11 @@ test('after round 30, the Day choice waits for the crossing and is applied exact
 });
 
 test('after round 40, skipping the crossing still leads to the Day choice', async ({ page, problems }) => {
-  await openGame(page, '&seed=9'); await toCrossingOffer(page, { round: 40, heat: 25 });
+  await openGame(page, '&seed=9&mode=chill'); await toCrossingOffer(page, { round: 40, heat: 14 });
   await page.keyboard.press('Digit2');
   await expect(page.locator('#dayOffer')).toBeVisible();
   await page.locator('[data-day="keep"]').click();
   await expect(page.locator('#roundNum')).toHaveText('41');
-  expect(await state(page)).toMatchObject({ round: 41, heat: 26, dayPending: false, crossingStreet: null });
+  expect(await state(page)).toMatchObject({ round: 41, heat: 14, dayPending: false, crossingStreet: null });
   expect(problems).toEqual([]);
 });

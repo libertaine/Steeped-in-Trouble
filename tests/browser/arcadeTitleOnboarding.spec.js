@@ -127,7 +127,7 @@ test.describe('Tea packaging title and instruction overlay', () => {
     await expect(table.getByRole('row', { name: /Mute \/ unmute/ })).toContainText('M');
 
     await expect(page.locator('.overlay-notes')).toContainText('Milk pushes leaves back and slows them.');
-    await expect(page.locator('.overlay-notes')).toContainText('Sugar fires a three-lane burst.');
+    await expect(page.locator('.overlay-notes')).toContainText('Sugar fires a seven-lane burst.');
     await expect(page.locator('#overlayPrimaryBtn')).toHaveText('PRESS ENTER OR CLICK TO START');
     await expect(page.locator('.overlay-footer')).toHaveText('You can review controls again any time in Tea Break.');
     await expect(page.locator('#overlayVersion')).toHaveText(`v${VERSION}`);

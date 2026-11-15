@@ -35,7 +35,7 @@ export const UPGRADES = Object.freeze({
     id: 'sugarScoop',
     name: 'Sugar Scoop',
     short: 'Scoop',
-    info: 'Carry one more sugar burst every cup.',
+    info: 'Hold one more sugar burst (up to 4) and gain +1 sugar now.',
     icon: '◆',
     max: 2,
   },

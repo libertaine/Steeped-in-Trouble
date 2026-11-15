@@ -16,7 +16,35 @@ adventures and unexpected humor keep finding their way into the pot.
 does not show all current features.*
 Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
-## 0.22.0 — The Training Cup
+## 0.23.0 candidate — Chill, Arcade and Tea Cash
+
+The local integration candidate adds **Chill** and **Arcade** mode selection,
+seven-lane Sugar, persistent supplies and separate mode records. Arcade always
+keeps the kettle on: Heat carries forward automatically at each Day boundary.
+Chill retains Fresh Brew and Keep the Kettle On, with Auto Steam available.
+Auto Steam is disabled in Arcade, including with Easy Touch.
+
+Both modes start with 2 Milk and 1 Sugar. Milk carries between cups and gains
+1 after every normal cup in Chill, or every 2 in Arcade. Sugar carries too;
+it has no automatic full refill each round. Spend Tea Cash at a reading, once
+the supply bar appears and before choosing an upgrade: **10 for +1 Milk**,
+**25 for +1 Sugar** (<kbd>B</kbd> / <kbd>N</kbd> or the buttons), subject to
+inventory capacity. <kbd>Q</kbd> and <kbd>E</kbd> stay Milk and Sugar.
+Bosses use the supplies you carry in; beating one pays Tea Cash (15 for a
+milestone, 10 for a rematch) and +1 Sugar, plus +1 Milk for a milestone.
+Every reward stops at capacity.
+Ants can now stay active around upgrade and restock decisions where space permits.
+
+Earlier saves migrate in memory: Auto Steam pots become Chill, manual-steam
+pots become Arcade. The saved mode resumes with the pot. Completed cups and
+finished-pot records stay separate for each mode; the Other Jobs record book
+remains separate. Development-injected scenarios cannot write these records
+or replace/clear a normal saved pot.
+
+These changes are prepared for integration review; they are not published or
+production qualified. See the [draft release notes](docs/releases/v0.23.0.md).
+
+## Published baseline: 0.22.0 — The Training Cup
 
 - An optional Training Cup teaches movement, steam, milk and sugar, then runs
   a short practice wave.
@@ -25,7 +53,7 @@ Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 - Analytics now load as an optional module, so blocking them cannot stop the
   game from starting. See [Privacy](#privacy), including how to turn them off.
 
-Normal gameplay and earlier saved pots are unchanged.
+For the published 0.22.0 baseline, normal gameplay and earlier saved pots were unchanged.
 
 See the [release notes](docs/releases/v0.22.0.md),
 [changelog](CHANGELOG.md) and
@@ -39,14 +67,15 @@ See the [release notes](docs/releases/v0.22.0.md),
 - **Optional mini-adventures:** The Tea Run, The Daily Pour, Biscuit Breakout
   and Crossing the Street. Skip them freely during a pot, or jump straight
   into **The Spoon's Other Jobs** to chase browser-local personal records.
-- **Days and Chapters:** every ten normal cups, choose a gentler Fresh Brew
-  or carry the Heat forward. Days control difficulty; Chapters open content.
+- **Days and Chapters:** every ten normal cups, Chill lets you choose Fresh
+  Brew or carry Heat forward. Arcade carries Heat automatically. Days control
+  difficulty; Chapters open content.
 - **Continue Your Pot:** completed normal cups save automatically. Return to
   the last reading and pending choices; mid-round positions are not saved.
   Progress and arcade records stay in this browser on this device. Clearing
   browser data may erase them; there is no account or cloud synchronization.
 - **Room for tea:** one responsive layout, Easy and Classic Touch, optional
-  Auto Steam, an illustrated resource HUD, and an adaptive synthesized score.
+  Auto Steam in Chill, an illustrated resource HUD, and an adaptive synthesized score.
 
 Desktop browsers with keyboard controls are the primary experience. Phone
 and tablet support is best effort; mobile checks primarily use browser
@@ -59,10 +88,10 @@ emulation. Extended human playtesting and physical-device testing remain open.
   STABLE to STRUCTURAL FAILURE IMMINENT, shows how many it can still afford.
   Lose them all and the cup breaks.
 - The spoon circles the rim and fires down the lane that glows. Steam is
-  unlimited. Each round you also get a couple of milk pours, which push
+  unlimited. Your carried milk pours push
   leaves back and slow them (strongly in front of the spoon, and briefly
-  across the whole cup), and a couple of sugar bursts, which fire down three
-  lanes at once.
+  across the whole cup); carried sugar bursts fire down seven lanes at once.
+  Restock between cups with Tea Cash instead of receiving full round refills.
 - Clear enough leaves to finish the round. The leaves you defeated are then
   read, and their fortune changes the next round. Every other round you also
   choose an upgrade for your spoon, which lasts for the whole pot.
@@ -84,7 +113,9 @@ emulation. Extended human playtesting and physical-device testing remain open.
 | Move the silver spoon | <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> | hold **◀ TURN** / **TURN ▶** |
 | Fire steam (hold for continuous fire) | <kbd>Space</kbd> | hold **STEAM ↑** |
 | Milk: wash back and slow a wedge of the cup, and the whole cup briefly | <kbd>Q</kbd> or <kbd>↑</kbd> | **MILK** |
-| Sugar: three-lane burst | <kbd>E</kbd>, <kbd>↓</kbd>, or <kbd>S</kbd> | **SUGAR** |
+| Sugar: seven-lane burst | <kbd>E</kbd>, <kbd>↓</kbd>, or <kbd>S</kbd> | **SUGAR** |
+| Buy +1 Milk / +1 Sugar at a reading (once the supply bar shows) | <kbd>B</kbd> (10 Cash) / <kbd>N</kbd> (25 Cash) | tap a supply button |
+| Chill Day: Fresh Brew / Keep the Kettle On | <kbd>1</kbd> / <kbd>2</kbd> | tap a choice |
 | Pause / resume | <kbd>P</kbd> | main button |
 | Mute / Unmute Audio | <kbd>M</kbd> | speaker button |
 | Start, next cup, new pot | <kbd>Enter</kbd> | main button |
@@ -101,8 +132,9 @@ emulation. Extended human playtesting and physical-device testing remain open.
 
 Phones start with **Easy Touch**: hold the two
 steering pads, double-tap the cup for milk, and hold the cup for sugar.
-Auto Steam fires only at targets lined up with your spoon. Select **Classic
-Touch** for the buttons in the table; it also works with Auto Steam.
+In Chill, Easy Touch uses Auto Steam, firing only at targets lined up with
+your spoon. Arcade adds a manual STEAM button. Select **Classic Touch** for
+the buttons in the table; it also works with Auto Steam in Chill.
 
 Mini-adventures explain their controls when offered. Skipping or failing one
 never costs a cup. For the complete rules and rewards (with spoilers), see
@@ -118,10 +150,12 @@ never costs a cup. For the complete rules and rewards (with spoilers), see
   windows use a control rail beside the cup. The former Compact layout is
   now permanent; saved view preferences and `?view=compact|full` are ignored.
   The game cannot override Chrome's Desktop Site setting.
-- **Touch** chooses Easy or Classic Touch; **Auto Steam** can be enabled
-  with Classic Touch or a keyboard, and is always enabled with Easy Touch.
+- **Mode** selects Chill or Arcade before starting a pot; it locks during play.
+  Continue Your Pot uses the saved mode. `?mode=chill|arcade` overrides the preference.
+- **Touch** chooses Easy or Classic Touch; in Chill, **Auto Steam** can be enabled
+  with Classic Touch or a keyboard, and is enabled with Easy Touch. Arcade disables it.
   Both choices are remembered. URL overrides for one visit are
-  `?touch=easy|classic` and `?autosteam=on|off` (Easy Touch keeps Auto Steam on).
+  `?touch=easy|classic` and `?autosteam=on|off` (Chill Easy Touch keeps Auto Steam on).
 - **On-screen controls** (Tea Break → Controls & Settings) is Auto by
   default: touch buttons appear on phones and tablets and stay out of the way
   with a keyboard and mouse. **Show** or **Hide** overrides it and is

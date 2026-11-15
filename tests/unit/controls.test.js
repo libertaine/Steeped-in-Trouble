@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readingReadyAt } from '../../src/core/game.js';
 import { createRandom } from '../../src/core/random.js';
 import { createHavoc } from '../../src/gameplay/chocolate.js';
 import { createControls } from '../../src/input/controls.js';
-import { atShortage, playingGame } from './helpers.js';
+import { atShortage, completeRound, playingGame } from './helpers.js';
 
 /** Just enough of a page for the controls: a window and document to listen on, and no buttons. */
 function fakePage() {
@@ -53,6 +54,47 @@ describe('keyboard controls', () => {
     game.state.shots = [];
     press(win, 'KeyS');
     expect(game.state.sugarLeft).toBe(2);
+  });
+
+  it('buys supplies only with B / N or the supply buttons, and only once the restock bar is available', () => {
+    const game = playingGame();
+    completeRound(game);
+    const s = game.state;
+    Object.assign(s, { teaCash: 100, milkLeft: 0, sugarLeft: 0, readingTime: 0 });
+    const win = new EventTarget();
+    const supply = ['milk', 'sugar'].map((kind) => Object.assign(new EventTarget(), { dataset: { supply: kind } }));
+    const doc = Object.assign(new EventTarget(), { defaultView: win, visibilityState: 'visible',
+      querySelectorAll: (selector) => (selector === '[data-supply]' ? supply : []), querySelector: () => null });
+    createControls({ doc, commands: {
+      fire: game.fireSteam, milk: game.pourMilk, sugar: game.sugarBurst, confirm: game.confirm, togglePause: game.togglePause,
+      restart: game.restart, pause: game.pause, choose: game.chooseUpgrade, buySupply: game.buySupply,
+    } });
+    const key = (code) => {
+      const e = Object.assign(new Event('keydown', { cancelable: true }), { code });
+      win.dispatchEvent(e);
+      return e.defaultPrevented;
+    };
+    const click = (i) => supply[i].dispatchEvent(new Event('click'));
+    const wallet = () => [s.teaCash, s.milkLeft, s.sugarLeft];
+    // Before the bar appears nothing sells, by any route.
+    for (const t of [0, readingReadyAt(s) - 0.01]) {
+      s.readingTime = t;
+      for (const code of ['KeyQ', 'KeyE', 'KeyB', 'KeyN']) expect(key(code)).toBe(false);
+      click(0); click(1);
+      expect(wallet()).toEqual([100, 0, 0]);
+    }
+    // Once it is available, Q and E still never buy; B / N and the buttons do.
+    s.readingTime = readingReadyAt(s);
+    key('KeyQ'); key('KeyE');
+    expect(wallet()).toEqual([100, 0, 0]);
+    expect(key('KeyB')).toBe(true);
+    expect(wallet()).toEqual([90, 1, 0]);
+    expect(key('KeyN')).toBe(true);
+    expect(wallet()).toEqual([65, 1, 1]);
+    click(0); click(1);
+    expect(wallet()).toEqual([30, 2, 2]);
+    expect(key('KeyN')).toBe(false); // Sugar is full (2/2)
+    expect(wallet()).toEqual([30, 2, 2]);
   });
 });
 
@@ -111,7 +153,7 @@ describe('Easy Touch gestures', () => {
     tapAt(1, 0);
     tapAt(2, 200);
     expect(game.state.milkLeft).toBe(1);
-    expect(game.state.sugarLeft).toBe(2);
+    expect(game.state.sugarLeft).toBe(1);
   });
 
   it('fires one sugar burst for a long press, however long it is held', () => {
@@ -120,7 +162,7 @@ describe('Easy Touch gestures', () => {
     pointer(area, 'pointerdown');
     for (clock.now = 16; clock.now < 2000; clock.now += 16) controls.update();
     pointer(area, 'pointerup');
-    expect(game.state.sugarLeft).toBe(1);
+    expect(game.state.sugarLeft).toBe(0);
     expect(game.state.milkLeft).toBe(2);
     expect(said).toContain('press'); // the charge-up ring
     expect(said).toContain('sugar');
@@ -141,7 +183,7 @@ describe('Easy Touch gestures', () => {
       pointer(pad, 'pointerup', { id: 10 + i });
     }
     expect(game.state.milkLeft).toBe(2);
-    expect(game.state.sugarLeft).toBe(2);
+    expect(game.state.sugarLeft).toBe(1);
   });
 
   it('works while a thumb holds a steering pad', () => {
@@ -163,7 +205,7 @@ describe('Easy Touch gestures', () => {
     clock.now = 2000;
     controls.update();
     expect(game.state.milkLeft).toBe(2);
-    expect(game.state.sugarLeft).toBe(2);
+    expect(game.state.sugarLeft).toBe(1);
   });
 
   it('does nothing between rounds or while paused, and a half-made double tap does not carry over', () => {
@@ -359,7 +401,7 @@ describe('input boundaries', () => {
     press(page.win, 'Space');
     pointer(page.pads[1], 'pointerdown');
     expect(controls.held).toEqual({ left: false, right: false, fire: false });
-    expect([game.state.milkLeft, game.state.sugarLeft, game.state.shots.length]).toEqual([2, 2, 0]);
+    expect([game.state.milkLeft, game.state.sugarLeft, game.state.shots.length]).toEqual([2, 1, 0]);
   });
 
   it('keeps native activation on focused interface buttons out of gameplay shortcuts', () => {

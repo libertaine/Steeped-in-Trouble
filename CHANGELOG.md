@@ -3,6 +3,49 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
+## [0.23.0] - Unreleased — Chill, Arcade and Tea Cash
+
+- Added Chill and Arcade selection before a new pot, with mode locked during
+  play and separate best scores, best rounds, completed cups and finished plays.
+- Arcade automatically takes Keep the Kettle On at every Day boundary after
+  pending encounters. Heat carries forward; Fresh Brew is rejected by the engine.
+  Chill retains both Day choices and its existing gentler limits.
+- Auto Steam is available in Chill and disabled in Arcade, including Easy Touch;
+  Easy Touch shows a manual STEAM button in Arcade.
+- Sugar fires across seven lanes. Milk and Sugar carry between cups instead of
+  receiving full per-round refills. Both modes start with 2 Milk and 1 Sugar;
+  Chill restores 1 Milk per normal cup, Arcade 1 per 2 normal cups. Sugar has no
+  passive refill. Every Milk and Sugar award is capped at capacity; next-cup
+  awards are clamped when that cup starts.
+- Bosses keep the carried inventory instead of refilling it. A milestone victory
+  pays 15 Tea Cash, +1 Sugar and +1 Milk; a rematch victory now pays 10 Tea Cash
+  and +1 Sugar.
+- Sugar Rush regrows a burst every 9 seconds, at most 2 per cup. Sugar Scoop adds
+  1 Sugar capacity per level and 1 Sugar at once. A Golden Cube's Sugar reward
+  pays bonus points instead when Sugar is full; its jackpot fills to capacity.
+- Against The Mycelium Manager each sugar dart is spent on the first memo, root
+  or Manager it meets, and Synergy drops at most two memos per sugar burst.
+- At a ready reading, buy +1 Milk for 10 Tea Cash or +1 Sugar for 25 with B / N
+  or the supply bar, within capacity. Nothing can be bought before the bar
+  appears or outside readings; Q / E remain Milk and Sugar only. Purchases at a
+  saved reading persist without counting another completed cup.
+- Hot Chocolate Havoc's good and great grades both still earn the extra Sugar,
+  as in 0.22.0 (subject to capacity).
+- Ant activity continues around reading upgrade and restock decisions where
+  measured safe space permits; reduced motion, Low graphics and modal rules remain.
+- Schema 6 saves include mode. Earlier schemas migrate in memory; Auto Steam
+  pots become Chill and manual-steam pots Arcade. The original stored checkpoint
+  remains until a subsequent successful save. Other Jobs records remain separate.
+  Authentic 0.22.0 schema 5 fixtures (Auto Steam on and off) cover migration.
+- Development-injected Day, Cup, boss, fortune and adventure scenarios cannot
+  write legitimate records, checkpoints or saved-pot deletion. Plain `?debug`
+  play remains eligible; the legacy migration preview uses disposable storage.
+- Resolved the between-cup ant report's Milk HUD discrepancy as a stale test
+  expectation: jackpot full Milk is the current capacity, 3/3.
+
+Integration candidate only. No release, tag, publication or production qualification
+is claimed. See [draft notes](docs/releases/v0.23.0.md).
+
 ## [0.22.0] - 2026-11-08 — The Training Cup
 
 - Added the Training Cup, an optional, replayable five-stage tutorial offered

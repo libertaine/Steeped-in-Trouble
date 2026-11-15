@@ -5,7 +5,7 @@
 // Effects never modify game state and use their own random source, so they
 // can be changed freely without affecting gameplay or seeded replays.
 
-import { LANE_STEP, TAU, toCanvasPoint } from '../gameplay/arena.js';
+import { LANE_STEP, TAU, laneAngle, toCanvasPoint } from '../gameplay/arena.js';
 import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { FIBS, FORTUNES } from '../gameplay/fortunes.js';
@@ -338,11 +338,12 @@ export function createEffects({ random = Math.random } = {}) {
       if (fortune) say(`“${FORTUNES[fortune].quote}”`, { color: FORTUNES[fortune].color });
       else hush();
     },
-    dayStart({ choice }) {
+    dayStart({ choice, mode }) {
       const fresh = choice === 'fresh';
       fx.banner = {
-        title: fresh ? 'A FRESH START' : 'THE KETTLE STAYS ON',
-        words: fresh ? 'The leaves have agreed to behave. For now.' : 'The spoon has made a questionable decision.',
+        title: mode === 'arcade' ? 'ARCADE — KEEP THE KETTLE ON' : fresh ? 'A FRESH START' : 'THE KETTLE STAYS ON',
+        words: mode === 'arcade' ? 'A new Day. The Heat carries on.'
+          : fresh ? 'The leaves have agreed to behave. For now.' : 'The spoon has made a questionable decision.',
         time: 2.6, life: 2.6,
       };
       if (fx.teaCard) fx.teaCard.delay += 2.6;
@@ -460,7 +461,16 @@ export function createEffects({ random = Math.random } = {}) {
       say('The prism fades. Blink and you miss it.', { color: '#a99bc0', life: 2.6 });
     },
     sugar({ lanes }) {
-      pulseLanes(lanes, 'sugar', 0.4);
+      pulseLanes(lanes, 'sugar', 0.48);
+      for (const lane of lanes) {
+        const a = laneAngle(lane);
+        burst(4, () => CONFIG.arena.rimRadius - rnd(8, 22), () => a + rnd(-0.06, 0.06),
+          (i) => (i % 2 ? '#fff8dc' : GOLD), () => rnd(0.28, 0.55), 1.4);
+      }
+    },
+    supplyBought({ kind }) {
+      const colors = kind === 'sugar' ? ['#fff8dc', GOLD, '#f2c13e'] : ['#ffffff', '#f4efe4', '#e8dccb'];
+      spoonBurst(16, fx.spoonAngle, colors, 1.3);
     },
     nova({ count, golden: gilded }) {
       pulseLanes(Array.from({ length: CONFIG.arena.lanes }, (_, lane) => lane), 'nova', 0.6);

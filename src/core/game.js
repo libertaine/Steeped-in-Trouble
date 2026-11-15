@@ -35,6 +35,7 @@ import { CONFIG } from '../config.js';
 import { createRandom, toSeed } from './random.js';
 import { PHASE, createInitialState, createRoundStats } from './state.js';
 import { captureCheckpoint, migrateCheckpoint } from './checkpoint.js';
+import { excludeScenario } from './recordEligibility.js';
 import { laneOf } from '../gameplay/arena.js';
 import { drawFortune, modifiersFor } from '../gameplay/fortunes.js';
 import { advanceChapter, createProgress, currentChapter, opensChapter, teaAge } from '../gameplay/progress.js';
@@ -71,7 +72,8 @@ import { releaseSpores, sproutPuffball, updateSpores } from '../gameplay/mushroo
 import { UPGRADES, applyUpgrade, createSpoon, drawOffer, offerDue, strainerCapacity } from '../gameplay/upgrades.js';
 import { TRAY, fillFromTray, serveTray } from '../gameplay/teaTray.js';
 import {
-  findStrikingShot, fireSteam, isNearCloud, killScore, milkPulse, pourMilk, spendDart, sugarBurst, sugarCapacity,
+  buySupply, clampResources, findStrikingShot, fireSteam, isNearCloud, killScore, milkPulse, modeConfig,
+  passiveMilkGain, pourMilk, spendDart, startingMilk, startingSugar, sugarBurst, sugarCapacity,
   updateClouds, updateShots, updateSugarRegen,
 } from '../gameplay/weapons.js';
 
@@ -85,6 +87,13 @@ export const OFFER_AT = revealAt + 0.6;
 // retain their established timing.
 export const readingReadyAt = (state) => state.nextFortune === 'lie' ? lieRetractAt + 0.7 : OFFER_AT;
 
+/**
+ * Tea Cash supplies are sold only at a reading, once it is ready and its
+ * restock bar is on show (ui/hud.js uses this same rule). Keyboard and
+ * pointer purchases share it, so nothing can be bought before it appears.
+ */
+export const restockOpen = (state) => state.phase === PHASE.READING && state.readingTime >= readingReadyAt(state);
+
 const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
 
 /**
@@ -93,7 +102,7 @@ const NO_INPUT = Object.freeze({ left: false, right: false, fire: false });
  *   Pass a tea id (see TEAS) to brew only that variety, every cup, as if it
  *   had been on tap from the first; the chapters run as usual around it.
  */
-export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, practice = null, training = null } = {}) {
+export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, practice = null, training = null, mode = CONFIG.defaultMode } = {}) {
   // Older saves are migrated (and validated) first; the caller's copy is never changed.
   const checkpoint = saved ? migrateCheckpoint(saved) : null;
   if (saved && !checkpoint) throw new TypeError('Invalid pot checkpoint');
@@ -105,7 +114,8 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
   const restoreRandom = (id, fallback) => checkpoint
     ? createRandom(checkpoint.random[id].seed, checkpoint.random[id].state) : fallback();
   const rng = restoreRandom('normal', () => random ?? createRandom(seed));
-  const state = createInitialState();
+  const state = createInitialState(mode);
+  if (training) excludeScenario(state);
   const events = [];
   const emit = (type, data = {}) => events.push({ type, ...data });
   const sim = { state, rng, emit };
@@ -150,6 +160,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
   const crossing = (stage) => state.phase === PHASE.CROSSING_STREET && (!stage || state.crossingStreet.stage === stage);
   const offerOpen = () => state.phase === PHASE.READING && !!state.offer && state.readingTime >= readingReadyAt(state);
   const errandOpen = () => state.phase === PHASE.SHORTAGE && state.shortage.time >= CONFIG.shortage.chooseAt;
+  const supplyShopOpen = () => restockOpen(state);
 
   function clearField() {
     state.shots = [];
@@ -186,12 +197,19 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     clearField();
     state.residue = [];
     state.kills = 0;
-    state.target = difficultyAt(state.heat).target;
+    state.target = difficultyAt(state.heat, state.mode).target;
     const lean = steepTea();
-    state.modifiers = withHeat(roundModifiers(state.fortune, state.tea, state.teaAge), state.heat, currentChapter(state.progress));
+    state.modifiers = withHeat(
+      roundModifiers(state.fortune, state.tea, state.teaAge), state.heat, currentChapter(state.progress), state.mode,
+    );
     if (state.modifiers.spiceCurrents) state.current = createCurrent(lean, state.teaAge);
-    state.milkLeft = CONFIG.milk.perRound;
-    state.sugarLeft = sugarCapacity(state) + state.extraSugar;
+    if (state.round === 1) {
+      state.milkLeft = startingMilk(state);
+      state.sugarLeft = startingSugar(state) + state.extraSugar + state.modifiers.bonusSugar;
+    } else {
+      state.milkLeft += passiveMilkGain(state);
+      state.sugarLeft += state.extraSugar + state.modifiers.bonusSugar;
+    }
     state.extraSugar = 0;
     state.secrets = [];
     state.strainerLeft = strainerCapacity(state.spoon);
@@ -208,11 +226,14 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     emit('roundStart', {
       round: state.round, fortune: state.fortune, tea: state.tea, debut: state.round > 1 && state.teaAge === 1,
       chapter: state.progress.chapter, opens: opensChapter(state.progress, state.round),
+      mode: state.mode,
     });
     serveTray(state, emit);
+    clampResources(state);
   }
 
   function resetMatch() {
+    if (!modeConfig(state).autoSteamAllowed) state.autoSteam = false;
     state.round = 1;
     state.heat = 0;
     state.dayPending = false;
@@ -292,11 +313,11 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     }
     // All rewards, offers, fortunes and schedules are now final. Event data is
     // a detached snapshot, not a reference that input can change before storage.
-    if (!practice) emit('checkpoint', { checkpoint: exportCheckpoint() });
+    if (!practice) emit('checkpoint', { checkpoint: exportCheckpoint(), cupCompleted: true });
   }
 
   function brewNextCup(fresh = false) {
-    state.heat = fresh ? 0 : nextHeat(state.heat);
+    state.heat = fresh ? 0 : nextHeat(state.heat, state.mode);
     state.round++;
     state.fortune = state.nextFortune;
     startRound();
@@ -322,15 +343,17 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     else if (state.dayPending) {
       state.phase = PHASE.DAY;
       emit('dayEnd', { day: dayOf(state.round) });
+      if (state.mode === 'arcade') chooseDay('keep');
     }
     else brewNextCup();
   }
 
   function chooseDay(choice) {
     if (state.phase !== PHASE.DAY || !state.dayPending || !['fresh', 'keep'].includes(choice)) return false;
+    if (state.mode === 'arcade' && choice !== 'keep') return false;
     state.dayPending = false; // consume before starting the next cup: repeats cannot apply twice
     brewNextCup(choice === 'fresh');
-    emit('dayStart', { choice, day: dayOf(state.round), heat: state.heat });
+    emit('dayStart', { choice, day: dayOf(state.round), heat: state.heat, mode: state.mode });
     return true;
   }
 
@@ -508,8 +531,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state.grindDue = false;
     state.lastGrind = state.round;
     state.modifiers = modifiersFor(null);
-    state.milkLeft = CONFIG.milk.perRound;
-    state.sugarLeft = sugarCapacity(state);
+    clampResources(state);
     state.roundStats = createRoundStats();
     state.grind = createGrind({ milestone });
     emit('grindStart', { round: state.round, milestone });
@@ -561,8 +583,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state.managerDue = false;
     state.lastManager = state.round;
     state.modifiers = modifiersFor(null);
-    state.milkLeft = CONFIG.milk.perRound;
-    state.sugarLeft = sugarCapacity(state);
+    clampResources(state);
     state.roundStats = createRoundStats();
     state.manager = createManager({ milestone, appearance: milestone ? 1 : state.managerVisits + 1 });
     emit('managerStart', { round: state.round, milestone, appearance: state.manager.appearance, twists: [...state.manager.twists] });
@@ -599,6 +620,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     // As in The Daily Grind, the Golden Spoon's time stands still.
     moveSpoon(state, input, dt);
     state.shotCooldown -= dt;
+    if (!modeConfig(state).autoSteamAllowed) state.autoSteam = false;
     if (input.fire || (state.autoSteam && autoSteamWantedInManager(state))) fireSteam(managerSim);
     updateClouds(state, dt);
     updateShots(state, dt);
@@ -616,6 +638,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     // As in the hot chocolate, the Golden Spoon's time stands still.
     moveSpoon(state, input, dt);
     state.shotCooldown -= dt;
+    if (!modeConfig(state).autoSteamAllowed) state.autoSteam = false;
     if (input.fire || (state.autoSteam && autoSteamWantedInGrind(state))) fireSteam(grindSim);
     updateClouds(state, dt);
     updateShots(state, dt);
@@ -837,6 +860,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     state.wake = tornadoWake(state);
     if (state.wake) discover(sim, 'silverTornado');
     state.shotCooldown -= dt;
+    if (!modeConfig(state).autoSteamAllowed) state.autoSteam = false;
     if ((!training || training.allow('steam')) && (input.fire || (state.autoSteam && !training?.frozen && autoSteamWanted(state)))) fireSteam(sim);
     updateSugarRegen(sim, dt);
     if (!training) updateSpawning(sim, dt);
@@ -929,6 +953,7 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
   }
 
   if (checkpoint) Object.assign(state, structuredClone(checkpoint.state));
+  if (!modeConfig(state).autoSteamAllowed) state.autoSteam = false;
   if (training) training.init(sim);
   if (practice === 'teaRun') startRun();
   else if (practice) {
@@ -967,6 +992,17 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     offerOpen,
     /** Is the Tea Shortage's choice on show and ready to be made? */
     errandOpen,
+    /** Can the player currently purchase Milk or Sugar supplies with Tea Cash? */
+    supplyShopOpen,
+    /** Purchase one Milk ('milk') or Sugar ('sugar') charge between rounds using Tea Cash. */
+    buySupply(kind) {
+      if (!supplyShopOpen()) return false;
+      const bought = buySupply(sim, kind);
+      if (bought && state.phase === PHASE.READING && !practice) {
+        emit('checkpoint', { checkpoint: exportCheckpoint(), cupCompleted: false });
+      }
+      return bought;
+    },
     chooseInterlude,
     chooseDay,
     aimPaper: (aim) => pouring('play') && aimPour(state.dailyPour, aim),
@@ -1023,9 +1059,29 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
     },
     /** In the Tea Run: slide (↓, or SLIDE). */
     slide: () => running('run') && press(runSim, 'slide'),
-    /** Turn Auto Steam on or off; it lasts from pot to pot. */
+    /** Turn Auto Steam on or off; it lasts from pot to pot in Chill Mode. Disabled in Arcade Mode. */
     setAutoSteam(on) {
+      if (!modeConfig(state).autoSteamAllowed) {
+        state.autoSteam = false;
+        return false;
+      }
       state.autoSteam = !!on;
+      return state.autoSteam;
+    },
+    /**
+     * Select the gameplay mode ('chill' or 'arcade') before a run starts or on
+     * the game-over screen. Switching modes during an active run is refused.
+     */
+    setMode(nextMode) {
+      if (typeof nextMode !== 'string' || !Object.hasOwn(CONFIG.modes, nextMode)) return false;
+      if (state.phase !== PHASE.READY && state.phase !== PHASE.GAME_OVER) return false;
+      state.mode = nextMode;
+      if (!modeConfig(state).autoSteamAllowed) state.autoSteam = false;
+      if (state.phase === PHASE.READY) {
+        state.milkLeft = startingMilk(state);
+        state.sugarLeft = startingSugar(state);
+      }
+      return true;
     },
     /**
      * Which touch gestures the cup answers right now (Easy Touch): 'cup' for
@@ -1047,7 +1103,10 @@ export function createGame({ seed, random, tea: onlyTea, checkpoint: saved, prac
       if (!id) return false;
       const tray = Object.hasOwn(TRAY, id);
       if (tray) state.tray = id; // served when the next normal cup starts
-      else applyUpgrade(state.spoon, id);
+      else {
+        applyUpgrade(state.spoon, id);
+        if (id === 'sugarScoop') state.sugarLeft = Math.min(sugarCapacity(state), state.sugarLeft + 1);
+      }
       state.offer = null;
       continueFromReading();
       emit('upgrade', tray ? { id, tray, name: TRAY[id].name, angle: state.angle }

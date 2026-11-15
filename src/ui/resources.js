@@ -2,7 +2,7 @@
 import { CONFIG } from '../config.js';
 import { PHASE } from '../core/state.js';
 import { cupCondition } from '../gameplay/porcelain.js';
-import { sugarCapacity } from '../gameplay/weapons.js';
+import { milkCapacity, sugarCapacity } from '../gameplay/weapons.js';
 import { strainerCapacity } from '../gameplay/upgrades.js';
 import { grindInProgress } from '../gameplay/grind.js';
 import { managerInProgress } from '../gameplay/mycelium.js';
@@ -26,7 +26,8 @@ export function resourceView(s, text) {
   const g = grindInProgress(s), c = havocInProgress(s), r = runInProgress(s), m = managerInProgress(s);
   const p = pourInProgress(s), b = breakoutInProgress(s), x = crossingInProgress(s);
   const phase = s.phase === PHASE.PAUSED ? s.pausedFrom : s.phase;
-  const milk = inventory('milk', 'Milk', s.milkLeft, CONFIG.milk.perRound, s.milkLeft > CONFIG.milk.perRound ? '+ bonus' : '');
+  const milkCap = milkCapacity(s);
+  const milk = inventory('milk', 'Milk', s.milkLeft, milkCap, s.milkLeft > milkCap ? '+ bonus' : '');
   const cap = sugarCapacity(s);
   const sugar = inventory('sugar', 'Sugar', s.sugarLeft, cap, s.sugarLeft > cap ? '+ bonus'
     : s.modifiers.sugarRegenInterval && s.sugarLeft < cap ? `Next ${seconds(s.sugarRegenTimer)}` : '');
@@ -129,7 +130,12 @@ export function createResources(doc) {
       write('resourceScore', v.score);
     },
     handle(event) {
-      const feedback = { milk: [0, 'Milk used'], sugar: [1, 'Sugar used'], strain: [2, 'Leaf caught'] }[event.type];
+      const feedback = {
+        milk: [0, 'Milk used'],
+        sugar: [1, 'Sugar used'],
+        strain: [2, 'Leaf caught'],
+        supplyBought: [event.kind === 'sugar' ? 1 : 0, `${event.kind === 'sugar' ? 'Sugar' : 'Milk'} restocked`],
+      }[event.type];
       if (!feedback) return;
       const el = doc.getElementById(`resource${feedback[0]}`);
       // Browser animation owns only a brief visual cue, never resource state.
