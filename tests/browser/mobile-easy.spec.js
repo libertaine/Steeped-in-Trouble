@@ -154,10 +154,14 @@ test('gestures are left behind when the round ends: none reach the reading, the 
   await expect(page.locator('#upgradeOffer')).toBeVisible({ timeout: 10_000 });
   await page.locator('.upgrade-card').first().tap();
   await expect(page.locator('#roundNum')).toHaveText('02');
+  // Chill carries the two unused pours and replenishes one after the cup.
+  await expect(page.locator('#milkCount')).toHaveText('3');
+  expect(await page.evaluate(() => window.__TEACUP__.game.state.roundStats.milkUses)).toBe(0);
   const q = await cupPoint(page);
   await page.touchscreen.tap(q.x, q.y); // a single tap in the new cup is only a first tap
   await page.waitForTimeout(400);
-  await expect(page.locator('#milkCount')).toHaveText('2');
+  await expect(page.locator('#milkCount')).toHaveText('3');
+  expect(await page.evaluate(() => window.__TEACUP__.game.state.roundStats.milkUses)).toBe(0);
   expect(problems).toEqual([]);
 });
 

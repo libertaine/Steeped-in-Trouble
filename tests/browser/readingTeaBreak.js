@@ -213,7 +213,7 @@ export function readingTeaBreakTests() {
     await time(page, 3);
     await expect(page.locator('#upgradeOffer .offer-head em')).toHaveText('The Tea Tray comes round.');
     await expect(page.locator('[data-choice="0"] strong')).toHaveText('A Spare Jug');
-    await expect(page.locator('[data-choice="1"] small')).toHaveText('One more sugar burst, next cup only.');
+    await expect(page.locator('[data-choice="1"] small')).toHaveText('One more sugar burst (up to max), next cup only.');
     for (const [width, height] of [[1280, 720], [375, 667], [844, 390]]) {
       await page.setViewportSize({ width, height });
       await page.clock.runFor(64);
