@@ -1,11 +1,12 @@
 import { expect, gameState, openGame, test } from './fixtures.js';
 import { expectRunnerHud, runErrand, toShortage } from './errand.js';
 
-/** Sugar bursts a cup starts with before any restock: the usual, plus whatever its fortune adds. */
-const usualSugar = (page) => page.evaluate(() => {
+/** Carried Sugar plus the shortage reward and new fortune, limited by Scoop capacity. */
+const nextSugar = (page, carried, reward = 0) => page.evaluate(([carried, reward]) => {
   const s = window.__TEACUP__.game.state;
-  return window.__TEACUP__.config.sugar.perRound + s.modifiers.bonusSugar + s.spoon.sugarScoop;
-});
+  const capacity = window.__TEACUP__.config.modes[s.mode].maxSugar + s.spoon.sugarScoop;
+  return Math.min(capacity, carried + reward + s.modifiers.bonusSugar);
+}, [carried, reward]);
 
 const canvasPainted = (page) => page.locator('#game').evaluate((c) => {
   const pixels = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
@@ -17,6 +18,7 @@ const canvasPainted = (page) => page.locator('#game').evaluate((c) => {
 test('the tea tin runs out after round 9, and buying tea restocks the next cup', async ({ page, problems }) => {
   await openGame(page, '&seed=21');
   await toShortage(page, { teaCash: 45 });
+  const carried = (await gameState(page)).sugarLeft;
   await expect(page.locator('#hudStatus')).toHaveText('THE TEA SHORTAGE');
   await expect(page.locator('#teaCash')).toHaveText('45');
   await expect(page.locator('[data-errand="buy"]')).toBeEnabled();
@@ -25,20 +27,21 @@ test('the tea tin runs out after round 9, and buying tea restocks the next cup',
   await expect(page.locator('#errandOffer')).toBeHidden();
   await expect(page.locator('#teaCash')).toHaveText('25');
   await expect(page.locator('#roundNum')).toHaveText('10');
-  await expect(page.locator('#sugarCount')).toHaveText(String((await usualSugar(page)) + 1));
+  await expect(page.locator('#sugarCount')).toHaveText(String(await nextSugar(page, carried, 1)));
   expect(problems).toEqual([]);
 });
 
 test('without enough Tea Cash, buying is unavailable but the game carries on', async ({ page, problems }) => {
   await openGame(page, '&seed=22');
   await toShortage(page, { teaCash: 15 });
+  const carried = (await gameState(page)).sugarLeft;
   await expect(page.locator('[data-errand="buy"]')).toBeDisabled();
   await expect(page.locator('[data-errand="buy"] small')).toContainText('Needs 20');
   await page.keyboard.press('Digit1');
   expect((await gameState(page)).phase).toBe('shortage');
   await page.locator('[data-errand="skip"]').click();
   await expect(page.locator('#roundNum')).toHaveText('10');
-  await expect(page.locator('#sugarCount')).toHaveText(String(await usualSugar(page)));
+  await expect(page.locator('#sugarCount')).toHaveText(String(await nextSugar(page, carried)));
   expect(problems).toEqual([]);
 });
 
@@ -47,7 +50,7 @@ test('the Tea Run plays with the keyboard, pauses, and comes back to the tea', a
   await toShortage(page);
   const before = await page.evaluate(() => {
     const s = window.__TEACUP__.game.state;
-    return { lives: s.lives, nextFortune: s.nextFortune, round: s.round };
+    return { lives: s.lives, nextFortune: s.nextFortune, round: s.round, sugarLeft: s.sugarLeft };
   });
   await page.keyboard.press('Digit2');
   await expect(page.locator('#hudStatus')).toHaveText('ON YOUR MARKS');
@@ -79,7 +82,7 @@ test('the Tea Run plays with the keyboard, pauses, and comes back to the tea', a
     return { lives: s.lives, fortune: s.fortune, round: s.round, sugarLeft: s.sugarLeft, run: s.run };
   });
   expect(after).toMatchObject({ lives: before.lives, fortune: before.nextFortune, round: before.round + 1, run: null });
-  expect(after.sugarLeft).toBe((await usualSugar(page)) + 1);
+  expect(after.sugarLeft).toBe(await nextSugar(page, before.sugarLeft, 1));
   await expect(page.locator('#hudScore')).toContainText('SCORE');
   await expect(page.locator('#hudLives')).toHaveText(/^(REINFORCED|CUP STABLE|PORCELAIN CRACKED|STRUCTURAL FAILURE IMMINENT)$/);
   // Jump and slide keys are milk and sugar again.
@@ -92,6 +95,7 @@ test('three stumbles end the errand without costing a cup', async ({ page, probl
   await openGame(page, '&seed=24');
   await toShortage(page);
   const lives = (await gameState(page)).lives;
+  const carried = (await gameState(page)).sugarLeft;
   await page.keyboard.press('Digit2');
   await page.keyboard.press('Enter'); // skip the announcement, then just stand there
   await page.waitForFunction(() => window.__TEACUP__.game.state.run?.stage === 'outro', null, { timeout: 40_000 });
@@ -104,12 +108,12 @@ test('three stumbles end the errand without costing a cup', async ({ page, probl
   expect(await page.evaluate(() => window.__TEACUP__.game.state.roundStats.volleys)).toBe(0);
   await page.keyboard.up('Space');
   expect((await gameState(page)).lives).toBe(lives);
-  await expect(page.locator('#sugarCount')).toHaveText(String(await usualSugar(page)));
+  await expect(page.locator('#sugarCount')).toHaveText(String(await nextSugar(page, carried)));
   expect(problems).toEqual([]);
 });
 
 test('Auto Steam can be switched on with a keyboard, and says so', async ({ page, problems }) => {
-  await openGame(page);
+  await openGame(page, '&mode=chill');
   await page.locator('#menuBtn').click();
   await page.locator('#teaBreak summary').nth(3).click();
   await expect(page.locator('#autoSteamBtn')).toHaveText('Auto Steam: off');

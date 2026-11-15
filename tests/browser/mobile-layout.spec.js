@@ -150,7 +150,7 @@ test('Tea Break pauses time, traps focus, changes settings, and dismisses withou
   const angle = await page.evaluate(() => window.__TEACUP__.game.state.angle);
   await page.waitForTimeout(250);
   expect(await page.evaluate(() => window.__TEACUP__.game.state.angle)).toBe(angle);
-  expect(await page.evaluate(() => [window.__TEACUP__.game.state.milkLeft, window.__TEACUP__.game.state.sugarLeft])).toEqual([2, 2]);
+  expect(await page.evaluate(() => [window.__TEACUP__.game.state.milkLeft, window.__TEACUP__.game.state.sugarLeft])).toEqual([2, 1]);
   expect(problems).toEqual([]);
 });
 

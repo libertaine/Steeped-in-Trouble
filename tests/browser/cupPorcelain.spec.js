@@ -119,7 +119,7 @@ test('an authentic 0.16.0 save continues, cracked, with its reading and upgrade 
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'playing');
   await quiet(page);
   await finishCup(page);
-  await page.waitForFunction(() => JSON.parse(localStorage.getItem('steeped-in-trouble:pot-save')).schemaVersion === 5);
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('steeped-in-trouble:pot-save')).schemaVersion === 6);
   expect(problems).toEqual([]);
 });
 

@@ -37,9 +37,14 @@ export function resourceHudTests() {
         // Both successful uses enter the real event queue before the next frame.
         g.pourMilk(); g.pourMilk();
       });
-      await expect(page.locator('#resource0 b')).toHaveText('0/2');
+      await expect(page.locator('#resource0 b')).toHaveText('0/3');
       await expect.poll(() => page.evaluate(() => window.__resourceNotifications)).toEqual(['Milk used', 'Milk used']);
-      await page.evaluate(() => { const g = window.__TEACUP__.game; g.sugarBurst(); g.sugarBurst(); });
+      await page.evaluate(() => {
+        const g = window.__TEACUP__.game;
+        // A fresh pot has one Sugar; supply a spare to exercise consecutive notifications.
+        g.state.sugarLeft = 2;
+        g.sugarBurst(); g.sugarBurst();
+      });
       await expect(page.locator('#resource1 b')).toHaveText('0/2');
       await expect.poll(() => page.evaluate(() => window.__resourceNotifications)).toEqual(['Milk used', 'Milk used', 'Sugar used', 'Sugar used']);
       await page.evaluate(() => {
