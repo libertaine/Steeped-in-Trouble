@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The project uses
 [semantic versioning](https://semver.org/).
 
-## [0.23.0] - Unreleased — Chill, Arcade and Tea Cash
+## [0.23.0] - 2026-11-15 — Chill, Arcade and Tea Cash
 
 - Added Chill and Arcade selection before a new pot, with mode locked during
   play and separate best scores, best rounds, completed cups and finished plays.
@@ -43,8 +43,8 @@ All notable changes to this project are documented here. The project uses
 - Resolved the between-cup ant report's Milk HUD discrepancy as a stale test
   expectation: jackpot full Milk is the current capacity, 3/3.
 
-Integration candidate only. No release, tag, publication or production qualification
-is claimed. See [draft notes](docs/releases/v0.23.0.md).
+See [release notes](docs/releases/v0.23.0.md). The historical decorative
+crumb-timing issue remains open in [#51](https://github.com/libertaine/Steeped-in-Trouble/issues/51).
 
 ## [0.22.0] - 2026-11-08 — The Training Cup
 

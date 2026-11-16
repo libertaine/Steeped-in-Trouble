@@ -16,10 +16,10 @@ adventures and unexpected humor keep finding their way into the pot.
 does not show all current features.*
 Prefer a still image? [See a screenshot](docs/images/screenshot.png).
 
-## 0.23.0 candidate — Chill, Arcade and Tea Cash
+## 0.23.0 — Chill, Arcade and Tea Cash
 
-The local integration candidate adds **Chill** and **Arcade** mode selection,
-seven-lane Sugar, persistent supplies and separate mode records. Arcade always
+Choose **Chill** or **Arcade** mode, with seven-lane Sugar, persistent supplies
+and separate mode records. Arcade always
 keeps the kettle on: Heat carries forward automatically at each Day boundary.
 Chill retains Fresh Brew and Keep the Kettle On, with Auto Steam available.
 Auto Steam is disabled in Arcade, including with Easy Touch.
@@ -41,21 +41,10 @@ finished-pot records stay separate for each mode; the Other Jobs record book
 remains separate. Development-injected scenarios cannot write these records
 or replace/clear a normal saved pot.
 
-These changes are prepared for integration review; they are not published or
-production qualified. See the [draft release notes](docs/releases/v0.23.0.md).
+The Training Cup and the single responsive layout remain available. Earlier
+saved pots continue through migration.
 
-## Published baseline: 0.22.0 — The Training Cup
-
-- An optional Training Cup teaches movement, steam, milk and sugar, then runs
-  a short practice wave.
-- The former Compact layout is now the only responsive presentation, with
-  improved Day and Tea Shortage choices in narrow windows.
-- Analytics now load as an optional module, so blocking them cannot stop the
-  game from starting. See [Privacy](#privacy), including how to turn them off.
-
-For the published 0.22.0 baseline, normal gameplay and earlier saved pots were unchanged.
-
-See the [release notes](docs/releases/v0.22.0.md),
+See the [release notes](docs/releases/v0.23.0.md),
 [changelog](CHANGELOG.md) and
 [past releases](https://github.com/libertaine/Steeped-in-Trouble/releases).
 

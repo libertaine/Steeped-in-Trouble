@@ -28,11 +28,10 @@ Tablet compatibility and phone compatibility follow as best effort, in
 that order. Existing touch and responsive layout accommodations remain supported
 by automated tests; physical-device testing is not a publication gate.
 
-## 0.23.0 integration candidate: modes and supplies
+## 0.23.0: modes and supplies
 
-This section describes the accepted local candidate, which is not published
-or production qualified. Sections explicitly labeled with earlier versions
-describe their historical rules; this section supersedes their Sugar width,
+This section describes the 0.23.0 modes and supplies. Sections explicitly labeled
+with earlier versions describe their historical rules; this section supersedes their Sugar width,
 resource refill, boss reward, Sugar Rush, Sugar Scoop, Golden Cube sugar,
 Mycelium Manager sugar and Arcade Day-choice descriptions.
 
