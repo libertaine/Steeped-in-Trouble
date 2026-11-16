@@ -114,3 +114,22 @@ export function saveSound(storage, on) {
     storage?.setItem(SOUND_KEY, on ? 'on' : 'off');
   } catch { /* The choice still applies for this visit. */ }
 }
+
+export const MODE_KEY = 'steeped-in-trouble:mode';
+
+export function initialMode({ params = new URLSearchParams(), storage, touchDevice = false } = {}) {
+  const fromUrl = params.get('mode');
+  if (fromUrl === 'chill' || fromUrl === 'arcade') return fromUrl;
+  try {
+    const saved = storage?.getItem(MODE_KEY);
+    if (saved === 'chill' || saved === 'arcade') return saved;
+  } catch { /* Default mode still works when storage is unavailable. */ }
+  const settings = initialSettings({ params, storage, touchDevice });
+  return settings.autoSteam ? 'chill' : 'arcade';
+}
+
+export function saveMode(storage, mode) {
+  try {
+    if (mode === 'chill' || mode === 'arcade') storage?.setItem(MODE_KEY, mode);
+  } catch { /* Apply the choice for this visit even when it cannot be saved. */ }
+}

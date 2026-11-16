@@ -26,10 +26,10 @@ describe('Continue Pot: 0.16.0 saves', () => {
     expect(migrated.schemaVersion).toBe(POT_SCHEMA_VERSION);
     expect(validateCheckpoint(migrated)).toBe(true);
     const { porcelain, goldenLeaf, goldenLeafTimer, spores, tray, modifiers,
-      managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, rush, ...kept } = migrated.state;
-    // Schema 5: a Chapter 1 pot has no Manager scheduled yet, and has never brewed Mushroom Tea.
-    expect({ managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, rush }).toEqual({
-      managerAfter: null, lastManager: 0, managerVisits: 0, managerDue: false, manager: null, mushroomCups: 0, strangeFirst: 0, rush: null });
+      managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, rush, mode, ...kept } = migrated.state;
+    // Schema 5 & 6: a Chapter 1 pot has no Manager scheduled yet, has never brewed Mushroom Tea, and defaults to Arcade mode.
+    expect({ managerAfter, lastManager, managerVisits, managerDue, manager, mushroomCups, strangeFirst, rush, mode }).toEqual({
+      managerAfter: null, lastManager: 0, managerVisits: 0, managerDue: false, manager: null, mushroomCups: 0, strangeFirst: 0, rush: null, mode: 'arcade' });
     const { modifiers: heldModifiers, ...held } = original.state;
     expect(kept).toEqual(held);
     expect(modifiers).toEqual({ ...heldModifiers, puffballChance: 0 }); // schema 3: the neutral puffball chance
@@ -59,18 +59,18 @@ describe('Continue Pot: 0.16.0 saves', () => {
     expect(game.state.fortune).toBe(original.state.nextFortune);
   });
 
-  it('keeps a pending Day choice', () => {
+  it('keeps the pending boundary and automatically carries Heat in a migrated Arcade pot', () => {
     const original = structuredClone(legacy.checkpoints.dayEnd);
     const game = createGame({ checkpoint: original });
     expect(game.state).toMatchObject({ dayPending: true, round: 10, porcelain: { fractures: [] } });
     game.update(5);
     if (game.state.offer) game.chooseUpgrade(0); else game.primaryAction();
-    while (game.state.phase !== 'day') {
+    for (let i = 0; i < 10 && game.state.round === 10; i++) {
       if (game.state.phase === 'arcadeOffer') game.chooseInterlude(false);
       else game.primaryAction(), game.update(60), game.primaryAction();
     }
-    expect(game.chooseDay('fresh')).toBe(true);
-    expect(game.state).toMatchObject({ phase: 'playing', round: 11, heat: 0 });
+    expect(game.chooseDay('fresh')).toBe(false);
+    expect(game.state).toMatchObject({ phase: 'playing', round: 11, heat: 10 });
   });
 
   it('plays on exactly as 0.16.0 did, cup by cup, every original random stream included', () => {

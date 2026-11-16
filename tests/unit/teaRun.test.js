@@ -435,7 +435,7 @@ describe('returning to the tea', () => {
     expect(game.state.progress.chapter).toBe(chapter.chapter);
     expect(game.state.run).toBe(null);
     // The restock arrives with this cup.
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound + game.state.modifiers.bonusSugar + 1);
+    expect(game.state.sugarLeft).toBe(Math.min(CONFIG.sugar.max, CONFIG.sugar.starting + game.state.modifiers.bonusSugar + 1));
   });
 
   it('then takes any hot chocolate or coffee boss the reading had decided on', () => {

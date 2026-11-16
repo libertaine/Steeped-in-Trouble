@@ -28,7 +28,7 @@ import { PHASE } from '../core/state.js';
 import { LANES, LANE_STEP, angleDifference, laneAngle, laneOf, wrapLane } from './arena.js';
 import { spoonLane } from './player.js';
 import { restoreLife } from './porcelain.js';
-import { isNearCloud, spendDart } from './weapons.js';
+import { isNearCloud, milkCapacity, spendDart, sugarCapacity } from './weapons.js';
 
 /** Salts the Manager's own random generator from the pot's seed. */
 export const MANAGER_SALT = 0x6d1c311a;
@@ -300,26 +300,32 @@ function popMemo({ state, emit }, memo, shot) {
 }
 
 /** Steam cuts a root back a little way; sugar, or a short enough root, clears it. */
-function cutRoot(sim, root, shot) {
+function cutRoot(sim, root, shot, allowSynergy = true) {
   const { state, emit } = sim;
   const m = state.manager;
   const tip = root.tip;
   root.tip -= shot.sugar ? Infinity : M.cutBack;
   const cleared = root.tip <= M.bodyRadius;
   emit('rootCut', { lane: root.lane, angle: laneAngle(root.lane), tip, cleared, sugar: shot.sugar });
-  if (!cleared) return;
+  if (!cleared) return false;
   m.roots.splice(m.roots.indexOf(root), 1);
   m.tally.roots++;
   state.score += M.rootPoints;
   say(sim, 'whoApproved');
-  // Synergy: the Manager makes the most of it.
-  if (has(m, 'synergy') && addMemo(m, root.lane, by(M.memoSpeed, fury(m)))) emit('memo', { lanes: [root.lane], synergy: true });
+  // Synergy: the Manager makes the most of it (capped when a 7-lane sugar burst clears many roots at once).
+  if (allowSynergy && has(m, 'synergy') && addMemo(m, root.lane, by(M.memoSpeed, fury(m)))) {
+    emit('memo', { lanes: [root.lane], synergy: true });
+    return true;
+  }
+  return false;
 }
 
 /**
  * Each dart meets whatever it reaches first on its way in: a memo beyond the
- * root's tip, the tip itself, or the Manager (a harmless thump). Steam is
- * spent on what it hits; sugar carries on through.
+ * root's tip, the tip itself, or the Manager (a harmless thump). Each dart in
+ * a steam volley or 7-lane sugar burst is spent on the first target it hits
+ * in its lane, so a single sugar dart cannot clear a root and also pop the
+ * shielded or Synergy memo behind it on the same shot.
  */
 function resolveShots(sim) {
   const { state, emit } = sim;
@@ -330,14 +336,16 @@ function resolveShots(sim) {
     const memo = m.memos.find((target) => strikes(target, shot));
     let hit = true;
     if (memo && (!root || memo.radius > root.tip)) popMemo(sim, memo, shot);
-    else if (root && shot.radius <= root.tip + radialTolerance) cutRoot(sim, root, shot);
-    else if (shot.radius <= M.bodyRadius) {
+    else if (root && shot.radius <= root.tip + radialTolerance) {
+      const burst = shot.sugar ? shot.burst : null;
+      if (cutRoot(sim, root, shot, !burst || burst.synergyMemos < 2) && burst) burst.synergyMemos++;
+    } else if (shot.radius <= M.bodyRadius) {
       emit('thump', { angle: shot.angle, sugar: shot.sugar });
       state.shots.splice(i, 1);
       spendDart(state, shot, true); // like the Grind's clank: it reached the boss
       continue;
     } else hit = false;
-    if (hit && !shot.sugar) {
+    if (hit) {
       state.shots.splice(i, 1);
       spendDart(state, shot, true);
     }
@@ -462,15 +470,19 @@ function finish(sim, result, reason = null) {
   state.shots = [];
   state.volleys = {};
   const summary = {
-    result, reason, perfect: false, cup: false, bonus: 0, cash: 0, scalds: m.scalds,
+    result, reason, perfect: false, cup: false, bonus: 0, cash: 0, sugar: 0, milk: 0, scalds: m.scalds,
     memos: m.tally.memos, roots: m.tally.roots, time: m.clock,
   };
   if (result === 'victory') {
     summary.bonus = G.points;
-    if (m.milestone) {
-      summary.cash = CONFIG.teaCash.milestone;
-      state.teaCash += summary.cash;
-    }
+    summary.cash = m.milestone ? CONFIG.teaCash.milestone : CONFIG.teaCash.rematch;
+    state.teaCash += summary.cash;
+    const beforeSugar = state.sugarLeft;
+    const beforeMilk = state.milkLeft;
+    state.sugarLeft = Math.min(sugarCapacity(state), state.sugarLeft + 1);
+    if (m.milestone) state.milkLeft = Math.min(milkCapacity(state), state.milkLeft + 1);
+    summary.sugar = state.sugarLeft - beforeSugar;
+    summary.milk = state.milkLeft - beforeMilk;
     state.goldenSpoon = Math.max(state.goldenSpoon, G.goldenSpoon);
     if (m.scalds === 0) {
       summary.perfect = true;

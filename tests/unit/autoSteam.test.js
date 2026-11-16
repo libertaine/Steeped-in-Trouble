@@ -11,7 +11,7 @@ const STEAM = CONFIG.steam;
 
 /** A round in progress with Auto Steam on and the spoon over lane 0. */
 function autoGame(seed = 1) {
-  const game = playingGame({ seed });
+  const game = playingGame({ seed, mode: 'chill' });
   game.setAutoSteam(true);
   game.state.angle = laneAngle(0);
   return game;
@@ -19,12 +19,18 @@ function autoGame(seed = 1) {
 
 describe('Auto Steam', () => {
   it('is off unless switched on, and fires nothing by itself then', () => {
-    const game = playingGame();
+    const game = playingGame({ mode: 'chill' });
     expect(game.state.autoSteam).toBe(false);
     game.state.angle = laneAngle(0);
     placeEnemy(game.state, { lane: 0, radius: 120 });
     step(game, 1);
     expect(game.state.roundStats.volleys).toBe(0);
+  });
+
+  it('is disabled in Arcade Mode and cannot be switched on there', () => {
+    const game = playingGame({ mode: 'arcade' });
+    expect(game.setAutoSteam(true)).toBe(false);
+    expect(game.state.autoSteam).toBe(false);
   });
 
   it('fires down the spoon’s lane when a leaf is lined up there, and kills it', () => {
@@ -137,7 +143,7 @@ describe('Auto Steam', () => {
 
 describe('Auto Steam in The Daily Grind', () => {
   function fight(seed = 1) {
-    const game = playingGame({ seed });
+    const game = playingGame({ seed, mode: 'chill' });
     game.setAutoSteam(true);
     playTo(game, 5);
     game.state.kills = game.state.target - 1;
@@ -195,7 +201,7 @@ describe('Auto Steam in The Daily Grind', () => {
 
 describe('Auto Steam in Hot Chocolate Havoc', () => {
   it('stays out of it: toasting is the player’s own', () => {
-    const game = playingGame({ seed: 2 });
+    const game = playingGame({ seed: 2, mode: 'chill' });
     game.setAutoSteam(true);
     game.state.phase = 'chocolate';
     game.state.chocolate = { stage: 'play', time: 0, left: 10, marshmallows: [], flames: [] };
@@ -206,7 +212,7 @@ describe('Auto Steam in Hot Chocolate Havoc', () => {
   });
 
   it('fires no flames by itself', () => {
-    const game = playingGame({ seed: 2 });
+    const game = playingGame({ seed: 2, mode: 'chill' });
     game.setAutoSteam(true);
     game.state.phase = 'chocolate';
     game.state.chocolate = { ...createHavoc(createRandom(1)), stage: 'play' };

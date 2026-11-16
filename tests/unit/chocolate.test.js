@@ -5,6 +5,7 @@ import { createRandom } from '../../src/core/random.js';
 import { laneAngle } from '../../src/gameplay/arena.js';
 import { firstHavocRound, havocDue, toastStage } from '../../src/gameplay/chocolate.js';
 import { turnSpeed } from '../../src/gameplay/player.js';
+import { sugarCapacity } from '../../src/gameplay/weapons.js';
 import { hudText } from '../../src/ui/hud.js';
 import { completeRound, finishBonus, playingGame, step } from './helpers.js';
 
@@ -251,8 +252,39 @@ describe('toasting marshmallows', () => {
     expect(game.state.score - score).toBe(C.greatBonus);
     game.state.chocolate.time = 5;
     game.primaryAction();
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound + game.state.modifiers.bonusSugar + 1);
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.starting + game.state.modifiers.bonusSugar + 1);
   });
+
+  // As in 0.22.0: good and great rounds both earn the sugar burst; a modest one does not.
+  // 0.23.0 only adds the inventory cap, applied when the next cup starts.
+  for (const [perfect, grade, bonus, sugar] of [
+    [0, 'modest', 0, 0],
+    [C.goodPerfects - 1, 'modest', 0, 0],
+    [C.goodPerfects, 'good', C.goodBonus, C.rewardSugar],
+    [C.greatPerfects - 1, 'good', C.goodBonus, C.rewardSugar],
+    [C.greatPerfects, 'great', C.greatBonus, C.rewardSugar],
+  ]) {
+    for (const full of [false, true]) {
+      it(`grades ${perfect} perfect marshmallows ${grade}: +${bonus} and ${sugar} sugar, ${full ? 'full' : 'with room'}`, () => {
+        const game = toastingGame();
+        const s = game.state;
+        s.chocolate.tally.perfect = perfect;
+        s.sugarLeft = full ? sugarCapacity(s) : 0;
+        const score = s.score;
+        s.chocolate.left = 0.01;
+        step(game, 0.05);
+        expect(s.chocolate.summary).toMatchObject({ grade, bonus, sugar });
+        expect(s.score - score).toBe(bonus);
+        expect(s.extraSugar).toBe(sugar);
+        s.chocolate.time = 5;
+        game.primaryAction();
+        expect(s.phase).toBe('playing');
+        expect(s.extraSugar).toBe(0);
+        const expected = full ? sugarCapacity(s) : Math.min(sugarCapacity(s), sugar + s.modifiers.bonusSugar);
+        expect(s.sugarLeft).toBe(expected);
+      });
+    }
+  }
 });
 
 describe('the spoon in the hot chocolate', () => {

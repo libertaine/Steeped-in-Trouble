@@ -342,7 +342,8 @@ describe('presentation policy', () => {
     [{ phase: 'playing' }, 'run'],
     [{ phase: 'ready' }, 'run'],
     [{ phase: 'reading' }, 'run'],
-    [{ phase: 'reading', offer: true }, 'off'], // an upgrade decision
+    [{ phase: 'reading', offer: true }, 'run'], // safe space decides whether ants fit
+    [{ phase: 'paused', pausedFrom: 'reading', offer: true }, 'frozen'],
     [{ phase: 'paused', pausedFrom: 'playing' }, 'frozen'],
     [{ phase: 'paused', pausedFrom: 'grind' }, 'off'],
     [{ phase: 'playing', holding: true }, 'frozen'], // a rewind holds time still
@@ -471,6 +472,59 @@ describe('the colony', () => {
   }
 
   const present = (colony) => colony.ants.filter((a) => a.state !== 'absent');
+
+  it.each([1, 5, 7, 11, 31, 94])('offers a first reading arrival within 2–4 simulated seconds (seed %i)', (seed) => {
+    const colony = createColony({ random: createRandom(seed) });
+    let arrival = 0;
+    while (!colony.count && arrival < 5) {
+      colony.step(FRAME, regions, 4, { activity: 'between-cups' });
+      arrival += FRAME;
+    }
+    expect(arrival).toBeGreaterThanOrEqual(2 - FRAME);
+    expect(arrival).toBeLessThanOrEqual(4 + FRAME);
+  });
+
+  it('changes opportunity clocks without resetting ants, spells, crumbs or the rare cube clock', () => {
+    const { colony } = simulate(5, 8, { tuning: LINGER, each: (c, t) => { if (t < FRAME) c.summon(4); } });
+    const before = structuredClone(colony.ants);
+    const clocks = colony.scheduling;
+    colony.step(0, regions, 6, { activity: 'between-cups' });
+    expect(colony.ants).toEqual(before);
+    expect(colony.scheduling).toMatchObject({ activity: 'between-cups', spell: clocks.spell, cube: clocks.cube });
+    expect(colony.scheduling.social).toBeCloseTo(clocks.social / 2);
+    expect(colony.scheduling.crumb).toBeCloseTo(clocks.crumb * 80 / 130);
+    colony.step(0, regions, 6);
+    expect(colony.scheduling).toEqual(clocks);
+    expect(colony.ants).toEqual(before);
+  });
+
+  it('never manufactures room for reading arrivals and retains ordinary population limits', () => {
+    const colony = createColony({ random: createRandom(7) });
+    for (let t = 0; t < 60; t += FRAME) colony.step(FRAME, [], 0, { activity: 'between-cups' });
+    expect(colony.count).toBe(0);
+    expect(colony.scheduling.spell).toBeGreaterThanOrEqual(2);
+    for (let t = 0; t < 120; t += FRAME) {
+      colony.step(FRAME, regions, 2, { activity: 'between-cups', social: false });
+      expect(colony.count).toBeLessThanOrEqual(2);
+      expect(present(colony).every((a) => a.mode === 'solo' || a.mode === 'forage')).toBe(true);
+      expect(colony.cube.phase).toBe('none');
+    }
+  });
+
+  it('offers a prompt reading visit even when an active spell is waiting on every ant cooldown', () => {
+    const colony = createColony({ random: createRandom(7) });
+    colony.summon(1);
+    for (const ant of colony.ants) ant.timer = 25;
+    colony.step(0, regions, 4, { activity: 'between-cups' });
+    expect(colony.ants.filter((a) => a.timer <= 3)).toHaveLength(1);
+    let elapsed = 0;
+    while (!colony.count && elapsed < 4) {
+      colony.step(FRAME, regions, 4, { activity: 'between-cups' });
+      elapsed += FRAME;
+    }
+    expect(colony.count).toBe(1);
+    expect(elapsed).toBeLessThanOrEqual(3 + FRAME);
+  });
 
   it('never exceeds the population ceiling, and reaches it with a summons', () => {
     for (const limit of [1, 2, 4, 6, 12]) {
@@ -1760,6 +1814,65 @@ describe('the ant painter', () => {
 
 describe('the ambient layer', () => {
   const PHONE = Object.freeze({ touch: true, screen: [412, 915] }); // Pixel 7
+  const READING = { ...PLAYING, phase: 'reading', offer: true };
+
+  it('keeps a colony through reading decisions and back to ordinary play', () => {
+    const page = fakePage();
+    const ambient = createAmbient({ canvas: page.layer, seed: 9 });
+    untilVisible(ambient, 3);
+    const before = ambient.snapshot().ants;
+    ambient.update(0, READING);
+    expect(ambient.snapshot()).toMatchObject({ policy: 'run', scheduling: { activity: 'between-cups' } });
+    expect(ambient.snapshot().ants).toEqual(before);
+    ambient.update(0, PLAYING);
+    expect(ambient.snapshot().scheduling.activity).toBe('ordinary');
+    expect(ambient.snapshot().ants).toEqual(before);
+    ambient.dispose();
+  });
+
+  it('observes resizing decision panels even when the stage keeps its size', () => {
+    const page = fakePage();
+    const panel = page.addPanel({ left: 0, top: 0, width: 100, height: 100 });
+    const ambient = createAmbient({ canvas: page.layer, seed: 9 });
+    untilVisible(ambient, 3, READING);
+    expect(page.win.observers[0].observed).toContain(panel);
+    panel.box = { left: 0, top: 0, width: 1200, height: 500 };
+    page.win.observers[0].callback();
+    ambient.update(FRAME, READING);
+    expect(ambient.snapshot().hidden).toBe(true);
+    run(ambient, 0.3, READING);
+    expect(ambient.snapshot()).toMatchObject({ count: 0, room: 0, hidden: true });
+    panel.hidden = true;
+    run(ambient, 0.3, READING);
+    expect(ambient.snapshot().room).toBeGreaterThan(0);
+    ambient.dispose();
+  });
+
+  it('freezes reading scheduling under pause, focus loss, hidden tabs and modals, without catch-up', () => {
+    const page = fakePage();
+    const ambient = createAmbient({ canvas: page.layer, seed: 7 });
+    untilVisible(ambient, 3, READING);
+    const before = ambient.snapshot();
+    const unchanged = () => {
+      expect(ambient.snapshot().ants).toEqual(before.ants);
+      expect(ambient.snapshot().scheduling).toEqual(before.scheduling);
+    };
+    run(ambient, 30, { ...READING, phase: 'paused', pausedFrom: 'reading' }); unchanged();
+    page.win.dispatchEvent(new Event('blur'));
+    run(ambient, 30, READING); unchanged();
+    page.win.dispatchEvent(new Event('focus'));
+    page.doc.visibilityState = 'hidden';
+    run(ambient, 30, READING); unchanged();
+    page.doc.visibilityState = 'visible';
+    run(ambient, 30, { ...READING, blocked: true }); unchanged();
+    expect(ambient.snapshot().hidden).toBe(true);
+    ambient.update(FRAME, READING);
+    expect(ambient.snapshot().scheduling.cube).toBeGreaterThanOrEqual(before.scheduling.cube - FRAME - 1e-9);
+    page.win.media.dispatchEvent(Object.assign(new Event('change'), { matches: true }));
+    run(ambient, 10, READING);
+    expect(ambient.snapshot()).toMatchObject({ policy: 'off', count: 0, hidden: true });
+    ambient.dispose();
+  });
   it('attaches to the existing loop: no timers, animation frames or input listeners of its own, and cleans up', () => {
     const page = fakePage();
     const frames = vi.fn(() => 0);
@@ -2456,7 +2569,7 @@ describe('isolation from the game', () => {
       }
       const seen = ambient?.snapshot().count;
       ambient?.dispose();
-      return { state: JSON.stringify(game.state), log, seen, crumbs, cubes };
+      return { state: JSON.stringify(game.state), rng: game.exportRandom(), log, seen, crumbs, cubes };
     }
     const plain = play(false);
     const decorated = play(true, 1);
@@ -2464,6 +2577,8 @@ describe('isolation from the game', () => {
     expect(decorated.log).toEqual(plain.log);
     expect(decorated.state).toBe(plain.state);
     expect(otherSeed.state).toBe(plain.state);
+    expect(decorated.rng).toEqual(plain.rng);
+    expect(otherSeed.rng).toEqual(plain.rng);
     expect(plain.log.some((entry) => entry.endsWith(':kill'))).toBe(true);
     expect(decorated.crumbs + otherSeed.crumbs).toBeGreaterThan(0); // crumbs came and went meanwhile
     expect(decorated.cubes + otherSeed.cubes).toBeGreaterThan(0); // and sugar cubes

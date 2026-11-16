@@ -80,7 +80,8 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
   // Everything on the stage or in the playfield that could cover it, except
   // decorative (aria-hidden) layers such as this one and the touch ring.
   // Collected again at each measurement: a view switch moves panels between them.
-  const collect = () => [...host.children, ...(clip === host ? [] : clip.children)]
+  const collect = () => [...new Set([...host.children, ...(clip === host ? [] : clip.children),
+    doc.getElementById('upgradeOffer'), doc.getElementById('restockOffer')].filter(Boolean))]
     .filter((element) => element !== host && element.getAttribute('aria-hidden') !== 'true');
   let candidates = collect();
   let hiddenKey = candidates.map((element) => element.hidden);
@@ -131,8 +132,9 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
   listen(win.matchMedia?.('(orientation: portrait)'), 'change', markDirty);
   listen(win.matchMedia?.('(pointer: coarse)'), 'change', markDirty);
   const observer = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(markDirty) : null;
+  const observed = new Set();
   for (const element of [host, clip, doc.getElementById('game'), doc.getElementById('readingPresentation')]) {
-    if (element) observer?.observe(element);
+    if (element) { observer?.observe(element); observed.add(element); }
   }
 
   // Cheap per-frame checks for layout changes no observer reports: view,
@@ -157,6 +159,11 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
 
   function measure() {
     candidates = collect();
+    // Decisions can resize inside a fixed stage (wrapping copy, purchases,
+    // font changes). Observe protected panels as well as the stage itself.
+    for (const element of candidates) {
+      if (!observed.has(element)) { observer?.observe(element); observed.add(element); }
+    }
     hiddenKey = candidates.map((element) => element.hidden);
     // All reads first, then the backing-store writes.
     layout = measureLayout({ host, clip, candidates, viewport: { x: 0, y: 0, w: win.innerWidth, h: win.innerHeight } });
@@ -256,7 +263,8 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
       const look = quality();
       limit = populationLimit(room, look);
       // Low graphics keeps to plain wandering: no social moments.
-      if (policy === 'run') colony.step(dt, regions, limit, { social: look !== 'low' });
+      if (policy === 'run') colony.step(dt, regions, limit, { social: look !== 'low',
+        activity: scene.phase === 'reading' ? 'between-cups' : 'ordinary' });
       const visible = (colony.count > 0 || colony.crumb.state !== 'none' || colony.cube.phase !== 'none')
         && (policy === 'run' || policy === 'frozen');
       show(visible);
@@ -275,7 +283,8 @@ export function createAmbient({ canvas, quality = () => 'high', seed, ants } = {
       const crumb = colony.crumb;
       const cube = colony.cube;
       return {
-        policy, room, space, budget, limit, shape, count: colony.count, spell: colony.spell, reduced, focused,
+        policy, room, space, budget, limit, shape, count: colony.count, spell: colony.spell,
+        scheduling: colony.scheduling, reduced, focused,
         text: textMischief?.snapshot() ?? null,
         drawn, quality: drawnQuality, hidden: canvas.hidden, width: canvas.width, height: canvas.height,
         visible: layout?.visible ?? null, exclusions: layout?.exclusions ?? [], open: layout?.open ?? null,

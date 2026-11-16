@@ -74,7 +74,7 @@ describe('the isolated Training Cup', () => {
     expect(stage(g)).toBe(3); expect(g.state.enemies).toHaveLength(3);
     expect(g.fireSteam()).toBe(false);
     aim(g, laneAngle(TRAINING_LANE + 5)); g.sugarBurst();
-    expect(g.state.shots.filter((s) => s.sugar)).toHaveLength(3);
+    expect(g.state.shots.filter((s) => s.sugar)).toHaveLength(7);
     tick(g, .6); expect(stage(g)).toBe(3);
     g.sugarBurst(); tick(g, .7);
     expect(g.training.view.failures).toBe(1); expect(g.state.sugarLeft).toBe(CONFIG.sugar.perRound);

@@ -321,8 +321,8 @@ describe('playing Crossing the Street from the offer', () => {
 describe('the Day boundary', () => {
   /** A Day-ending cup with the crossing due after it. */
   function dayEnd(round) {
-    const g = playingGame({ seed: 3 });
-    Object.assign(g.state, { round, heat: Math.min(28, round - 1), progress: { chapter: 2, starts: [1, 6] },
+    const g = playingGame({ seed: 3, mode: 'chill' });
+    Object.assign(g.state, { round, heat: Math.min(14, round - 1), progress: { chapter: 2, starts: [1, 6] },
       grindAfter: null, lastGrind: round, havocAfter: null, lastHavoc: round, shortageAfter: 1000 });
     Object.assign(g.state.arcade.after, { dailyPour: round + 3, biscuitBreakout: round + 6, crossingStreet: round });
     finishNormal(g);
@@ -351,7 +351,7 @@ describe('the Day boundary', () => {
     expect(g.chooseDay(choice)).toBe(true);
     expect(g.chooseDay(choice)).toBe(false); // exactly once
     expect(g.state).toMatchObject({ phase: 'playing', round: round + 1, dayPending: false, fortune: before.nextFortune,
-      heat: choice === 'fresh' ? 0 : Math.min(28, before.heat + 1), spoon: before.spoon, progress: before.progress });
+      heat: choice === 'fresh' ? 0 : Math.min(14, before.heat + 1), spoon: before.spoon, progress: before.progress });
   });
 });
 

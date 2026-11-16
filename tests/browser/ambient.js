@@ -3,6 +3,16 @@ import { expect } from './fixtures.js';
 /** The ambient layer's read-only debug state. */
 export const ambientState = (page) => page.evaluate(() => window.__TEACUP__.ambient.snapshot());
 
+/** Advance a paused Playwright clock, observing without real-time event races. */
+export async function advanceAmbientUntil(page, predicate, { maxMs = 60_000, stepMs = 100 } = {}) {
+  for (let elapsed = 0; elapsed <= maxMs; elapsed += stepMs) {
+    const state = await ambientState(page);
+    if (predicate(state)) return state;
+    await page.clock.runFor(stepMs);
+  }
+  throw new Error(`Ambient condition not reached within ${maxMs} simulated ms`);
+}
+
 /** Bring `n` visits forward (space and policy still apply) and wait until that many ants are out. */
 export async function summonAnts(page, n = 1, { settled = false } = {}) {
   await page.evaluate((count) => window.__TEACUP__.ambient.summon(count), n);
@@ -58,7 +68,7 @@ export function protectedOverlaps(page, { samples = 30, interval = 100 } = {}) {
   return page.evaluate(async ({ samples, interval }) => {
     const ambient = window.__TEACUP__.ambient;
     const stage = document.querySelector('.stage');
-    const guarded = [...document.querySelectorAll('#game, .hud-top, #readingPresentation, .upgrade-offer, button, select, #upgradeAcknowledgment')];
+    const guarded = [...document.querySelectorAll('#game, .hud-top, #readingPresentation, .upgrade-offer, #restockOffer, button, select, #upgradeAcknowledgment')];
     const hits = [];
     let seen = 0, most = 0, nearest = Infinity, cubes = 0;
     const crumbs = { lying: 0, carried: 0 };
@@ -93,7 +103,7 @@ export function protectedOverlaps(page, { samples = 30, interval = 100 } = {}) {
           }
         }
       }
-      await new Promise((resolve) => setTimeout(resolve, interval));
+      if (interval > 0) await new Promise((resolve) => setTimeout(resolve, interval));
     }
     return { seen, most, nearest, hits, crumbs, cubes };
   }, { samples, interval });

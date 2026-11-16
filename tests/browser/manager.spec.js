@@ -59,7 +59,7 @@ test('The Mycelium Manager can be met, fought with the usual keys, and escaped w
   await page.keyboard.press('q');
   await expect(page.locator('#milkCount')).toHaveText('1');
   await page.keyboard.press('e');
-  await expect(page.locator('#sugarCount')).toHaveText('1');
+  await expect(page.locator('#sugarCount')).toHaveText('0');
 
   // A meeting the spoon cannot avoid in time (forced for the test), and its scald.
   await page.evaluate(() => {

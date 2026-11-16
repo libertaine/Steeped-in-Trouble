@@ -7,7 +7,7 @@ import { CONFIG } from '../config.js';
 import { laneAngle, wrapLane } from './arena.js';
 import { spoonLane } from './player.js';
 import { restoreLife } from './porcelain.js';
-import { findStrikingShot, spendDart, sugarCapacity } from './weapons.js';
+import { findStrikingShot, milkCapacity, spendDart, sugarCapacity } from './weapons.js';
 
 const G = CONFIG.golden;
 
@@ -36,8 +36,8 @@ export function awardGolden(sim) {
   };
   let edge = G.jackpotChance;
   if (roll < edge) {
-    state.sugarLeft = Math.max(state.sugarLeft, sugarCapacity(state));
-    state.milkLeft = Math.max(state.milkLeft, CONFIG.milk.perRound);
+    state.sugarLeft = Math.min(sugarCapacity(state), Math.max(state.sugarLeft, sugarCapacity(state)));
+    state.milkLeft = Math.min(milkCapacity(state), Math.max(state.milkLeft, milkCapacity(state)));
     gildSpoon(state);
     return { reward: 'jackpot', points: points(G.jackpotPoints) };
   }
@@ -51,8 +51,8 @@ export function awardGolden(sim) {
     return { reward: 'life', points: 0 };
   }
   edge += G.sugarChance;
-  if (roll < edge) {
-    state.sugarLeft = Math.max(state.sugarLeft, sugarCapacity(state)) + 1;
+  if (roll < edge && state.sugarLeft < sugarCapacity(state)) {
+    state.sugarLeft = Math.min(sugarCapacity(state), state.sugarLeft + 1);
     return { reward: 'sugar', points: 0 };
   }
   return { reward: 'points', points: points(G.points) };

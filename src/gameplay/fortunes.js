@@ -166,7 +166,7 @@ export const FORTUNES = Object.freeze({
     id: 'sugarRush',
     name: 'Sugar Rush',
     quote: 'One lump or seventeen?',
-    info: `Sugar bursts regenerate: one every ${F.sugarRushInterval} seconds, up to your usual supply.`,
+    info: `Sugar bursts regenerate: one every ${F.sugarRushInterval} seconds, up to your usual supply (at most ${F.sugarRushMaxPerRound} a cup).`,
     effect: `Sugar bursts regrow, one every ${F.sugarRushInterval} seconds.`,
     tag: 'sugar regrows',
     tone: 'good',

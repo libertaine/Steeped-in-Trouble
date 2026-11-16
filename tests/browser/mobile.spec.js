@@ -33,7 +33,9 @@ test('is playable with Classic Touch controls on a phone-sized screen', { tag: '
   await page.waitForTimeout(200);
   expect((await gameState(page)).angle).toBeCloseTo(cancelled, 5);
 
-  const steam = page.locator('[data-hold="fire"]');
+  const steam = page.locator('.controls-classic [data-hold="fire"]');
+  await expect(steam).toBeVisible();
+  await expect(steam).toHaveAccessibleName('Shoot steam');
   await steam.dispatchEvent('pointerdown', { pointerId: 9, pointerType: 'touch', isPrimary: true });
   await steam.dispatchEvent('pointerup', { pointerId: 9, pointerType: 'touch', isPrimary: true });
   await expect.poll(async () => (await gameState(page)).shots).toBeGreaterThan(0);
@@ -41,7 +43,7 @@ test('is playable with Classic Touch controls on a phone-sized screen', { tag: '
   await page.locator('#milkBtn').tap();
   await expect(page.locator('#milkCount')).toHaveText('1');
   await page.locator('#sugarBtn').tap();
-  await expect(page.locator('#sugarCount')).toHaveText('1');
+  await expect(page.locator('#sugarCount')).toHaveText('0');
 
   // Finish the round on the spot and pick an upgrade with a tap.
   await page.evaluate(() => {

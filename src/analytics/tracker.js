@@ -8,7 +8,7 @@ const HOSTNAME = 'libertaine.github.io';
 const PATHS = new Set(['/Steeped-in-Trouble/', '/Steeped-in-Trouble/index.html']);
 
 // Every URL parameter that sets up a test or replays a chosen game. Player
-// preferences (view, touch, autosteam, graphics) are listed in the unit test.
+// preferences (view, touch, autosteam, graphics, mode) are listed in the unit test.
 export const SCENARIO_PARAMS = Object.freeze(['debug', 'noOverlay', 'holdSplash', 'arcade', 'crossing', 'day', 'cup',
   'fortune', 'boss', 'visit', 'progress', 'strange', 'ambientSeed', 'ambientAnts', 'seed', 'tea']);
 

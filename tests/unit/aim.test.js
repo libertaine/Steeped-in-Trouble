@@ -45,7 +45,7 @@ describe('the aim highlight', () => {
     for (const dart of darts) expect(dart.angle).toBeCloseTo(laneAngle(shown), 9);
   });
 
-  it('flashes the lanes that fired: one for steam, three for sugar, all for a Steam Nova', () => {
+  it('flashes the lanes that fired: one for steam, seven for sugar, all for a Steam Nova', () => {
     const game = playingGame();
     const effects = createEffects({ random: () => 0.5 });
     game.state.angle = laneAngle(15) + LANE_STEP * 0.3;
@@ -54,7 +54,7 @@ describe('the aim highlight', () => {
     for (const event of game.drainEvents()) effects.handle(event);
     const [steam, sugar] = effects.fx.aimPulses;
     expect(steam.lanes).toEqual([15]);
-    expect(sugar.lanes).toEqual([wrapLane(14), 15, wrapLane(16)]);
+    expect(sugar.lanes).toEqual([12, 13, 14, 15, wrapLane(16), wrapLane(17), wrapLane(18)]);
     effects.handle({ type: 'nova', count: 16, angle: 0 });
     expect(effects.fx.aimPulses.at(-1).lanes).toHaveLength(CONFIG.arena.lanes);
     effects.update(1);

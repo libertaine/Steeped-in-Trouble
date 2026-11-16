@@ -38,12 +38,12 @@ function illustrate(canvas, id) {
   }
 }
 
-export function createCollectionUI({ doc, sessions, progress, presentation, settleInput, onActivate = () => {}, onOpen = () => {} }) {
+export function createCollectionUI({ doc, sessions, progress, presentation, settleInput, getMode = () => undefined, onActivate = () => {}, onOpen = () => {} }) {
   const el = (id) => doc.getElementById(id);
-  const text = (id, value) => { const element = el(id); if (element.textContent !== value) element.textContent = value; };
+  const text = (id, value) => { const element = el(id); if (element && element.textContent !== value) element.textContent = value; };
   const dialog = el('arcadeCollection'), confirm = el('potConfirmation');
   const cleanups = [];
-  let confirmAction = null, lastInfo = '', lastRecord = '';
+  let confirmAction = null, lastInfo = '', lastRecord = '', lastModeRecord = '';
   function on(id, event, fn) {
     const target = typeof id === 'string' ? el(id) : id;
     target.addEventListener(event, fn);
@@ -98,7 +98,7 @@ export function createCollectionUI({ doc, sessions, progress, presentation, sett
   on(dialog, 'cancel', (e) => { e.preventDefault(); back(); });
   on('playAgainBtn', 'click', () => { settleInput(); sessions.replay(); el('game').focus({ preventScroll: true }); });
   on('retryBtn', 'click', () => { settleInput(); sessions.replay(true); el('game').focus({ preventScroll: true }); });
-  on('newPotBtn', 'click', () => ask(() => { if (sessions.newPot(true)) onActivate(); }));
+  on('newPotBtn', 'click', () => ask(() => { if (sessions.newPot(true, getMode())) onActivate(); }));
   on('clearPotBtn', 'click', () => ask(() => progress.clearPot(), true));
   on('cancelPotBtn', 'click', cancelConfirm);
   on(confirm, 'cancel', (e) => { e.preventDefault(); cancelConfirm(); });
@@ -113,12 +113,12 @@ export function createCollectionUI({ doc, sessions, progress, presentation, sett
   return {
     open,
     get blocked() { return dialog.open || confirm.open; },
-    askNewPot() { ask(() => { if (sessions.newPot(true)) onActivate(); }); },
+    askNewPot() { ask(() => { if (sessions.newPot(true, getMode())) onActivate(); }); },
     primary() {
       if (this.blocked) return true;
       if (sessions.training) return sessions.game.state.phase !== 'paused';
       if (!sessions.practice && sessions.game.state.phase === 'gameover' && progress.potInfo) {
-        ask(() => { sessions.newPot(true); onActivate(); }); return true;
+        ask(() => { sessions.newPot(true, getMode()); onActivate(); }); return true;
       }
       if (!sessions.practice && sessions.game.state.phase === 'ready' && progress.pot) {
         settleInput(); sessions.continuePot(); onActivate();
@@ -138,6 +138,15 @@ export function createCollectionUI({ doc, sessions, progress, presentation, sett
         text('gameTip', saved ? `The leaves have been waiting. Day ${dayOf(saved.round)} · round ${saved.round} completed.`
           : 'Defend the rim. Your defeated leaves are the seeds of the next fortune.');
       }
+      const modeRec = progress.modeRecords?.modes?.[s.mode === 'chill' ? 'chill' : 'arcade'];
+      const modeLabel = s.mode === 'chill' ? 'Chill' : 'Arcade';
+      const modeSummary = modeRec?.plays
+        ? `${modeLabel} best: ${modeRec.bestScore} pts · Cup ${String(modeRec.bestRound).padStart(2, '0')}`
+        : `${modeLabel} best: No record yet`;
+      if (modeSummary !== lastModeRecord) {
+        text('modeRecord', modeSummary);
+        lastModeRecord = modeSummary;
+      }
       const mission = practice?.practiceMission();
       const finished = mission?.stage === 'outro';
       doc.body.dataset.practiceResult = String(!!finished);
@@ -145,7 +154,8 @@ export function createCollectionUI({ doc, sessions, progress, presentation, sett
       el('mainBtn').hidden = !!practice && !!mission?.summary;
       el('personalBest').hidden = !finished || !sessions.result?.improved;
       if (practice && finished) text('gameTip', 'Rewards stay in practice. Replay a new layout or retry this seed.');
-      const info = saved ? `Saved pot: Day ${dayOf(saved.round)} · round ${saved.round} completed.` : 'No saved pot.';
+      const savedModeLabel = saved?.mode === 'chill' ? 'Chill' : 'Arcade';
+      const info = saved ? `Saved pot (${savedModeLabel}): Day ${dayOf(saved.round)} · round ${saved.round} completed.` : 'No saved pot.';
       if (info !== lastInfo) { el('savedPotInfo').textContent = info; lastInfo = info; }
       el('clearPotBtn').hidden = !saved;
       const notice = practice ? progress.status.records : progress.status.pot || (saved

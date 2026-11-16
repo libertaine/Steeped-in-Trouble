@@ -6,7 +6,6 @@ import { PHASE } from '../../src/core/state.js';
 import { migrateCheckpoint, validateCheckpoint } from '../../src/core/checkpoint.js';
 import { TRAY, fillFromTray, usableTray } from '../../src/gameplay/teaTray.js';
 import { UPGRADES, createSpoon, strainerCapacity } from '../../src/gameplay/upgrades.js';
-import { sugarCapacity } from '../../src/gameplay/weapons.js';
 import { offerCards } from '../../src/ui/hud.js';
 import { answerShortage, completeRound, finishGrind, playingGame, playTo } from './helpers.js';
 import { V5_KEYS, omit } from '../support/legacyPlay.js';
@@ -81,17 +80,18 @@ describe('the Tea Tray in a pot', () => {
     expect(game.state.spoon).toEqual(spoon); // no permanent power
     expect(game.state.round).toBe(2);
     expect(game.state.tray).toBeNull();
-    expect(game.state.milkLeft).toBe(CONFIG.milk.perRound + 1);
+    expect(game.state.milkLeft).toBe(CONFIG.milk.starting + 1);
     const event = game.drainEvents().find((e) => e.type === 'upgrade');
     expect(event).toMatchObject({ id: 'trayMilk', tray: true, name: 'A Spare Jug' });
-    playTo(game, 3); // the cup after: back to the usual jug
-    expect(game.state.milkLeft).toBe(CONFIG.milk.perRound);
+    game.pourMilk();
+    playTo(game, 3); // the cup after: passive milk adds +1 back up to capacity
+    expect(game.state.milkLeft).toBe(CONFIG.milk.max);
   });
 
   it('serves each treat as the next cup starts', () => {
     const cases = {
       trayCatch: (s) => expect(s.strainerLeft).toBe(strainerCapacity(s.spoon) + 1),
-      traySugar: (s) => expect(s.sugarLeft).toBe(sugarCapacity(s) + 1),
+      traySugar: (s) => expect(s.sugarLeft).toBe(CONFIG.sugar.starting + 1),
       trayGolden: (s) => expect(s.goldenSpoon).toBe(CONFIG.teaTray.goldenSpoon),
     };
     for (const [id, check] of Object.entries(cases)) {
@@ -109,10 +109,10 @@ describe('the Tea Tray in a pot', () => {
     take(game, forceOffer(game, 'trayMilk'));
     expect(game.state.phase).toBe('grind');
     expect(game.state.tray).toBe('trayMilk');
-    expect(game.state.milkLeft).toBe(CONFIG.milk.perRound); // the machine gets the usual jug
+    expect(game.state.milkLeft).toBe(CONFIG.milk.starting); // the machine gets the carried jug
     finishGrind(game);
     expect(game.state.phase).toBe('playing');
-    expect(game.state.milkLeft).toBe(CONFIG.milk.perRound + 1);
+    expect(game.state.milkLeft).toBe(CONFIG.milk.starting + 1);
     expect(game.state.tray).toBeNull();
   });
 
@@ -123,7 +123,7 @@ describe('the Tea Tray in a pot', () => {
     game.state.phase = PHASE.GAME_OVER;
     expect(game.restart()).toBe(true);
     expect(game.state.tray).toBeNull();
-    expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound);
+    expect(game.state.sugarLeft).toBe(CONFIG.sugar.starting);
   });
 
   it('still offers an upgrade first while one can improve', () => {

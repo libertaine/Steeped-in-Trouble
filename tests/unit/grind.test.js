@@ -289,7 +289,7 @@ describe('losing to the machine', () => {
     expect(state.fortune).toBe(nextFortune);
     expect(state.spoon).toMatchObject({ polished: 2, strainer: 1 });
     expect(state.strainerLeft).toBe(2);
-    expect(state.sugarLeft).toBe(CONFIG.sugar.perRound + state.modifiers.bonusSugar + 1); // the promised extra burst
+    expect(state.sugarLeft).toBe(Math.min(CONFIG.sugar.max, CONFIG.sugar.starting + state.modifiers.bonusSugar + 1)); // the promised extra burst
   });
 
   it('counts only one scald while the spoon recovers', () => {
@@ -394,13 +394,13 @@ it('leaves the normal rounds exactly as they would have been without it', () => 
   expect(run(true).length).toBeGreaterThan(2);
 });
 
-it('fights with fresh milk and sugar, and the Sugar Scoop counts', () => {
+it('fights with carried milk and sugar clamped to capacity, and the Sugar Scoop counts', () => {
   const game = readingWithBoss();
   game.state.spoon.sugarScoop = 1;
-  game.state.milkLeft = 0;
-  game.state.sugarLeft = 0;
+  game.state.milkLeft = 5;
+  game.state.sugarLeft = 5;
   game.primaryAction();
-  expect(game.state.milkLeft).toBe(CONFIG.milk.perRound);
-  expect(game.state.sugarLeft).toBe(CONFIG.sugar.perRound + 1);
+  expect(game.state.milkLeft).toBe(CONFIG.milk.max);
+  expect(game.state.sugarLeft).toBe(CONFIG.sugar.max + 1);
   expect(wrapLane(game.state.grind.valve.lane)).toBe(game.state.grind.valve.lane);
 });

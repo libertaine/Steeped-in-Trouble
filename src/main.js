@@ -3,6 +3,7 @@
 import { CONFIG } from './config.js';
 import { createGame } from './core/game.js';
 import { createSessions } from './core/sessions.js';
+import { excludeScenario } from './core/recordEligibility.js';
 import { createLocalProgress } from './storage/localProgress.js';
 import { createCollectionUI } from './ui/collection.js';
 import { createTrainingUI } from './ui/training.js';
@@ -13,7 +14,7 @@ import { createDailyPour } from './gameplay/dailyPour.js';
 import { BREAKOUT_SALT, createBreakout } from './gameplay/biscuitBreakout.js';
 import { createRandom, toSeed } from './core/random.js';
 import { createControls } from './input/controls.js';
-import { initialSettings, initialSound, isTouchDevice, normalize, saveSettings } from './input/settings.js';
+import { initialMode, initialSettings, initialSound, isTouchDevice, normalize, saveMode, saveSettings } from './input/settings.js';
 import { createAudio } from './audio/audio.js';
 import { attachCanvasScaling } from './rendering/canvas.js';
 import { createAmbient } from './ui/ambient.js';
@@ -88,28 +89,29 @@ function boot() {
 
   const params = new URLSearchParams(window.location.search);
   const canvas = document.getElementById('game');
-  // ?tea=<id> brews only one variety (see gameplay/teas.js); unknown ids are ignored.
-  const mainPot = createGame({ seed: seedFromUrl(params), tea: params.get('tea') ?? undefined });
-  const effects = createEffects();
-  const renderer = createRenderer(canvas, { quality: initialQuality(params) });
-  const hud = createHud(document);
-  // The page ground's quiet Day tint (decoration only; see ui/dayPalette.js).
-  const dayPalette = createDayPalette(document);
-
-  // Control settings: Easy or Classic Touch, and Auto Steam (see input/settings.js).
+  // Control settings: Easy or Classic Touch, Auto Steam, and gameplay Mode (see input/settings.js).
   let storage = null;
   try {
     storage = window.localStorage;
   } catch {
     // Storage may be unavailable; the defaults will do.
   }
+  let currentMode = initialMode({ params, storage, touchDevice: isTouchDevice(window) });
+  // ?tea=<id> brews only one variety (see gameplay/teas.js); unknown ids are ignored.
+  const mainPot = createGame({ seed: seedFromUrl(params), tea: params.get('tea') ?? undefined, mode: currentMode });
+  const effects = createEffects();
+  const renderer = createRenderer(canvas, { quality: initialQuality(params) });
+  const hud = createHud(document);
+  // The page ground's quiet Day tint (decoration only; see ui/dayPalette.js).
+  const dayPalette = createDayPalette(document);
+
   // A remembered "on" still waits for the player's first gesture (see audio/audio.js).
   const audio = createAudio({ enabled: initialSound(storage) });
   // Before the title screen, so its Enter (which it keeps to itself) can still unlock audio.
   const sound = createSoundToggle({ doc: document, audio, storage });
-  // ?debug&cup=migrated: an authentic 0.16.0 pot is stored first, so Continue Your Pot migrates it (development only).
-  if (import.meta.env.DEV && params.has('debug') && params.get('cup') === 'migrated') seedLegacyPot(storage);
-  const progress = createLocalProgress(storage);
+  // Migration preview uses a disposable store; the browser's real pot stays intact.
+  const migrationPreview = import.meta.env.DEV && params.has('debug') && params.get('cup') === 'migrated';
+  const progress = createLocalProgress(migrationPreview ? seedLegacyPot() : storage, { eligible: !migrationPreview });
   const sessions = createSessions(mainPot, progress);
   const game = sessions.game;
   // Mushroom Tea's Strange Happenings (presentation only). With ?debug, ?strange=rewind|breathing|impostor
@@ -122,23 +124,74 @@ function boot() {
     resetInput: () => controls?.settle(true), onChange: describeControls });
   const touchButton = document.getElementById('touchBtn');
   const autoButton = document.getElementById('autoSteamBtn');
+  const modeButton = document.getElementById('modeBtn');
+  const headerModeButton = document.getElementById('headerModeBtn');
+  const modeSelectButtons = [...document.querySelectorAll('[data-select-mode]')];
+  let lastModeSyncKey = '';
+  function syncModeUI() {
+    const canSwitch = !sessions.practice && !sessions.training
+      && (game.state.phase === 'ready' || game.state.phase === 'gameover');
+    const activeMode = game.state.mode === 'chill' ? 'chill' : 'arcade';
+    const key = `${activeMode}:${currentMode}:${canSwitch}:${settings.autoSteam}:${settings.touch}`;
+    if (key === lastModeSyncKey) return;
+    lastModeSyncKey = key;
+    document.body.dataset.gameMode = activeMode;
+    const label = activeMode === 'chill' ? 'Chill' : 'Arcade';
+    if (modeButton) {
+      modeButton.textContent = `Mode: ${label}${canSwitch ? '' : ' (locked)'}`;
+      modeButton.disabled = !canSwitch;
+    }
+    if (headerModeButton) {
+      headerModeButton.disabled = !canSwitch;
+      headerModeButton.dataset.gameMode = activeMode;
+      headerModeButton.title = canSwitch ? 'Switch gameplay mode (Chill / Arcade)' : `${label} mode active for this pot`;
+    }
+    for (const btn of modeSelectButtons) {
+      const selected = btn.dataset.selectMode === currentMode;
+      btn.setAttribute('aria-pressed', String(selected));
+      btn.classList.toggle('is-selected', selected);
+    }
+    if (autoButton) {
+      if (activeMode === 'arcade') {
+        autoButton.textContent = 'Auto Steam: off (Arcade)';
+        autoButton.disabled = true;
+      } else {
+        autoButton.textContent = `Auto Steam: ${settings.autoSteam ? 'on' : 'off'}${settings.touch === 'easy' ? ' (Easy Touch)' : ''}`;
+        autoButton.disabled = settings.touch === 'easy';
+      }
+    }
+    describeControls();
+  }
+  function selectMode(nextMode, { save = true } = {}) {
+    if (nextMode !== 'chill' && nextMode !== 'arcade') return false;
+    currentMode = nextMode;
+    if (save) saveMode(storage, currentMode);
+    if (!sessions.practice && !sessions.training && (game.state.phase === 'ready' || game.state.phase === 'gameover')) {
+      game.setMode(currentMode);
+      game.setAutoSteam(settings.autoSteam);
+    }
+    lastModeSyncKey = '';
+    syncModeUI();
+    hud.update(game.state);
+    return true;
+  }
   function applySettings(next, { save = false } = {}) {
     settings = normalize(next);
     document.body.dataset.touch = settings.touch;
     game.setAutoSteam(settings.autoSteam);
     if (touchButton) touchButton.textContent = `Touch: ${settings.touch}`;
-    if (autoButton) {
-      autoButton.textContent = `Auto Steam: ${settings.autoSteam ? 'on' : 'off'}${settings.touch === 'easy' ? ' (Easy Touch)' : ''}`;
-      autoButton.disabled = settings.touch === 'easy';
-    }
+    lastModeSyncKey = '';
+    syncModeUI();
     if (save) saveSettings(storage, settings);
     describeControls();
   }
   function describeControls() {
+    const autoAllowed = game.state.mode === 'chill';
+    const autoOn = autoAllowed && settings.autoSteam;
     document.getElementById('activeControls').textContent = !onScreen.visible
-      ? `On-screen gameplay buttons are hidden. Use a keyboard to steer and play adventures; Space fires steam, and milk and sugar shortcuts still work. ${settings.autoSteam ? 'Auto Steam is on. ' : ''}${settings.touch === 'easy' ? 'Easy Touch cup gestures still work: double-tap for milk, hold for sugar or hot-chocolate flames. ' : ''}Choose Show to restore the buttons on a touch-only device.`
+      ? `On-screen gameplay buttons are hidden. Use a keyboard to steer and play adventures; Space fires steam, and milk and sugar shortcuts still work. ${autoOn ? 'Auto Steam is on. ' : ''}${settings.touch === 'easy' ? 'Easy Touch cup gestures still work: double-tap for milk, hold for sugar or hot-chocolate flames. ' : ''}Choose Show to restore the buttons on a touch-only device.`
       : settings.touch === 'easy'
-      ? 'Easy Touch: hold ◀ / ▶ to steer; double-tap the cup for milk; hold the cup for sugar. In hot chocolate, hold the cup for flames. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH; crossing the street, tap the arrow pad. Keyboard controls work too.'
+      ? `Easy Touch: hold ◀ / ▶ to steer; ${autoAllowed ? 'Auto Steam fires at targets; ' : 'hold Steam to fire; '}double-tap the cup for milk; hold the cup for sugar. In hot chocolate, hold the cup for flames. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH; crossing the street, tap the arrow pad. Keyboard controls work too.`
       : 'Classic Touch: hold Turn to steer and Steam to fire; tap Milk or Sugar. On the Tea Run use Jump / Slide; in Biscuit Breakout, hold ◀ / ▶ and tap LAUNCH; crossing the street, tap the arrow pad. Keyboard controls work too.';
   }
   applySettings(settings);
@@ -148,8 +201,15 @@ function boot() {
     applySettings({ touch, autoSteam: settings.autoSteam }, { save: true });
   });
   autoButton?.addEventListener('click', () => {
+    if (game.state.mode === 'arcade') return;
     applySettings({ ...settings, autoSteam: !settings.autoSteam }, { save: true });
   });
+  const toggleMode = () => selectMode(currentMode === 'chill' ? 'arcade' : 'chill', { save: true });
+  modeButton?.addEventListener('click', toggleMode);
+  headerModeButton?.addEventListener('click', toggleMode);
+  for (const btn of modeSelectButtons) {
+    btn.addEventListener('click', () => selectMode(btn.dataset.selectMode, { save: true }));
+  }
 
   // A ring under the finger for Easy Touch gestures.
   const ring = document.getElementById('touchRing');
@@ -198,6 +258,7 @@ function boot() {
       crossingControls: game.crossingControls,
       hop: game.hop,
       errand: game.chooseErrand,
+      buySupply: game.buySupply,
       jump: game.jump,
       slide: game.slide,
     },
@@ -214,7 +275,7 @@ function boot() {
     doc: document,
     version: __APP_VERSION__,
     onTraining: () => trainingUI.launch(),
-    touch: () => ({ scheme: settings.touch, autoSteam: settings.autoSteam, visible: onScreen.visible }),
+    touch: () => ({ scheme: settings.touch, autoSteam: game.state.autoSteam, visible: onScreen.visible }),
     onStart: ({ fromTeaBreak, isNewPot }) => {
       controls.settle(true);
       if (fromTeaBreak) return;
@@ -240,8 +301,12 @@ function boot() {
     progress,
     presentation,
     settleInput: () => controls.settle(true),
+    getMode: () => currentMode,
     onActivate: () => {
+      currentMode = game.state.mode;
       game.setAutoSteam(settings.autoSteam);
+      lastModeSyncKey = '';
+      syncModeUI();
       // Continuing a saved pot raises no game event, so it is reported here.
       recordAnalytics('gameStarted');
     },
@@ -345,6 +410,7 @@ function boot() {
     dayPalette.update(game.state, { quality: renderer.quality });
     presentation.update();
     collectionUI.update();
+    syncModeUI();
     trainingUI.update();
     title.update(dt, renderer.quality);
     // After the HUD and panels, so this frame's layout is the one measured.
@@ -420,6 +486,7 @@ function boot() {
       window.__TEACUP__.launchPractice = (id, seed = 42) => {
         collectionUI.open();
         const ok = sessions.launch(id, seed);
+        if (ok) excludeScenario(game);
         if (ok) document.getElementById('arcadeCollection').close();
         controls.settle(true);
         return ok;
@@ -438,6 +505,7 @@ function boot() {
       // Console-only practice, compiled out of production. Call again without
       // an argument to replay the exact course, starting a fresh practice pot.
       window.__TEACUP__.launchDailyPour = (seed = routeSeed) => {
+        excludeScenario(game);
         routeSeed = seed;
         game.state.phase = 'gameover';
         game.restart();
@@ -451,6 +519,7 @@ function boot() {
       let wallSeed = game.seed;
       // The same for Biscuit Breakout: call again without an argument to rebuild the same wall.
       window.__TEACUP__.launchBiscuitBreakout = (seed = wallSeed) => {
+        excludeScenario(game);
         wallSeed = seed;
         game.state.phase = 'gameover';
         game.restart();
@@ -478,6 +547,7 @@ function boot() {
       // hand-off (so it lasts exactly that one cup). ?fortune=karma does this on load.
       window.__TEACUP__.brewWithFortune = (id = 'karma', { cup = 2 } = {}) => {
         if (!Object.hasOwn(FORTUNES, id)) return false;
+        excludeScenario(game);
         game.state.phase = 'gameover';
         game.restart();
         Object.assign(game.state, { round: Math.max(1, cup - 1), phase: 'reading', readingTime: 10, nextFortune: id, offer: null,
@@ -514,6 +584,7 @@ function boot() {
     if (import.meta.env.DEV) window.__TEACUP__.previewAerial = (kind) => {
       const run = game.state.run;
       if (game.state.phase !== 'teaRun' || run?.stage !== 'run' || !CONFIG.teaRun.aerial[kind]) return false;
+      excludeScenario(game);
       run.opportunity = kind;
       run.encountered = null;
       run.encounter = null;

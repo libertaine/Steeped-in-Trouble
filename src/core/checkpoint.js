@@ -16,7 +16,11 @@
 //   Happenings (state.mushroomCups, strangeFirst), and Rush Hour's (always
 //   empty here) state.rush. Schemas 3 and 4 were only
 //   ever saved by development builds of 0.19.0; they migrate like the rest.
+// Schema 6 (0.23.0): adds state.mode ('chill' | 'arcade'). Pre-0.23.0 saves
+//   with autoSteam enabled migrate to 'chill' so Auto Steam stays active; all
+//   others migrate to 'arcade'.
 import { CONFIG } from '../config.js';
+import { recordEligible } from './recordEligibility.js';
 import { createRandom, toSeed } from './random.js';
 import { createInitialState, PHASE } from './state.js';
 import { FORTUNES } from '../gameplay/fortunes.js';
@@ -31,7 +35,7 @@ import { FRACTURE_KINDS, cracksFor, porcelainForLives } from '../gameplay/porcel
 import { GOLDEN_LEAF_SALT } from '../gameplay/goldenLeaf.js';
 import { MANAGER_SALT } from '../gameplay/mycelium.js';
 
-export const POT_SCHEMA_VERSION = 5;
+export const POT_SCHEMA_VERSION = 6;
 const V1_STREAMS = Object.freeze(['normal', 'chocolate', 'boss', 'tea',
   'teaRun', 'dailyPour', 'biscuitBreakout', 'crossingStreet']);
 const V2_STREAMS = Object.freeze([...V1_STREAMS, 'goldenLeaf']);
@@ -42,7 +46,8 @@ const V3_MODIFIERS = Object.freeze(['puffballChance']);
 const V4_STATE = Object.freeze(['tray']);
 const V5_STATE = Object.freeze(['managerAfter', 'lastManager', 'managerVisits', 'managerDue', 'manager',
   'mushroomCups', 'strangeFirst', 'rush']);
-const LATER_STATE = Object.freeze([...V2_STATE, ...V3_STATE, ...V4_STATE, ...V5_STATE]);
+const V6_STATE = Object.freeze(['mode']);
+const LATER_STATE = Object.freeze([...V2_STATE, ...V3_STATE, ...V4_STATE, ...V5_STATE, ...V6_STATE]);
 const without = (later) => Object.keys(createInitialState()).filter((key) => !later.includes(key));
 const own = (o, k) => Object.hasOwn(o, k);
 const object = (o) => o !== null && typeof o === 'object' && !Array.isArray(o)
@@ -87,7 +92,7 @@ function fromVersion1(data) {
 function fromVersion2(data) {
   if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || !keys(data.random, V2_STREAMS)) return null;
   const template = createInitialState();
-  const stateKeys = without([...V3_STATE, ...V4_STATE, ...V5_STATE]);
+  const stateKeys = without([...V3_STATE, ...V4_STATE, ...V5_STATE, ...V6_STATE]);
   const modifierKeys = Object.keys(template.modifiers).filter((key) => !V3_MODIFIERS.includes(key));
   if (!keys(data.state, stateKeys) || !keys(data.state.modifiers, modifierKeys)) return null;
   const state = structuredClone(data.state);
@@ -100,14 +105,14 @@ function fromVersion2(data) {
 }
 
 /**
- * Schema 3 to 4 (checked, with everything else, after the step to 5). No
+ * Schema 3 to 4 (checked, with everything else, after the step to 6). No
  * treat can be waiting at a saved reading, so the Tea Tray's slot starts
  * empty, and a pending offer (upgrades only, in schema 3) is kept as it was.
  * @returns {object|null} a schema 4 checkpoint, or null if `data` is not a sound schema 3 save
  */
 function fromVersion3(data) {
   if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea'])) return null;
-  if (!keys(data.state, without([...V4_STATE, ...V5_STATE]))) return null;
+  if (!keys(data.state, without([...V4_STATE, ...V5_STATE, ...V6_STATE]))) return null;
   return {
     schemaVersion: 4,
     state: { ...structuredClone(data.state), tray: null },
@@ -123,15 +128,15 @@ function fromVersion3(data) {
  * its fifth Chapter 2 cup, or after the next cup if that has passed. Until
  * 0.19.0 Mushroom Tea was brewed only when pinned, so a pinned pot has
  * brewed it every cup and any other none; no Strange Happening is assumed.
- * @returns {object|null} a valid schema 5 checkpoint, or null if `data` is not a sound schema 4 save
+ * @returns {object|null} a schema 5 checkpoint, or null if `data` is not a sound schema 4 save
  */
 function fromVersion4(data) {
   if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || !keys(data.random, V2_STREAMS)) return null;
-  if (!keys(data.state, without(V5_STATE)) || !integer(data.random.normal?.seed, 0, 0xffffffff)) return null;
+  if (!keys(data.state, without([...V5_STATE, ...V6_STATE])) || !integer(data.random.normal?.seed, 0, 0xffffffff)) return null;
   const s = data.state;
   const chapter2 = s.progress?.chapter === 2 && integer(s.progress.starts?.[1], 1);
-  const migrated = {
-    schemaVersion: POT_SCHEMA_VERSION,
+  return {
+    schemaVersion: 5,
     state: {
       ...structuredClone(s),
       managerAfter: chapter2 ? Math.max(s.progress.starts[1] + CONFIG.manager.milestoneCup - 1, s.round + 1) : null,
@@ -146,6 +151,26 @@ function fromVersion4(data) {
     random: { ...structuredClone(data.random), manager: createRandom(toSeed(data.random.normal.seed) ^ MANAGER_SALT).exportState() },
     pinnedTea: data.pinnedTea,
   };
+}
+
+/**
+ * Schema 5 to 6. Pre-0.23.0 saves had no explicit gameplay mode; saves that
+ * had Auto Steam enabled migrate to Chill Mode so Auto Steam remains active,
+ * while manual-steam saves migrate to Arcade Mode so their progression curve
+ * and records stay aligned.
+ * @returns {object|null} a valid schema 6 checkpoint, or null if `data` is not a sound schema 5 save
+ */
+function fromVersion5(data) {
+  if (!keys(data, ['schemaVersion', 'state', 'random', 'pinnedTea']) || !keys(data.random, RANDOM_STREAMS)) return null;
+  if (!keys(data.state, without(V6_STATE))) return null;
+  const s = structuredClone(data.state);
+  const mode = s.autoSteam ? 'chill' : 'arcade';
+  const migrated = {
+    schemaVersion: POT_SCHEMA_VERSION,
+    state: { ...s, mode },
+    random: structuredClone(data.random),
+    pinnedTea: data.pinnedTea,
+  };
   return validateCheckpoint(migrated) ? migrated : null;
 }
 
@@ -158,7 +183,7 @@ export function migrateCheckpoint(data) {
   try {
     if (data?.schemaVersion === POT_SCHEMA_VERSION) return validateCheckpoint(data) ? data : null;
     // Each step checks the layout it reads; only the last validates everything.
-    const steps = [fromVersion1, fromVersion2, fromVersion3, fromVersion4];
+    const steps = [fromVersion1, fromVersion2, fromVersion3, fromVersion4, fromVersion5];
     if (!Number.isSafeInteger(data?.schemaVersion) || data.schemaVersion < 1 || data.schemaVersion >= POT_SCHEMA_VERSION) return null;
     let at = data;
     for (let v = data.schemaVersion; v < POT_SCHEMA_VERSION && at; v++) at = steps[v - 1](at);
@@ -207,7 +232,9 @@ export function validateCheckpoint(data) {
       else if (typeof value === 'number') { if (!finite(s[key])) return false; }
       else if (typeof s[key] !== typeof value) return false;
     }
-    if (!integer(s.round, 1) || !integer(s.heat, 0, Math.min(MAX_HEAT, s.round - 1))
+    if (!integer(s.round, 1) || !known(s.mode, CONFIG.modes)
+      || (s.mode === 'arcade' && s.autoSteam)
+      || !integer(s.heat, 0, Math.min(MAX_HEAT, s.round - 1))
       || !integer(s.score) || !integer(s.lives, 1, Math.max(CONFIG.lives + 1, CONFIG.grind.maxLives)) || !integer(s.teaCash)
       || !integer(s.kills, 1) || !integer(s.target, CONFIG.rounds.baseTarget, CONFIG.rounds.maxTarget)
       || s.kills !== s.target || s.readingTime < 0 || s.goldenSpoon < 0
@@ -256,6 +283,7 @@ export function validateCheckpoint(data) {
 }
 
 export function captureCheckpoint(state, streams, pinnedTea = null) {
+  if (!recordEligible(state)) return null;
   if (state.phase !== PHASE.READING || RANDOM_STREAMS.some((id) => !streams[id]?.exportState)) return null;
   const data = { schemaVersion: POT_SCHEMA_VERSION, state: structuredClone(state),
     random: Object.fromEntries(RANDOM_STREAMS.map((id) => [id, streams[id].exportState()])), pinnedTea };

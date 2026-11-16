@@ -18,7 +18,7 @@ import { LANES, LANE_STEP, TAU, angleDifference, laneAngle, wrapLane } from './a
 import { advanceEnemy, washBack } from './enemies.js';
 import { spoonLane } from './player.js';
 import { restoreLife } from './porcelain.js';
-import { findStrikingShot, spendDart } from './weapons.js';
+import { findStrikingShot, milkCapacity, spendDart, sugarCapacity } from './weapons.js';
 
 const G = CONFIG.grind;
 const RIM = CONFIG.arena.rimRadius;
@@ -408,16 +408,19 @@ function finish(sim, result, reason = null) {
   state.shots = [];
   state.volleys = {};
   const summary = {
-    result, reason, perfect: false, cup: false, bonus: 0, cash: 0, scalds: g.scalds,
+    result, reason, perfect: false, cup: false, bonus: 0, cash: 0, sugar: 0, milk: 0, scalds: g.scalds,
     valveHits: g.tally.valveHits, beans: g.tally.beans, time: g.clock,
   };
   if (result === 'victory') {
     summary.bonus = G.points;
-    // Beating a milestone boss pays Tea Cash too (gameplay/shortage.js).
-    if (g.milestone) {
-      summary.cash = CONFIG.teaCash.milestone;
-      state.teaCash += summary.cash;
-    }
+    summary.cash = g.milestone ? CONFIG.teaCash.milestone : CONFIG.teaCash.rematch;
+    state.teaCash += summary.cash;
+    const beforeSugar = state.sugarLeft;
+    const beforeMilk = state.milkLeft;
+    state.sugarLeft = Math.min(sugarCapacity(state), state.sugarLeft + 1);
+    if (g.milestone) state.milkLeft = Math.min(milkCapacity(state), state.milkLeft + 1);
+    summary.sugar = state.sugarLeft - beforeSugar;
+    summary.milk = state.milkLeft - beforeMilk;
     state.goldenSpoon = Math.max(state.goldenSpoon, G.goldenSpoon);
     if (g.scalds === 0) {
       summary.perfect = true;

@@ -75,15 +75,79 @@ export function steamNova({ state, emit }) {
   });
 }
 
-/** The most sugar bursts the spoon can hold this round, Sugar Scoop included. */
-export function sugarCapacity(state) {
-  return CONFIG.sugar.perRound + state.modifiers.bonusSugar + state.spoon.sugarScoop;
+/** Mode configuration for the active pot (defaults to Arcade). */
+export function modeConfig(state) {
+  return CONFIG.modes[state?.mode] ?? CONFIG.modes[CONFIG.defaultMode];
 }
 
-/** Sugar Rush: regrow one burst per interval, never beyond capacity. */
+/** Maximum milk charges the player can carry in the current mode. */
+export function milkCapacity(state) {
+  return modeConfig(state).maxMilk;
+}
+
+/** The most sugar bursts the spoon can hold, Sugar Scoop included. */
+export function sugarCapacity(state) {
+  return modeConfig(state).maxSugar + (state?.spoon?.sugarScoop ?? 0);
+}
+
+/** Starting milk charges for a fresh pot in the current mode. */
+export function startingMilk(state) {
+  return modeConfig(state).startingMilk;
+}
+
+/** Starting sugar bursts for a fresh pot in the current mode. */
+export function startingSugar(state) {
+  return modeConfig(state).startingSugar;
+}
+
+/**
+ * Passive milk replenishment when entering a normal round after round 1.
+ * Chill replenishes 1 milk after every completed normal cup; Arcade after every 2.
+ */
+export function passiveMilkGain(state) {
+  if ((state?.round ?? 1) <= 1) return 0;
+  const every = modeConfig(state).passiveMilkEvery;
+  return every > 0 && (state.round - 1) % every === 0 ? 1 : 0;
+}
+
+/** Clamp carried milk and sugar to the pot's current inventory limits. */
+export function clampResources(state) {
+  state.milkLeft = Math.max(0, Math.min(milkCapacity(state), state.milkLeft));
+  state.sugarLeft = Math.max(0, Math.min(sugarCapacity(state), state.sugarLeft));
+}
+
+/**
+ * Purchase one milk or sugar charge using Tea Cash, respecting inventory limits.
+ */
+export function buySupply({ state, emit }, kind) {
+  if (kind === 'milk') {
+    const cost = CONFIG.teaCash.milkPrice;
+    if (state.teaCash < cost || state.milkLeft >= milkCapacity(state)) return false;
+    state.teaCash -= cost;
+    state.milkLeft++;
+    emit('supplyBought', {
+      kind: 'milk', cost, milkLeft: state.milkLeft, sugarLeft: state.sugarLeft, teaCash: state.teaCash,
+    });
+    return true;
+  }
+  if (kind === 'sugar') {
+    const cost = CONFIG.teaCash.sugarPrice;
+    if (state.teaCash < cost || state.sugarLeft >= sugarCapacity(state)) return false;
+    state.teaCash -= cost;
+    state.sugarLeft++;
+    emit('supplyBought', {
+      kind: 'sugar', cost, milkLeft: state.milkLeft, sugarLeft: state.sugarLeft, teaCash: state.teaCash,
+    });
+    return true;
+  }
+  return false;
+}
+
+/** Sugar Rush: regrow one burst per interval, never beyond capacity or the per-round cap. */
 export function updateSugarRegen({ state, emit }, dt) {
   const interval = state.modifiers.sugarRegenInterval;
   if (!interval) return;
+  if ((state.volleys.sugarRegens ?? 0) >= CONFIG.fortunes.sugarRushMaxPerRound) return;
   if (state.sugarLeft >= sugarCapacity(state)) {
     state.sugarRegenTimer = interval; // the clock only runs while there is room
     return;
@@ -92,21 +156,25 @@ export function updateSugarRegen({ state, emit }, dt) {
   if (state.sugarRegenTimer <= 0) {
     state.sugarRegenTimer = interval;
     state.sugarLeft++;
+    state.volleys.sugarRegens = (state.volleys.sugarRegens ?? 0) + 1;
     emit('sugarRegen', { angle: state.angle });
   }
 }
 
-/** Fire three sugar darts across the spoon's lane and its neighbours. */
+/** Fire seven sugar darts across the spoon's lane and three neighbours on each side. */
 export function sugarBurst({ state, emit }) {
   if (state.sugarLeft <= 0) return false;
   state.sugarLeft--;
   const lane = spoonLane(state);
+  // Shared by this burst's darts until the last one is spent, across frames.
+  const burst = { synergyMemos: 0 };
   for (const offset of CONFIG.sugar.laneOffsets) {
     state.shots.push({
       angle: laneAngle(wrapLane(lane + offset)),
       radius: RIM - CONFIG.sugar.spawnInset,
       speed: CONFIG.sugar.speed,
       sugar: true,
+      burst,
       veer: 0,
     });
   }

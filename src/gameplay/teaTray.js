@@ -16,6 +16,7 @@
 
 import { CONFIG } from '../config.js';
 import { gildSpoon } from './golden.js';
+import { milkCapacity, sugarCapacity } from './weapons.js';
 
 const T = CONFIG.teaTray;
 
@@ -23,7 +24,7 @@ export const TRAY = Object.freeze({
   trayMilk: {
     id: 'trayMilk',
     name: 'A Spare Jug',
-    info: 'One more milk pour, next cup only.',
+    info: 'One more milk pour (up to max), next cup only.',
     words: 'Someone left the cream out.',
     usable: () => true,
   },
@@ -37,7 +38,7 @@ export const TRAY = Object.freeze({
   traySugar: {
     id: 'traySugar',
     name: 'A Sugar Lump',
-    info: 'One more sugar burst, next cup only.',
+    info: 'One more sugar burst (up to max), next cup only.',
     words: 'Just the one. Allegedly.',
     usable: () => true,
   },
@@ -75,9 +76,9 @@ export function fillFromTray(state, upgrades) {
 export function serveTray(state, emit) {
   const id = state.tray;
   state.tray = null;
-  if (id === 'trayMilk') state.milkLeft++;
+  if (id === 'trayMilk') state.milkLeft = Math.min(milkCapacity(state), state.milkLeft + 1);
   else if (id === 'trayCatch') state.strainerLeft++;
-  else if (id === 'traySugar') state.sugarLeft++;
+  else if (id === 'traySugar') state.sugarLeft = Math.min(sugarCapacity(state), state.sugarLeft + 1);
   else if (id === 'trayGolden') {
     gildSpoon(state, T.goldenSpoon);
     emit('goldenSpoon', { angle: state.angle, time: state.goldenSpoon });

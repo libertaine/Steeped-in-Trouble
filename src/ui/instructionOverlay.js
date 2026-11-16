@@ -20,7 +20,7 @@ export function touchSummary({ scheme, autoSteam, visible = true }) {
   if (scheme === 'easy') {
     return {
       label: 'Easy Touch:',
-      text: 'hold ◀ / ▶ to steer. Steam fires by itself. Double-tap the cup for milk; hold a finger on the cup for sugar.',
+      text: `hold ◀ / ▶ to steer. ${autoSteam ? 'Steam fires by itself.' : 'Hold STEAM to fire.'} Double-tap the cup for milk; hold a finger on the cup for sugar.`,
     };
   }
   return {

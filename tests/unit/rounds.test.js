@@ -180,7 +180,7 @@ describe('resetting a match', () => {
     expect(s.fortune).toBeNull();
     expect(s.nextFortune).toBeNull();
     expect(s.modifiers.bonusSugar).toBe(0);
-    expect([s.milkLeft, s.sugarLeft]).toEqual([2, 2]);
+    expect([s.milkLeft, s.sugarLeft]).toEqual([2, 1]);
     expect(s.residue).toHaveLength(0);
   });
 

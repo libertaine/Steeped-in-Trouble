@@ -64,18 +64,24 @@ export function createSessions(main, progress, { nextSeed = randomSeed } = {}) {
     },
     // Confirmation belongs to the caller. Failed storage is reported by the
     // progress store; it cannot prevent a confirmed new session from playing.
-    newPot(confirmed = false) {
+    newPot(confirmed = false, mode = pot?.state?.mode) {
       if (progress.pot && !confirmed) return false;
       if (progress.pot) progress.clearPot();
-      pot = createGame({ seed: nextSeed() });
+      pot = createGame({ seed: nextSeed(), mode });
       this.back();
       pot.primaryAction();
       return true;
     },
     handle(event) {
       if (!this.ordinary) return;
-      if (event.type === 'checkpoint') progress.saveCheckpoint(event.checkpoint);
-      if (event.type === 'gameover') progress.clearPot();
+      if (event.type === 'checkpoint') {
+        progress.saveCheckpoint(event.checkpoint, pot.state);
+        if (event.cupCompleted === true) progress.recordPot?.(pot.state, { cupCompleted: true });
+      }
+      if (event.type === 'gameover') {
+        progress.recordPot?.(pot.state, { finished: true });
+        progress.clearPot(pot.state);
+      }
     },
   };
 }

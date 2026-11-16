@@ -37,9 +37,14 @@ export function resourceHudTests() {
         // Both successful uses enter the real event queue before the next frame.
         g.pourMilk(); g.pourMilk();
       });
-      await expect(page.locator('#resource0 b')).toHaveText('0/2');
+      await expect(page.locator('#resource0 b')).toHaveText('0/3');
       await expect.poll(() => page.evaluate(() => window.__resourceNotifications)).toEqual(['Milk used', 'Milk used']);
-      await page.evaluate(() => { const g = window.__TEACUP__.game; g.sugarBurst(); g.sugarBurst(); });
+      await page.evaluate(() => {
+        const g = window.__TEACUP__.game;
+        // A fresh pot has one Sugar; supply a spare to exercise consecutive notifications.
+        g.state.sugarLeft = 2;
+        g.sugarBurst(); g.sugarBurst();
+      });
       await expect(page.locator('#resource1 b')).toHaveText('0/2');
       await expect.poll(() => page.evaluate(() => window.__resourceNotifications)).toEqual(['Milk used', 'Milk used', 'Sugar used', 'Sugar used']);
       await page.evaluate(() => {
@@ -66,22 +71,27 @@ export function resourceHudTests() {
 
   test(`resource illustrations follow real use, catches, spills and repairs`, { tag: '@smoke' }, async ({ page, problems }, info) => {
     await start(page, `&touch=classic`);
-    await expect(page.locator('#resource0 b')).toHaveText('2/2');
-    await expect(page.locator('#resource0')).toHaveAccessibleName('Milk: 2 available, 2 normal capacity');
-    await expect(page.locator('#resource1 b')).toHaveText('2/2');
-    await expect(page.locator('.resource-cubes svg')).toHaveCount(2);
+    await expect(page.locator('#resource0 b')).toHaveText('2/3');
+    await expect(page.locator('#resource0')).toHaveAccessibleName('Milk: 2 available, 3 normal capacity');
+    await expect(page.locator('#resource1 b')).toHaveText('1/2');
+    await expect(page.locator('#resource1')).toHaveAccessibleName('Sugar: 1 available, 2 normal capacity');
+    await expect(page.locator('.resource-cubes svg')).toHaveCount(1);
     await expect(page.locator('.catch-pips i')).toHaveCount(1);
     await page.keyboard.press('KeyQ');
-    await expect(page.locator('#resource0 b')).toHaveText('1/2');
+    await expect(page.locator('#resource0 b')).toHaveText('1/3');
     await expect(page.locator('#resourceAnnouncement')).toHaveText('Milk used');
     await page.keyboard.press('KeyQ');
-    await expect(page.locator('#resource0 b')).toHaveText('0/2');
+    await expect(page.locator('#resource0 b')).toHaveText('0/3');
     await expect(page.locator('#resource0 rect')).toHaveAttribute('height', '0');
     await page.keyboard.press('KeyE');
     await expect(page.locator('.resource-cubes svg')).toHaveCount(1);
-    await expect(page.locator('#resource1 b')).toHaveText('1/2');
+    await expect(page.locator('#resource1 b')).toHaveText('0/2');
+    await expect(page.locator('#resource1')).toHaveAccessibleName('Sugar: 0 available, 2 normal capacity');
+    await expect(page.locator('.resource-cubes svg path').first()).toHaveAttribute('fill', 'none');
+    expect(await page.evaluate(() => window.__TEACUP__.game.state.roundStats.sugarUses)).toBe(1);
     await page.keyboard.press('KeyE');
     await expect(page.locator('#resource1 b')).toHaveText('0/2');
+    expect(await page.evaluate(() => window.__TEACUP__.game.state.roundStats.sugarUses)).toBe(1);
     await expect(page.locator('.resource-cubes svg path').first()).toHaveAttribute('fill', 'none');
     await page.evaluate(() => {
       const { game: g, config } = window.__TEACUP__;
@@ -137,7 +147,7 @@ export function resourceHudTests() {
         await page.evaluate(() => { window.__TEACUP__.game.state.grind.scalds = 2; });
         await expect(page.locator('#resource2')).toContainText('Scalds2/3');
         await expect(page.locator('#resourceProgressLabel')).toContainText('Machine health');
-        await expect(page.locator('#resource0 b')).toHaveText('2/2');
+        await expect(page.locator('#resource0 b')).toHaveText('2/3');
       } else {
         await expect(page.locator('.resource-cubes')).toHaveCount(0);
         await expect(page.locator('#resource0')).toContainText('Perfect');

@@ -1,9 +1,11 @@
 // Imported only by the DEV branch in main.js; Vite removes it from production.
 import { OFFER_AT } from '../core/game.js';
+import { excludeScenario } from '../core/recordEligibility.js';
 import { MAX_HEAT, difficultyAt } from '../gameplay/days.js';
 
 export function prepareDayPractice(game, mode = 'end') {
   if (!['near', 'end', 'fresh', 'keep', 'max'].includes(mode)) return false;
+  excludeScenario(game);
   game.state.phase = 'gameover';
   game.restart();
   const s = game.state;
