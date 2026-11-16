@@ -17,12 +17,26 @@ for (const [name, viewport] of [
     await accept.tap();
     await expectPourControls(page);
     await page.screenshot({ path: `docs/images/daily-pour/${name}-intro.png`, fullPage: true, scale: 'css' });
-    await page.locator('#mainBtn').tap();
-    await page.locator('[data-paper="aimPaper"]').tap();
+    // Layout checks can outlast the automatic intro. During play the primary
+    // button is hidden, so tapping it can wait until the route has already ended.
+    await page.waitForFunction(() => {
+      const { game, config } = window.__TEACUP__;
+      const pour = game.state.dailyPour;
+      return game.state.phase === 'dailyPour' && pour.stage === 'play'
+        && pour.clock < config.dailyPour.duration && pour.summary === null;
+    });
+    const aim = page.locator('[data-paper="aimPaper"]');
+    await expect(aim).toBeVisible();
+    await expect(aim).toBeEnabled();
+    await expect(aim).toHaveText('AIM: MAILBOX');
+    await aim.tap({ trial: true });
+    await aim.tap();
     await expect(page.locator('#aimPaperBtn')).toHaveText('AIM: PORCH');
+    const papers = await page.evaluate(() => window.__TEACUP__.game.state.dailyPour.papers);
+    expect(papers).toBe(9);
     await page.locator('[data-paper="throwPaper"]').tap();
     const thrown = await page.evaluate(() => window.__TEACUP__.game.state.dailyPour.papers);
-    expect(thrown).toBe(8);
+    expect(thrown).toBe(papers - 1);
     await page.locator('[data-paper="throwPaper"]').dispatchEvent('pointercancel', { pointerId: 1 });
     await page.waitForTimeout(950);
     expect(await page.evaluate(() => window.__TEACUP__.game.state.dailyPour.papers)).toBe(thrown);
@@ -35,6 +49,11 @@ for (const [name, viewport] of [
     expect(await page.evaluate(() => window.__TEACUP__.game.state.dailyPour)).toEqual(frozen);
     await page.locator('#closeBreak').tap();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'dailyPour');
+    await page.waitForFunction((clock) => {
+      const { state } = window.__TEACUP__.game;
+      return state.phase === 'dailyPour' && state.dailyPour.stage === 'play'
+        && state.dailyPour.clock > clock;
+    }, frozen.clock);
     expect(problems).toEqual([]);
   });
 }
